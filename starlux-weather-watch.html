@@ -209,14 +209,24 @@ svg{display:block}
 
 <main id="viewInfo" class="hidden">
   <div class="card">
-    <h2>TAF 警戒門檻</h2>
+    <h2>嚴重</h2>
     <div class="thr">
-      <div><span>陣風，側風與亂流</span><b>40 kt</b></div>
-      <div><span>陣風，颱風或強烈低壓</span><b>50 kt</b></div>
+      <div><span>陣風</span><b>40 kt</b></div>
+      <div><span>持續風</span><b>35 kt</b></div>
+      <div><span>能見度，霧或低雲遮蔽</span><b>800 m</b></div>
       <div><span>雲底，低於一類標準</span><b>200 ft</b></div>
-      <div><span>能見度，低於一類標準</span><b>800 m</b></div>
-      <div><span>雷雨、凍性降水、颮線</span><b>一律嚴重</b></div>
-      <div><span>雲底 500 ft、能見度 3000 m 以下</span><b>警戒</b></div>
+      <div><span>強降雨、強降雪</span><b>TAF 標 +</b></div>
+      <div><span>凍性降水、颮線</span><b>一律嚴重</b></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>觀察</h2>
+    <div class="thr">
+      <div><span>雷雨</span><b>一律觀察</b></div>
+      <div><span>風</span><b>28 kt</b></div>
+      <div><span>能見度</span><b>3000 m</b></div>
+      <div><span>雲底</span><b>500 ft</b></div>
+      <div><span>一般降雪、有霧</span><b>觀察</b></div>
       <div><span>TEMPO 與 PROB 時段</span><b>標為短時</b></div>
     </div>
   </div>
@@ -353,18 +363,27 @@ function assessTAF(t){
   const out=[];
   t.groups.forEach(g=>{
     const tmp=g.kind==="TEMPO"||g.kind==="PROB", tag=tmp?"（短時）":"";
+    // 嚴重：強風
     if(g.gust>=50)out.push([2,"陣風 "+Math.round(g.gust)+" kt，颱風或強烈低壓"+tag,"wind"]);
     else if(g.gust>=40)out.push([2,"陣風 "+Math.round(g.gust)+" kt，側風與亂流"+tag,"wind"]);
+    else if(g.wind>=35)out.push([2,"持續風 "+Math.round(g.wind)+" kt"+tag,"wind"]);
     else if(g.gust>=30||g.wind>=28)out.push([1,"風 "+Math.round(Math.max(g.wind,g.gust))+" kt"+tag,"wind"]);
-    if(g.ts)out.push([2,"雷雨"+tag,"storm"]);
-    if(g.fz)out.push([2,"凍性降水，積冰風險"+tag,"snow"]);
-    if(g.sq)out.push([2,"颮線或漏斗雲"+tag,"storm"]);
-    if(g.heavy&&!g.ts)out.push([1,"強降水 "+g.wx.join("、")+tag,"rain"]);
-    if(g.sn&&!g.fz)out.push([1,"降雪，需除冰"+tag,"snow"]);
+    // 嚴重：霧與低能見度
     if(g.vis!=null&&g.vis<800)out.push([2,"能見度 "+Math.round(g.vis)+" m，低於一類標準"+tag,"fog"]);
     else if(g.vis!=null&&g.vis<3000)out.push([1,"能見度 "+Math.round(g.vis)+" m"+tag,"fog"]);
+    else if(g.wx.some(w=>/霧$/.test(w)))out.push([1,"有霧"+tag,"fog"]);
     if(g.ceil!=null&&g.ceil<=200)out.push([2,"雲底 "+g.ceil+" ft，低於一類標準"+tag,"fog"]);
     else if(g.ceil!=null&&g.ceil<500)out.push([1,"雲底 "+g.ceil+" ft"+tag,"fog"]);
+    // 嚴重：強降水
+    if(g.heavy&&g.sn)out.push([2,"強降雪，除冰與跑道摩擦係數"+tag,"snow"]);
+    else if(g.wx.some(w=>/冰雹|霰/.test(w)))out.push([2,"冰雹"+tag,"storm"]);
+    else if(g.heavy)out.push([2,"強降雨，跑道積水與水花"+tag,"rain"]);
+    else if(g.sn)out.push([1,"降雪，需除冰"+tag,"snow"]);
+    // 嚴重：凍性降水與颮
+    if(g.fz)out.push([2,"凍性降水，積冰風險"+tag,"snow"]);
+    if(g.sq)out.push([2,"颮線或漏斗雲"+tag,"storm"]);
+    // 觀察：雷雨本身
+    if(g.ts)out.push([1,"雷雨"+tag,"storm"]);
   });
   out.sort((a,b)=>b[0]-a[0]);
   const seen=new Set(),notes=[];let lvl=0,icon=null;
@@ -522,7 +541,7 @@ function render(){
       ?'目前沒有取得任何 TAF，到管理頁確認 ICAO 代碼與中繼設定。'
       :flagged.length
        ?(sev.length?'其中 <i>'+sev.length+'</i> 個達到嚴重門檻，'+sev.slice(0,4).map(s=>esc(s.c.split(" ")[0])).join("、")+(sev.length>4?" 等":"")+'。'
-                   :'皆為警戒等級，尚未達到嚴重門檻。')
+                   :'皆為觀察等級，尚未達到嚴重門檻。')
        :'各站 TAF 都在門檻以下。')+'</p></div>';
   document.getElementById("navdot").style.display=sev.length?"inline-block":"none";
 
@@ -530,20 +549,20 @@ function render(){
     '<div class="card"><div class="alert'+(s.lvl>1?' sev':'')+'">'+
       '<span class="key">'+(ICON[s.tafRisk.icon]||ICON.cloud)+'</span><div class="body">'+
       '<h3>'+esc(s.c)+'<small>'+esc(s.i)+(s.k?' '+esc(s.k):'')+'</small>'+
-      '<span class="tag">'+(s.lvl>1?'嚴重':'警戒')+'</span></h3>'+
+      '<span class="tag">'+(s.lvl>1?'嚴重':'觀察')+'</span></h3>'+
       '<p>'+s.tafRisk.notes.join('，')+'</p>'+
       '<p class="when">'+esc(tafHead(s))+'</p>'+
       '<p class="raw"><span>TAF 原文</span>'+esc(s.taf.raw)+'</p>'+
       (s.metar?'<p class="raw"><span>METAR 實況</span>'+esc(s.metar.raw)+'</p>':'')+
       '</div></div></div>').join("")
-    : '<div class="card"><p class="thr">'+(withTaf.length?'這個範圍內，各站 TAF 都沒有達到警戒門檻。':'尚未取得 TAF。')+'</p></div>';
+    : '<div class="card"><p class="thr">'+(withTaf.length?'這個範圍內，各站 TAF 都沒有達到門檻。':'尚未取得 TAF。')+'</p></div>';
 
   document.getElementById("viewStations").innerHTML=list.map(s=>{
     if(!s.taf) return '<div class="card stn"><h3>'+esc(s.c)+'<small>'+esc(s.i)+(s.k?' '+esc(s.k):'')+'</small></h3>'+
       '<p class="note quiet">'+(s.k?'未取得這一站的 TAF，可能是該站不發布或中繼暫時取不到。':'沒有 ICAO 代碼，到管理頁補上才會有 TAF。')+'</p></div>';
     const r=s.tafRisk;
     return '<div class="card stn"><h3>'+esc(s.c)+'<small>'+esc(s.i)+' '+esc(s.k)+'</small>'+
-      (r.lvl?'<span class="tag">'+(r.lvl>1?'嚴重':'警戒')+'</span>':'')+'</h3>'+
+      (r.lvl?'<span class="tag">'+(r.lvl>1?'嚴重':'觀察')+'</span>':'')+'</h3>'+
       '<p class="note'+(r.lvl?'':' quiet')+'">'+(r.lvl?r.notes.join('　'):'TAF 內無達標的惡劣天氣')+'</p>'+
       '<p class="raw"><span>'+esc(tafHead(s))+'</span>'+esc(s.taf.raw)+'</p>'+
       (s.metar?'<p class="raw"><span>METAR</span>'+esc(s.metar.raw)+'</p>':'')+'</div>';
