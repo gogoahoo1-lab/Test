@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>星宇航空 | 航點宵禁與轉降作業儀表板</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="星宇 宵禁儀表板">
+<meta name="theme-color" content="#C7F034">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%23EFEFED' width='180' height='180'/><circle cx='140' cy='40' r='50' fill='%23C7F034' opacity='.3'/></svg>">
+<link rel="manifest" href="./manifest.json">
+<link rel="preconnect" href="https://rsms.me/">
+<link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+<style>
+  :root {
+    --lime: #C7F034;
+    --olive: #7E8F35;
+    --lime-light: #D6EF5C;
+    --bg: #EFEFED;
+    --white: #FFFFFF;
+    --text: #1A1A1A;
+    --text-dim: #666666;
+    --text-faint: #999999;
+    --black: #000000;
+    --shadow: 0 2px 18px rgba(20, 20, 20, 0.07);
+    --blur: 10px;
+  }
+
+  * { box-sizing: border-box; }
+  
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    font-feature-settings: 'ss01' 1;
+  }
+
+  /* 背景光暈：右上萊姆綠 + 左上霧粉 */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+      radial-gradient(circle 600px at 85% 5%, rgba(199, 240, 52, 0.12) 0%, transparent 70%),
+      radial-gradient(circle 700px at 10% 8%, rgba(230, 180, 200, 0.08) 0%, transparent 65%);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  body {
+    padding-bottom: 100px;
+    font-size: 17px;
+    line-height: 1.5;
+  }
+
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--white);
+    padding: 20px 20px 16px;
+    box-shadow: var(--shadow);
+  }
+
+  .header h1 {
+    font-size: 24px;
+    font-weight: 500;
+    margin: 0 0 4px;
+    letter-spacing: -0.03em;
+  }
+
+  .header .sub {
+    font-size: 13px;
+    color: var(--text-dim);
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0;
+  }
+
+  .clock {
+    font-variant-numeric: tabular-nums;
+    font-weight: 400;
+    letter-spacing: -0.04em;
+  }
+
+  .container {
+    padding: 20px;
+    max-width: 840px;
+    margin: 0 auto;
+  }
+
+  .panel {
+    display: none;
+  }
+
+  .panel.active {
+    display: block;
+    animation: fadeIn 0.25s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card {
+    background: var(--white);
+    border-radius: 30px;
+    padding: 24px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+
+  .card h2 {
+    font-size: 18px;
+    font-weight: 500;
+    margin: 0 0 14px;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  .card p.hint {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin: 0 0 16px;
+    line-height: 1.6;
+    font-weight: 400;
+  }
+
+  .card.mesh-gradient {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #7E8F35 0%, #A8C544 50%, #D6EF5C 100%);
+  }
+
+  .card.mesh-gradient::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle 400px at 20% 30%, rgba(214, 239, 92, 0.4) 0%, transparent 60%),
+      radial-gradient(circle 300px at 70% 20%, rgba(168, 197, 68, 0.3) 0%, transparent 50%),
+      radial-gradient(circle 350px at 50% 80%, rgba(126, 143, 53, 0.35) 0%, transparent 55%);
+    pointer-events: none;
+  }
+
+  .card.mesh-gradient::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle 2px at 20% 30%, rgba(255, 255, 255, 0.4) 0%, transparent 2px),
+      radial-gradient(circle 2px at 40% 60%, rgba(255, 255, 255, 0.3) 0%, transparent 2px),
+      radial-gradient(circle 2px at 60% 20%, rgba(255, 255, 255, 0.35) 0%, transparent 2px),
+      radial-gradient(circle 2px at 80% 70%, rgba(255, 255, 255, 0.25) 0%, transparent 2px);
+    background-size: 60px 60px;
+    background-position: 0 0, 15px 30px, 30px 15px, 45px 45px;
+    mask-image: radial-gradient(circle at 50% 50%, transparent 20%, black 60%);
+    pointer-events: none;
+  }
+
+  .card.mesh-gradient > * {
+    position: relative;
+    z-index: 2;
+    color: var(--white);
+  }
+
+  .card.mesh-gradient h2 {
+    color: var(--white);
+  }
+
+  .card.mesh-gradient p.hint {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  label {
+    font-size: 12px;
+    color: var(--text-dim);
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+
+  input[type=text],
+  input[type=time],
+  input[type=number],
+  input[type=datetime-local],
+  select {
+    width: 100%;
+    background: var(--white);
+    border: 1px solid #E0E0E0;
+    color: var(--text);
+    border-radius: 14px;
+    padding: 12px 14px;
+    font-size: 16px;
+    font-family: 'Inter', inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input:focus,
+  select:focus {
+    border-color: var(--lime);
+  }
+
+  .field {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .btn {
+    background: var(--white);
+    color: var(--text);
+    border: none;
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: 'Inter', inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn:active {
+    transform: scale(0.96);
+  }
+
+  .btn.primary {
+    background: var(--black);
+    color: var(--white);
+  }
+
+  .btn.secondary {
+    background: var(--white);
+    border: 1px solid #E0E0E0;
+    color: var(--text);
+  }
+
+  .btn.danger {
+    background: transparent;
+    color: #D32F2F;
+    border: 1px solid #D32F2F;
+  }
+
+  .btn.block {
+    width: 100%;
+  }
+
+  .dcard {
+    background: var(--white);
+    border-radius: 30px;
+    padding: 20px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+  }
+
+  .dcard.edit-form {
+    border: 2px solid var(--lime);
+  }
+
+  .dcard .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .dcard .city {
+    font-weight: 500;
+    font-size: 18px;
+    letter-spacing: -0.02em;
+  }
+
+  .dcard .code {
+    color: var(--lime);
+    font-size: 13px;
+    font-weight: 500;
+    margin-left: 8px;
+    letter-spacing: 0.03em;
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+    white-space: nowrap;
+    letter-spacing: 0.01em;
+  }
+
+  .tag.yes {
+    background: #FFE0E0;
+    color: #D32F2F;
+  }
+
+  .tag.no {
+    background: #E8F5E9;
+    color: #388E3C;
+  }
+
+  .tag.na {
+    background: #F5F5F5;
+    color: var(--text-faint);
+  }
+
+  .dcard .meta {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin: 10px 0;
+    line-height: 1.7;
+    font-weight: 400;
+  }
+
+  .dcard .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .dcard .actions button {
+    flex: 1;
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  .search {
+    margin-bottom: 14px;
+    font-size: 16px;
+  }
+
+  .search::placeholder {
+    color: var(--text-faint);
+  }
+
+  .gauge-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 16px 0 8px;
+  }
+
+  .gauge-time {
+    font-size: 42px;
+    font-weight: 300;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+    margin-top: 8px;
+    color: var(--black);
+  }
+
+  .gauge-label {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 6px;
+    text-align: center;
+    font-weight: 400;
+  }
+
+  .status-banner {
+    border-radius: 24px;
+    padding: 16px 20px;
+    margin-top: 14px;
+    font-size: 14px;
+    line-height: 1.7;
+    font-weight: 400;
+  }
+
+  .status-banner.safe {
+    background: #E8F5E9;
+    color: #2E7D32;
+  }
+
+  .status-banner.warn {
+    background: #FFF3E0;
+    color: #E65100;
+  }
+
+  .status-banner.danger {
+    background: #FFEBEE;
+    color: #C62828;
+  }
+
+  .status-banner b {
+    display: block;
+    font-size: 15px;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+
+  .alert-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    background: var(--white);
+    border-radius: 24px;
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+    border-left: 4px solid transparent;
+  }
+
+  .alert-item.risk-danger {
+    border-left-color: #D32F2F;
+  }
+
+  .alert-item.risk-warn {
+    border-left-color: #F57C00;
+  }
+
+  .alert-item .info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .alert-item .title {
+    font-size: 15px;
+    font-weight: 500;
+    margin-bottom: 2px;
+    letter-spacing: -0.01em;
+  }
+
+  .alert-item .due {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 3px;
+  }
+
+  .alert-item .countdown {
+    font-size: 12px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  .icon-btn {
+    width: 42px;
+    height: 42px;
+    background: var(--white);
+    border: 1px solid #D0D0D0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    color: var(--text-faint);
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+
+  .icon-btn:active {
+    transform: scale(0.92);
+  }
+
+  .tabbar {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(20px);
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    z-index: 30;
+    border-radius: 50px;
+    padding: 8px 12px;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: var(--shadow);
+  }
+
+  .tabbar button {
+    flex: 0 1 auto;
+    background: var(--white);
+    border: none;
+    color: var(--text-dim);
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'Inter', inherit;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    border-radius: 40px;
+    transition: all 0.3s;
+    white-space: nowrap;
+    letter-spacing: -0.01em;
+  }
+
+  .tabbar button.active {
+    background: var(--black);
+    color: var(--white);
+  }
+
+  .tabbar button .ic {
+    font-size: 16px;
+  }
+
+  .empty {
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 14px;
+    padding: 40px 20px;
+    font-weight: 400;
+  }
+
+  .toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--white);
+    border-radius: 30px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow);
+    gap: 12px;
+  }
+
+  .toggle-row > div:first-child {
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .switch {
+    position: relative;
+    width: 48px;
+    height: 28px;
+    flex-shrink: 0;
+  }
+
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    position: absolute;
+    inset: 0;
+    background: #E0E0E0;
+    border-radius: 28px;
+    transition: background 0.3s;
+    cursor: pointer;
+  }
+
+  .slider::before {
+    content: '';
+    position: absolute;
+    height: 24px;
+    width: 24px;
+    left: 2px;
+    top: 2px;
+    background: var(--white);
+    border-radius: 50%;
+    transition: all 0.3s;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  input:checked + .slider {
+    background: var(--black);
+  }
+
+  input:checked + .slider::before {
+    transform: translateX(20px);
+  }
+
+  .note {
+    font-size: 13px;
+    color: var(--text-faint);
+    line-height: 1.6;
+    margin-top: 8px;
+    font-weight: 400;
+  }
+
+  select option {
+    background: var(--white);
+    color: var(--text);
+  }
+
+  .inline-err {
+    font-size: 13px;
+    color: #D32F2F;
+    margin: 6px 0;
+    font-weight: 500;
+  }
+
+  .toast {
+    position: fixed;
+    left: 20px;
+    right: 20px;
+    bottom: 120px;
+    background: rgba(26, 26, 26, 0.95);
+    backdrop-filter: blur(12px);
+    color: var(--white);
+    padding: 14px 18px;
+    border-radius: 24px;
+    font-size: 14px;
+    z-index: 40;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .toast button {
+    background: none;
+    border: none;
+    color: var(--lime);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-dim);
+    margin: 6px 0 10px;
+    font-weight: 400;
+  }
+
+  .checkbox-row input {
+    width: auto;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>星宇航空 · 航點宵禁與轉降儀表板</h1>
+  <div class="sub">
+    <span>即時參考 · 實際作業請以最新 AIP / OM-A 為準</span>
+    <span class="clock" id="clock">--:--:--</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="panel active" id="panel-airports">
+    <div class="card mesh-gradient">
+      <h2>航點宵禁與地面餐勤資訊</h2>
+      <p class="hint">點「編輯」可直接修改此航點資料；所有宵禁時段與餐勤供應狀態請務必對照公司最新 OM-A / 航站手冊與 NOTAM 確認後再用於派遣決策。</p>
+    </div>
+    <div class="card">
+      <input type="text" class="search" id="airportSearch" placeholder="搜尋城市或代碼…">
+      <div class="row">
+        <button class="btn secondary" style="flex:1" id="addAirportBtn">新增航點</button>
+        <button class="btn secondary" style="flex:1" id="resetSampleBtn">重設為範例</button>
+      </div>
+      <div id="resetConfirmBox"></div>
+    </div>
+    <div id="airportList"></div>
+  </div>
+
+  <div class="panel" id="panel-calc">
+    <div class="card mesh-gradient">
+      <h2>轉降後最晚起飛時間試算</h2>
+      <p class="hint">目的地有宵禁限制時，計算班機從備降站起飛的最晚時間。</p>
+    </div>
+    <div class="card">
+      <div class="row">
+        <div class="field">
+          <label>原目的地（有宵禁限制）</label>
+          <input type="text" id="calcDest" placeholder="例：高雄 KHH">
+        </div>
+        <div class="field">
+          <label>宵禁截止時間（當地時間）</label>
+          <input type="time" id="calcCurfew" value="22:00">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>目前備降站</label>
+          <input type="text" id="calcDivert" placeholder="例：香港 HKG">
+        </div>
+        <div class="field">
+          <label>時差（備降減目的地）</label>
+          <input type="number" id="calcTzDiff" value="0" step="0.5">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>預估飛行時間</label>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input type="number" id="calcFlightH" min="0" value="1" style="width:70px;">
+            <span style="color:var(--text-dim);font-size:14px;font-weight:500;">時</span>
+            <input type="number" id="calcFlightM" min="0" max="59" value="30" style="width:70px;">
+            <span style="color:var(--text-dim);font-size:14px;font-weight:500;">分</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>安全緩衝（分鐘）</label>
+          <input type="number" id="calcBuffer" value="30" min="0">
+        </div>
+      </div>
+      <div id="calcErr"></div>
+      <button class="btn primary block" id="calcBtn" style="margin-top:6px;">計算最晚起飛時間</button>
+
+      <div id="calcResult" style="display:none;margin-top:20px;">
+        <div class="gauge-wrap">
+          <div class="gauge-label">備降站當地時間</div>
+          <div class="gauge-time" id="gaugeTime">--:--</div>
+        </div>
+        <div class="status-banner" id="calcBanner"></div>
+        <button class="btn secondary block" id="addAlertFromCalc" style="margin-top:14px;">加入風險提醒</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-alerts">
+    <div class="card mesh-gradient">
+      <h2>作業風險提醒管理</h2>
+      <p class="hint">追蹤與通知所有轉降、宵禁相關的作業風險項目。</p>
+    </div>
+    <div class="card">
+      <div class="toggle-row">
+        <div>
+          <div style="font-size:15px;font-weight:500;">啟用瀏覽器通知</div>
+          <div class="note" style="margin-top:3px;">需保持此頁面開啟，逾時自動提醒</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="notifToggle"><span class="slider"></span></label>
+      </div>
+      <h2 style="margin-top:20px;">手動新增提醒</h2>
+      <div class="row">
+        <div class="field">
+          <label>提醒項目</label>
+          <input type="text" id="manTitle" placeholder="例：確認香港轉降加油作業">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>截止時間</label>
+          <input type="datetime-local" id="manDue">
+        </div>
+        <div class="field">
+          <label>風險等級</label>
+          <select id="manLevel">
+            <option value="warn">一般</option>
+            <option value="danger">高風險</option>
+          </select>
+        </div>
+      </div>
+      <div id="manErr"></div>
+      <button class="btn secondary block" id="addManualBtn">新增提醒</button>
+    </div>
+
+    <div class="card">
+      <h2>提醒清單</h2>
+      <div id="alertList"></div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toastHost"></div>
+
+<div class="tabbar">
+  <button class="active" data-tab="airports"><span class="ic">✈️</span><span>航點</span></button>
+  <button data-tab="calc"><span class="ic">🕐</span><span>試算</span></button>
+  <button data-tab="alerts"><span class="ic">🔔</span><span>提醒</span></button>
+</div>
+
+<script>
+const STORE_KEY_AIRPORTS = 'starlux_curfew_airports_v1';
+const STORE_KEY_ALERTS = 'starlux_curfew_alerts_v1';
+const STORE_KEY_NOTIF = 'starlux_curfew_notif_v1';
+
+const SAMPLE_AIRPORTS = [
+  {id:'KHH', city:'高雄', code:'KHH', country:'台灣', curfew:'yes', curfewStart:'23:00', curfewEnd:'06:00', catering:'yes', note:'宵禁時段為範例值，請以最新 AIP / 機場當局公告為準'},
+  {id:'HKG', city:'香港', code:'HKG', country:'香港', curfew:'no', curfewStart:'', curfewEnd:'', catering:'yes', note:'香港國際機場為 24 小時營運機場'},
+  {id:'NRT', city:'東京成田', code:'NRT', country:'日本', curfew:'yes', curfewStart:'23:00', curfewEnd:'06:00', catering:'yes', note:'成田機場有公告之夜間起降限制'},
+  {id:'TPE', city:'台北桃園', code:'TPE', country:'台灣', curfew:'na', curfewStart:'', curfewEnd:'', catering:'yes', note:'請填入公司作業手冊實際規範'},
+  {id:'RMQ', city:'台中', code:'RMQ', country:'台灣', curfew:'na', curfewStart:'', curfewEnd:'', catering:'na', note:'待確認'},
+  {id:'MFM', city:'澳門', code:'MFM', country:'澳門', curfew:'na', curfewStart:'', curfewEnd:'', catering:'na', note:'待確認'},
+  {id:'MNL', city:'馬尼拉', code:'MNL', country:'菲律賓', curfew:'na', curfewStart:'', curfewEnd:'', catering:'na', note:'待確認'},
+  {id:'KUL', city:'吉隆坡', code:'KUL', country:'馬來西亞', curfew:'na', curfewStart:'', curfewEnd:'', catering:'na', note:'待確認'},
+  {id:'SIN', city:'新加坡', code:'SIN', country:'新加坡', curfew:'na', curfewStart:'', curfewEnd:'', catering:'na', note:'待確認'},
+  {id:'BKK', city:'曼谷', code:'BKK', country:'泰國', curfew:'na', curfewStart:'', curfewEnd:'', catering:'na', note:'待確認'},
+];
+
+let airports = [];
+let alerts = [];
+let notifOn = false;
+let currentCalc = null;
+let scheduledTimers = {};
+let editingId = null;
+let addingNew = false;
+let pendingDeleteId = null;
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function esc(s){ return (s||'').toString().replace(/[<>&"]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+function pad(n){ return n.toString().padStart(2,'0'); }
+
+function showToast(msg, actionLabel, actionFn){
+  const host = document.getElementById('toastHost');
+  const id = uid();
+  const el = document.createElement('div');
+  el.className='toast';
+  el.innerHTML = '<span>'+esc(msg)+'</span>'+(actionLabel?'<button id="toastAction_'+id+'">'+esc(actionLabel)+'</button>':'');
+  host.innerHTML='';
+  host.appendChild(el);
+  if(actionLabel){
+    document.getElementById('toastAction_'+id).addEventListener('click', ()=>{
+      actionFn && actionFn();
+      host.innerHTML='';
+    });
+  }
+  setTimeout(()=>{ if(host.contains(el)) host.innerHTML=''; }, 5000);
+}
+
+async function loadAll(){
+  try{
+    const a = await window.storage.get(STORE_KEY_AIRPORTS);
+    airports = a ? JSON.parse(a.value) : SAMPLE_AIRPORTS.slice();
+  }catch(e){ airports = SAMPLE_AIRPORTS.slice(); }
+  try{
+    const al = await window.storage.get(STORE_KEY_ALERTS);
+    alerts = al ? JSON.parse(al.value) : [];
+  }catch(e){ alerts = []; }
+  try{
+    const n = await window.storage.get(STORE_KEY_NOTIF);
+    notifOn = n ? JSON.parse(n.value) : false;
+  }catch(e){ notifOn = false; }
+  document.getElementById('notifToggle').checked = notifOn;
+  renderAirports();
+  renderAlerts();
+  scheduleAllNotifications();
+}
+
+async function saveAirports(){ try{ await window.storage.set(STORE_KEY_AIRPORTS, JSON.stringify(airports)); }catch(e){} }
+async function saveAlerts(){ try{ await window.storage.set(STORE_KEY_ALERTS, JSON.stringify(alerts)); }catch(e){} }
+async function saveNotif(){ try{ await window.storage.set(STORE_KEY_NOTIF, JSON.stringify(notifOn)); }catch(e){} }
+
+function tagHtml(val, yesLabel, noLabel, naLabel){
+  if(val==='yes') return '<span class="tag yes">'+yesLabel+'</span>';
+  if(val==='no') return '<span class="tag no">'+noLabel+'</span>';
+  return '<span class="tag na">'+naLabel+'</span>';
+}
+
+function blankAirport(){ return {id:uid(), city:'', code:'', country:'', curfew:'na', curfewStart:'23:00', curfewEnd:'06:00', catering:'na', note:''}; }
+
+function editFormHtml(a, isNew){
+  return '<div class="dcard edit-form" data-id="'+a.id+'">'+
+    '<div class="row">'+
+      '<div class="field"><label>城市</label><input type="text" class="ef-city" value="'+esc(a.city)+'" placeholder="例：高雄"></div>'+
+      '<div class="field"><label>機場代碼</label><input type="text" class="ef-code" value="'+esc(a.code)+'" placeholder="例：KHH"></div>'+
+    '</div>'+
+    '<div class="row">'+
+      '<div class="field"><label>國家/地區</label><input type="text" class="ef-country" value="'+esc(a.country)+'"></div>'+
+    '</div>'+
+    '<div class="row">'+
+      '<div class="field"><label>是否有宵禁</label>'+
+        '<select class="ef-curfew">'+
+          '<option value="yes"'+(a.curfew==='yes'?' selected':'')+'>有宵禁</option>'+
+          '<option value="no"'+(a.curfew==='no'?' selected':'')+'>無宵禁</option>'+
+          '<option value="na"'+(a.curfew==='na'?' selected':'')+'>未確認</option>'+
+        '</select></div>'+
+      '<div class="field"><label>地面上餐</label>'+
+        '<select class="ef-catering">'+
+          '<option value="yes"'+(a.catering==='yes'?' selected':'')+'>可供應</option>'+
+          '<option value="no"'+(a.catering==='no'?' selected':'')+'>不可供應</option>'+
+          '<option value="na"'+(a.catering==='na'?' selected':'')+'>未確認</option>'+
+        '</select></div>'+
+    '</div>'+
+    '<div class="row ef-curfew-times" style="'+(a.curfew==='yes'?'':'display:none;')+'">'+
+      '<div class="field"><label>宵禁開始</label><input type="time" class="ef-curfewStart" value="'+esc(a.curfewStart||'23:00')+'"></div>'+
+      '<div class="field"><label>宵禁結束</label><input type="time" class="ef-curfewEnd" value="'+esc(a.curfewEnd||'06:00')+'"></div>'+
+    '</div>'+
+    '<div class="row"><div class="field"><label>備註</label><input type="text" class="ef-note" value="'+esc(a.note)+'"></div></div>'+
+    '<div class="inline-err" id="efErr_'+a.id+'"></div>'+
+    '<div class="actions">'+
+      '<button class="btn primary ef-save" data-id="'+a.id+'" data-new="'+(isNew?'1':'0')+'">儲存</button>'+
+      '<button class="btn secondary ef-cancel" data-id="'+a.id+'" data-new="'+(isNew?'1':'0')+'">取消</button>'+
+    '</div>'+
+  '</div>';
+}
+
+function renderAirports(){
+  const list = document.getElementById('airportList');
+  const q = (document.getElementById('airportSearch').value||'').trim().toLowerCase();
+  const filtered = airports.filter(a=>{
+    if(!q) return true;
+    return (a.city+a.code+a.country).toLowerCase().includes(q);
+  });
+
+  let html = '';
+  if(addingNew){
+    html += editFormHtml(blankAirportRef, true);
+  }
+  if(filtered.length===0 && !addingNew){
+    html += '<div class="empty">沒有符合的航點</div>';
+  } else {
+    html += filtered.map(a=>{
+      if(editingId===a.id){
+        return editFormHtml(a, false);
+      }
+      return '<div class="dcard" data-id="'+a.id+'">'+
+        '<div class="top">'+
+          '<div><span class="city">'+esc(a.city)+'</span><span class="code">'+esc(a.code)+'</span></div>'+
+          tagHtml(a.curfew,'有宵禁','無宵禁','未確認')+
+        '</div>'+
+        '<div class="meta">'+
+          (a.curfew==='yes' ? '宵禁：'+ (a.curfewStart||'--') +' – '+(a.curfewEnd||'--') : '無宵禁') +
+          '　｜　' + (a.catering==='yes'?'可上餐':a.catering==='no'?'不可上餐':'待確認') +
+        '</div>'+
+        (a.note ? '<div class="note">'+esc(a.note)+'</div>' : '')+
+        (pendingDeleteId===a.id ?
+          '<div class="row" style="margin-top:12px;gap:10px;">'+
+            '<button class="btn danger" style="flex:1" data-confirm-del="'+a.id+'">確定刪除</button>'+
+            '<button class="btn secondary" style="flex:1" data-cancel-del="'+a.id+'">取消</button>'+
+          '</div>'
+          :
+          '<div class="actions">'+
+            '<button class="btn secondary" data-edit="'+a.id+'">編輯</button>'+
+            '<button class="btn danger" data-del="'+a.id+'">刪除</button>'+
+          '</div>'
+        )+
+      '</div>';
+    }).join('');
+  }
+  list.innerHTML = html;
+  attachAirportListHandlers();
+}
+
+let blankAirportRef = null;
+
+function attachAirportListHandlers(){
+  document.querySelectorAll('[data-edit]').forEach(b=>{
+    b.addEventListener('click', ()=>{ editingId = b.getAttribute('data-edit'); addingNew=false; renderAirports(); });
+  });
+  document.querySelectorAll('[data-del]').forEach(b=>{
+    b.addEventListener('click', ()=>{ pendingDeleteId = b.getAttribute('data-del'); renderAirports(); });
+  });
+  document.querySelectorAll('[data-cancel-del]').forEach(b=>{
+    b.addEventListener('click', ()=>{ pendingDeleteId=null; renderAirports(); });
+  });
+  document.querySelectorAll('[data-confirm-del]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const id = b.getAttribute('data-confirm-del');
+      airports = airports.filter(x=>x.id!==id);
+      pendingDeleteId=null;
+      saveAirports(); renderAirports();
+      showToast('已刪除航點');
+    });
+  });
+  document.querySelectorAll('.ef-curfew').forEach(sel=>{
+    sel.addEventListener('change', (e)=>{
+      const card = e.target.closest('.dcard');
+      const timesRow = card.querySelector('.ef-curfew-times');
+      timesRow.style.display = e.target.value==='yes' ? '' : 'none';
+    });
+  });
+  document.querySelectorAll('.ef-save').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const id = b.getAttribute('data-id');
+      const isNew = b.getAttribute('data-new')==='1';
+      const card = b.closest('.dcard');
+      const city = card.querySelector('.ef-city').value.trim();
+      const code = card.querySelector('.ef-code').value.trim().toUpperCase();
+      const country = card.querySelector('.ef-country').value.trim();
+      const curfew = card.querySelector('.ef-curfew').value;
+      const curfewStart = card.querySelector('.ef-curfewStart').value;
+      const curfewEnd = card.querySelector('.ef-curfewEnd').value;
+      const catering = card.querySelector('.ef-catering').value;
+      const note = card.querySelector('.ef-note').value.trim();
+      const errBox = document.getElementById('efErr_'+id);
+      if(!city || !code){
+        errBox.textContent = '請輸入城市與機場代碼';
+        return;
+      }
+      errBox.textContent='';
+      const data = {id: isNew?code:id, city, code, country, curfew, curfewStart, curfewEnd, catering, note};
+      if(isNew){
+        airports.push(data);
+        addingNew=false;
+      } else {
+        const idx = airports.findIndex(x=>x.id===id);
+        if(idx>-1) airports[idx]=data;
+        editingId=null;
+      }
+      saveAirports(); renderAirports();
+      showToast('已儲存');
+    });
+  });
+  document.querySelectorAll('.ef-cancel').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const isNew = b.getAttribute('data-new')==='1';
+      if(isNew){ addingNew=false; } else { editingId=null; }
+      renderAirports();
+    });
+  });
+}
+
+document.getElementById('addAirportBtn').addEventListener('click', ()=>{
+  blankAirportRef = blankAirport();
+  addingNew = true;
+  editingId = null;
+  renderAirports();
+});
+
+document.getElementById('resetSampleBtn').addEventListener('click', ()=>{
+  document.getElementById('resetConfirmBox').innerHTML =
+    '<div class="row" style="margin-top:8px;">'+
+      '<button class="btn danger" style="flex:1" id="resetConfirmYes">確定覆蓋</button>'+
+      '<button class="btn secondary" style="flex:1" id="resetConfirmNo">取消</button>'+
+    '</div>';
+  document.getElementById('resetConfirmYes').addEventListener('click', ()=>{
+    airports = SAMPLE_AIRPORTS.slice();
+    saveAirports(); renderAirports();
+    document.getElementById('resetConfirmBox').innerHTML='';
+    showToast('已重設');
+  });
+  document.getElementById('resetConfirmNo').addEventListener('click', ()=>{
+    document.getElementById('resetConfirmBox').innerHTML='';
+  });
+});
+
+document.getElementById('airportSearch').addEventListener('input', renderAirports);
+
+document.getElementById('calcBtn').addEventListener('click', ()=>{
+  const errBox = document.getElementById('calcErr');
+  errBox.innerHTML='';
+  const dest = document.getElementById('calcDest').value.trim() || '目的地';
+  const divert = document.getElementById('calcDivert').value.trim() || '備降站';
+  const curfewVal = document.getElementById('calcCurfew').value;
+  const tzDiff = parseFloat(document.getElementById('calcTzDiff').value)||0;
+  const fh = parseInt(document.getElementById('calcFlightH').value)||0;
+  const fm = parseInt(document.getElementById('calcFlightM').value)||0;
+  const buffer = parseInt(document.getElementById('calcBuffer').value)||0;
+  if(!curfewVal){
+    errBox.innerHTML = '<div class="inline-err">請輸入宵禁截止時間</div>';
+    return;
+  }
+
+  const parts = curfewVal.split(':').map(Number);
+  const ch=parts[0], cm=parts[1];
+  let curfewMinTotal = ch*60+cm;
+  let curfewInDivertTz = curfewMinTotal + tzDiff*60;
+  const flightMin = fh*60+fm;
+  let latestDepartMin = curfewInDivertTz - flightMin - buffer;
+
+  let dayOffset = 0;
+  while(latestDepartMin < 0){ latestDepartMin += 1440; dayOffset -= 1; }
+  while(latestDepartMin >= 1440){ latestDepartMin -= 1440; dayOffset += 1; }
+
+  const outH = Math.floor(latestDepartMin/60);
+  const outM = Math.round(latestDepartMin%60);
+  const timeStr = pad(outH)+':'+pad(outM) + (dayOffset<0 ? '（前一天）' : dayOffset>0 ? '（次日）' : '');
+
+  document.getElementById('gaugeTime').textContent = timeStr;
+  document.getElementById('calcResult').style.display='block';
+
+  const now = new Date();
+  const nowMin = now.getHours()*60+now.getMinutes();
+  let effectiveMargin = latestDepartMin - nowMin + dayOffset*1440;
+
+  const banner = document.getElementById('calcBanner');
+  let bannerClass='safe', bannerText='';
+  if(effectiveMargin < 0){
+    bannerClass='danger';
+    bannerText = '<b>已超過最晚起飛時間</b>班機恐無法於宵禁前抵達 '+esc(dest)+'，建議立即通報簽派評估備援方案。';
+  } else if(effectiveMargin <= 60){
+    bannerClass='warn';
+    bannerText = '<b>時間緊迫</b>距離最晚起飛時間僅剩約 '+Math.round(effectiveMargin)+' 分鐘，請立即確認機組、加油、地勤與航路許可。';
+  } else {
+    bannerClass='safe';
+    bannerText = '<b>時間充裕</b>距離最晚起飛時間約 '+Math.round(effectiveMargin)+' 分鐘，建議持續追蹤天候與宵禁公告。';
+  }
+  banner.className = 'status-banner '+bannerClass;
+  banner.innerHTML = bannerText;
+
+  currentCalc = {dest,divert,timeStr,latestDepartMin,dayOffset,bannerClass};
+});
+
+document.getElementById('addAlertFromCalc').addEventListener('click', ()=>{
+  if(!currentCalc) return;
+  const now = new Date();
+  const due = new Date(now);
+  due.setHours(0,0,0,0);
+  due.setDate(due.getDate()+currentCalc.dayOffset);
+  due.setMinutes(currentCalc.latestDepartMin);
+  alerts.push({
+    id: uid(),
+    title: currentCalc.divert+' 起飛以趕在 '+currentCalc.dest+' 宵禁前抵達',
+    due: due.toISOString(),
+    level: currentCalc.bannerClass==='danger' ? 'danger' : 'warn',
+    source:'calc'
+  });
+  saveAlerts(); renderAlerts(); scheduleAllNotifications();
+  switchTab('alerts');
+});
+
+document.getElementById('addManualBtn').addEventListener('click', ()=>{
+  const errBox = document.getElementById('manErr');
+  errBox.innerHTML='';
+  const title = document.getElementById('manTitle').value.trim();
+  const due = document.getElementById('manDue').value;
+  const level = document.getElementById('manLevel').value;
+  if(!title || !due){
+    errBox.innerHTML = '<div class="inline-err">請輸入提醒項目與截止時間</div>';
+    return;
+  }
+  alerts.push({id:uid(), title, due:new Date(due).toISOString(), level, source:'manual'});
+  document.getElementById('manTitle').value='';
+  document.getElementById('manDue').value='';
+  saveAlerts(); renderAlerts(); scheduleAllNotifications();
+  showToast('已新增提醒');
+});
+
+function fmtCountdown(ms){
+  if(ms<=0) return '已逾期';
+  const totalMin = Math.floor(ms/60000);
+  const h = Math.floor(totalMin/60), m = totalMin%60;
+  return '剩餘 '+(h>0?h+' h ':'')+m+' min';
+}
+
+function renderAlerts(){
+  const list = document.getElementById('alertList');
+  if(alerts.length===0){
+    list.innerHTML = '<div class="empty">沒有提醒項目</div>';
+    return;
+  }
+  const sorted = alerts.slice().sort((a,b)=> new Date(a.due)-new Date(b.due));
+  list.innerHTML = sorted.map(a=>{
+    const dueDate = new Date(a.due);
+    const ms = dueDate - new Date();
+    const overdue = ms<=0;
+    const riskClass = overdue ? 'risk-danger' : (a.level==='danger' ? 'risk-danger' : 'risk-warn');
+    return '<div class="alert-item '+riskClass+'" data-id="'+a.id+'">'+
+      '<div class="info">'+
+        '<div class="title">'+esc(a.title)+'</div>'+
+        '<div class="due">'+dueDate.toLocaleString('zh-TW',{hour12:false})+'</div>'+
+        '<div class="countdown">'+fmtCountdown(ms)+'</div>'+
+      '</div>'+
+      '<button class="icon-btn" data-del-alert="'+a.id+'">×</button>'+
+    '</div>';
+  }).join('');
+  document.querySelectorAll('[data-del-alert]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const id = b.getAttribute('data-del-alert');
+      alerts = alerts.filter(a=>a.id!==id);
+      saveAlerts(); renderAlerts();
+      if(scheduledTimers[id]){ clearTimeout(scheduledTimers[id]); delete scheduledTimers[id]; }
+    });
+  });
+}
+
+document.getElementById('notifToggle').addEventListener('change', async (e)=>{
+  if(e.target.checked){
+    if(!('Notification' in window)){
+      showToast('此瀏覽器不支援通知');
+      e.target.checked = false; return;
+    }
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted'){
+      showToast('未取得通知權限');
+      e.target.checked = false; notifOn = false;
+    } else {
+      notifOn = true;
+    }
+  } else {
+    notifOn = false;
+  }
+  saveNotif();
+  scheduleAllNotifications();
+});
+
+function scheduleAllNotifications(){
+  Object.values(scheduledTimers).forEach(t=>clearTimeout(t));
+  scheduledTimers = {};
+  if(!notifOn) return;
+  alerts.forEach(a=>{
+    const ms = new Date(a.due) - new Date();
+    if(ms>0 && ms < 24*3600*1000){
+      scheduledTimers[a.id] = setTimeout(()=>{
+        if(notifOn && Notification.permission==='granted'){
+          new Notification('星宇航空作業提醒', {body:a.title});
+        }
+      }, ms);
+    }
+  });
+}
+
+function switchTab(name){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  document.querySelectorAll('.tabbar button').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+}
+document.querySelectorAll('.tabbar button').forEach(b=>{
+  b.addEventListener('click', ()=>switchTab(b.dataset.tab));
+});
+
+function tickClock(){
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString('zh-TW',{hour12:false});
+}
+setInterval(tickClock, 1000);
+tickClock();
+setInterval(renderAlerts, 30000);
+
+loadAll();
+
+const urlParams = new URLSearchParams(window.location.search);
+const tabParam = urlParams.get('tab');
+if(tabParam && ['airports','calc','alerts'].includes(tabParam)){
+  switchTab(tabParam);
+}
+</script>
+</body>
+</html>
