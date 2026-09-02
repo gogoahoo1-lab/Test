@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="航點天氣">
+<meta name="theme-color" content="#EFEFED">
+<title>航點天氣警戒</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EFEFED;
+  --ink:#141414;
+  --ink-2:#4A4A48;
+  --ink-3:#8C8C88;
+  --line:#E2E2DE;
+  --card:#FFFFFF;
+  --lime:#C7F034;
+  --shadow:0 2px 18px rgba(20,20,20,.07);
+  --r:30px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:"Inter","Noto Sans TC","PingFang TC",system-ui,sans-serif;
+  font-weight:400;
+  font-feature-settings:"tnum" 1;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+  padding:0 16px 130px;
+  position:relative;
+  overflow-x:hidden;
+}
+body::before,body::after{
+  content:"";position:fixed;z-index:-1;pointer-events:none;
+}
+body::before{ /* 右上 萊姆綠光暈 */
+  top:-260px;right:-200px;width:620px;height:620px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(199,240,52,.55) 0%, rgba(199,240,52,.22) 38%, rgba(199,240,52,0) 70%),
+    radial-gradient(circle at 30% 65%, rgba(214,239,92,.35) 0%, rgba(214,239,92,0) 60%);
+}
+body::after{ /* 左上 霧粉光暈 */
+  top:-200px;left:-220px;width:560px;height:560px;
+  background:
+    radial-gradient(circle at 55% 45%, rgba(240,206,208,.6) 0%, rgba(240,206,208,.24) 40%, rgba(240,206,208,0) 72%),
+    radial-gradient(circle at 25% 70%, rgba(232,214,222,.4) 0%, rgba(232,214,222,0) 62%);
+}
+
+header{padding:34px 6px 20px}
+h1{margin:0 0 6px;font-size:19px;font-weight:500;letter-spacing:-.01em}
+header p{margin:0;font-size:13px;line-height:1.65;color:var(--ink-3);max-width:34em}
+
+/* ── 重點卡片：mesh gradient ─────────────────── */
+.hero{
+  position:relative;overflow:hidden;
+  border-radius:var(--r);
+  padding:26px 24px 24px;
+  color:#1B2109;
+  background:
+    radial-gradient(115% 95% at 14% 16%, #D6EF5C 0%, rgba(214,239,92,0) 58%),
+    radial-gradient(95% 85% at 86% 6%, #C9E85A 0%, rgba(201,232,90,0) 55%),
+    radial-gradient(105% 100% at 74% 96%, #6F7F2E 0%, rgba(111,127,46,0) 62%),
+    radial-gradient(85% 75% at 26% 92%, #9BB144 0%, rgba(155,177,68,0) 60%),
+    linear-gradient(135deg,#7E8F35 0%,#A6BC45 55%,#8C9E3B 100%);
+  box-shadow:var(--shadow);
+}
+.hero::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(circle, rgba(255,255,255,.6) 1px, rgba(255,255,255,0) 1.4px);
+  background-size:15px 15px;
+  -webkit-mask-image:radial-gradient(62% 62% at 50% 48%, #000 0%, rgba(0,0,0,0) 100%);
+  mask-image:radial-gradient(62% 62% at 50% 48%, #000 0%, rgba(0,0,0,0) 100%);
+}
+.hero .lbl{position:relative;font-size:12.5px;color:rgba(27,33,9,.62);margin:0}
+.hero .big{
+  position:relative;display:flex;align-items:baseline;gap:10px;margin:6px 0 2px;
+}
+.hero .big b{
+  font-weight:300;font-size:76px;line-height:.92;letter-spacing:-.04em;
+  font-variant-numeric:tabular-nums;
+}
+.hero .big span{font-size:13.5px;color:rgba(27,33,9,.7)}
+.hero .who{position:relative;margin:12px 0 0;font-size:13.5px;line-height:1.6;color:rgba(27,33,9,.82);max-width:26em}
+.hero .who i{font-style:normal;font-weight:500}
+
+/* ── 分頁 pill ─────────────────── */
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:18px 0 4px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  flex:0 0 auto;border:0;cursor:pointer;font-family:inherit;
+  background:var(--card);color:var(--ink-3);
+  font-size:13px;font-weight:400;padding:9px 16px;border-radius:999px;
+  box-shadow:var(--shadow);
+}
+.tab[aria-pressed="true"]{background:var(--ink);color:#fff;font-weight:500}
+.tab:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+/* ── 卡片 ─────────────────── */
+.card{
+  background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);
+  padding:20px 22px;margin-top:12px;
+}
+.stamp{padding:14px 6px 2px;font-size:12px;color:var(--ink-3)}
+
+.alert{display:flex;gap:14px;align-items:flex-start}
+.alert .key{
+  flex:0 0 auto;width:42px;height:42px;border-radius:50%;
+  background:#fff;border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;color:var(--ink-2);
+}
+.alert.sev .key{background:var(--ink);border-color:var(--ink);color:#fff}
+.alert .body{min-width:0;flex:1}
+.alert h3{margin:0;font-size:14.5px;font-weight:500;letter-spacing:-.01em}
+.alert h3 small{font-weight:400;color:var(--ink-3);font-size:12.5px;margin-left:7px}
+.alert p{margin:5px 0 0;font-size:13px;line-height:1.65;color:var(--ink-2)}
+.alert .when{margin-top:6px;font-size:12px;color:var(--ink-3)}
+.alert .when u{text-decoration:none;color:var(--ink)}
+
+/* ── 航點卡 ─────────────────── */
+.stn h3{margin:0 0 2px;font-size:14.5px;font-weight:500;letter-spacing:-.01em}
+.stn h3 small{font-weight:400;color:var(--ink-3);font-size:12.5px;margin-left:7px}
+.days{display:flex;gap:8px;margin-top:14px;justify-content:space-between}
+.day{flex:1;text-align:center}
+.day .key{
+  width:42px;height:42px;border-radius:50%;margin:0 auto 7px;
+  background:#fff;border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;color:var(--ink-2);
+}
+.day.w .key{border-color:#BEBEB8}
+.day.s .key{background:var(--ink);border-color:var(--ink);color:#fff}
+.day .d{font-size:11px;color:var(--ink-3)}
+.day .t{font-size:15px;font-weight:300;letter-spacing:-.04em;font-variant-numeric:tabular-nums;margin-top:3px}
+.day .t i{font-style:normal;color:var(--ink-3);font-size:12px}
+.stn .note{margin:14px 0 0;font-size:12.5px;line-height:1.7;color:var(--ink-2)}
+.stn .note.quiet{color:var(--ink-3)}
+
+/* ── 新增航點 ─────────────────── */
+.field{display:flex;gap:8px;align-items:center}
+.field input{
+  flex:1;min-width:0;font-family:inherit;font-size:14px;color:var(--ink);
+  background:#fff;border:1px solid var(--line);border-radius:999px;
+  padding:11px 16px;outline:none;
+}
+.field input::placeholder{color:var(--ink-3)}
+.field input:focus{border-color:#BEBEB8}
+.field button{
+  flex:0 0 auto;border:0;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;
+  background:var(--ink);color:#fff;padding:11px 20px;border-radius:999px;
+}
+.hint{margin:12px 2px 0;font-size:12.5px;line-height:1.7;color:var(--ink-3)}
+.res{margin-top:6px}
+.res button{
+  display:flex;width:100%;gap:12px;align-items:center;text-align:left;
+  background:transparent;border:0;border-top:1px solid var(--line);
+  font-family:inherit;cursor:pointer;padding:13px 2px;color:var(--ink);
+}
+.res button:first-child{border-top:0}
+.res .nm{font-size:14px;font-weight:500;letter-spacing:-.01em}
+.res .sb{font-size:12.5px;color:var(--ink-3);margin-top:3px}
+.res .co{margin-left:auto;font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.mine div{
+  display:flex;gap:12px;align-items:center;padding:13px 2px;border-top:1px solid var(--line);font-size:13.5px;
+}
+.mine div:first-of-type{border-top:0}
+.mine small{color:var(--ink-3);font-size:12.5px}
+.mine button{
+  margin-left:auto;border:1px solid var(--line);background:#fff;color:var(--ink-2);
+  font-family:inherit;font-size:12.5px;cursor:pointer;padding:7px 14px;border-radius:999px;
+}
+.thr{margin:0;font-size:13px;line-height:1.9;color:var(--ink-2)}
+.thr div{display:flex;gap:12px;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)}
+.thr div:last-child{border-bottom:0}
+.thr b{font-weight:300;font-size:16px;letter-spacing:-.04em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.foot{padding:18px 8px 4px;font-size:11.5px;line-height:1.8;color:var(--ink-3)}
+
+/* ── 底部懸浮膠囊 ─────────────────── */
+nav{
+  position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(env(safe-area-inset-bottom) + 16px);
+  display:flex;gap:4px;padding:6px;
+  background:rgba(255,255,255,.68);
+  -webkit-backdrop-filter:blur(18px) saturate(1.4);
+  backdrop-filter:blur(18px) saturate(1.4);
+  border-radius:999px;box-shadow:var(--shadow);z-index:5;
+}
+nav button{
+  border:0;cursor:pointer;font-family:inherit;background:transparent;
+  color:var(--ink-3);font-size:13px;padding:10px 20px;border-radius:999px;
+}
+nav button[aria-current="true"]{background:var(--ink);color:#fff;font-weight:500}
+nav button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+nav button .dot{
+  display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:var(--lime);margin-left:7px;vertical-align:1px;
+}
+.hidden{display:none}
+svg{display:block}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>航點天氣警戒</h1>
+  <p>未來五天各航點的惡劣天氣，依影響飛航的門檻自動判讀。每次開啟重新抓取最新預報。</p>
+</header>
+
+<div id="hero"></div>
+
+<div class="tabs" id="tabs">
+  <button class="tab" data-reg="all" aria-pressed="true">全部</button>
+  <button class="tab" data-reg="日韓" aria-pressed="false">日韓</button>
+  <button class="tab" data-reg="東南亞" aria-pressed="false">東南亞</button>
+  <button class="tab" data-reg="港澳" aria-pressed="false">港澳</button>
+  <button class="tab" data-reg="美洲" aria-pressed="false">美洲</button>
+  <button class="tab" data-reg="歐洲" aria-pressed="false">歐洲</button>
+  <button class="tab" data-reg="自訂" aria-pressed="false">自訂</button>
+</div>
+
+<div class="stamp" id="stamp">載入中</div>
+
+<main id="viewAlerts"></main>
+<main id="viewStations" class="hidden"></main>
+<main id="viewAdd" class="hidden">
+  <div class="card">
+    <h3 style="margin:0 0 14px;font-size:14.5px;font-weight:500;letter-spacing:-.01em">新增航點</h3>
+    <div class="field">
+      <input id="q" type="search" placeholder="輸入城市或機場所在地，例如 Helsinki、宿霧" autocomplete="off">
+      <button id="go">搜尋</button>
+    </div>
+    <div class="res" id="res"></div>
+    <p class="hint" id="hint">搜尋結果取自 Open-Meteo 地名資料庫，選一筆就會用該座標抓預報。知道精確機場座標的話，可直接輸入「緯度, 經度」，例如 60.3172, 24.9633。</p>
+  </div>
+  <div class="card">
+    <h3 style="margin:0 0 6px;font-size:14.5px;font-weight:500;letter-spacing:-.01em">我加的航點</h3>
+    <div class="mine" id="mine"></div>
+  </div>
+</main>
+
+<main id="viewInfo" class="hidden">
+  <div class="card">
+    <p class="thr">
+      <div><span>陣風，側風與亂流</span><b>40 kt</b></div>
+      <div><span>陣風，颱風或強烈低壓</span><b>50 kt</b></div>
+      <div><span>日雨量，跑道積水</span><b>80 mm</b></div>
+      <div><span>能見度，低於一類標準</span><b>800 m</b></div>
+      <div><span>高溫，起飛性能受限</span><b>40 °C</b></div>
+      <div><span>雷雨、大雪、凍雨</span><b>逐時判讀</b></div>
+    </p>
+  </div>
+  <p class="foot">資料來源 Open-Meteo，整合 ECMWF、GFS、JMA 等模式。此處為自動化預報摘要，供提前警覺使用；放行與轉降決策請以官方 METAR、TAF、SIGMET 及簽派為準。</p>
+</main>
+
+<nav id="nav">
+  <button data-v="alerts" aria-current="true">警戒<span class="dot" id="navdot"></span></button>
+  <button data-v="stations" aria-current="false">航點</button>
+  <button data-v="add" aria-current="false">新增</button>
+  <button data-v="info" aria-current="false">門檻</button>
+</nav>
+
+<script>
+const BUILTIN=[
+ {i:"NRT",c:"東京 成田",r:"日韓",la:35.7647,lo:140.3864},
+ {i:"KIX",c:"大阪 關西",r:"日韓",la:34.4342,lo:135.2440},
+ {i:"UKB",c:"神戶",r:"日韓",la:34.6328,lo:135.2239},
+ {i:"NGO",c:"名古屋 中部",r:"日韓",la:34.8584,lo:136.8054},
+ {i:"FUK",c:"福岡",r:"日韓",la:33.5859,lo:130.4500},
+ {i:"KMJ",c:"熊本",r:"日韓",la:32.8373,lo:130.8551},
+ {i:"TAK",c:"高松",r:"日韓",la:34.2142,lo:134.0156},
+ {i:"CTS",c:"札幌 新千歲",r:"日韓",la:42.7752,lo:141.6923},
+ {i:"HKD",c:"函館",r:"日韓",la:41.7700,lo:140.8219},
+ {i:"SDJ",c:"仙台",r:"日韓",la:38.1397,lo:140.9170},
+ {i:"OKA",c:"沖繩 那霸",r:"日韓",la:26.1958,lo:127.6458},
+ {i:"MMY",c:"宮古島",r:"日韓",la:24.7828,lo:125.2950},
+ {i:"PUS",c:"釜山 金海",r:"日韓",la:35.1795,lo:128.9382},
+ {i:"SIN",c:"新加坡 樟宜",r:"東南亞",la:1.3644,lo:103.9915},
+ {i:"BKK",c:"曼谷 蘇汪那蓬",r:"東南亞",la:13.6900,lo:100.7501},
+ {i:"CNX",c:"清邁",r:"東南亞",la:18.7669,lo:98.9626},
+ {i:"DPS",c:"峇里島 登巴薩",r:"東南亞",la:-8.7482,lo:115.1675},
+ {i:"CGK",c:"雅加達",r:"東南亞",la:-6.1256,lo:106.6559},
+ {i:"HAN",c:"河內 內排",r:"東南亞",la:21.2212,lo:105.8072},
+ {i:"SGN",c:"胡志明市",r:"東南亞",la:10.8188,lo:106.6520},
+ {i:"DAD",c:"峴港",r:"東南亞",la:16.0439,lo:108.1994},
+ {i:"PQC",c:"富國島",r:"東南亞",la:10.2270,lo:103.9670},
+ {i:"CRK",c:"克拉克",r:"東南亞",la:15.1860,lo:120.5600},
+ {i:"CEB",c:"宿霧",r:"東南亞",la:10.3075,lo:123.9790},
+ {i:"HKG",c:"香港",r:"港澳",la:22.3080,lo:113.9185},
+ {i:"MFM",c:"澳門",r:"港澳",la:22.1496,lo:113.5915},
+ {i:"LAX",c:"洛杉磯",r:"美洲",la:33.9416,lo:-118.4085},
+ {i:"SFO",c:"舊金山",r:"美洲",la:37.6213,lo:-122.3790},
+ {i:"SEA",c:"西雅圖",r:"美洲",la:47.4502,lo:-122.3088},
+ {i:"ONT",c:"安大略",r:"美洲",la:34.0560,lo:-117.6012},
+ {i:"PDX",c:"波特蘭",r:"美洲",la:45.5898,lo:-122.5951},
+ {i:"PHX",c:"鳳凰城",r:"美洲",la:33.4342,lo:-112.0116},
+ {i:"LAS",c:"拉斯維加斯",r:"美洲",la:36.0840,lo:-115.1537},
+ {i:"DFW",c:"達拉斯",r:"美洲",la:32.8998,lo:-97.0403},
+ {i:"PRG",c:"布拉格",r:"歐洲",la:50.1008,lo:14.2600},
+ {i:"TPE",c:"台北 桃園",r:"日韓",la:25.0777,lo:121.2328},
+ {i:"RMQ",c:"台中 清泉崗",r:"日韓",la:24.2647,lo:120.6213}
+];
+
+const KEY="jx-weather-custom";
+let CUSTOM=[];
+try{ CUSTOM=JSON.parse(localStorage.getItem(KEY)||"[]"); }catch(e){ CUSTOM=[]; }
+function saveCustom(){
+  try{ localStorage.setItem(KEY,JSON.stringify(CUSTOM)); }
+  catch(e){ document.getElementById("hint").textContent="這個瀏覽器不讓網頁存資料，新增的航點只在本次開啟期間有效。把檔案下載後用 Safari 或 Chrome 開就會記住。"; }
+}
+let STATIONS=[];
+function buildStations(){ STATIONS=BUILTIN.concat(CUSTOM); }
+buildStations();
+
+const WMO={0:["晴","sun"],1:["晴時多雲","sun"],2:["多雲","cloud"],3:["陰","cloud"],
+ 45:["霧","fog"],48:["凍霧","fog"],51:["毛毛雨","rain"],53:["毛毛雨","rain"],55:["強毛毛雨","rain"],
+ 56:["凍雨","snow"],57:["強凍雨","snow"],61:["小雨","rain"],63:["中雨","rain"],65:["大雨","rain"],
+ 66:["凍雨","snow"],67:["強凍雨","snow"],71:["小雪","snow"],73:["中雪","snow"],75:["大雪","snow"],
+ 77:["冰珠","snow"],80:["陣雨","rain"],81:["強陣雨","rain"],82:["劇烈陣雨","storm"],
+ 85:["陣雪","snow"],86:["強陣雪","snow"],95:["雷雨","storm"],96:["雷雨帶冰雹","storm"],99:["強雷雨帶冰雹","storm"]};
+const wx=c=>WMO[c]||["—","cloud"];
+
+const S='stroke="currentColor" fill="none" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"';
+const ICON={
+ sun:`<svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="4" ${S}/><path d="M10 1.6v1.8M10 16.6v1.8M18.4 10h-1.8M3.4 10H1.6M15.9 4.1l-1.3 1.3M5.4 14.6l-1.3 1.3M15.9 15.9l-1.3-1.3M5.4 5.4L4.1 4.1" ${S}/></svg>`,
+ cloud:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M6 15.2h8.1a3.2 3.2 0 0 0 .3-6.4 4.6 4.6 0 0 0-8.8-.6A3.5 3.5 0 0 0 6 15.2Z" ${S}/></svg>`,
+ rain:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M6 12.4h8a3 3 0 0 0 .3-6 4.4 4.4 0 0 0-8.4-.6A3.3 3.3 0 0 0 6 12.4Z" ${S}/><path d="M7.2 15.2l-.8 2.4M10.4 15.2l-.8 2.4M13.6 15.2l-.8 2.4" ${S}/></svg>`,
+ storm:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M6 12.1h8a3 3 0 0 0 .3-6 4.4 4.4 0 0 0-8.4-.6A3.3 3.3 0 0 0 6 12.1Z" ${S}/><path d="M10.8 14.1l-2.4 2.9h2.6l-1 2.4" ${S}/></svg>`,
+ snow:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M6 12.2h8a3 3 0 0 0 .3-6 4.4 4.4 0 0 0-8.4-.6A3.3 3.3 0 0 0 6 12.2Z" ${S}/><path d="M7.4 15.6v2.2M6.4 16.2l2 1M8.4 16.2l-2 1M13 15.6v2.2M12 16.2l2 1M14 16.2l-2 1" ${S}/></svg>`,
+ fog:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M6 11.4h8a3 3 0 0 0 .3-6 4.4 4.4 0 0 0-8.4-.6A3.3 3.3 0 0 0 6 11.4Z" ${S}/><path d="M4.4 14.2h11.2M6.4 17h7.6" ${S}/></svg>`,
+ wind:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M2.6 7h9.2a2.4 2.4 0 1 0-2.4-2.6M2.6 11.4h12.6a2.4 2.4 0 1 1-2.4 2.6M2.6 15.4h5.6" ${S}/></svg>`,
+ heat:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M8.6 11.6V4.2a1.7 1.7 0 0 1 3.4 0v7.4a3.4 3.4 0 1 1-3.4 0Z" ${S}/></svg>`
+};
+
+function assess(d){
+  const o=[],g=d.gust,w=d.wind,p=d.precip,c=d.code,v=d.vis;
+  if(g>=50)o.push([2,"暴風等級陣風 "+Math.round(g)+" kt，颱風或強烈低壓","wind"]);
+  else if(g>=40)o.push([2,"強陣風 "+Math.round(g)+" kt，側風與亂流","wind"]);
+  else if(g>=30)o.push([1,"陣風 "+Math.round(g)+" kt，注意側風","wind"]);
+  else if(w>=28)o.push([1,"持續風 "+Math.round(w)+" kt","wind"]);
+  if([95,96,99].includes(c))o.push([2,"雷雨胞，可能繞飛或空中待命","storm"]);
+  else if(c===82)o.push([2,"劇烈陣雨","storm"]);
+  else if([80,81].includes(c))o.push([1,"對流陣雨","rain"]);
+  if(p>=80)o.push([2,"豪雨 "+Math.round(p)+" mm，跑道積水","rain"]);
+  else if(p>=40)o.push([1,"大雨 "+Math.round(p)+" mm","rain"]);
+  if([75,86,77].includes(c))o.push([2,"大雪或冰珠，除冰與跑道摩擦係數","snow"]);
+  else if([71,73,85].includes(c))o.push([1,"降雪，需除冰","snow"]);
+  if([56,57,66,67].includes(c))o.push([2,"凍雨，積冰風險","snow"]);
+  if(v!=null&&v<800)o.push([2,"能見度 "+Math.round(v)+" m，低於一類標準","fog"]);
+  else if(v!=null&&v<3000)o.push([1,"能見度 "+Math.round(v)+" m，霧或降水遮蔽","fog"]);
+  else if([45,48].includes(c))o.push([1,"有霧","fog"]);
+  if(d.tmax>=40)o.push([1,"高溫 "+Math.round(d.tmax)+" 度，起飛性能受限","heat"]);
+  if(d.tmin<=-12)o.push([1,"嚴寒 "+Math.round(d.tmin)+" 度，地面作業與除冰","snow"]);
+  return {lvl:o.reduce((m,x)=>Math.max(m,x[0]),0),notes:o.map(x=>x[1]),icon:(o[0]||[,,null])[2]};
+}
+const dayName=s=>{const d=new Date(s+"T00:00:00");return ["日","一","二","三","四","五","六"][d.getDay()];};
+const dayNum=s=>{const d=new Date(s+"T00:00:00");return (d.getMonth()+1)+"/"+d.getDate();};
+
+let DATA=[],filter="all",view="alerts";
+
+async function load(){
+  const la=STATIONS.map(s=>s.la).join(","),lo=STATIONS.map(s=>s.lo).join(",");
+  const url="https://api.open-meteo.com/v1/forecast?latitude="+la+"&longitude="+lo+
+   "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max"+
+   "&hourly=visibility,weather_code&forecast_days=5&timezone=auto&wind_speed_unit=kn";
+  const res=await fetch(url); if(!res.ok) throw new Error("HTTP "+res.status);
+  let j=await res.json(); if(!Array.isArray(j)) j=[j];
+  DATA=STATIONS.map((s,n)=>{
+    const b=j[n]||{},dd=b.daily||{},hh=b.hourly||{};
+    const days=(dd.time||[]).map((t,k)=>{
+      let vis=null,worst=dd.weather_code[k];
+      if(hh.time)for(let x=0;x<hh.time.length;x++){
+        if(hh.time[x].slice(0,10)!==t)continue;
+        const v=hh.visibility?hh.visibility[x]:null;
+        if(v!=null&&(vis===null||v<vis))vis=v;
+        const c=hh.weather_code?hh.weather_code[x]:null;
+        if(c!=null&&[95,96,99,82,75,86,66,67].includes(c))worst=c;
+      }
+      return{date:t,code:worst,tmax:dd.temperature_2m_max[k],tmin:dd.temperature_2m_min[k],
+        precip:dd.precipitation_sum[k],wind:dd.wind_speed_10m_max[k],gust:dd.wind_gusts_10m_max[k],vis};
+    }).map(d=>Object.assign(d,{risk:assess(d)}));
+    return Object.assign({},s,{days,lvl:days.reduce((m,d)=>Math.max(m,d.risk.lvl),0)});
+  });
+  document.getElementById("stamp").textContent="更新於 "+new Date().toLocaleString("zh-TW",{hour12:false}).slice(0,16);
+  render();
+}
+
+function render(){
+  const list=DATA.filter(s=>filter==="all"||s.r===filter);
+  const flagged=list.filter(s=>s.lvl>0).sort((a,b)=>b.lvl-a.lvl||b.days.filter(d=>d.risk.lvl>0).length-a.days.filter(d=>d.risk.lvl>0).length);
+  const sev=flagged.filter(s=>s.lvl>1);
+
+  document.getElementById("hero").innerHTML=
+   '<div class="hero"><p class="lbl">未來五天需要留意的航點</p>'+
+   '<p class="big"><b>'+flagged.length+'</b><span>／ '+list.length+' 個航點</span></p>'+
+   '<p class="who">'+(flagged.length
+      ? (sev.length? '其中 <i>'+sev.length+'</i> 個達到嚴重門檻，'+sev.slice(0,4).map(s=>s.c.split(" ")[0]).join("、")+(sev.length>4?" 等":"")+'。'
+                   : '皆為警戒等級，尚未達到嚴重門檻。')
+      : '沒有航點達到警戒門檻。')+'</p></div>';
+
+  const dot=document.getElementById("navdot");
+  dot.style.display=sev.length?"inline-block":"none";
+
+  document.getElementById("viewAlerts").innerHTML= flagged.length? flagged.map(s=>{
+    const d=s.days.filter(x=>x.risk.lvl>0).sort((a,b)=>b.risk.lvl-a.risk.lvl)[0];
+    return '<div class="card"><div class="alert'+(d.risk.lvl>1?' sev':'')+'">'+
+      '<span class="key">'+(ICON[d.risk.icon]||ICON.cloud)+'</span><div class="body">'+
+      '<h3>'+s.c+'<small>'+s.i+'</small></h3>'+
+      '<p>'+d.risk.notes.join('，')+'</p>'+
+      '<p class="when">週<u>'+dayName(d.date)+'</u> '+dayNum(d.date)+'　'+wx(d.code)[0]+'</p>'+
+      '</div></div></div>';
+  }).join("") : '<div class="card"><p class="thr">這個範圍內，未來五天沒有達到警戒門檻的天氣。</p></div>';
+
+  document.getElementById("viewStations").innerHTML=list.map(s=>{
+    const days=s.days.map(d=>{
+      const k=d.risk.lvl>1?"s":d.risk.lvl>0?"w":"";
+      return '<div class="day '+k+'"><span class="key">'+(ICON[wx(d.code)[1]]||ICON.cloud)+'</span>'+
+        '<div class="d">'+dayName(d.date)+'</div>'+
+        '<div class="t">'+Math.round(d.tmax)+'<i> '+Math.round(d.tmin)+'</i></div></div>';
+    }).join("");
+    const notes=[...new Set(s.days.flatMap(d=>d.risk.notes))];
+    return '<div class="card stn"><h3>'+s.c+'<small>'+s.i+'</small></h3>'+
+      '<div class="days">'+days+'</div>'+
+      '<p class="note'+(notes.length?'':' quiet')+'">'+(notes.length?notes.join('　'):'五日內無明顯惡劣天氣')+'</p></div>';
+  }).join("");
+}
+
+document.getElementById("tabs").addEventListener("click",e=>{
+  const b=e.target.closest(".tab"); if(!b)return;
+  filter=b.dataset.reg;
+  document.querySelectorAll("#tabs .tab").forEach(x=>x.setAttribute("aria-pressed",x===b));
+  render();
+});
+document.getElementById("nav").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b)return;
+  view=b.dataset.v;
+  document.querySelectorAll("#nav button").forEach(x=>x.setAttribute("aria-current",x===b));
+  viewAlerts.classList.toggle("hidden",view!=="alerts");
+  viewStations.classList.toggle("hidden",view!=="stations");
+  viewAdd.classList.toggle("hidden",view!=="add");
+  viewInfo.classList.toggle("hidden",view!=="info");
+  document.getElementById("tabs").classList.toggle("hidden",view==="info"||view==="add");
+  window.scrollTo({top:0,behavior:"smooth"});
+});
+
+/* ── 新增航點 ─────────────────── */
+function renderMine(){
+  const m=document.getElementById("mine");
+  m.innerHTML = CUSTOM.length ? CUSTOM.map((s,n)=>
+    '<div><span>'+s.c+' <small>'+s.i+'　'+s.la.toFixed(2)+', '+s.lo.toFixed(2)+'</small></span>'+
+    '<button data-del="'+n+'">移除</button></div>').join("")
+    : '<p class="hint" style="margin:8px 2px 2px">還沒有自訂航點。搜尋後選一筆就會加進來，並和其他航點一起判讀警戒。</p>';
+}
+renderMine();
+
+function addStation(name,la,lo){
+  const code=(prompt("這個航點的代碼（例如 HEL），可留空","")||"").trim().toUpperCase().slice(0,4);
+  CUSTOM.push({i:code||"—",c:name,r:"自訂",la:+la,lo:+lo});
+  saveCustom(); buildStations(); renderMine();
+  document.getElementById("res").innerHTML="";
+  document.getElementById("q").value="";
+  document.getElementById("stamp").textContent="重新抓取預報";
+  load().catch(()=>{document.getElementById("stamp").textContent="連線失敗";});
+}
+
+async function search(){
+  const q=document.getElementById("q").value.trim();
+  const res=document.getElementById("res");
+  if(!q){res.innerHTML="";return;}
+  const ll=q.match(/^(-?\d+(?:\.\d+)?)\s*[,，]\s*(-?\d+(?:\.\d+)?)$/);
+  if(ll){ addStation((prompt("航點名稱","自訂航點")||"自訂航點").trim(),ll[1],ll[2]); return; }
+  res.innerHTML='<p class="hint" style="margin:14px 2px">搜尋中</p>';
+  try{
+    const r=await fetch("https://geocoding-api.open-meteo.com/v1/search?count=6&language=zh&format=json&name="+encodeURIComponent(q));
+    const j=await r.json();
+    if(!j.results||!j.results.length){res.innerHTML='<p class="hint" style="margin:14px 2px">找不到這個地名。換個拼法，或直接輸入「緯度, 經度」。</p>';return;}
+    res.innerHTML=j.results.map(x=>
+      '<button data-la="'+x.latitude+'" data-lo="'+x.longitude+'" data-nm="'+
+      (x.name+(x.admin1?" "+x.admin1:"")).replace(/"/g,"")+'">'+
+      '<span><span class="nm">'+x.name+'</span><span class="sb">'+[x.admin1,x.country].filter(Boolean).join("，")+'</span></span>'+
+      '<span class="co">'+x.latitude.toFixed(2)+', '+x.longitude.toFixed(2)+'</span></button>').join("");
+  }catch(err){
+    res.innerHTML='<p class="hint" style="margin:14px 2px">地名查詢連不上（'+err.message+'）。可以直接輸入「緯度, 經度」新增。</p>';
+  }
+}
+document.getElementById("go").addEventListener("click",search);
+document.getElementById("q").addEventListener("keydown",e=>{if(e.key==="Enter")search();});
+document.getElementById("res").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-la]"); if(!b)return;
+  addStation(b.dataset.nm,b.dataset.la,b.dataset.lo);
+});
+document.getElementById("mine").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-del]"); if(!b)return;
+  CUSTOM.splice(+b.dataset.del,1);
+  saveCustom(); buildStations(); renderMine();
+  load().catch(()=>{});
+});
+
+load().catch(err=>{
+  document.getElementById("stamp").textContent="連線失敗";
+  document.getElementById("viewAlerts").innerHTML='<div class="card"><p class="thr">抓不到氣象資料（'+err.message+'）。'+
+   '這通常是預覽視窗擋掉了對外連線。把檔案下載後用 Safari 或 Chrome 開啟即可正常取得預報，'+
+   'iPhone 可再加入主畫面，之後每次開啟都會自動更新。</p></div>';
+});
+</script>
+</body>
+</html>
