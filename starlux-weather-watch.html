@@ -77,13 +77,8 @@ header p{margin:0;font-size:13px;line-height:1.65;color:var(--ink-3);max-width:3
 
 .card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:20px 22px;margin-top:12px}
 .card h2{margin:0 0 14px;font-size:14.5px;font-weight:500;letter-spacing:-.01em}
-.stamp{
-  display:flex;align-items:center;gap:10px;
-  padding:14px 6px 2px;font-size:12px;color:var(--ink-3);
-}
+.stamp{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 6px 2px;font-size:12px;color:var(--ink-3)}
 .stamp .ghost{padding:7px 14px;margin-left:auto}
-.tag{margin-left:8px;font-size:12px;color:var(--ink-3);font-weight:400}
-.alert.sev .tag{color:var(--ink)}
 
 .alert{display:flex;gap:14px;align-items:flex-start}
 .key{
@@ -94,9 +89,17 @@ header p{margin:0;font-size:13px;line-height:1.65;color:var(--ink-3);max-width:3
 .alert .body{min-width:0;flex:1}
 .alert h3{margin:0;font-size:14.5px;font-weight:500;letter-spacing:-.01em}
 .alert h3 small{font-weight:400;color:var(--ink-3);font-size:12.5px;margin-left:7px}
+.tag{margin-left:8px;font-size:12px;color:var(--ink-3);font-weight:400}
+.alert.sev .tag{color:var(--ink)}
 .alert p{margin:5px 0 0;font-size:13px;line-height:1.65;color:var(--ink-2)}
 .alert .when{margin-top:6px;font-size:12px;color:var(--ink-3)}
 .alert .when u{text-decoration:none;color:var(--ink)}
+.raw{
+  margin:12px 0 0;padding:12px 14px;background:var(--bg);border-radius:18px;
+  font-size:11.5px;line-height:1.7;color:var(--ink-2);word-break:break-word;
+  font-variant-numeric:tabular-nums;letter-spacing:.01em;
+}
+.raw span{color:var(--ink-3);display:block;margin-bottom:4px}
 
 .stn h3{margin:0 0 2px;font-size:14.5px;font-weight:500;letter-spacing:-.01em}
 .stn h3 small{font-weight:400;color:var(--ink-3);font-size:12.5px;margin-left:7px}
@@ -111,7 +114,6 @@ header p{margin:0;font-size:13px;line-height:1.65;color:var(--ink-3);max-width:3
 .stn .note{margin:14px 0 0;font-size:12.5px;line-height:1.7;color:var(--ink-2)}
 .stn .note.quiet{color:var(--ink-3)}
 
-/* 管理 */
 .field{display:flex;gap:8px;align-items:center}
 input[type=text],input[type=search]{
   flex:1;min-width:0;width:100%;font-family:inherit;font-size:14px;color:var(--ink);
@@ -171,7 +173,7 @@ svg{display:block}
 
 <header>
   <h1>航點天氣警戒</h1>
-  <p>未來五天各航點的惡劣天氣，依影響飛航的門檻自動判讀。每次開啟重新抓取最新預報。</p>
+  <p>近期以機場 TAF 判讀，第二天之後改用數值模式預報。依影響飛航的門檻自動標示。</p>
 </header>
 
 <div id="hero"></div>
@@ -189,12 +191,18 @@ svg{display:block}
       <button class="solid" id="go">搜尋</button>
     </div>
     <div id="res"></div>
-    <p class="hint" id="hint">地名取自 Open-Meteo 資料庫，選一筆即用該座標抓預報。知道精確機場座標的話，直接輸入「緯度, 經度」，例如 60.3172, 24.9633。</p>
+    <p class="hint" id="hint">選一筆即用該座標抓模式預報，新增後記得補上 ICAO 代碼才會有 TAF。也可直接輸入「緯度, 經度」。</p>
   </div>
   <div class="card">
     <h2>所有航點</h2>
     <div class="list" id="list"></div>
     <div class="acts"><button class="ghost" id="reset">還原內建清單</button></div>
+  </div>
+  <div class="card">
+    <h2>TAF 中繼</h2>
+    <div class="field"><input type="text" id="proxy" placeholder="https://api.allorigins.win/raw?url="></div>
+    <p class="hint">美國 AWC 的 TAF 服務不開放跨網域存取，網頁必須經中繼取得。留空代表直接連線，只有在你自架服務或用瀏覽器擴充解除限制時才會成功。換成自己的中繼網址最穩定。</p>
+    <div class="acts"><button class="solid" id="saveProxy">儲存並重抓</button></div>
   </div>
 </main>
 
@@ -203,13 +211,14 @@ svg{display:block}
     <div class="thr">
       <div><span>陣風，側風與亂流</span><b>40 kt</b></div>
       <div><span>陣風，颱風或強烈低壓</span><b>50 kt</b></div>
-      <div><span>日雨量，跑道積水</span><b>80 mm</b></div>
+      <div><span>雲底高，低於一類標準</span><b>200 ft</b></div>
       <div><span>能見度，低於一類標準</span><b>800 m</b></div>
+      <div><span>日雨量，跑道積水</span><b>80 mm</b></div>
       <div><span>高溫，起飛性能受限</span><b>40 °C</b></div>
       <div><span>雷雨、大雪、凍雨</span><b>逐時判讀</b></div>
     </div>
   </div>
-  <footer>資料來源 Open-Meteo，整合 ECMWF、GFS、JMA 等模式。此處為自動化預報摘要，供提前警覺使用；放行與轉降決策請以官方 METAR、TAF、SIGMET 及簽派為準。</footer>
+  <footer>近期取自 NOAA 航空氣象中心的 TAF 與 METAR 原文，第二天之後取自 Open-Meteo 整合的 ECMWF、GFS、JMA 等模式。此處為自動化摘要，供提前警覺使用；放行與轉降決策請以官方 TAF、METAR、SIGMET 及簽派為準。</footer>
 </main>
 
 <nav id="nav">
@@ -221,55 +230,57 @@ svg{display:block}
 
 <script>
 const BUILTIN=[
- {i:"NRT",c:"東京 成田",r:"日韓",la:35.7647,lo:140.3864},
- {i:"KIX",c:"大阪 關西",r:"日韓",la:34.4342,lo:135.2440},
- {i:"UKB",c:"神戶",r:"日韓",la:34.6328,lo:135.2239},
- {i:"NGO",c:"名古屋 中部",r:"日韓",la:34.8584,lo:136.8054},
- {i:"FUK",c:"福岡",r:"日韓",la:33.5859,lo:130.4500},
- {i:"KMJ",c:"熊本",r:"日韓",la:32.8373,lo:130.8551},
- {i:"TAK",c:"高松",r:"日韓",la:34.2142,lo:134.0156},
- {i:"CTS",c:"札幌 新千歲",r:"日韓",la:42.7752,lo:141.6923},
- {i:"HKD",c:"函館",r:"日韓",la:41.7700,lo:140.8219},
- {i:"SDJ",c:"仙台",r:"日韓",la:38.1397,lo:140.9170},
- {i:"OKA",c:"沖繩 那霸",r:"日韓",la:26.1958,lo:127.6458},
- {i:"MMY",c:"宮古島",r:"日韓",la:24.7828,lo:125.2950},
- {i:"PUS",c:"釜山 金海",r:"日韓",la:35.1795,lo:128.9382},
- {i:"SIN",c:"新加坡 樟宜",r:"東南亞",la:1.3644,lo:103.9915},
- {i:"BKK",c:"曼谷 蘇汪那蓬",r:"東南亞",la:13.6900,lo:100.7501},
- {i:"CNX",c:"清邁",r:"東南亞",la:18.7669,lo:98.9626},
- {i:"DPS",c:"峇里島 登巴薩",r:"東南亞",la:-8.7482,lo:115.1675},
- {i:"CGK",c:"雅加達",r:"東南亞",la:-6.1256,lo:106.6559},
- {i:"HAN",c:"河內 內排",r:"東南亞",la:21.2212,lo:105.8072},
- {i:"SGN",c:"胡志明市",r:"東南亞",la:10.8188,lo:106.6520},
- {i:"DAD",c:"峴港",r:"東南亞",la:16.0439,lo:108.1994},
- {i:"PQC",c:"富國島",r:"東南亞",la:10.2270,lo:103.9670},
- {i:"CRK",c:"克拉克",r:"東南亞",la:15.1860,lo:120.5600},
- {i:"CEB",c:"宿霧",r:"東南亞",la:10.3075,lo:123.9790},
- {i:"HKG",c:"香港",r:"港澳",la:22.3080,lo:113.9185},
- {i:"MFM",c:"澳門",r:"港澳",la:22.1496,lo:113.5915},
- {i:"LAX",c:"洛杉磯",r:"美洲",la:33.9416,lo:-118.4085},
- {i:"SFO",c:"舊金山",r:"美洲",la:37.6213,lo:-122.3790},
- {i:"SEA",c:"西雅圖",r:"美洲",la:47.4502,lo:-122.3088},
- {i:"ONT",c:"安大略",r:"美洲",la:34.0560,lo:-117.6012},
- {i:"PDX",c:"波特蘭",r:"美洲",la:45.5898,lo:-122.5951},
- {i:"PHX",c:"鳳凰城",r:"美洲",la:33.4342,lo:-112.0116},
- {i:"LAS",c:"拉斯維加斯",r:"美洲",la:36.0840,lo:-115.1537},
- {i:"DFW",c:"達拉斯",r:"美洲",la:32.8998,lo:-97.0403},
- {i:"PRG",c:"布拉格",r:"歐洲",la:50.1008,lo:14.2600},
- {i:"TPE",c:"台北 桃園",r:"基地",la:25.0777,lo:121.2328},
- {i:"RMQ",c:"台中 清泉崗",r:"基地",la:24.2647,lo:120.6213}
+ {i:"NRT",k:"RJAA",c:"東京 成田",r:"日韓",la:35.7647,lo:140.3864},
+ {i:"KIX",k:"RJBB",c:"大阪 關西",r:"日韓",la:34.4342,lo:135.2440},
+ {i:"UKB",k:"RJBE",c:"神戶",r:"日韓",la:34.6328,lo:135.2239},
+ {i:"NGO",k:"RJGG",c:"名古屋 中部",r:"日韓",la:34.8584,lo:136.8054},
+ {i:"FUK",k:"RJFF",c:"福岡",r:"日韓",la:33.5859,lo:130.4500},
+ {i:"KMJ",k:"RJFT",c:"熊本",r:"日韓",la:32.8373,lo:130.8551},
+ {i:"TAK",k:"RJOT",c:"高松",r:"日韓",la:34.2142,lo:134.0156},
+ {i:"CTS",k:"RJCC",c:"札幌 新千歲",r:"日韓",la:42.7752,lo:141.6923},
+ {i:"HKD",k:"RJCH",c:"函館",r:"日韓",la:41.7700,lo:140.8219},
+ {i:"SDJ",k:"RJSS",c:"仙台",r:"日韓",la:38.1397,lo:140.9170},
+ {i:"OKA",k:"ROAH",c:"沖繩 那霸",r:"日韓",la:26.1958,lo:127.6458},
+ {i:"MMY",k:"ROMY",c:"宮古島",r:"日韓",la:24.7828,lo:125.2950},
+ {i:"PUS",k:"RKPK",c:"釜山 金海",r:"日韓",la:35.1795,lo:128.9382},
+ {i:"SIN",k:"WSSS",c:"新加坡 樟宜",r:"東南亞",la:1.3644,lo:103.9915},
+ {i:"BKK",k:"VTBS",c:"曼谷 蘇汪那蓬",r:"東南亞",la:13.6900,lo:100.7501},
+ {i:"CNX",k:"VTCC",c:"清邁",r:"東南亞",la:18.7669,lo:98.9626},
+ {i:"DPS",k:"WADD",c:"峇里島 登巴薩",r:"東南亞",la:-8.7482,lo:115.1675},
+ {i:"CGK",k:"WIII",c:"雅加達",r:"東南亞",la:-6.1256,lo:106.6559},
+ {i:"HAN",k:"VVNB",c:"河內 內排",r:"東南亞",la:21.2212,lo:105.8072},
+ {i:"SGN",k:"VVTS",c:"胡志明市",r:"東南亞",la:10.8188,lo:106.6520},
+ {i:"DAD",k:"VVDN",c:"峴港",r:"東南亞",la:16.0439,lo:108.1994},
+ {i:"PQC",k:"VVPQ",c:"富國島",r:"東南亞",la:10.2270,lo:103.9670},
+ {i:"CRK",k:"RPLC",c:"克拉克",r:"東南亞",la:15.1860,lo:120.5600},
+ {i:"CEB",k:"RPVM",c:"宿霧",r:"東南亞",la:10.3075,lo:123.9790},
+ {i:"HKG",k:"VHHH",c:"香港",r:"港澳",la:22.3080,lo:113.9185},
+ {i:"MFM",k:"VMMC",c:"澳門",r:"港澳",la:22.1496,lo:113.5915},
+ {i:"LAX",k:"KLAX",c:"洛杉磯",r:"美洲",la:33.9416,lo:-118.4085},
+ {i:"SFO",k:"KSFO",c:"舊金山",r:"美洲",la:37.6213,lo:-122.3790},
+ {i:"SEA",k:"KSEA",c:"西雅圖",r:"美洲",la:47.4502,lo:-122.3088},
+ {i:"ONT",k:"KONT",c:"安大略",r:"美洲",la:34.0560,lo:-117.6012},
+ {i:"PDX",k:"KPDX",c:"波特蘭",r:"美洲",la:45.5898,lo:-122.5951},
+ {i:"PHX",k:"KPHX",c:"鳳凰城",r:"美洲",la:33.4342,lo:-112.0116},
+ {i:"LAS",k:"KLAS",c:"拉斯維加斯",r:"美洲",la:36.0840,lo:-115.1537},
+ {i:"DFW",k:"KDFW",c:"達拉斯",r:"美洲",la:32.8998,lo:-97.0403},
+ {i:"PRG",k:"LKPR",c:"布拉格",r:"歐洲",la:50.1008,lo:14.2600},
+ {i:"TPE",k:"RCTP",c:"台北 桃園",r:"基地",la:25.0777,lo:121.2328},
+ {i:"RMQ",k:"RCMQ",c:"台中 清泉崗",r:"基地",la:24.2647,lo:120.6213}
 ];
 
-const KEY="jx-weather-stations";
-let STATIONS=[], memoryOnly=false;
+const KEY="jx-weather-stations", PKEY="jx-weather-proxy";
+const DEFAULT_PROXY="https://api.allorigins.win/raw?url=";
+let STATIONS=[],PROXY=DEFAULT_PROXY;
 try{
   const s=JSON.parse(localStorage.getItem(KEY)||"null");
-  STATIONS = Array.isArray(s)&&s.length ? s : BUILTIN.map(x=>Object.assign({},x));
-}catch(e){ STATIONS=BUILTIN.map(x=>Object.assign({},x)); memoryOnly=true; }
+  STATIONS=Array.isArray(s)&&s.length?s:BUILTIN.map(x=>Object.assign({},x));
+  const p=localStorage.getItem(PKEY); if(p!==null) PROXY=p;
+}catch(e){ STATIONS=BUILTIN.map(x=>Object.assign({},x)); }
 function save(){
-  try{ localStorage.setItem(KEY,JSON.stringify(STATIONS)); }
-  catch(e){ memoryOnly=true;
-    document.getElementById("hint").textContent="這個瀏覽器不讓網頁存資料，改動只在本次開啟期間有效。把檔案下載後用 Safari 或 Chrome 開就會記住。"; }
+  try{ localStorage.setItem(KEY,JSON.stringify(STATIONS)); localStorage.setItem(PKEY,PROXY); }
+  catch(e){ const h=document.getElementById("hint");
+    if(h) h.textContent="這個瀏覽器不讓網頁存資料，改動只在本次開啟期間有效。下載後用 Safari 或 Chrome 開就會記住。"; }
 }
 
 const WMO={0:["晴","sun"],1:["晴時多雲","sun"],2:["多雲","cloud"],3:["陰","cloud"],
@@ -290,6 +301,73 @@ const ICON={
  wind:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M2.6 7h9.2a2.4 2.4 0 1 0-2.4-2.6M2.6 11.4h12.6a2.4 2.4 0 1 1-2.4 2.6M2.6 15.4h5.6" ${S}/></svg>`,
  heat:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M8.6 11.6V4.2a1.7 1.7 0 0 1 3.4 0v7.4a3.4 3.4 0 1 1-3.4 0Z" ${S}/></svg>`
 };
+
+/* ── TAF 解析 ─────────────────── */
+const WXNAME={TS:"雷雨",TSRA:"雷雨",RA:"雨",SN:"雪",DZ:"毛毛雨",GR:"冰雹",GS:"霰",PL:"冰珠",
+ SG:"雪珠",FG:"霧",BR:"輕霧",HZ:"靄",FU:"煙",SA:"揚沙",DU:"塵",VA:"火山灰",SQ:"颮",FC:"漏斗雲",
+ SS:"沙暴",DS:"塵暴",IC:"冰針",UP:"未知降水"};
+function decodeGroup(g){
+  const o={wind:0,gust:0,vis:null,ceil:null,ts:false,heavy:false,fz:false,sn:false,fg:false,sq:false,wx:[]};
+  g.split(" ").forEach(t=>{
+    let m=t.match(/^(\d{3}|VRB)(\d{2,3})(?:G(\d{2,3}))?(KT|MPS)$/);
+    if(m){const f=m[4]==="MPS"?1.94384:1;o.wind=Math.max(o.wind,+m[2]*f);if(m[3])o.gust=Math.max(o.gust,+m[3]*f);return;}
+    if(/^\d{4}$/.test(t)){const v=+t;o.vis=o.vis===null?(v===9999?10000:v):Math.min(o.vis,v===9999?10000:v);return;}
+    m=t.match(/^(P?)(\d+)(?:\/(\d+))?SM$/);
+    if(m){let v=m[3]?(+m[2]/+m[3]):+m[2];v*=1609;o.vis=o.vis===null?v:Math.min(o.vis,v);return;}
+    m=t.match(/^(BKN|OVC|VV)(\d{3})/);
+    if(m){const ft=+m[2]*100;o.ceil=o.ceil===null?ft:Math.min(o.ceil,ft);return;}
+    m=t.match(/^([+-]?)(VC)?((?:TS|SH|FZ|MI|BC|DR|BL|PR)?)((?:RA|SN|DZ|GR|GS|PL|SG|IC|FG|BR|HZ|FU|SA|DU|VA|SQ|FC|SS|DS|UP)+)$/);
+    if(m&&m[4]){
+      const sev=m[1]==="+",desc=m[3],ph=m[4];
+      if(desc==="TS"||ph==="TS")o.ts=true;
+      if(/^TS/.test(t.replace(/^[+-]/,"")))o.ts=true;
+      if(sev)o.heavy=true;
+      if(desc==="FZ")o.fz=true;
+      if(/SN|SG|PL|GS/.test(ph))o.sn=true;
+      if(ph==="FG")o.fg=true;
+      if(ph==="SQ"||ph==="FC")o.sq=true;
+      const nm=(sev?"強":"")+(WXNAME[ph]||ph);
+      if(!o.wx.includes(nm))o.wx.push(nm);
+    }
+    if(/^TS/.test(t))o.ts=true;
+  });
+  return o;
+}
+function parseTAF(raw){
+  if(!raw) return null;
+  const txt=raw.replace(/\s+/g," ").replace(/=+$/,"").trim();
+  const head=txt.match(/\b(\d{4})\/(\d{4})\b/);
+  const parts=txt.split(/ (?=FM\d{6}\b|TEMPO\b|BECMG\b|PROB\d{2}\b)/);
+  const groups=parts.map(p=>{
+    const kind=/^FM/.test(p)?"FM":/^TEMPO/.test(p)?"TEMPO":/^BECMG/.test(p)?"BECMG":/^PROB/.test(p)?"PROB":"MAIN";
+    const tm=p.match(/^FM(\d{2})(\d{2})/);
+    return Object.assign(decodeGroup(p),{kind,from:tm?(tm[1]+"日 "+tm[2]+"Z"):null,txt:p});
+  });
+  return {raw:txt, valid: head?head[1]+"/"+head[2]:null, groups};
+}
+function assessTAF(t){
+  if(!t) return null;
+  const out=[];
+  t.groups.forEach(g=>{
+    const tmp=g.kind==="TEMPO"||g.kind==="PROB", tag=tmp?"（短時）":"";
+    if(g.gust>=50)out.push([2,"陣風 "+Math.round(g.gust)+" kt，颱風或強烈低壓"+tag,"wind"]);
+    else if(g.gust>=40)out.push([2,"陣風 "+Math.round(g.gust)+" kt，側風與亂流"+tag,"wind"]);
+    else if(g.gust>=30||g.wind>=28)out.push([1,"風 "+Math.round(Math.max(g.wind,g.gust))+" kt"+tag,"wind"]);
+    if(g.ts)out.push([2,"雷雨"+tag,"storm"]);
+    if(g.fz)out.push([2,"凍性降水，積冰風險"+tag,"snow"]);
+    if(g.sq)out.push([2,"颮線或漏斗雲"+tag,"storm"]);
+    if(g.heavy&&!g.ts)out.push([1,"強降水 "+g.wx.join("、")+tag,"rain"]);
+    if(g.sn&&!g.fz)out.push([1,"降雪，需除冰"+tag,"snow"]);
+    if(g.vis!=null&&g.vis<800)out.push([2,"能見度 "+Math.round(g.vis)+" m，低於一類標準"+tag,"fog"]);
+    else if(g.vis!=null&&g.vis<3000)out.push([1,"能見度 "+Math.round(g.vis)+" m"+tag,"fog"]);
+    if(g.ceil!=null&&g.ceil<=200)out.push([2,"雲底 "+g.ceil+" ft，低於一類標準"+tag,"fog"]);
+    else if(g.ceil!=null&&g.ceil<500)out.push([1,"雲底 "+g.ceil+" ft"+tag,"fog"]);
+  });
+  out.sort((a,b)=>b[0]-a[0]);
+  const seen=new Set(),notes=[];let lvl=0,icon=null;
+  out.forEach(([l,n,ic])=>{lvl=Math.max(lvl,l);if(!seen.has(n)){seen.add(n);notes.push(n);icon=icon||ic;}});
+  return {lvl,notes:notes.slice(0,5),icon:icon||"cloud"};
+}
 
 function assess(d){
   const o=[],g=d.gust,w=d.wind,p=d.precip,c=d.code,v=d.vis;
@@ -312,32 +390,46 @@ function assess(d){
   if(d.tmin<=-12)o.push([1,"嚴寒 "+Math.round(d.tmin)+" 度，地面作業與除冰","snow"]);
   return {lvl:o.reduce((m,x)=>Math.max(m,x[0]),0),notes:o.map(x=>x[1]),icon:(o[0]||[,,null])[2]};
 }
+
 const dayName=s=>["日","一","二","三","四","五","六"][new Date(s+"T00:00:00").getDay()];
 const dayNum=s=>{const d=new Date(s+"T00:00:00");return (d.getMonth()+1)+"/"+d.getDate();};
-const esc=s=>String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
 
-let DATA=[],filter="all",view="alerts",editing=-1,fetchedAt=null;
+let DATA=[],filter="all",view="alerts",editing=-1,fetchedAt=null,tafAt=null,tafOK=0,tafFail="";
 
 function stampText(){
-  const el=document.getElementById("stamp");
-  if(!fetchedAt){return;}
+  const el=document.getElementById("stamp"); if(!fetchedAt) return;
   const mins=Math.floor((Date.now()-fetchedAt)/60000);
   const t=fetchedAt.toLocaleString("zh-TW",{hour12:false,month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});
-  el.textContent="天氣資料更新於 "+t+"　"+(mins<1?"剛剛":mins<60?mins+" 分鐘前":Math.floor(mins/60)+" 小時前");
+  const rel=mins<1?"剛剛":mins<60?mins+" 分鐘前":Math.floor(mins/60)+" 小時前";
+  el.textContent="更新於 "+t+"　"+rel+"　"+(tafOK?("TAF "+tafOK+" 站"):("TAF 未取得"+(tafFail?"："+tafFail:"")));
 }
 setInterval(stampText,60000);
 
-function severity(s){
-  let peak=0,hits=0;
-  s.days.forEach(d=>{
-    if(d.risk.lvl>0)hits++;
-    let x=Math.max(d.gust/40,(d.precip||0)/80);
-    if([95,96,99].includes(d.code))x=Math.max(x,1.15);
-    if([75,86,77,56,57,66,67].includes(d.code))x=Math.max(x,1.10);
-    if(d.vis!=null&&d.vis<3000)x=Math.max(x,0.6+(3000-d.vis)/3000);
-    peak=Math.max(peak,x);
-  });
-  return s.lvl*100+peak*10+hits;
+async function viaProxy(url){
+  const tries=PROXY?[PROXY+encodeURIComponent(url),url]:[url];
+  let last="";
+  for(const u of tries){
+    try{ const r=await fetch(u); if(!r.ok){last="HTTP "+r.status;continue;} return await r.text(); }
+    catch(e){ last=e.message||"連線失敗"; }
+  }
+  throw new Error(last||"連線失敗");
+}
+
+async function fetchAWC(){
+  const ids=[...new Set(STATIONS.map(s=>(s.k||"").toUpperCase()).filter(x=>/^[A-Z]{4}$/.test(x)))];
+  const out={taf:{},metar:{}};
+  if(!ids.length){tafOK=0;tafFail="沒有 ICAO 代碼";return out;}
+  try{
+    const t=await viaProxy("https://aviationweather.gov/api/data/taf?format=json&ids="+ids.join(","));
+    (JSON.parse(t)||[]).forEach(x=>{ if(x&&x.icaoId&&x.rawTAF) out.taf[x.icaoId]=x; });
+    try{
+      const m=await viaProxy("https://aviationweather.gov/api/data/metar?format=json&ids="+ids.join(","));
+      (JSON.parse(m)||[]).forEach(x=>{ if(x&&x.icaoId&&x.rawOb) out.metar[x.icaoId]=x; });
+    }catch(e){}
+    tafOK=Object.keys(out.taf).length; tafFail=tafOK?"":"回傳空資料";
+  }catch(e){ tafOK=0; tafFail=e.message; }
+  return out;
 }
 
 async function load(){
@@ -346,8 +438,10 @@ async function load(){
   const url="https://api.open-meteo.com/v1/forecast?latitude="+la+"&longitude="+lo+
    "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max"+
    "&hourly=visibility,weather_code&forecast_days=5&timezone=auto&wind_speed_unit=kn";
-  const res=await fetch(url); if(!res.ok) throw new Error("HTTP "+res.status);
-  let j=await res.json(); if(!Array.isArray(j)) j=[j];
+  const [modelRes,awc]=await Promise.all([fetch(url),fetchAWC()]);
+  if(!modelRes.ok) throw new Error("HTTP "+modelRes.status);
+  let j=await modelRes.json(); if(!Array.isArray(j)) j=[j];
+
   DATA=STATIONS.map((s,n)=>{
     const b=j[n]||{},dd=b.daily||{},hh=b.hourly||{};
     const days=(dd.time||[]).map((t,k)=>{
@@ -362,10 +456,18 @@ async function load(){
       return{date:t,code:worst,tmax:dd.temperature_2m_max[k],tmin:dd.temperature_2m_min[k],
         precip:dd.precipitation_sum[k],wind:dd.wind_speed_10m_max[k],gust:dd.wind_gusts_10m_max[k],vis};
     }).map(d=>Object.assign(d,{risk:assess(d)}));
-    return Object.assign({},s,{days,lvl:days.reduce((m,d)=>Math.max(m,d.risk.lvl),0)});
+
+    const icao=(s.k||"").toUpperCase();
+    const tafRaw=awc.taf[icao], metar=awc.metar[icao];
+    const taf=tafRaw?parseTAF(tafRaw.rawTAF):null;
+    const tafRisk=taf?assessTAF(taf):null;
+    if(taf&&tafRaw.issueTime) taf.issue=tafRaw.issueTime;
+    if(days[0]&&tafRisk){ days[0].risk=tafRisk; days[0].src="TAF"; }
+    const lvl=Math.max(days.reduce((m,d)=>Math.max(m,d.risk.lvl),0), tafRisk?tafRisk.lvl:0);
+    return Object.assign({},s,{days,taf,tafRisk,metar:metar?{raw:metar.rawOb,time:metar.reportTime||metar.obsTime}:null,lvl});
   });
-  fetchedAt=new Date(); stampText();
-  render();
+  fetchedAt=new Date(); if(tafOK) tafAt=fetchedAt;
+  stampText(); render();
 }
 
 function renderTabs(){
@@ -376,12 +478,24 @@ function renderTabs(){
     .concat(regs.map(r=>'<button class="tab" data-reg="'+esc(r)+'" aria-pressed="'+(filter===r)+'">'+esc(r)+'</button>')).join("");
 }
 
+function severity(s){
+  let peak=0,hits=0;
+  if(s.tafRisk&&s.tafRisk.lvl>0) peak=Math.max(peak, s.tafRisk.lvl>1?1.2:0.8);
+  s.days.forEach(d=>{
+    if(d.risk.lvl>0)hits++;
+    let x=Math.max((d.gust||0)/40,(d.precip||0)/80);
+    if([95,96,99].includes(d.code))x=Math.max(x,1.15);
+    if([75,86,77,56,57,66,67].includes(d.code))x=Math.max(x,1.10);
+    if(d.vis!=null&&d.vis<3000)x=Math.max(x,0.6+(3000-d.vis)/3000);
+    peak=Math.max(peak,x);
+  });
+  return s.lvl*100+peak*10+hits;
+}
+
 function render(){
   renderTabs();
   const list=DATA.filter(s=>filter==="all"||s.r===filter);
-  const flagged=list.filter(s=>s.lvl>0)
-    .map(s=>Object.assign(s,{sc:severity(s)}))
-    .sort((a,b)=>b.sc-a.sc);
+  const flagged=list.filter(s=>s.lvl>0).map(s=>Object.assign(s,{sc:severity(s)})).sort((a,b)=>b.sc-a.sc);
   const sev=flagged.filter(s=>s.lvl>1);
 
   document.getElementById("hero").innerHTML=
@@ -394,15 +508,23 @@ function render(){
   document.getElementById("navdot").style.display=sev.length?"inline-block":"none";
 
   document.getElementById("viewAlerts").innerHTML= flagged.length? flagged.map(s=>{
+    const useTaf=s.tafRisk&&s.tafRisk.lvl>0;
     const hit=s.days.filter(x=>x.risk.lvl>0);
-    const d=hit.slice().sort((a,b)=>b.risk.lvl-a.risk.lvl)[0];
-    const first=hit[0];
-    return '<div class="card"><div class="alert'+(d.risk.lvl>1?' sev':'')+'">'+
-      '<span class="key">'+(ICON[d.risk.icon]||ICON.cloud)+'</span><div class="body">'+
-      '<h3>'+esc(s.c)+'<small>'+esc(s.i)+'</small><span class="tag">'+(d.risk.lvl>1?'嚴重':'警戒')+'</span></h3>'+
-      '<p>'+d.risk.notes.join('，')+'</p>'+
-      '<p class="when">最嚴重在週<u>'+dayName(d.date)+'</u> '+dayNum(d.date)+'　'+wx(d.code)[0]+
-      '　五天內 '+hit.length+' 天達標，最早週'+dayName(first.date)+'</p></div></div></div>';
+    const d=useTaf?null:hit.slice().sort((a,b)=>b.risk.lvl-a.risk.lvl)[0];
+    const risk=useTaf?s.tafRisk:d.risk;
+    const line=useTaf
+      ? 'TAF '+(s.taf.valid?esc(s.taf.valid):"")+(s.taf.issue?'　發布 '+esc(String(s.taf.issue).replace("T"," ").slice(5,16))+'Z':'')
+      : '模式預報　最嚴重在週'+dayName(d.date)+' '+dayNum(d.date)+'　'+wx(d.code)[0];
+    const later=hit.filter(x=>x.src!=="TAF");
+    return '<div class="card"><div class="alert'+(risk.lvl>1?' sev':'')+'">'+
+      '<span class="key">'+(ICON[risk.icon]||ICON.cloud)+'</span><div class="body">'+
+      '<h3>'+esc(s.c)+'<small>'+esc(s.i)+(s.k?' '+esc(s.k):'')+'</small>'+
+      '<span class="tag">'+(risk.lvl>1?'嚴重':'警戒')+(useTaf?'　TAF':'　模式')+'</span></h3>'+
+      '<p>'+risk.notes.join('，')+'</p>'+
+      '<p class="when">'+line+(later.length?'　後續 '+later.length+' 天模式仍達標，最早週'+dayName(later[0].date):'')+'</p>'+
+      (useTaf?'<p class="raw"><span>TAF 原文</span>'+esc(s.taf.raw)+'</p>':'')+
+      (useTaf&&s.metar?'<p class="raw"><span>METAR 實況</span>'+esc(s.metar.raw)+'</p>':'')+
+      '</div></div></div>';
   }).join("") : '<div class="card"><p class="thr">這個範圍內，未來五天沒有達到警戒門檻的天氣。</p></div>';
 
   document.getElementById("viewStations").innerHTML=list.map(s=>{
@@ -412,22 +534,26 @@ function render(){
         '<div class="d">'+dayName(d.date)+'</div><div class="t">'+Math.round(d.tmax)+'<i> '+Math.round(d.tmin)+'</i></div></div>';
     }).join("");
     const notes=[...new Set(s.days.flatMap(d=>d.risk.notes))];
-    return '<div class="card stn"><h3>'+esc(s.c)+'<small>'+esc(s.i)+'</small></h3><div class="days">'+days+'</div>'+
-      '<p class="note'+(notes.length?'':' quiet')+'">'+(notes.length?notes.join('　'):'五日內無明顯惡劣天氣')+'</p></div>';
+    return '<div class="card stn"><h3>'+esc(s.c)+'<small>'+esc(s.i)+(s.k?' '+esc(s.k):'')+'</small></h3>'+
+      '<div class="days">'+days+'</div>'+
+      '<p class="note'+(notes.length?'':' quiet')+'">'+(notes.length?notes.join('　'):'五日內無明顯惡劣天氣')+'</p>'+
+      (s.taf?'<p class="raw"><span>TAF '+esc(s.taf.valid||"")+'</span>'+esc(s.taf.raw)+'</p>':'')+
+      (s.metar?'<p class="raw"><span>METAR</span>'+esc(s.metar.raw)+'</p>':'')+'</div>';
   }).join("");
   renderList();
 }
 
-/* ── 管理：新增、編輯、刪除 ─────────────────── */
+/* ── 管理 ─────────────────── */
 function renderList(){
   document.getElementById("list").innerHTML=STATIONS.map((s,n)=>{
     const head='<button class="stn-row" data-edit="'+n+'"><span><span class="nm">'+esc(s.c)+'</span>'+
-      '<span class="sb">'+esc(s.i)+'　'+esc(s.r)+'</span></span>'+
+      '<span class="sb">'+esc(s.i)+'　'+esc(s.k||"無 ICAO")+'　'+esc(s.r)+'</span></span>'+
       '<span class="co">'+s.la.toFixed(2)+', '+s.lo.toFixed(2)+'</span></button>';
     if(n!==editing) return '<div class="item">'+head+'</div>';
     return '<div class="item">'+head+'<div class="edit">'+
       '<div class="row"><label><span>名稱</span><input type="text" id="f-c" value="'+esc(s.c)+'"></label></div>'+
-      '<div class="row"><label><span>代碼</span><input type="text" id="f-i" value="'+esc(s.i)+'"></label>'+
+      '<div class="row"><label><span>IATA</span><input type="text" id="f-i" value="'+esc(s.i)+'"></label>'+
+      '<label><span>ICAO</span><input type="text" id="f-k" value="'+esc(s.k||"")+'"></label>'+
       '<label><span>分區</span><input type="text" id="f-r" value="'+esc(s.r)+'"></label></div>'+
       '<div class="row"><label><span>緯度</span><input type="text" id="f-la" value="'+s.la+'"></label>'+
       '<label><span>經度</span><input type="text" id="f-lo" value="'+s.lo+'"></label></div>'+
@@ -439,7 +565,7 @@ function renderList(){
 
 function refresh(){
   save(); render();
-  document.getElementById("stamp").textContent="重新抓取預報";
+  document.getElementById("stamp").textContent="重新抓取中";
   load().catch(()=>{document.getElementById("stamp").textContent="連線失敗";});
 }
 
@@ -447,19 +573,18 @@ document.getElementById("list").addEventListener("click",e=>{
   const row=e.target.closest("[data-edit]"),sv=e.target.closest("[data-save]"),
         dl=e.target.closest("[data-del]"),cx=e.target.closest("[data-cancel]");
   if(sv){
-    const n=+sv.dataset.save, la=parseFloat(document.getElementById("f-la").value),
+    const n=+sv.dataset.save,la=parseFloat(document.getElementById("f-la").value),
           lo=parseFloat(document.getElementById("f-lo").value);
-    if(!isFinite(la)||la<-90||la>90||!isFinite(lo)||lo<-180||lo>180){
-      alert("緯度需在 -90 到 90、經度需在 -180 到 180 之間。"); return;
-    }
+    if(!isFinite(la)||la<-90||la>90||!isFinite(lo)||lo<-180||lo>180){alert("緯度需在 -90 到 90、經度需在 -180 到 180 之間。");return;}
     STATIONS[n]={i:document.getElementById("f-i").value.trim()||"—",
+                 k:document.getElementById("f-k").value.trim().toUpperCase(),
                  c:document.getElementById("f-c").value.trim()||"未命名",
-                 r:document.getElementById("f-r").value.trim()||"自訂", la, lo};
+                 r:document.getElementById("f-r").value.trim()||"自訂",la,lo};
     editing=-1; refresh(); return;
   }
   if(dl){ STATIONS.splice(+dl.dataset.del,1); editing=-1; refresh(); return; }
   if(cx){ editing=-1; renderList(); return; }
-  if(row){ editing = editing===+row.dataset.edit ? -1 : +row.dataset.edit; renderList(); }
+  if(row){ editing=editing===+row.dataset.edit?-1:+row.dataset.edit; renderList(); }
 });
 
 document.getElementById("reset").addEventListener("click",()=>{
@@ -467,17 +592,21 @@ document.getElementById("reset").addEventListener("click",()=>{
   STATIONS=BUILTIN.map(x=>Object.assign({},x)); editing=-1; refresh();
 });
 
+document.getElementById("proxy").value=PROXY;
+document.getElementById("saveProxy").addEventListener("click",()=>{
+  PROXY=document.getElementById("proxy").value.trim(); refresh();
+});
+
 function addStation(name,la,lo){
-  STATIONS.push({i:"—",c:name,r:"自訂",la:+la,lo:+lo});
+  STATIONS.push({i:"—",k:"",c:name,r:"自訂",la:+la,lo:+lo});
   editing=STATIONS.length-1;
-  document.getElementById("res").innerHTML="";
-  document.getElementById("q").value="";
+  document.getElementById("res").innerHTML=""; document.getElementById("q").value="";
   refresh();
-  setTimeout(()=>{const f=document.getElementById("f-i"); if(f){f.focus();f.select();}},60);
+  setTimeout(()=>{const f=document.getElementById("f-k"); if(f){f.focus();}},60);
 }
 
 async function search(){
-  const q=document.getElementById("q").value.trim(), res=document.getElementById("res");
+  const q=document.getElementById("q").value.trim(),res=document.getElementById("res");
   if(!q){res.innerHTML="";return;}
   const ll=q.match(/^(-?\d+(?:\.\d+)?)\s*[,，]\s*(-?\d+(?:\.\d+)?)$/);
   if(ll){ addStation("新航點",ll[1],ll[2]); return; }
@@ -503,7 +632,6 @@ document.getElementById("again").addEventListener("click",()=>{
   document.getElementById("stamp").textContent="重新抓取中";
   load().catch(()=>{document.getElementById("stamp").textContent="連線失敗，稍後再試";});
 });
-
 document.getElementById("tabs").addEventListener("click",e=>{
   const b=e.target.closest(".tab"); if(!b)return;
   filter=b.dataset.reg; render();
@@ -524,8 +652,7 @@ renderList();
 load().catch(err=>{
   document.getElementById("stamp").textContent="連線失敗";
   document.getElementById("viewAlerts").innerHTML='<div class="card"><p class="thr">抓不到氣象資料（'+esc(err.message)+'）。'+
-   '這通常是預覽視窗擋掉了對外連線。把檔案下載後用 Safari 或 Chrome 開啟即可正常取得預報，'+
-   'iPhone 可再加入主畫面，之後每次開啟都會自動更新。</p></div>';
+   '這通常是預覽視窗擋掉了對外連線。把檔案下載後用 Safari 或 Chrome 開啟即可，iPhone 可再加入主畫面。</p></div>';
 });
 </script>
 </body>
