@@ -23,7 +23,7 @@ jobs:
             ROAH,ROMY,RKPK,WSSS,VTBS,VTCC,WADD,WIII,VVNB,VVTS,VVDN,VVPQ,RPLC,
             RPVM,VHHH,VMMC,KLAX,KSFO,KSEA,KONT,KPDX,KPHX,KLAS,KDFW,LKPR
           # AWC 要求帶可識別的 User-Agent，請換成你自己的聯絡方式
-          UA: "starlux-weather-watch/1.0 (contact: you@example.com)"
+          UA: "starlux-weather-watch/1.0 (contact: gogoahoo1@gmail.com)"
         run: |
           set -euo pipefail
           mkdir -p data
