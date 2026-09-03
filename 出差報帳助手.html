@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>出差報帳助手</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+    background: #07070a;
+    color: #f2f2f5;
+    padding: 1.25rem;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  .bg-dots {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: radial-gradient(rgba(255,255,255,0.55) 1px, transparent 1.4px);
+    background-size: 11px 11px;
+    opacity: 0.14;
+    -webkit-mask-image: radial-gradient(ellipse 70% 45% at 50% 18%, black 30%, transparent 75%);
+    mask-image: radial-gradient(ellipse 70% 45% at 50% 18%, black 30%, transparent 75%);
+  }
+
+  .app-container { max-width: 460px; margin: 0 auto; position: relative; z-index: 1; }
+
+  .dot-num {
+    font-weight: 700;
+    background-image: radial-gradient(#ffffff 1.1px, transparent 1.4px);
+    background-size: 3.2px 3.2px;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: 0.3px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- Header ---------- */
+  .app-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .app-title { font-size: 20px; font-weight: 600; }
+  .icon-btn {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 15px; cursor: pointer;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: 32px;
+    padding: 1.75rem 1.5rem 2.25rem;
+    margin-bottom: 12px;
+    background:
+      radial-gradient(circle at 25% 15%, #ec6fb3 0%, transparent 55%),
+      radial-gradient(circle at 80% 0%, #a855f7 0%, transparent 45%),
+      linear-gradient(165deg, #7c3aed 0%, #4c1d95 45%, #1a0a2e 100%);
+  }
+
+  .hero-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.75rem; position: relative; z-index: 2; }
+  .hero-label { font-size: 13px; color: rgba(255,255,255,0.75); }
+
+  .hero-center { text-align: center; position: relative; z-index: 2; min-height: 64px; }
+  .hero-total-row { display: flex; align-items: baseline; justify-content: center; gap: 8px; margin-bottom: 2px; }
+  .hero-total-row .cur-code { font-size: 12px; color: rgba(255,255,255,0.55); }
+  .hero-amount { font-size: 42px; line-height: 1.15; }
+
+  .hero-orb {
+    position: absolute; left: 50%; bottom: -40px; transform: translateX(-50%);
+    width: 260px; height: 140px; z-index: 1; opacity: 0.55;
+  }
+
+  .page-dots { display: flex; justify-content: center; gap: 6px; margin-bottom: 1.1rem; }
+  .page-dots .d { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.25); transition: all 0.2s; }
+  .page-dots .d.active { background: #ffffff; width: 14px; border-radius: 3px; }
+
+  /* ---------- Stat grid ---------- */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; gap: 10px; margin-bottom: 1.25rem; }
+
+  .card-dark {
+    grid-row: span 2;
+    background: #121214;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 26px;
+    padding: 1.2rem;
+    display: flex; flex-direction: column; justify-content: space-between;
+    min-height: 190px;
+  }
+
+  .card-navy {
+    background: linear-gradient(160deg, #2c2f8f, #12143a);
+    border-radius: 26px; padding: 1.1rem 1.2rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .card-warm {
+    background: radial-gradient(circle at 25% 100%, #e0662c 0%, #3a1206 60%, #0d0603 100%);
+    border-radius: 26px; padding: 1.1rem 1.2rem; position: relative; overflow: hidden;
+  }
+
+  .mini-label { font-size: 12px; color: rgba(255,255,255,0.55); margin-bottom: 6px; }
+  .mini-value { font-size: 24px; }
+  .mini-value.big { font-size: 28px; }
+
+  .toggle { width: 42px; height: 24px; border-radius: 999px; background: rgba(255,255,255,0.15); position: relative; cursor: pointer; flex-shrink: 0; }
+  .toggle .knob { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #ffffff; transition: left 0.2s; }
+  .toggle.on { background: rgba(255,255,255,0.35); }
+  .toggle.on .knob { left: 21px; }
+
+  .ruler { display: flex; align-items: flex-end; gap: 3px; height: 20px; margin-top: 10px; }
+  .ruler .tick { flex: 1; width: 2px; height: 6px; background: rgba(255,255,255,0.18); border-radius: 2px; }
+  .ruler .tick.hi { height: 18px; background: #d9f27a; }
+
+  .arc-deco { position: absolute; right: 10px; bottom: 6px; opacity: 0.9; }
+
+  /* ---------- Segmented control ---------- */
+  .segmented { display: flex; gap: 4px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: 999px; padding: 4px; margin-bottom: 1.25rem; }
+  .seg-btn { flex: 1; padding: 0.65rem 0.5rem; background: transparent; border: none; border-radius: 999px; cursor: pointer; font-size: 13px; color: rgba(255,255,255,0.55); transition: all 0.2s; }
+  .seg-btn.active { background: #ffffff; color: #16140f; font-weight: 600; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ---------- Form ---------- */
+  .expense-form { background: #121214; border: 1px solid rgba(255,255,255,0.06); border-radius: 28px; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .form-group { margin-bottom: 1.1rem; }
+  .form-label { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.55); margin-bottom: 0.6rem; display: block; }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { padding: 0.55rem 0.95rem; border-radius: 999px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); font-size: 13px; cursor: pointer; }
+  .chip.active { background: #ffffff; color: #16140f; border-color: #ffffff; font-weight: 600; }
+  .chip.add-chip { border-style: dashed; color: rgba(255,255,255,0.4); }
+
+  .form-input, .form-select {
+    width: 100%;
+    min-width: 0;
+    padding: 0.8rem 1rem;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 999px;
+    font-size: 14px;
+    font-family: inherit;
+    background: rgba(255,255,255,0.06);
+    color: #f2f2f5;
+  }
+
+  .form-input::placeholder { color: rgba(255,255,255,0.35); }
+  .form-input:focus, .form-select:focus { outline: none; border-color: rgba(255,255,255,0.35); }
+
+  /* Compact 3-column row: amount / currency / date — fixes overflow with min-width:0 + tighter radius/padding */
+  .form-row-3 { display: grid; grid-template-columns: 1fr 0.75fr 1fr; gap: 6px; }
+  .form-row-3 > * { min-width: 0; width: 100%; }
+  .form-row-3 .form-input, .form-row-3 .form-select {
+    border-radius: 14px;
+    padding: 0.7rem 0.5rem;
+    font-size: 12.5px;
+  }
+  @media (max-width: 400px) {
+    .form-row-3 { grid-template-columns: 1fr; }
+  }
+
+  .file-upload-btn { width: 100%; padding: 1rem; border: 1.5px dashed rgba(255,255,255,0.18); border-radius: 18px; background: rgba(255,255,255,0.03); cursor: pointer; font-size: 14px; color: rgba(255,255,255,0.55); text-align: center; }
+  .file-upload-btn:hover { border-color: rgba(255,255,255,0.4); color: #fff; }
+  #fileInput { display: none; }
+
+  .image-preview { margin-top: 0.6rem; max-width: 140px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.1); display: block; }
+
+  .button-group { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .btn { padding: 0.85rem 1.4rem; border: none; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 600; }
+  .btn-primary { background: linear-gradient(135deg, #f472b6, #db2777); color: #ffffff; }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-secondary { background: rgba(255,255,255,0.07); color: #f2f2f5; border: 1px solid rgba(255,255,255,0.12); }
+  .btn-secondary:hover { background: rgba(255,255,255,0.12); }
+
+  /* ---------- List ---------- */
+  .expense-list { display: flex; flex-direction: column; gap: 10px; }
+  .expense-item { background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.08); border-radius: 22px; padding: 1rem 1.1rem; }
+  .expense-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.6rem; gap: 0.5rem; }
+  .cat-pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 11px; border-radius: 999px; background: rgba(255,255,255,0.1); color: #fff; margin-bottom: 4px; }
+  .expense-date { font-size: 12px; color: rgba(255,255,255,0.4); }
+  .expense-amount { font-size: 17px; font-weight: 700; white-space: nowrap; }
+  .expense-description { font-size: 13px; color: rgba(255,255,255,0.55); margin-bottom: 0.7rem; }
+  .expense-image { max-width: 110px; max-height: 110px; border-radius: 14px; margin-bottom: 0.7rem; cursor: pointer; display: block; border: 1px solid rgba(255,255,255,0.1); }
+  .thumb-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 0.7rem; cursor: pointer; }
+  .expense-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .edit-btn { background: rgba(255,255,255,0.08) !important; color: #fff !important; border-color: rgba(255,255,255,0.15) !important; }
+  .edit-btn:hover { background: rgba(255,255,255,0.16) !important; }
+  .icon-btn-small {
+    padding: 7px 14px;
+    border-radius: 999px;
+    background: rgba(239,68,68,0.14);
+    color: #ff9b9b;
+    border: 1px solid rgba(239,68,68,0.35);
+    display: flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .icon-btn-small:hover { background: rgba(239,68,68,0.24); }
+  .icon-btn-small:active { transform: scale(0.97); }
+
+  /* ---------- Modal ---------- */
+  .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; }
+  .modal.active { display: flex; }
+  .modal-content { background: #17171a; border-radius: 24px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.08); }
+  .modal-close { float: right; cursor: pointer; font-size: 20px; color: rgba(255,255,255,0.5); width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; }
+  .full-image { width: 100%; margin-top: 1rem; border-radius: 14px; clear: both; }
+
+  .empty-state { text-align: center; padding: 2.5rem 1rem; color: rgba(255,255,255,0.35); }
+  .empty-state-icon { font-size: 40px; margin-bottom: 0.75rem; }
+
+  /* ---------- Export ---------- */
+  .export-card { background: #121214; border: 1px solid rgba(255,255,255,0.06); border-radius: 28px; padding: 1.5rem; }
+  .export-card h3 { margin-bottom: 1rem; font-size: 15px; font-weight: 600; }
+  .cat-row { display: flex; justify-content: space-between; align-items: center; padding: 0.7rem 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 14px; }
+  .cat-row:last-of-type { border-bottom: none; }
+  .cat-row .amt { font-weight: 700; }
+  .total-block { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); }
+  .total-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .total-row .lbl { font-size: 13px; color: rgba(255,255,255,0.55); }
+  .total-row .val { font-size: 24px; }
+  .export-hint { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 0.9rem; text-align: center; }
+
+  /* ---------- Off-screen printable report ---------- */
+  /* NOTE: must be position:absolute, not fixed — html2canvas has a known bug
+     where "fixed" off-screen elements get captured incorrectly (it ends up
+     rendering whatever is on-screen instead of this element). */
+  .print-report {
+    position: absolute; left: -10000px; top: 0; width: 780px;
+    background: #ffffff; color: #1a1a1a; padding: 40px;
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  }
+  .print-report h2 { font-size: 22px; margin-bottom: 6px; }
+  .print-report .print-meta { font-size: 13px; color: #666; margin-bottom: 20px; }
+  .print-report table { width: 100%; font-size: 13px; border-collapse: collapse; margin-bottom: 18px; }
+  .print-report th, .print-report td { padding: 8px 4px; text-align: left; }
+  .print-report th { color: #333; border-bottom: 2px solid #1a1a1a; }
+  .print-report tr { border-bottom: 1px solid #ddd; }
+  .print-report .print-total-row td { font-weight: 700; border-top: 2px solid #1a1a1a; border-bottom: none; }
+  .print-receipts { margin-top: 20px; }
+  .print-receipt-item { display: block; width: 100%; margin: 0 0 24px; text-align: center; font-size: 13px; page-break-inside: avoid; }
+  .print-receipt-item img { width: 100%; max-height: 480px; object-fit: contain; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<div class="bg-dots"></div>
+
+<div class="app-container">
+
+  <div class="app-header">
+    <div class="app-title">出差報帳助手</div>
+    <div class="icon-btn">📋</div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-top">
+      <div class="hero-label">總計請領金額</div>
+      <div class="icon-btn" style="width:30px;height:30px;font-size:12px;">i</div>
+    </div>
+    <div class="hero-center" id="heroTotalList"></div>
+    <svg class="hero-orb" viewBox="0 0 260 140" fill="none">
+      <ellipse cx="130" cy="20" rx="120" ry="14" stroke="rgba(255,255,255,0.35)" stroke-dasharray="2 4"/>
+      <ellipse cx="130" cy="20" rx="80" ry="9" stroke="rgba(255,255,255,0.25)" stroke-dasharray="2 4"/>
+      <circle cx="70" cy="24" r="2" fill="rgba(255,255,255,0.6)"/>
+      <circle cx="150" cy="14" r="2" fill="rgba(255,255,255,0.6)"/>
+      <circle cx="190" cy="26" r="2" fill="rgba(255,255,255,0.6)"/>
+    </svg>
+  </div>
+
+  <div class="page-dots">
+    <div class="d active" id="dot0"></div>
+    <div class="d" id="dot1"></div>
+    <div class="d" id="dot2"></div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="card-dark">
+      <div>
+        <div class="mini-label">報帳項目數</div>
+        <div class="mini-value dot-num big" id="itemCount">0</div>
+      </div>
+      <div class="ruler" id="itemRuler"></div>
+    </div>
+
+    <div class="card-navy">
+      <div><div class="mini-label">顯示縮圖預覽</div></div>
+      <div class="toggle on" id="thumbToggle" onclick="toggleThumbs()"><div class="knob"></div></div>
+    </div>
+
+    <div class="card-warm">
+      <div class="mini-label">憑證附件比例</div>
+      <div class="mini-value dot-num big" id="receiptRatio">0%</div>
+      <svg class="arc-deco" width="70" height="40" viewBox="0 0 70 40" fill="none">
+        <path d="M2 38 Q 20 5 38 30" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+        <path d="M25 38 Q 45 15 68 32" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
+        <circle cx="2" cy="38" r="2.5" fill="#f5d78a"/>
+        <circle cx="38" cy="30" r="2.5" fill="#f5d78a"/>
+        <circle cx="68" cy="32" r="2.5" fill="#e0662c"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="segmented">
+    <button class="seg-btn active" onclick="switchTab('add', event)">新增支出</button>
+    <button class="seg-btn" onclick="switchTab('list', event)">支出清單</button>
+    <button class="seg-btn" onclick="switchTab('export', event)">匯出報告</button>
+  </div>
+
+  <!-- Add Tab -->
+  <div id="add" class="tab-content active">
+    <div class="expense-form">
+      <div id="editingBanner" style="display:none; align-items:center; justify-content:space-between; background: rgba(244,114,182,0.12); border: 1px solid rgba(244,114,182,0.3); border-radius: 14px; padding: 0.7rem 1rem; margin-bottom: 1.1rem; font-size: 13px; color: #f9a8d4;">
+        <span>✏️ 正在編輯這筆支出</span>
+        <span style="cursor:pointer; text-decoration: underline;" onclick="resetForm()">取消編輯</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">支出類別</label>
+        <div class="chip-row" id="categoryChips"></div>
+      </div>
+
+      <div id="newCategoryForm" style="display:none; margin: 0.75rem 0 1.1rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 16px; border: 1px solid rgba(255,255,255,0.08);">
+        <div class="form-group">
+          <label class="form-label">新類別名稱</label>
+          <input type="text" class="form-input" id="newCategoryInput" placeholder="例如：停車費">
+        </div>
+        <div style="display:flex; gap:0.5rem;">
+          <button class="btn btn-primary" style="flex:1;" onclick="addNewCategory()">確認</button>
+          <button class="btn btn-secondary" style="flex:1;" onclick="hideNewCategoryForm()">取消</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">金額 / 幣別 / 日期</label>
+        <div class="form-row-3">
+          <input type="number" class="form-input" id="amount" placeholder="金額" step="0.01">
+          <select class="form-select" id="currencySelect"></select>
+          <input type="date" class="form-input" id="date">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">描述（可選）</label>
+        <input type="text" class="form-input" id="description" placeholder="例如：台北往返東京機票">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">上傳憑證照片</label>
+        <div class="file-upload-btn" onclick="document.getElementById('fileInput').click();">📷 點擊拍照或上傳照片</div>
+        <input type="file" id="fileInput" accept="image/*">
+        <img id="previewImage" class="image-preview" style="display:none;">
+      </div>
+
+      <div class="button-group">
+        <button class="btn btn-primary" id="addExpenseBtn" onclick="addExpense()">添加支出</button>
+        <button class="btn btn-secondary" onclick="resetForm()">清除表單</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- List Tab -->
+  <div id="list" class="tab-content">
+    <div id="expenseList" class="expense-list"></div>
+  </div>
+
+  <!-- Export Tab -->
+  <div id="export" class="tab-content">
+    <div class="export-card">
+      <h3>報帳總結</h3>
+      <div id="exportSummary"></div>
+      <div class="total-block" id="exportTotals"></div>
+      <div class="button-group" style="margin-top: 1.5rem;">
+        <button class="btn btn-primary" onclick="exportToPDF()">匯出為 PDF</button>
+        <button class="btn btn-secondary" onclick="exportToCSV()">匯出為 CSV</button>
+      </div>
+      <div class="export-hint" id="pdfStatus">PDF 匯出需要一次網路連線以載入產生工具（僅首次使用時）。</div>
+    </div>
+  </div>
+</div>
+
+<!-- Image Modal -->
+<div id="imageModal" class="modal">
+  <div class="modal-content">
+    <span class="modal-close" onclick="closeImageModal()">&times;</span>
+    <img id="modalImage" class="full-image">
+  </div>
+</div>
+
+<!-- Off-screen printable report for PDF export -->
+<div id="printReport" class="print-report"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+  const CATEGORY_ICONS = { '機票':'✈️','飯店':'🏨','交通費':'🚕','電信費':'📶','登機證':'🎫','餐飲':'🍽️','其他':'🧾' };
+  function catIcon(cat) { return CATEGORY_ICONS[cat] || '🏷️'; }
+
+  const CURRENCIES = {
+    TWD: { symbol: 'NT$', name: '新台幣' },
+    USD: { symbol: '$', name: '美元' },
+    JPY: { symbol: '¥', name: '日圓' },
+    CNY: { symbol: '¥', name: '人民幣' },
+    EUR: { symbol: '€', name: '歐元' },
+    GBP: { symbol: '£', name: '英鎊' },
+    HKD: { symbol: 'HK$', name: '港幣' },
+    KRW: { symbol: '₩', name: '韓元' },
+    SGD: { symbol: 'S$', name: '新加坡幣' },
+    THB: { symbol: '฿', name: '泰銖' },
+    VND: { symbol: '₫', name: '越南盾' },
+    MYR: { symbol: 'RM', name: '馬來幣' }
+  };
+
+  function formatMoney(amount, code) {
+    const cur = CURRENCIES[code] || { symbol: code, name: code };
+    const num = amount.toLocaleString('zh-TW', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return `${cur.symbol} ${num}`;
+  }
+
+  let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+  let categories = JSON.parse(localStorage.getItem('categories')) || ['機票','飯店','交通費','電信費','登機證','餐飲','其他'];
+  let showThumbs = localStorage.getItem('showThumbs') !== 'false';
+  let lastCurrency = localStorage.getItem('lastCurrency') || 'TWD';
+  let currentImage = null;
+  let selectedCategory = '';
+  let editingId = null;
+
+  function setDefaultDate() { document.getElementById('date').value = new Date().toISOString().split('T')[0]; }
+
+  function populateCurrencySelect() {
+    const select = document.getElementById('currencySelect');
+    select.innerHTML = '';
+    Object.keys(CURRENCIES).forEach(code => {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = code;
+      opt.title = CURRENCIES[code].name;
+      select.appendChild(opt);
+    });
+    select.value = lastCurrency;
+  }
+
+  function renderCategoryChips() {
+    const row = document.getElementById('categoryChips');
+    row.innerHTML = categories.map(cat =>
+      `<div class="chip ${cat === selectedCategory ? 'active' : ''}" onclick="selectCategory('${cat}')">${catIcon(cat)} ${cat}</div>`
+    ).join('') + `<div class="chip add-chip" onclick="showNewCategoryForm()">+ 新增類別</div>`;
+  }
+
+  function selectCategory(cat) { selectedCategory = cat; renderCategoryChips(); }
+
+  function activateTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.seg-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(tab).classList.add('active');
+
+    const idx = tab === 'add' ? 0 : (tab === 'list' ? 1 : 2);
+    document.querySelectorAll('.seg-btn')[idx].classList.add('active');
+
+    document.querySelectorAll('.page-dots .d').forEach(d => d.classList.remove('active'));
+    document.getElementById('dot' + idx).classList.add('active');
+
+    if (tab === 'list') renderExpenses();
+    if (tab === 'export') renderExportSummary();
+  }
+
+  function switchTab(tab, evt) { activateTab(tab); }
+
+  function toggleThumbs() {
+    showThumbs = !showThumbs;
+    localStorage.setItem('showThumbs', showThumbs);
+    document.getElementById('thumbToggle').classList.toggle('on', showThumbs);
+    renderExpenses();
+  }
+
+  function showNewCategoryForm() {
+    document.getElementById('newCategoryForm').style.display = 'block';
+    document.getElementById('newCategoryInput').focus();
+  }
+  function hideNewCategoryForm() {
+    document.getElementById('newCategoryForm').style.display = 'none';
+    document.getElementById('newCategoryInput').value = '';
+  }
+  function addNewCategory() {
+    const newCat = document.getElementById('newCategoryInput').value.trim();
+    if (newCat && !categories.includes(newCat)) {
+      categories.push(newCat);
+      localStorage.setItem('categories', JSON.stringify(categories));
+      selectedCategory = newCat;
+      renderCategoryChips();
+      hideNewCategoryForm();
+    }
+  }
+
+  document.getElementById('fileInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        currentImage = event.target.result;
+        const preview = document.getElementById('previewImage');
+        preview.src = currentImage;
+        preview.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  function addExpense() {
+    const category = selectedCategory;
+    const amount = parseFloat(document.getElementById('amount').value);
+    const currency = document.getElementById('currencySelect').value;
+    const date = document.getElementById('date').value;
+    const description = document.getElementById('description').value;
+    if (!category || !amount || !date) { alert('請填寫必填欄位：類別、金額、日期'); return; }
+
+    if (editingId !== null) {
+      const idx = expenses.findIndex(e => e.id === editingId);
+      if (idx !== -1) {
+        expenses[idx] = { ...expenses[idx], category, amount: parseFloat(amount.toFixed(2)), currency, date, description, image: currentImage };
+      }
+      lastCurrency = currency;
+      localStorage.setItem('lastCurrency', lastCurrency);
+      localStorage.setItem('expenses', JSON.stringify(expenses));
+      resetForm();
+      updateSummary();
+      activateTab('list');
+      return;
+    }
+
+    expenses.push({ id: Date.now(), category, amount: parseFloat(amount.toFixed(2)), currency, date, description, image: currentImage });
+    lastCurrency = currency;
+    localStorage.setItem('lastCurrency', lastCurrency);
+    localStorage.setItem('expenses', JSON.stringify(expenses));
+    resetForm();
+    updateSummary();
+    alert('支出已添加');
+  }
+
+  function editExpense(id) {
+    const exp = expenses.find(e => e.id === id);
+    if (!exp) return;
+    editingId = id;
+    selectedCategory = exp.category;
+    renderCategoryChips();
+    document.getElementById('amount').value = exp.amount;
+    document.getElementById('currencySelect').value = exp.currency;
+    document.getElementById('date').value = exp.date;
+    document.getElementById('description').value = exp.description || '';
+    currentImage = exp.image || null;
+    const preview = document.getElementById('previewImage');
+    if (currentImage) { preview.src = currentImage; preview.style.display = 'block'; }
+    else { preview.style.display = 'none'; }
+
+    document.getElementById('addExpenseBtn').textContent = '更新支出';
+    document.getElementById('editingBanner').style.display = 'flex';
+
+    activateTab('add');
+  }
+
+  function resetForm() {
+    selectedCategory = '';
+    renderCategoryChips();
+    document.getElementById('amount').value = '';
+    document.getElementById('description').value = '';
+    document.getElementById('fileInput').value = '';
+    document.getElementById('previewImage').style.display = 'none';
+    currentImage = null;
+    document.getElementById('currencySelect').value = lastCurrency;
+    setDefaultDate();
+    editingId = null;
+    document.getElementById('addExpenseBtn').textContent = '添加支出';
+    document.getElementById('editingBanner').style.display = 'none';
+  }
+
+  function renderExpenses() {
+    const list = document.getElementById('expenseList');
+    if (expenses.length === 0) {
+      list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><div>還沒有支出記錄</div></div>';
+      return;
+    }
+    const sorted = [...expenses].sort((a,b) => b.id - a.id);
+    list.innerHTML = sorted.map(exp => `
+      <div class="expense-item">
+        <div class="expense-header">
+          <div>
+            <div class="cat-pill">${catIcon(exp.category)} ${exp.category}</div>
+            <div class="expense-date">${exp.date}</div>
+          </div>
+          <div class="expense-amount">${formatMoney(exp.amount, exp.currency)}</div>
+        </div>
+        ${exp.description ? `<div class="expense-description">${exp.description}</div>` : ''}
+        ${exp.image ? (showThumbs
+          ? `<img src="${exp.image}" class="expense-image" onclick="openImageModal('${exp.image}')">`
+          : `<div class="thumb-badge" onclick="openImageModal('${exp.image}')">📷 已附憑證（點擊查看）</div>`) : ''}
+        <div class="expense-actions">
+          <button class="icon-btn-small edit-btn" onclick="editExpense(${exp.id})">✏️ 編輯</button>
+          <button class="icon-btn-small" onclick="deleteExpense(${exp.id}, this)">🗑 刪除</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function deleteExpense(id, btnEl) {
+    if (btnEl.dataset.confirming !== 'yes') {
+      btnEl.dataset.confirming = 'yes';
+      btnEl.textContent = '⚠️ 再點一次確認刪除';
+      btnEl.style.background = 'rgba(239,68,68,0.4)';
+      clearTimeout(btnEl._resetTimer);
+      btnEl._resetTimer = setTimeout(() => {
+        btnEl.dataset.confirming = 'no';
+        btnEl.innerHTML = '🗑 刪除';
+        btnEl.style.background = '';
+      }, 3000);
+      return;
+    }
+    clearTimeout(btnEl._resetTimer);
+    expenses = expenses.filter(e => e.id !== id);
+    localStorage.setItem('expenses', JSON.stringify(expenses));
+    renderExpenses();
+    updateSummary();
+  }
+
+  function openImageModal(src) { document.getElementById('modalImage').src = src; document.getElementById('imageModal').classList.add('active'); }
+  function closeImageModal() { document.getElementById('imageModal').classList.remove('active'); }
+
+  function groupByCurrency() {
+    const grouped = {};
+    expenses.forEach(exp => { grouped[exp.currency] = (grouped[exp.currency] || 0) + exp.amount; });
+    return grouped;
+  }
+
+  function renderTotalsList(targetEl, grouped, sizeClass) {
+    const codes = Object.keys(grouped);
+    if (codes.length === 0) {
+      targetEl.innerHTML = `<div class="hero-total-row"><span class="cur-code">${lastCurrency}</span><span class="hero-amount dot-num ${sizeClass || ''}">${formatMoney(0, lastCurrency)}</span></div>`;
+      return;
+    }
+    targetEl.innerHTML = codes.map(code =>
+      `<div class="hero-total-row"><span class="cur-code">${code}</span><span class="hero-amount dot-num ${sizeClass || ''}">${formatMoney(grouped[code], code)}</span></div>`
+    ).join('');
+  }
+
+  function updateSummary() {
+    const grouped = groupByCurrency();
+    renderTotalsList(document.getElementById('heroTotalList'), grouped);
+
+    document.getElementById('itemCount').textContent = expenses.length;
+
+    const withImg = expenses.filter(e => e.image).length;
+    const ratio = expenses.length ? Math.round((withImg/expenses.length)*100) : 0;
+    document.getElementById('receiptRatio').textContent = ratio + '%';
+
+    const ruler = document.getElementById('itemRuler');
+    const fillPos = Math.min(expenses.length, 20);
+    let ticks = '';
+    for (let i = 1; i <= 20; i++) ticks += `<div class="tick ${i === Math.max(fillPos,1) ? 'hi' : ''}"></div>`;
+    ruler.innerHTML = ticks;
+  }
+
+  function renderExportSummary() {
+    const summary = document.getElementById('exportSummary');
+    const totalsEl = document.getElementById('exportTotals');
+    if (expenses.length === 0) {
+      summary.innerHTML = '<p style="color:rgba(255,255,255,0.4);">沒有支出記錄</p>';
+      totalsEl.innerHTML = '';
+      return;
+    }
+    const byCat = {};
+    expenses.forEach(exp => {
+      const key = exp.category + '|' + exp.currency;
+      byCat[key] = (byCat[key] || 0) + exp.amount;
+    });
+    let html = '';
+    Object.entries(byCat).forEach(([key, amt]) => {
+      const [cat, cur] = key.split('|');
+      html += `<div class="cat-row"><span>${catIcon(cat)} ${cat} <span style="color:rgba(255,255,255,0.4);font-size:11px;">${cur}</span></span><span class="amt">${formatMoney(amt, cur)}</span></div>`;
+    });
+    summary.innerHTML = html;
+
+    const grouped = groupByCurrency();
+    totalsEl.innerHTML = Object.entries(grouped).map(([code, amt]) =>
+      `<div class="total-row"><span class="lbl">${code} 總計</span><span class="val dot-num">${formatMoney(amt, code)}</span></div>`
+    ).join('');
+  }
+
+  function exportToCSV() {
+    if (expenses.length === 0) { alert('目前沒有支出記錄可以匯出'); return; }
+    let csv = '日期,類別,幣別,金額,描述\n';
+    expenses.forEach(exp => { csv += `${exp.date},${exp.category},${exp.currency},${exp.amount},${(exp.description||'').replace(/,/g,'，')}\n`; });
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `出差報帳_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+  }
+
+  async function exportToPDF() {
+    const statusEl = document.getElementById('pdfStatus');
+    if (expenses.length === 0) { alert('目前沒有支出記錄可以匯出'); return; }
+
+    // Open a blank tab synchronously, at the moment of the click, so mobile
+    // Safari/Chrome still treat it as a trusted user action even after the
+    // async PDF-building work below finishes.
+    let pdfWindow = null;
+    try { pdfWindow = window.open('', '_blank'); } catch (e) { pdfWindow = null; }
+
+    if (typeof window.jspdf === 'undefined' || typeof html2canvas === 'undefined') {
+      statusEl.textContent = 'PDF 產生工具尚未載入完成，請確認網路連線後再試一次。';
+      statusEl.style.color = '#ff8a8a';
+      if (pdfWindow) pdfWindow.close();
+      return;
+    }
+
+    statusEl.textContent = '正在產生 PDF，請稍候…';
+    statusEl.style.color = 'rgba(255,255,255,0.4)';
+
+    const grouped = groupByCurrency();
+    const today = new Date().toLocaleDateString('zh-TW');
+
+    // Summary + table only — receipt photos are handled separately below,
+    // each on its own page, so a photo can never get cut across a page break.
+    let summaryHtml = `<h2>出差報帳單</h2>`;
+    summaryHtml += `<div class="print-meta">列印日期：${today}　｜　項目數：${expenses.length}</div>`;
+    summaryHtml += '<table><tr><th>日期</th><th>類別</th><th>描述</th><th style="text-align:right;">金額</th></tr>';
+    expenses.forEach(exp => {
+      summaryHtml += `<tr><td>${exp.date}</td><td>${exp.category}</td><td>${exp.description || ''}</td><td style="text-align:right;">${formatMoney(exp.amount, exp.currency)}</td></tr>`;
+    });
+    Object.entries(grouped).forEach(([code, amt]) => {
+      summaryHtml += `<tr class="print-total-row"><td colspan="3">${code} 總計</td><td style="text-align:right;">${formatMoney(amt, code)}</td></tr>`;
+    });
+    summaryHtml += '</table>';
+
+    const reportEl = document.getElementById('printReport');
+    reportEl.innerHTML = summaryHtml;
+
+    try {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p', 'pt', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 40;
+
+      // --- Page 1+: summary table (safe to slice; it's just text rows) ---
+      const canvas = await html2canvas(reportEl, { scale: 2, backgroundColor: '#ffffff', useCORS: true, scrollX: 0, scrollY: 0 });
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const imgWidth = pageWidth;
+      const imgHeight = canvas.height * imgWidth / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      // --- One dedicated page per receipt photo, scaled to fit fully ---
+      const withImages = expenses.filter(exp => exp.image);
+      for (const exp of withImages) {
+        pdf.addPage();
+
+        // Caption drawn on a native <canvas> (Canvas 2D text supports Chinese
+        // directly via the browser's own font engine — no extra library needed).
+        const captionCanvas = document.createElement('canvas');
+        captionCanvas.width = 1400;
+        captionCanvas.height = 110;
+        const ctx = captionCanvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, captionCanvas.width, captionCanvas.height);
+        ctx.fillStyle = '#1a1a1a';
+        ctx.font = '600 40px -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif';
+        ctx.fillText(`${exp.category}　${formatMoney(exp.amount, exp.currency)}`, 4, 48);
+        ctx.font = '30px -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif';
+        ctx.fillStyle = '#666666';
+        ctx.fillText(`${exp.date}${exp.description ? '　' + exp.description : ''}`, 4, 92);
+
+        const captionData = captionCanvas.toDataURL('image/png');
+        const captionW = pageWidth - margin * 2;
+        const captionH = captionW * (captionCanvas.height / captionCanvas.width);
+        pdf.addImage(captionData, 'PNG', margin, margin, captionW, captionH);
+
+        // Load the photo to read its real dimensions so it can be fit
+        // (never cropped, never stretched, never split) within the page.
+        const dims = await new Promise((resolve) => {
+          const im = new Image();
+          im.onload = () => resolve({ w: im.naturalWidth || 1, h: im.naturalHeight || 1 });
+          im.onerror = () => resolve({ w: 1, h: 1 });
+          im.src = exp.image;
+        });
+
+        const availW = pageWidth - margin * 2;
+        const availH = pageHeight - margin * 2 - captionH - 20;
+        let drawW = availW;
+        let drawH = drawW * (dims.h / dims.w);
+        if (drawH > availH) {
+          drawH = availH;
+          drawW = drawH * (dims.w / dims.h);
+        }
+        const drawX = margin + (availW - drawW) / 2;
+        const drawY = margin + captionH + 20;
+        const fmt = exp.image.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+
+        pdf.addImage(exp.image, fmt, drawX, drawY, drawW, drawH);
+      }
+
+      const filename = `出差報帳_${new Date().toISOString().split('T')[0]}.pdf`;
+      const blob = pdf.output('blob');
+      const blobUrl = URL.createObjectURL(blob);
+
+      if (pdfWindow && !pdfWindow.closed) {
+        pdfWindow.location.href = blobUrl;
+        statusEl.textContent = 'PDF 已在新分頁開啟，請用分享／儲存功能存檔（若沒看到新分頁，請允許瀏覽器的彈出視窗權限後再試一次）。';
+      } else {
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        statusEl.textContent = 'PDF 已產生，請查看瀏覽器的下載項目。';
+      }
+      statusEl.style.color = 'rgba(255,255,255,0.4)';
+    } catch (err) {
+      statusEl.textContent = 'PDF 產生失敗：' + (err && err.message ? err.message : String(err)) + '（可改用「匯出為 CSV」）';
+      statusEl.style.color = '#ff8a8a';
+      if (pdfWindow && !pdfWindow.closed) pdfWindow.close();
+    }
+  }
+
+  // Init
+  setDefaultDate();
+  populateCurrencySelect();
+  renderCategoryChips();
+  document.getElementById('thumbToggle').classList.toggle('on', showThumbs);
+  updateSummary();
+</script>
+
+</body>
+</html>
