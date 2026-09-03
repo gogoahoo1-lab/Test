@@ -296,6 +296,16 @@ td.n,th.n,td.c{white-space:nowrap}
   .blank{padding:40px 20px;border-radius:26px}
   .blank h2{font-size:22px}
 }
+@media (max-width:420px){
+  .sheet-content{padding:12px 10px calc(30px + env(safe-area-inset-bottom))}
+  .panel{padding:4px 2px}
+  th,td{padding:8px 8px;font-size:12px}
+  td.n{font-size:13.5px}
+  .panel h4{margin:12px 10px 2px}
+  .panel .sub{margin:0 10px 10px}
+  .tip{padding:12px;font-size:12px}
+  .meta,.olist{margin-left:10px;margin-right:10px}
+}
 @media (max-width:380px){
   .grid,.grid-2{grid-template-columns:1fr}
   .duo{grid-template-columns:1fr}
@@ -591,8 +601,13 @@ td.n,th.n,td.c{white-space:nowrap}
     <p class="sub" style="margin-top:14px">1. 航班異動、系統／人員作業異常或發餐失誤導致餐食不足。
 2. 餐食發現異物、食材變質或腐壞進而影響旅客。</p>
     <table>
-      <thead><tr><th>艙等</th><th class="n">F</th><th class="n">J</th><th class="n">W</th><th class="n">Y</th></tr></thead>
-      <tbody><tr><td>優惠券（USD）</td><td class="n">100</td><td class="n">75</td><td class="n">50</td><td class="n">25</td></tr></tbody>
+      <thead><tr><th>艙等</th><th class="n">優惠券（USD）</th></tr></thead>
+      <tbody>
+        <tr><td>F</td><td class="n">100</td></tr>
+        <tr><td>J</td><td class="n">75</td></tr>
+        <tr><td>W</td><td class="n">50</td></tr>
+        <tr><td>Y</td><td class="n">25</td></tr>
+      </tbody>
     </table>
   </div>
 </template>
@@ -601,8 +616,13 @@ td.n,th.n,td.c{white-space:nowrap}
   <div class="panel">
     <p class="sub" style="margin-top:14px">如：遭機上行李砸傷、設備碰撞、熱飲潑濺燙傷、地面不平絆倒等。</p>
     <table>
-      <thead><tr><th>艙等</th><th class="n">F</th><th class="n">J</th><th class="n">W</th><th class="n">Y</th></tr></thead>
-      <tbody><tr><td>優惠券（USD）</td><td class="n">200</td><td class="n">150</td><td class="n">100</td><td class="n">50</td></tr></tbody>
+      <thead><tr><th>艙等</th><th class="n">優惠券（USD）</th></tr></thead>
+      <tbody>
+        <tr><td>F</td><td class="n">200</td></tr>
+        <tr><td>J</td><td class="n">150</td></tr>
+        <tr><td>W</td><td class="n">100</td></tr>
+        <tr><td>Y</td><td class="n">50</td></tr>
+      </tbody>
     </table>
   </div>
   <div class="tip">註 1：不適用升等至頭等艙；哩程依原訂艙等累積，餐食安排視機上配餐情況提供。
@@ -613,8 +633,13 @@ td.n,th.n,td.c{white-space:nowrap}
   <div class="panel">
     <p class="sub" style="margin-top:14px">航班因本公司造成之因素導致旅客已預訂不可變更或退費之地面交通／住宿票券無法使用；或因無法順利執飛衍生之交通／住宿費。如：航班延誤／異動致旅客失接、飛行器異常致航班取消。</p>
     <table>
-      <thead><tr><th>地區</th><th class="n">亞洲</th><th class="n">美洲</th><th class="n">歐洲</th><th class="n">瑞士</th></tr></thead>
-      <tbody><tr><td>上限（TWD）</td><td class="n">5,000</td><td class="n">7,000</td><td class="n">6,000</td><td class="n">8,000</td></tr></tbody>
+      <thead><tr><th>地區</th><th class="n">上限（TWD）</th></tr></thead>
+      <tbody>
+        <tr><td>亞洲</td><td class="n">5,000</td></tr>
+        <tr><td>美洲</td><td class="n">7,000</td></tr>
+        <tr><td>歐洲</td><td class="n">6,000</td></tr>
+        <tr><td>瑞士</td><td class="n">8,000</td></tr>
+      </tbody>
     </table>
   </div>
   <div class="tip">依場站簽約之飯店或參閱上表金額安排旅客住宿，如金額超過請另案請示並獲得相應之授權。
@@ -628,8 +653,13 @@ td.n,th.n,td.c{white-space:nowrap}
 
 場站依「先升後降」原則提供旅客升等至上一艙等；如上一艙等已無機位，請參閱「A. 訂位票務 02」非自願降等情境作業。</p>
     <table>
-      <thead><tr><th>無法升等時之優惠券</th><th class="n">F</th><th class="n">J</th><th class="n">W</th><th class="n">Y</th></tr></thead>
-      <tbody><tr><td>USD</td><td class="n">200</td><td class="n">150</td><td class="n">100</td><td class="n">50</td></tr></tbody>
+      <thead><tr><th>艙等</th><th class="n">無法升等時之優惠券（USD）</th></tr></thead>
+      <tbody>
+        <tr><td>F</td><td class="n">200</td></tr>
+        <tr><td>J</td><td class="n">150</td></tr>
+        <tr><td>W</td><td class="n">100</td></tr>
+        <tr><td>Y</td><td class="n">50</td></tr>
+      </tbody>
     </table>
   </div>
   <div class="tip">註 1：升等順位依 AOD-PHM 相關作業流程辦理，相關安排應盡可能避免衍生公平性爭議。
