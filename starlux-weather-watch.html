@@ -224,7 +224,8 @@ svg{display:block}
     <h2>TAF 中繼</h2>
     <div class="field"><input type="text" id="proxy" placeholder="https://api.allorigins.win/raw?url="></div>
     <p class="hint">美國 AWC 的 TAF 服務不開放跨網域存取，網頁必須經中繼取得。留空代表直接連線，只有在你自架服務或用瀏覽器擴充解除限制時才會成功。換成自己的中繼網址最穩定。</p>
-    <div class="acts"><button class="solid" id="saveProxy">儲存並重抓</button></div>
+    <div class="acts"><button class="solid" id="saveProxy">儲存並重抓</button><button class="ghost" id="testRelay">測試中繼</button></div>
+    <div id="relayOut"></div>
   </div>
 </main>
 
@@ -458,33 +459,72 @@ function stampText(){
   const mins=Math.floor((Date.now()-fetchedAt)/60000);
   const t=fetchedAt.toLocaleString("zh-TW",{hour12:false,month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});
   const rel=mins<1?"剛剛":mins<60?mins+" 分鐘前":Math.floor(mins/60)+" 小時前";
-  el.textContent="更新於 "+t+"　"+rel+"　"+(tafOK?("TAF "+tafOK+" 站"):("TAF 未取得"+(tafFail?"："+tafFail:"")));
+  el.textContent="更新於 "+t+"　"+rel+"　"+(tafOK?("TAF "+tafOK+" 站"+(relayUsed?"（"+relayUsed+"）":"")):("TAF 未取得"+(tafFail?"："+tafFail:"")));
 }
 setInterval(stampText,60000);
 
-async function viaProxy(url){
-  const tries=PROXY?[PROXY+encodeURIComponent(url),url]:[url];
-  let last="";
-  for(const u of tries){
-    try{ const r=await fetch(u); if(!r.ok){last="HTTP "+r.status;continue;} return await r.text(); }
-    catch(e){ last=e.message||"連線失敗"; }
+/* ── 取得 TAF / METAR：多重中繼與診斷 ─────────────────── */
+let relayUsed="", tafLog=[];
+
+function relayList(){
+  const out=[];
+  if(PROXY) out.push({n:"自訂中繼",u:u=>PROXY+encodeURIComponent(u)});
+  out.push({n:"allorigins",u:u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u)});
+  out.push({n:"corsproxy",u:u=>"https://corsproxy.io/?url="+encodeURIComponent(u)});
+  out.push({n:"codetabs",u:u=>"https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(u)});
+  out.push({n:"直連",u:u=>u});
+  const seen=new Set();
+  return out.filter(r=>{const k=r.u("https://x/"); if(seen.has(k))return false; seen.add(k); return true;});
+}
+
+async function tryFetch(url,ms){
+  const c=new AbortController(), t=setTimeout(()=>c.abort(),ms||14000);
+  try{
+    const r=await fetch(url,{signal:c.signal});
+    const txt=await r.text();
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    return txt;
+  }catch(e){
+    throw new Error(e.name==="AbortError"?"逾時":(e.message||"連線失敗"));
+  }finally{ clearTimeout(t); }
+}
+
+function parseArray(txt){
+  const s=(txt||"").trim();
+  if(!s) return [];
+  if(s[0]!=="["&&s[0]!=="{") throw new Error("回傳不是 JSON，可能是中繼的錯誤頁");
+  const j=JSON.parse(s);
+  return Array.isArray(j)?j:(j.data&&Array.isArray(j.data)?j.data:[j]);
+}
+
+function batches(arr,n){const o=[];for(let i=0;i<arr.length;i+=n)o.push(arr.slice(i,i+n));return o;}
+
+async function awcFetch(kind,ids){
+  const urls=batches(ids,12).map(b=>"https://aviationweather.gov/api/data/"+kind+"?format=json&ids="+b.join(","));
+  for(const r of relayList()){
+    try{
+      const rows=[];
+      for(const u of urls) rows.push(...parseArray(await tryFetch(r.u(u))));
+      relayUsed=r.n;
+      return rows;
+    }catch(e){ tafLog.push(r.n+" 取 "+kind+"："+e.message); }
   }
-  throw new Error(last||"連線失敗");
+  throw new Error(tafLog[tafLog.length-1]||"全部中繼都失敗");
 }
 
 async function fetchAWC(){
+  tafLog=[]; relayUsed="";
   const ids=[...new Set(STATIONS.map(s=>(s.k||"").toUpperCase()).filter(x=>/^[A-Z]{4}$/.test(x)))];
   const out={taf:{},metar:{}};
   if(!ids.length){tafOK=0;tafFail="沒有 ICAO 代碼";return out;}
   try{
-    const t=await viaProxy("https://aviationweather.gov/api/data/taf?format=json&ids="+ids.join(","));
-    (JSON.parse(t)||[]).forEach(x=>{ if(x&&x.icaoId&&x.rawTAF) out.taf[x.icaoId]=x; });
-    try{
-      const m=await viaProxy("https://aviationweather.gov/api/data/metar?format=json&ids="+ids.join(","));
-      (JSON.parse(m)||[]).forEach(x=>{ if(x&&x.icaoId&&x.rawOb) out.metar[x.icaoId]=x; });
-    }catch(e){}
-    tafOK=Object.keys(out.taf).length; tafFail=tafOK?"":"回傳空資料";
+    (await awcFetch("taf",ids)).forEach(x=>{ if(x&&x.icaoId&&x.rawTAF) out.taf[x.icaoId]=x; });
+    tafOK=Object.keys(out.taf).length;
+    tafFail=tafOK?"":"中繼有回應但沒有 TAF 資料";
   }catch(e){ tafOK=0; tafFail=e.message; }
+  try{
+    (await awcFetch("metar",ids)).forEach(x=>{ if(x&&x.icaoId&&x.rawOb) out.metar[x.icaoId]=x; });
+  }catch(e){}
   return out;
 }
 
@@ -747,6 +787,26 @@ document.getElementById("reset").addEventListener("click",()=>{
 });
 
 document.getElementById("proxy").value=PROXY;
+document.getElementById("testRelay").addEventListener("click",async()=>{
+  const box=document.getElementById("relayOut");
+  PROXY=document.getElementById("proxy").value.trim();
+  const url="https://aviationweather.gov/api/data/taf?format=json&ids=RCTP";
+  const list=relayList();
+  box.innerHTML='<p class="hint">測試中，每項最多等 14 秒</p>';
+  const lines=[];
+  for(const r of list){
+    let msg;
+    const t0=Date.now();
+    try{
+      const rows=parseArray(await tryFetch(r.u(url)));
+      const ok=rows.length&&rows[0].rawTAF;
+      msg=ok?("成功　"+(Date.now()-t0)+" ms"):"連得上，但沒有 TAF 資料";
+    }catch(e){ msg=e.message; }
+    lines.push(r.n+"　"+msg);
+    box.innerHTML='<p class="hint">'+lines.map(esc).join("<br>")+'</p>';
+  }
+});
+
 document.getElementById("saveProxy").addEventListener("click",()=>{
   PROXY=document.getElementById("proxy").value.trim(); refresh();
 });
