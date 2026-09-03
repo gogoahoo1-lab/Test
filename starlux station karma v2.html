@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>場站作業查詢</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EFEDE8;
+  --ink:#0B0B0C;
+  --card:#FFFFFF;
+  --muted:#8C8B85;
+  --line:#E7E4DC;
+  --amber:#F3C24B;
+  --sage:#A8B27A;
+  --steel:#8FA3B8;
+  --clay:#C89B6A;
+  --alert:#E4552B;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:"Outfit","Noto Sans TC",-apple-system,BlinkMacSystemFont,sans-serif;
+  font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;
+  min-height:100vh;overflow-x:clip;
+}
+/* 背景 mesh 漸層 */
+.mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.75}
+.b1{width:620px;height:620px;left:-120px;top:-160px;background:radial-gradient(circle,#F6D27A 0%,rgba(246,210,122,0) 70%)}
+.b2{width:560px;height:560px;right:-100px;top:40px;background:radial-gradient(circle,#C9D39A 0%,rgba(201,211,154,0) 70%)}
+.b3{width:520px;height:520px;left:38%;top:220px;background:radial-gradient(circle,#E7A96A 0%,rgba(231,169,106,0) 70%)}
+.b4{width:480px;height:480px;left:-60px;top:520px;background:radial-gradient(circle,#AFC0CE 0%,rgba(175,192,206,0) 70%)}
+
+.shell{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:0 18px 60px}
+
+/* ---- 頂部藥丸導覽 ---- */
+.topbar{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  position:-webkit-sticky;position:sticky;top:0;z-index:40;
+  margin:0 -18px 24px;padding:16px 18px 12px;
+  background:rgba(239,237,232,.86);
+  -webkit-backdrop-filter:saturate(1.5) blur(14px);backdrop-filter:saturate(1.5) blur(14px);
+  border-bottom:1px solid transparent;transition:border-color .2s,box-shadow .2s;
+}
+.topbar.stuck{border-bottom-color:rgba(11,11,12,.08);box-shadow:0 10px 24px -22px rgba(11,11,12,.6)}
+.pills{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px}
+.pills::-webkit-scrollbar{display:none}
+.pill{
+  flex:0 0 auto;border:1px solid rgba(11,11,12,.16);background:transparent;color:var(--ink);
+  font-family:inherit;font-size:14px;font-weight:400;padding:8px 18px;border-radius:999px;
+  cursor:pointer;transition:background .18s,color .18s,border-color .18s;white-space:nowrap;
+}
+.pill:hover{border-color:rgba(11,11,12,.4)}
+.pill[aria-selected="true"]{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:500}
+.pill:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.who{margin-left:auto;display:flex;align-items:center;gap:10px}
+.who .badge{
+  width:38px;height:38px;border-radius:50%;background:var(--ink);color:#fff;
+  display:grid;place-items:center;font-size:12px;letter-spacing:.06em;font-weight:500;
+}
+.who .txt{line-height:1.25}
+.who .txt b{display:block;font-weight:500;font-size:14px}
+.who .txt span{font-size:12px;color:var(--muted)}
+
+/* ---- Hero ---- */
+.hero{display:grid;grid-template-columns:1.05fr 1fr;gap:16px;margin-bottom:16px;align-items:stretch}
+.hero-main{padding:6px 4px 0}
+.eyebrow{font-size:13px;color:var(--muted);margin:0 0 2px}
+.hero h1{
+  font-size:clamp(30px,5vw,44px);font-weight:500;letter-spacing:-.01em;margin:0 0 18px;line-height:1.1;
+}
+.bignum{display:flex;align-items:flex-end;gap:10px;margin-bottom:4px}
+.bignum .v{
+  font-size:clamp(52px,10vw,78px);font-weight:600;line-height:.9;letter-spacing:-.03em;
+  font-style:italic;font-feature-settings:"tnum";
+}
+.bignum .u{font-size:15px;color:var(--muted);padding-bottom:8px}
+.hero-note{font-size:13px;color:var(--muted);margin:6px 0 0;max-width:26em}
+.gauge-row{display:flex;gap:22px;align-items:center;margin-top:18px;flex-wrap:wrap}
+.tier{text-align:left}
+.tier b{display:block;font-size:24px;font-weight:600;font-style:italic;line-height:1}
+.tier span{font-size:12px;color:var(--muted)}
+
+/* ---- 卡片 ---- */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.card{
+  position:relative;background:var(--card);border-radius:28px;padding:18px 20px 20px;
+  min-height:172px;display:flex;flex-direction:column;justify-content:space-between;
+  box-shadow:0 1px 2px rgba(11,11,12,.04),0 12px 28px -18px rgba(11,11,12,.28);
+  border:0;text-align:left;font-family:inherit;color:inherit;cursor:pointer;
+  transition:transform .2s ease, box-shadow .2s ease;
+}
+.card:hover{transform:translateY(-3px);box-shadow:0 2px 4px rgba(11,11,12,.05),0 22px 40px -20px rgba(11,11,12,.35)}
+.card:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.card .top{display:flex;align-items:flex-start;justify-content:space-between}
+.ico{
+  width:36px;height:36px;border-radius:50%;border:1px solid rgba(11,11,12,.18);
+  display:grid;place-items:center;color:var(--ink);
+}
+.go{
+  width:34px;height:34px;border-radius:50%;background:var(--ink);color:#fff;
+  display:grid;place-items:center;flex:0 0 auto;
+}
+.card h3{font-size:16px;font-weight:400;margin:14px 0 0;letter-spacing:-.01em}
+.card .foot{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:14px}
+.stat{display:flex;align-items:flex-end;gap:5px}
+.stat .n{font-size:38px;font-weight:600;font-style:italic;line-height:.85;letter-spacing:-.02em}
+.stat .s{font-size:13px;color:var(--muted);padding-bottom:3px}
+.spark{opacity:.85;flex:0 0 auto}
+.dots{display:flex;align-items:center;gap:7px}
+.dots i{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.55;display:block}
+.dots i.big{width:22px;height:22px;opacity:1}
+
+/* 漸層強調卡 */
+.card.grad{
+  color:#fff;
+  background:
+    radial-gradient(120% 100% at 12% 18%,#8FA0AE 0%,rgba(143,160,174,0) 62%),
+    radial-gradient(110% 110% at 82% 26%,#7E8FA6 0%,rgba(126,143,166,0) 60%),
+    radial-gradient(120% 110% at 40% 92%,#C39A67 0%,rgba(195,154,103,0) 66%),
+    linear-gradient(150deg,#6E7C8B 0%,#9C8A73 100%);
+}
+.card.grad .ico{border-color:rgba(255,255,255,.5);color:#fff}
+.card.grad .go{background:#fff;color:var(--ink)}
+.card.grad .stat .s{color:rgba(255,255,255,.72)}
+.card.alert .ico{border-color:rgba(228,85,43,.45)}
+.card .flag{
+  position:absolute;left:44px;top:14px;width:16px;height:14px;
+  background:var(--alert);clip-path:polygon(50% 0,100% 100%,0 100%);border-radius:2px;
+}
+
+/* 白色小卡（Net worth 型） */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+.mini{
+  background:var(--card);border-radius:26px;padding:16px 18px;min-height:132px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  box-shadow:0 1px 2px rgba(11,11,12,.04),0 12px 28px -20px rgba(11,11,12,.3);
+  border:0;font-family:inherit;text-align:left;color:inherit;cursor:pointer;transition:transform .2s;
+}
+.mini:hover{transform:translateY(-3px)}
+.mini .lab{font-size:14px;color:var(--ink);line-height:1.25}
+.mini .val{font-size:30px;font-weight:600;font-style:italic;letter-spacing:-.02em}
+.mini .val em{font-style:normal;font-size:14px;color:var(--muted);font-weight:400;margin-right:3px}
+
+/* ---- 深色反轉區塊 ---- */
+.dark{
+  background:var(--ink);color:#fff;border-radius:36px;padding:28px 24px 30px;margin-top:22px;
+}
+.dark-head{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.dark-head h2{font-size:26px;font-weight:400;margin:0;letter-spacing:-.01em}
+.dark-head .count{font-size:26px;font-weight:600;font-style:italic}
+.dark-head .count span{font-size:13px;font-style:normal;font-weight:400;color:rgba(255,255,255,.55);margin-left:5px}
+.offers{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.offer{
+  border-radius:26px;padding:18px 20px 20px;color:#fff;border:0;font-family:inherit;text-align:left;
+  cursor:pointer;transition:transform .2s;min-height:158px;display:flex;flex-direction:column;justify-content:space-between;
+}
+.offer:hover{transform:translateY(-3px)}
+.offer.o1{background:radial-gradient(120% 120% at 20% 15%,#5C6E76 0%,rgba(92,110,118,0) 65%),linear-gradient(145deg,#3E4A50,#6C7A6A)}
+.offer.o2{background:radial-gradient(120% 120% at 25% 20%,#6E7A3C 0%,rgba(110,122,60,0) 66%),linear-gradient(145deg,#4C5527,#7C8642)}
+.offer.o3{background:radial-gradient(120% 120% at 22% 18%,#8A8177 0%,rgba(138,129,119,0) 64%),linear-gradient(145deg,#57524B,#8E8377)}
+.offer .oh{display:flex;align-items:center;gap:11px}
+.offer .oi{width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.55);display:grid;place-items:center}
+.offer .on{font-size:15px;line-height:1.2}
+.offer .stats{display:flex;gap:26px;margin-top:16px}
+.offer .stats div span{display:block;font-size:12px;color:rgba(255,255,255,.62)}
+.offer .stats div b{font-size:28px;font-weight:600;font-style:italic;letter-spacing:-.02em}
+.offer .stats div b i{font-style:normal;font-size:12px;font-weight:400;color:rgba(255,255,255,.7);margin-left:3px}
+
+/* ---- 空狀態 ---- */
+.blank{
+  background:rgba(255,255,255,.6);backdrop-filter:blur(8px);border-radius:32px;
+  padding:56px 28px;text-align:center;
+}
+.blank h2{font-size:26px;font-weight:500;margin:0 0 8px}
+.blank p{color:var(--muted);max-width:32em;margin:0 auto 6px;font-size:14px}
+.blank ul{display:inline-block;text-align:left;color:var(--muted);font-size:13.5px;margin:16px 0 0;padding-left:20px}
+
+/* ---- 詳細頁（滑出層） ---- */
+.sheet{
+  position:fixed;inset:0;z-index:50;background:rgba(11,11,12,.42);backdrop-filter:blur(3px);
+  display:flex;align-items:flex-end;justify-content:center;padding:0;
+}
+.sheet[hidden]{display:none}
+.sheet-inner{
+  background:var(--bg);width:100%;max-width:940px;max-height:92vh;overflow-y:auto;
+  border-radius:30px 30px 0 0;padding:0;animation:up .28s cubic-bezier(.2,.7,.3,1);
+  width:100%;overscroll-behavior:contain;
+}
+@keyframes up{from{transform:translateY(28px);opacity:0}to{transform:none;opacity:1}}
+.sheet-bar{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
+  position:sticky;top:0;background:var(--bg);padding:20px 20px 14px;z-index:2;
+  border-bottom:1px solid rgba(11,11,12,.06)}
+.sheet-bar>div{min-width:0}
+.sheet-content{padding:16px 16px calc(34px + env(safe-area-inset-bottom))}
+.sheet-bar h2{font-size:24px;font-weight:500;margin:0}
+.sheet-bar p{margin:4px 0 0;font-size:13px;color:var(--muted)}
+.x{width:38px;height:38px;border-radius:50%;background:var(--ink);color:#fff;border:0;cursor:pointer;font-size:17px;flex:0 0 auto}
+.panel{background:var(--card);border-radius:26px;padding:6px 4px;margin-bottom:14px;overflow:visible;overflow:clip}
+.panel h4{font-size:15px;font-weight:500;margin:14px 18px 2px}
+.panel .sub{font-size:13px;color:var(--muted);margin:0 18px 10px;white-space:pre-line}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:11px 18px;text-align:left;font-size:14px}
+thead th{
+  font-size:12px;font-weight:400;color:var(--muted);padding-bottom:8px;
+  position:sticky;top:var(--stick,62px);z-index:3;
+  background:var(--card);box-shadow:0 1px 0 var(--line);
+}
+tbody td{border-bottom:1px solid #F1EFE9}
+tbody tr:last-child td{border-bottom:0}
+td.n,th.n{text-align:right;font-weight:600;font-style:italic;font-size:16px}
+th.n{font-style:normal;font-weight:400;font-size:12px}
+td.c{color:var(--muted);font-size:13px;letter-spacing:.04em}
+tr.grp td{
+  background:#F7F5F0;font-weight:500;font-size:13.5px;padding-top:9px;padding-bottom:9px;
+  position:sticky;top:calc(var(--stick,62px) + 34px);z-index:2;box-shadow:0 1px 0 #ECE9E2;
+}
+.tip{background:#F7F5F0;border-radius:18px;padding:14px 18px;font-size:13px;color:#57564F;white-space:pre-line;line-height:1.75;margin:0 4px 14px}
+.olist{font-size:13.5px;color:#57564F;padding-left:22px;margin:4px 18px 14px;line-height:1.75}
+.meta{list-style:none;padding:0;margin:0 18px 14px;font-size:13.5px;color:#57564F}
+.meta li{padding:7px 0;border-bottom:1px solid #F1EFE9}
+.meta li:last-child{border-bottom:0}
+.meta b{font-weight:500;color:var(--ink)}
+
+
+/* ---------- 防跑版 ---------- */
+html{overflow-x:clip}
+.shell{width:100%;max-width:min(1120px,100%)}
+.topbar,.hero,.grid,.duo,.offers,.dark,.dark-head{min-width:0}
+.hero>*,.grid>*,.duo>*,.offers>*,.dark-head>*{min-width:0}
+.card,.mini,.offer{min-width:0;overflow:hidden}
+.card h3,.mini .lab,.offer .on,.hero-note,.blank p{overflow-wrap:anywhere}
+.card .foot,.offer .stats,.mini{min-width:0}
+.spark{flex:0 1 auto;max-width:46%;height:auto}
+.pills{max-width:100%;flex:1 1 auto}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.who{min-width:0}
+.hero-main{min-width:0}
+.gauge-row{gap:18px}
+/* 表格：容器可橫向捲動，數字不斷行 */
+.panel>table{width:100%}
+th,td{overflow-wrap:anywhere}
+td.n,th.n,td.c{white-space:nowrap}
+.tip,.olist,.meta{overflow-wrap:anywhere}
+.sheet{align-items:flex-end}
+
+@media (max-width:900px){
+  .hero{grid-template-columns:1fr}
+  .grid{grid-template-columns:repeat(2,1fr)}
+  .offers{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  body{font-size:14.5px}
+  .shell{padding:0 12px 44px}
+  .topbar{gap:10px;margin:0 -12px 18px;padding:12px 12px 10px}
+  .who .txt{display:none}
+  .who .txt b{font-size:13px}
+  .who .txt span{font-size:11px}
+  .who .badge{width:34px;height:34px}
+  .pill{font-size:13px;padding:7px 15px}
+  .hero{gap:12px}
+  .hero h1{margin-bottom:12px}
+  .bignum .v{font-size:clamp(46px,15vw,60px)}
+  .tier b{font-size:20px}
+  .grid{grid-template-columns:1fr 1fr;gap:10px}
+  .card{border-radius:22px;padding:14px 14px 15px;min-height:0}
+  .card h3{font-size:13.5px;margin-top:12px}
+  .card .foot{margin-top:12px}
+  .stat .n{font-size:28px}
+  .stat .s{font-size:11px}
+  .ico{width:32px;height:32px}
+  .go{width:30px;height:30px}
+  .card .flag{left:38px;width:14px;height:12px}
+  .dots i{width:6px;height:6px}
+  .dots i.big{width:17px;height:17px}
+  .duo{gap:10px;margin-top:12px}
+  .mini{border-radius:22px;padding:14px;min-height:0}
+  .mini .lab{font-size:13px}
+  .mini .val{font-size:25px}
+  .dark{padding:20px 14px 22px;border-radius:26px;margin-top:18px}
+  .dark-head{gap:10px;margin-bottom:14px}
+  .dark-head h2{font-size:22px}
+  .dark-head .count{font-size:22px}
+  .offers{gap:10px}
+  .offer{border-radius:22px;padding:16px;min-height:0}
+  .offer .stats{gap:18px;margin-top:14px}
+  .offer .stats div b{font-size:24px}
+  .sheet-inner{max-height:94vh;border-radius:24px 24px 0 0}
+  .sheet-bar{padding:16px 16px 12px}
+  .sheet-bar h2{font-size:20px}
+  .sheet-content{padding:14px 12px calc(30px + env(safe-area-inset-bottom))}
+  .panel{border-radius:20px}
+  th,td{padding:9px 11px;font-size:13px}
+  td.n{font-size:14.5px}
+  .panel h4{margin:12px 14px 2px}
+  .panel .sub{margin:0 14px 10px;font-size:12.5px}
+  .tip{padding:13px 14px;font-size:12.5px}
+  .meta{margin:0 14px 12px}
+  .olist{margin:4px 14px 12px}
+  .blank{padding:40px 20px;border-radius:26px}
+  .blank h2{font-size:22px}
+}
+@media (max-width:380px){
+  .grid,.grid-2{grid-template-columns:1fr}
+  .duo{grid-template-columns:1fr}
+  .card h3{font-size:14px}
+  .spark{max-width:52%}
+  .gauge-row{gap:14px}
+  .tier b{font-size:18px}
+  th,td{padding:8px 9px;font-size:12.5px}
+  td.n{font-size:14px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+
+<div class="mesh"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div></div>
+
+<div class="shell">
+
+  <div class="topbar">
+    <div class="pills" role="tablist">
+      <button class="pill" role="tab" aria-selected="true" data-tab="p1">一線授權</button>
+      <button class="pill" role="tab" aria-selected="false" data-tab="p2">各站房舍</button>
+      <button class="pill" role="tab" aria-selected="false" data-tab="p3">各站貴賓室</button>
+      <button class="pill" role="tab" aria-selected="false" data-tab="p4">各站綜合資訊</button>
+    </div>
+    <div class="who">
+      <div class="txt"><b>場站手冊</b><span>一線人員現場查詢</span></div>
+      <div class="badge">JX</div>
+    </div>
+  </div>
+
+  <!-- ============ 一線授權 ============ -->
+  <div id="p1">
+    <div class="hero">
+      <div class="hero-main">
+        <p class="eyebrow">單筆優惠券授權上限</p>
+        <h1>一線授權</h1>
+        <div class="bignum"><span class="v">300</span><span class="u">USD · 頭等艙</span></div>
+        <p class="hero-note">最高級距出現在機上設備故障且飛時超過 8 小時。逾此金額須另案請示並取得授權。</p>
+        <div class="gauge-row">
+          <div class="tier"><b>300</b><span>F</span></div>
+          <div class="tier"><b>200</b><span>J</span></div>
+          <div class="tier"><b>100</b><span>W</span></div>
+          <div class="tier"><b>50</b><span>Y</span></div>
+        </div>
+        <div class="duo">
+          <button class="mini" data-open="d-hotel">
+            <span class="lab">住宿補償上限<br><span style="color:var(--muted);font-size:12px">瑞士｜最高地區</span></span>
+            <span class="val"><em>TWD</em>8,000</span>
+          </button>
+          <button class="mini" data-open="d-first">
+            <span class="lab">頭等艙餐食價差<br><span style="color:var(--muted);font-size:12px">10 個航點對照</span></span>
+            <span class="val"><em>USD</em>250</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <button class="card grad" data-open="d-meal">
+          <div class="top">
+            <span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 3v8a2 2 0 002 2v8M9 3v6M18 3c-1.5 2-2 4-2 7h2v11"/></svg></span>
+            <span class="go"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+          </div>
+          <h3>餐券金額</h3>
+          <div class="foot">
+            <span class="stat"><span class="n">13</span><span class="s">地區</span></span>
+            <span class="dots"><i></i><i></i><i></i><i class="big"></i></span>
+          </div>
+        </button>
+
+        <button class="card" data-open="d-laundry">
+          <div class="top">
+            <span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="13" r="5"/><path d="M4 5h16v15a1 1 0 01-1 1H5a1 1 0 01-1-1z"/></svg></span>
+            <span class="go"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+          </div>
+          <h3>洗衣券金額</h3>
+          <div class="foot">
+            <span class="stat"><span class="n">14</span><span class="s">幣別</span></span>
+            <svg class="spark" width="64" height="24" viewBox="0 0 64 24" fill="none" stroke="#0B0B0C" stroke-width="1.3"><path d="M1 18h4v-6h4v9h4v-11h4v7h4v-13h4v16h4v-9h4v5h4v-8h4v10h4v-6h4v8"/></svg>
+          </div>
+        </button>
+
+        <button class="card" data-open="d-equip">
+          <div class="top">
+            <span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8"/></svg></span>
+            <span class="go"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+          </div>
+          <h3>機上設備補償</h3>
+          <div class="foot">
+            <span class="stat"><span class="n">3</span><span class="s">類故障</span></span>
+            <svg class="spark" width="60" height="26" viewBox="0 0 60 26" fill="none" stroke="#0B0B0C" stroke-width="1.3"><path d="M2 22c6 0 6-8 12-8s6 12 12 12 6-16 12-16 6 8 12 8"/></svg>
+          </div>
+        </button>
+
+        <button class="card alert" data-open="d-food">
+          <span class="flag"></span>
+          <div class="top">
+            <span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 9h16M5 9c0 6 3 10 7 10s7-4 7-10"/><path d="M9 5V3M15 5V3"/></svg></span>
+            <span class="go"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+          </div>
+          <h3>餐食異常</h3>
+          <div class="foot">
+            <span class="stat"><span class="n">100</span><span class="s">USD 上限</span></span>
+            <span class="dots"><i></i><i></i><i></i><i></i></span>
+          </div>
+        </button>
+
+        <button class="card" data-open="d-injury">
+          <div class="top">
+            <span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 3v18M3 12h18" stroke-linecap="round"/></svg></span>
+            <span class="go"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+          </div>
+          <h3>特殊情事</h3>
+          <div class="foot">
+            <span class="stat"><span class="n">200</span><span class="s">USD 上限</span></span>
+            <svg class="spark" width="58" height="22" viewBox="0 0 58 22" fill="none" stroke="#0B0B0C" stroke-width="1.3"><path d="M2 20l10-6 9 4 9-14 10 9 16-6"/></svg>
+          </div>
+        </button>
+
+        <button class="card" data-open="d-cabin">
+          <div class="top">
+            <span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 16l20-9-6 14-4-5z"/></svg></span>
+            <span class="go"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+          </div>
+          <h3>航班異常｜艙等</h3>
+          <div class="foot">
+            <span class="stat"><span class="n">先升</span><span class="s">後降原則</span></span>
+            <span class="dots"><i class="big" style="opacity:.2"></i><i></i><i></i></span>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <div class="dark">
+      <div class="dark-head">
+        <h2>法規補償</h2>
+        <span class="count">3<span>個適用轄區</span></span>
+      </div>
+      <div class="offers">
+        <button class="offer o1" data-open="d-th">
+          <div class="oh"><span class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 2l9 7-9 13-9-13z"/></svg></span><span class="on">泰國<br>航空旅客權益法案</span></div>
+          <div class="stats">
+            <div><span>延誤門檻</span><b>5<i>hrs</i></b></div>
+            <div><span>補償</span><b>1,500<i>THB</i></b></div>
+          </div>
+        </button>
+        <button class="offer o2" data-open="d-vn">
+          <div class="oh"><span class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c4 4 4 14 0 18M12 3c-4 4-4 14 0 18"/></svg></span><span class="on">越南<br>14/2015/TT-BGTVT</span></div>
+          <div class="stats">
+            <div><span>延誤門檻</span><b>4<i>hrs</i></b></div>
+            <div><span>補償</span><b>50<i>USD</i></b></div>
+          </div>
+        </button>
+        <button class="offer o3" data-open="d-eu">
+          <div class="oh"><span class="oi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg></span><span class="on">歐盟<br>EU 261/2004</span></div>
+          <div class="stats">
+            <div><span>延誤門檻</span><b>3<i>hrs</i></b></div>
+            <div><span>補償</span><b>600<i>EUR 上限</i></b></div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 其他頁籤 ============ -->
+  <div id="p2" hidden>
+    <div class="blank">
+      <h2>各站房舍</h2>
+      <p>尚未建置資料。傳一份 Excel 或說明欄位，就能填進來。</p>
+      <ul><li>場站代碼與名稱、樓層位置</li><li>辦公室、櫃檯、儲藏室</li><li>門禁與鑰匙管理、聯絡分機</li><li>租約期間、坪數、維修窗口</li></ul>
+    </div>
+  </div>
+  <div id="p3" hidden>
+    <div class="blank">
+      <h2>各站貴賓室</h2>
+      <p>尚未建置資料。傳一份 Excel 或說明欄位，就能填進來。</p>
+      <ul><li>名稱、位置、營業時間</li><li>可使用艙等／會員等級、攜伴規則</li><li>容納人數、淋浴間、餐飲時段</li><li>合作廠商與計費方式</li></ul>
+    </div>
+  </div>
+  <div id="p4" hidden>
+    <div class="blank">
+      <h2>各站綜合資訊</h2>
+      <p>尚未建置資料。傳一份 Excel 或說明欄位，就能填進來。</p>
+      <ul><li>場站窗口、地勤代理、值班電話</li><li>櫃檯開放與關櫃時間</li><li>簽約飯店、地面交通、宵禁限制</li><li>當地特殊作業規定</li></ul>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 詳細內容層 ============ -->
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-inner">
+    <div class="sheet-bar">
+      <div><h2 id="sheet-title"></h2><p id="sheet-sub"></p></div>
+      <button class="x" id="sheet-close" aria-label="關閉">✕</button>
+    </div>
+    <div id="sheet-body" class="sheet-content"></div>
+  </div>
+</div>
+
+<template id="d-meal" data-title="各國餐券金額" data-sub="依地區與艙等發放，金額為單張面額">
+  <div class="panel">
+    <table>
+      <thead><tr><th>地區</th><th>幣別</th><th class="n">Y / W</th><th class="n">J</th><th class="n">F</th></tr></thead>
+      <tbody>
+        <tr><td>台灣</td><td class="c">TWD</td><td class="n">300</td><td class="n">450</td><td class="n">600</td></tr>
+        <tr><td>香港</td><td class="c">HKD</td><td class="n">75</td><td class="n">110</td><td class="n">150</td></tr>
+        <tr><td>澳門</td><td class="c">MOP</td><td class="n">70</td><td class="n">70</td><td class="n">70</td></tr>
+        <tr><td>越南</td><td class="c">USD</td><td class="n">15</td><td class="n">25</td><td class="n">30</td></tr>
+        <tr><td>泰國</td><td class="c">THB</td><td class="n">350</td><td class="n">500</td><td class="n">700</td></tr>
+        <tr><td>印尼</td><td class="c">IDR</td><td class="n">150,000</td><td class="n">225,000</td><td class="n">300,000</td></tr>
+        <tr><td>新加坡</td><td class="c">SGD</td><td class="n">18</td><td class="n">27</td><td class="n">36</td></tr>
+        <tr><td>菲律賓</td><td class="c">PHP</td><td class="n">700</td><td class="n">1,000</td><td class="n">1,400</td></tr>
+        <tr><td>馬來西亞</td><td class="c">MYR</td><td class="n">30</td><td class="n">45</td><td class="n">60</td></tr>
+        <tr><td>日本</td><td class="c">JPY</td><td class="n">1,500</td><td class="n">2,300</td><td class="n">3,000</td></tr>
+        <tr><td>美國</td><td class="c">USD</td><td class="n">25</td><td class="n">40</td><td class="n">50</td></tr>
+        <tr><td>韓國</td><td class="c">KRW</td><td class="n">15,000</td><td class="n">23,000</td><td class="n">30,000</td></tr>
+        <tr><td>歐洲</td><td class="c">EUR</td><td class="n">11</td><td class="n">16</td><td class="n">22</td></tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<template id="d-laundry" data-title="洗衣券金額" data-sub="不分艙等，依發放場站幣別給付">
+  <div class="panel">
+    <table>
+      <thead><tr><th>幣別</th><th class="n">金額</th></tr></thead>
+      <tbody>
+        <tr><td class="c">USD</td><td class="n">25</td></tr>
+        <tr><td class="c">TWD</td><td class="n">750</td></tr>
+        <tr><td class="c">JPY</td><td class="n">3,500</td></tr>
+        <tr><td class="c">MYR</td><td class="n">110</td></tr>
+        <tr><td class="c">SGD</td><td class="n">35</td></tr>
+        <tr><td class="c">MOP</td><td class="n">200</td></tr>
+        <tr><td class="c">VND</td><td class="n">650,000</td></tr>
+        <tr><td class="c">THB</td><td class="n">850</td></tr>
+        <tr><td class="c">PHP</td><td class="n">1,500</td></tr>
+        <tr><td class="c">HKD</td><td class="n">200</td></tr>
+        <tr><td class="c">IDR</td><td class="n">400,000</td></tr>
+        <tr><td class="c">CZK</td><td class="n">500</td></tr>
+        <tr><td class="c">EUR</td><td class="n">20</td></tr>
+        <tr><td class="c">KRW</td><td class="n">35,000</td></tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<template id="d-equip" data-title="機上設備補償" data-sub="優惠券單位 USD；時間級距以表訂飛時計算">
+  <div class="panel">
+    <h4>座椅／桌面故障</h4>
+    <p class="sub">扶手無法抬起放下、腿托無法展開收起、椅背無法傾斜豎直、電動操作故障、嚴重汙損、桌面傾斜或故障致無法使用。</p>
+    <table>
+      <thead><tr><th>飛時</th><th class="n">F</th><th class="n">J</th><th class="n">W</th><th class="n">Y</th></tr></thead>
+      <tbody>
+        <tr><td>&lt; 4 hrs</td><td class="n">150</td><td class="n">75</td><td class="n">50</td><td class="n">25</td></tr>
+        <tr><td>4–8 hrs</td><td class="n">200</td><td class="n">150</td><td class="n">75</td><td class="n">50</td></tr>
+        <tr><td>&gt; 8 hrs</td><td class="n">300</td><td class="n">200</td><td class="n">100</td><td class="n">50</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="panel">
+    <h4>機上娛樂系統故障</h4>
+    <p class="sub">遙控器及觸控螢幕皆無法操作、視聽娛樂系統無法正常使用、藍牙或耳機故障且無備用耳機。</p>
+    <table>
+      <thead><tr><th>飛時</th><th class="n">F</th><th class="n">J</th><th class="n">W</th><th class="n">Y</th></tr></thead>
+      <tbody>
+        <tr><td>&lt; 4 hrs</td><td class="n">100</td><td class="n">75</td><td class="n">50</td><td class="n">25</td></tr>
+        <tr><td>4–8 hrs</td><td class="n">150</td><td class="n">100</td><td class="n">50</td><td class="n">25</td></tr>
+        <tr><td>&gt; 8 hrs</td><td class="n">300</td><td class="n">200</td><td class="n">100</td><td class="n">50</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="panel">
+    <h4>其他設備</h4>
+    <p class="sub">閱讀燈／氣氛燈異常、置物櫃燈或腳踏燈無法關閉、邊櫃置物櫃故障、觸控式窗戶故障影響休息、拉門故障影響私人空間或動線。衣櫃燈、請勿打擾燈等如不影響體驗則不予補償。</p>
+    <table>
+      <thead><tr><th>飛時</th><th class="n">F</th><th class="n">J</th><th class="n">W</th><th class="n">Y</th></tr></thead>
+      <tbody>
+        <tr><td>&lt; 4 hrs</td><td class="n">75</td><td class="n">50</td><td class="n">25</td><td class="n">25</td></tr>
+        <tr><td>4–8 hrs</td><td class="n">75</td><td class="n">50</td><td class="n">25</td><td class="n">25</td></tr>
+        <tr><td>&gt; 8 hrs</td><td class="n">150</td><td class="n">75</td><td class="n">50</td><td class="n">25</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tip">1. 若同艙等中無替補空位，提供旅客升等至上一艙等（註 1），付費選位之 EMD 費用不予返還。
+2. 若無升等或旅客因同行者自身因素拒絕換位，依上表給予星宇航空優惠券（註 2）。
+
+註 1：不適用升等至頭等艙；哩程仍依原訂艙等累積，餐食安排視機上配餐情況提供。
+註 2：HKG／BKK／CNX／CTS／GUM 航線以 4–8 小時表訂飛時計算。
+註 3：航程為二段（含）以上且仍乘坐同架飛機，須向旅客說明續程航段將視修復及空位情況調整。
+註 4：如旅客主動要求 COSMILE 獎勵哩程，引導旅客持優惠券至相關通路兌換。
+註 5：多航段之航班依各航程分別給予補償。</div>
+</template>
+
+<template id="d-food" data-title="餐食異常" data-sub="可歸責本公司且替代方案未能滿足旅客需求">
+  <div class="panel">
+    <p class="sub" style="margin-top:14px">1. 航班異動、系統／人員作業異常或發餐失誤導致餐食不足。
+2. 餐食發現異物、食材變質或腐壞進而影響旅客。</p>
+    <table>
+      <thead><tr><th>艙等</th><th class="n">F</th><th class="n">J</th><th class="n">W</th><th class="n">Y</th></tr></thead>
+      <tbody><tr><td>優惠券（USD）</td><td class="n">100</td><td class="n">75</td><td class="n">50</td><td class="n">25</td></tr></tbody>
+    </table>
+  </div>
+</template>
+
+<template id="d-injury" data-title="特殊情事" data-sub="旅客於本公司場域因人員作業疏失導致受傷">
+  <div class="panel">
+    <p class="sub" style="margin-top:14px">如：遭機上行李砸傷、設備碰撞、熱飲潑濺燙傷、地面不平絆倒等。</p>
+    <table>
+      <thead><tr><th>艙等</th><th class="n">F</th><th class="n">J</th><th class="n">W</th><th class="n">Y</th></tr></thead>
+      <tbody><tr><td>優惠券（USD）</td><td class="n">200</td><td class="n">150</td><td class="n">100</td><td class="n">50</td></tr></tbody>
+    </table>
+  </div>
+  <div class="tip">註 1：不適用升等至頭等艙；哩程依原訂艙等累積，餐食安排視機上配餐情況提供。
+註 2：如旅客主動要求 COSMILE 獎勵哩程，引導旅客持優惠券至相關通路兌換。</div>
+</template>
+
+<template id="d-hotel" data-title="航班異常｜住宿" data-sub="地面交通與住宿費補償金額上限">
+  <div class="panel">
+    <p class="sub" style="margin-top:14px">航班因本公司造成之因素導致旅客已預訂不可變更或退費之地面交通／住宿票券無法使用；或因無法順利執飛衍生之交通／住宿費。如：航班延誤／異動致旅客失接、飛行器異常致航班取消。</p>
+    <table>
+      <thead><tr><th>地區</th><th class="n">亞洲</th><th class="n">美洲</th><th class="n">歐洲</th><th class="n">瑞士</th></tr></thead>
+      <tbody><tr><td>上限（TWD）</td><td class="n">5,000</td><td class="n">7,000</td><td class="n">6,000</td><td class="n">8,000</td></tr></tbody>
+    </table>
+  </div>
+  <div class="tip">依場站簽約之飯店或參閱上表金額安排旅客住宿，如金額超過請另案請示並獲得相應之授權。
+
+註：如遇特殊情況由機場場站訂定補償金額時，場站須記錄應允金額與項目並傳會客服單位確保資訊一致。</div>
+</template>
+
+<template id="d-cabin" data-title="航班異常｜艙等" data-sub="場站無法提供原訂艙等機位時之處理">
+  <div class="panel">
+    <p class="sub" style="margin-top:14px">因本公司因素以致場站無法提供原訂艙等機位予旅客。例如：機型異動、航班異動、機位超賣。
+
+場站依「先升後降」原則提供旅客升等至上一艙等；如上一艙等已無機位，請參閱「A. 訂位票務 02」非自願降等情境作業。</p>
+    <table>
+      <thead><tr><th>無法升等時之優惠券</th><th class="n">F</th><th class="n">J</th><th class="n">W</th><th class="n">Y</th></tr></thead>
+      <tbody><tr><td>USD</td><td class="n">200</td><td class="n">150</td><td class="n">100</td><td class="n">50</td></tr></tbody>
+    </table>
+  </div>
+  <div class="tip">註 1：升等順位依 AOD-PHM 相關作業流程辦理，相關安排應盡可能避免衍生公平性爭議。
+註 2：不適用升等至頭等艙；哩程依原訂艙等累積，餐食安排視機上配餐情況提供。
+註 3：如旅客主動要求 COSMILE 獎勵哩程，引導旅客持優惠券至相關通路兌換。</div>
+</template>
+
+<template id="d-first" data-title="頭等艙餐食價差補償" data-sub="現金補償，以受影響行程之起訖場站幣別為依據">
+  <div class="panel">
+    <table>
+      <thead><tr><th>航點</th><th>幣別</th><th class="n">金額</th></tr></thead>
+      <tbody>
+        <tr class="grp"><td colspan="3">區域航線</td></tr>
+        <tr><td>台灣</td><td class="c">TWD</td><td class="n">2,000</td></tr>
+        <tr><td>新加坡</td><td class="c">SGD</td><td class="n">85</td></tr>
+        <tr><td>日本</td><td class="c">JPY</td><td class="n">9,000</td></tr>
+        <tr><td>越南</td><td class="c">VND</td><td class="n">1,550,000</td></tr>
+        <tr><td>泰國</td><td class="c">THB</td><td class="n">2,000</td></tr>
+        <tr class="grp"><td colspan="3">美國航線</td></tr>
+        <tr><td>台灣</td><td class="c">TWD</td><td class="n">8,000</td></tr>
+        <tr><td>美國</td><td class="c">USD</td><td class="n">250</td></tr>
+        <tr class="grp"><td colspan="3">歐洲航線</td></tr>
+        <tr><td>台灣</td><td class="c">TWD</td><td class="n">7,500</td></tr>
+        <tr><td>捷克</td><td class="c">EUR</td><td class="n">200</td></tr>
+        <tr><td>捷克</td><td class="c">CZK</td><td class="n">5,000</td></tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<template id="d-th" data-title="泰國 · 航空旅客權益法案" data-sub="從泰國境內出發的國際航班">
+  <div class="panel">
+    <ul class="meta">
+      <li><b>適用對象</b>　所有旅客；持員工票、旅伴票、公差票及代理人／合作夥伴依需求提供補償</li>
+      <li><b>距離計算</b>　泰國出發至台灣航段</li>
+      <li><b>無須補償</b>　不可抗力之延誤；取消或拒絕登機已於出發前 7 日通知、替代航班提早或延遲不超過 3 小時、或係因不可抗力</li>
+    </ul>
+    <table>
+      <thead><tr><th>情境</th><th>條件</th><th>補償／人（擇一）</th></tr></thead>
+      <tbody>
+        <tr><td>航班延誤</td><td>延誤超過 5 小時</td><td>THB 1,500 或優惠券 USD 50</td></tr>
+        <tr><td>航班延誤</td><td>延誤超過 10 小時<br><span style="color:var(--muted);font-size:12px">1,500–3,500 km</span></td><td>THB 3,500 或優惠券 USD 125</td></tr>
+        <tr><td>取消／拒絕登機</td><td>因本公司因素<br><span style="color:var(--muted);font-size:12px">1,500–3,500 km</span></td><td>THB 3,500 或優惠券 USD 125</td></tr>
+        <tr><td>非自願降等</td><td>因本公司因素</td><td>退還遭降艙航段 50% 票價</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tip">補償時限：14 個日曆天內完成，起算日為事件發生日或依雙方約定時間。
+降等退款：現金購票 14 天、信用卡 45 天、代理購票 60 個日曆天內完成。
+註：以 ARD WEB 事發日之匯率計算等值幣別。</div>
+</template>
+
+<template id="d-vn" data-title="越南 · 14/2015/TT-BGTVT" data-sub="從越南境內出發的國際航班">
+  <div class="panel">
+    <ul class="meta">
+      <li><b>適用對象</b>　所有旅客；持員工票、旅伴票、公差票及代理人／合作夥伴不適用</li>
+      <li><b>距離計算</b>　越南出發至台灣之航段</li>
+    </ul>
+    <h4>無須補償情境</h4>
+    <ol class="olist">
+      <li>原定出發時間前 24 小時通知旅客。</li>
+      <li>未依規定登記聯絡資訊，或無法取得聯繫。</li>
+      <li>替代航班抵達時間較原定未延遲超過 4 小時。</li>
+      <li>抵達下一站點時間與原轉機航班抵達相距不到 6 小時。</li>
+      <li>旅客自願取消訂位／行程。</li>
+      <li>航班作業中發生技術問題，自機長簽署飛行文件起至飛行結束。</li>
+      <li>其他不可抗力之情況。</li>
+    </ol>
+    <table>
+      <thead><tr><th>情境</th><th>條件</th><th class="n">補償／人</th></tr></thead>
+      <tbody>
+        <tr><td>航班延誤</td><td>出發延誤超過 4 小時</td><td class="n">USD 50</td></tr>
+        <tr><td>提前出發</td><td>出發時間提早 15 分鐘</td><td class="n">USD 50</td></tr>
+        <tr><td>航班取消</td><td>因本公司因素取消</td><td class="n">USD 50</td></tr>
+        <tr><td>拒絕登機</td><td>因本公司因素（如超賣）</td><td class="n">USD 50</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tip">適用距離：1,000 km ≤ 距離 &lt; 2,500 km，補償得以現金或等值優惠券支付。
+註：以 ARD WEB 事發日之匯率計算等值幣別。</div>
+</template>
+
+<template id="d-eu" data-title="歐盟 · EU 261/2004" data-sub="自歐盟機場出發、持已確認訂位之有效機票">
+  <div class="panel">
+    <ul class="meta">
+      <li><b>適用對象</b>　所有旅客；免費或非公開優惠票價搭乘者不適用（員工票、旅伴票、公差票）</li>
+      <li><b>Codeshare</b>　由實際執飛之航空公司提供補償</li>
+      <li><b>無須補償</b>　不可抗力之延誤；取消於出發前 14 日通知，或 7–14 日內通知且替代航班出發不早於 2 小時、抵達不晚於 4 小時，或 7 日內通知且出發不早於 1 小時、抵達不晚於 2 小時</li>
+    </ul>
+    <table>
+      <thead><tr><th>情境</th><th>條件</th><th>補償／人（擇一）</th></tr></thead>
+      <tbody>
+        <tr><td>航班延誤</td><td>抵達延後 3 小時（含）以上、未達 4 小時</td><td>€300 或優惠券 USD 350</td></tr>
+        <tr><td>航班延誤</td><td>抵達延後 4 小時（含）以上</td><td>€600 或優惠券 USD 700</td></tr>
+        <tr><td>航班取消</td><td>替代航班延後未達 4 小時</td><td>€300 或優惠券 USD 350</td></tr>
+        <tr><td>航班取消</td><td>無替代航班或延後 4 小時（含）以上</td><td>€600 或優惠券 USD 700</td></tr>
+        <tr><td>拒絕登機</td><td>替代航班延後未達 4 小時</td><td>€300 或優惠券 USD 350</td></tr>
+        <tr><td>拒絕登機</td><td>替代航班延後 4 小時（含）以上</td><td>€600 或優惠券 USD 700</td></tr>
+        <tr><td>非自願降等</td><td>因本公司因素</td><td>退還遭降艙航段 75% 票價</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="panel">
+    <h4>EU261 適用表</h4>
+    <table>
+      <thead><tr><th>出發地</th><th>目的地</th><th>營運航空公司</th><th class="n">保障</th></tr></thead>
+      <tbody>
+        <tr><td>歐盟機場</td><td>歐盟機場</td><td>歐盟／非歐盟</td><td class="n">✓</td></tr>
+        <tr><td>歐盟機場</td><td>非歐盟機場</td><td>歐盟／非歐盟</td><td class="n">✓</td></tr>
+        <tr><td>非歐盟機場</td><td>歐盟機場</td><td>歐盟航空公司</td><td class="n">✓</td></tr>
+        <tr><td>非歐盟機場</td><td>歐盟機場</td><td>非歐盟航空公司</td><td class="n">✗</td></tr>
+        <tr><td>非歐盟機場</td><td>非歐盟機場</td><td>歐盟／非歐盟</td><td class="n">✗</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="tip">歐盟機場包含歐盟成員國及冰島、挪威、瑞士、瓜德羅普島、法國圭亞那、馬提尼克島、馬約特島、留尼汪島、聖巴泰勒米島、聖馬丁島、亞速爾群島、馬德拉群島、加那利群島。
+
+延誤與取消由旅客主動提出後補償，以最終目的地計算抵達時間；拒絕登機於現場補償或依約定時間完成；非自願降等於 7 個日曆天內完成。
+註：涉及 Codeshare 航班，MC 未經 OC 書面同意不得提出任何補償金額或承諾。</div>
+</template>
+
+<script>
+(function(){
+  var pills=[].slice.call(document.querySelectorAll('.pill'));
+  pills.forEach(function(p){
+    p.addEventListener('click',function(){
+      pills.forEach(function(x){
+        x.setAttribute('aria-selected',x===p);
+        document.getElementById(x.dataset.tab).hidden=(x!==p);
+      });
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+  });
+
+  var topbar=document.querySelector('.topbar');
+  var onScroll=function(){topbar.classList.toggle('stuck', window.scrollY>6);};
+  window.addEventListener('scroll',onScroll,{passive:true});
+  onScroll();
+
+  var sheet=document.getElementById('sheet'),
+      body=document.getElementById('sheet-body'),
+      title=document.getElementById('sheet-title'),
+      sub=document.getElementById('sheet-sub'),
+      last=null;
+
+  function open(id){
+    var tpl=document.getElementById(id);
+    if(!tpl) return;
+    title.textContent=tpl.dataset.title;
+    sub.textContent=tpl.dataset.sub||'';
+    body.innerHTML='';
+    body.appendChild(tpl.content.cloneNode(true));
+    sheet.hidden=false;
+    document.body.style.overflow='hidden';
+    requestAnimationFrame(function(){
+      var bar=document.querySelector('.sheet-bar');
+      document.querySelector('.sheet-inner').style.setProperty('--stick', bar.offsetHeight+'px');
+    });
+    document.getElementById('sheet-close').focus();
+  }
+  function close(){
+    sheet.hidden=true;
+    document.body.style.overflow='';
+    if(last) last.focus();
+  }
+  document.querySelectorAll('[data-open]').forEach(function(b){
+    b.addEventListener('click',function(){last=b;open(b.dataset.open);});
+  });
+  document.getElementById('sheet-close').addEventListener('click',close);
+  sheet.addEventListener('click',function(e){if(e.target===sheet) close();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!sheet.hidden) close();});
+})();
+</script>
+</body>
+</html>
