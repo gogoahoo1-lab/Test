@@ -1,0 +1,58 @@
+# .github/workflows/awc.yml
+name: 更新 TAF 與 METAR
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # 每 15 分鐘；GitHub 排程常有數分鐘延遲，屬正常
+  workflow_dispatch:          # 也可在 Actions 頁面手動執行
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 抓取 AWC 資料
+        env:
+          # 航點的 ICAO 清單，新增或刪除航點時改這裡
+          IDS: >-
+            RCTP,RCMQ,RCKH,RJAA,RJBB,RJBE,RJGG,RJFF,RJFT,RJOT,RJCC,RJCH,RJSS,
+            ROAH,ROMY,RKPK,WSSS,VTBS,VTCC,WADD,WIII,VVNB,VVTS,VVDN,VVPQ,RPLC,
+            RPVM,VHHH,VMMC,KLAX,KSFO,KSEA,KONT,KPDX,KPHX,KLAS,KDFW,LKPR
+          # AWC 要求帶可識別的 User-Agent，請換成你自己的聯絡方式
+          UA: "starlux-weather-watch/1.0 (contact: you@example.com)"
+        run: |
+          set -euo pipefail
+          mkdir -p data
+          CLEAN=$(echo "$IDS" | tr -d ' \n')
+
+          curl -sS --fail --retry 3 --retry-delay 5 -A "$UA" \
+            "https://aviationweather.gov/api/data/taf?format=json&ids=$CLEAN" \
+            -o data/taf.new.json
+          curl -sS --fail --retry 3 --retry-delay 5 -A "$UA" \
+            "https://aviationweather.gov/api/data/metar?format=json&ids=$CLEAN" \
+            -o data/metar.new.json
+
+          # 內容必須是 JSON 陣列才覆蓋，避免把錯誤頁寫進倉庫
+          for f in taf metar; do
+            if jq -e 'type == "array"' "data/$f.new.json" > /dev/null; then
+              mv "data/$f.new.json" "data/$f.json"
+            else
+              echo "$f 回應不是 JSON 陣列，保留上一版"
+              rm -f "data/$f.new.json"
+            fi
+          done
+
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > data/updated.txt
+          echo "TAF $(jq 'length' data/taf.json) 筆，METAR $(jq 'length' data/metar.json) 筆"
+
+      - name: 提交變更
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git diff --staged --quiet || git commit -m "更新 TAF 與 METAR $(date -u +'%Y-%m-%d %H:%M')Z"
+          git push
