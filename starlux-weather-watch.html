@@ -221,6 +221,14 @@ svg{display:block}
     <div class="acts"><button class="ghost" id="fixIcao">補上 ICAO 代碼</button><button class="ghost" id="reset">還原內建清單</button></div>
   </div>
   <div class="card">
+    <h2>AVWX 資料來源</h2>
+    <div class="field"><input type="text" id="avwxToken" placeholder="AVWX API token"></div>
+    <div class="field" style="margin-top:8px"><input type="text" id="avwxBase" placeholder="https://avwx.rest"></div>
+    <p class="hint">AVWX 直接回傳解析好的 TAF 與 METAR，比 AWC 原文可靠。到 account.avwx.rest 註冊即可取得 token。若你自己用 avwx-api 專案架站，把網址填在第二欄，且自架站台若未啟用帳號資料庫則不需 token。設定後這裡會成為第一順位來源，失敗才退回倉庫快取與中繼。</p>
+    <div class="acts"><button class="solid" id="saveAvwx">儲存並重抓</button><button class="ghost" id="testAvwx">測試 AVWX</button></div>
+    <div id="avwxOut"></div>
+  </div>
+  <div class="card">
     <h2>TAF 中繼</h2>
     <div class="field"><input type="text" id="proxy" placeholder="https://api.allorigins.win/raw?url="></div>
     <p class="hint">美國 AWC 的 TAF 服務不開放跨網域存取，網頁必須經中繼取得。留空代表直接連線，只有在你自架服務或用瀏覽器擴充解除限制時才會成功。換成自己的中繼網址最穩定。</p>
@@ -304,16 +312,23 @@ const BUILTIN=[
  {i:"RMQ",k:"RCMQ",c:"台中 清泉崗",r:"基地",la:24.2647,lo:120.6213}
 ];
 
-const KEY="jx-weather-stations", PKEY="jx-weather-proxy";
+const KEY="jx-weather-stations", PKEY="jx-weather-proxy", AKEY="jx-avwx-token", BKEY="jx-avwx-base";
 const DEFAULT_PROXY="https://api.allorigins.win/raw?url=";
-let STATIONS=[],PROXY=DEFAULT_PROXY;
+let STATIONS=[],PROXY=DEFAULT_PROXY,AVWX_TOKEN="",AVWX_BASE="https://avwx.rest";
 try{
   const s=JSON.parse(localStorage.getItem(KEY)||"null");
   STATIONS=Array.isArray(s)&&s.length?s:BUILTIN.map(x=>Object.assign({},x));
   const p=localStorage.getItem(PKEY); if(p!==null) PROXY=p;
+  AVWX_TOKEN=localStorage.getItem(AKEY)||"";
+  AVWX_BASE=(localStorage.getItem(BKEY)||"https://avwx.rest").replace(/\/+$/,"");
 }catch(e){ STATIONS=BUILTIN.map(x=>Object.assign({},x)); }
 function save(){
-  try{ localStorage.setItem(KEY,JSON.stringify(STATIONS)); localStorage.setItem(PKEY,PROXY); }
+  try{
+    localStorage.setItem(KEY,JSON.stringify(STATIONS));
+    localStorage.setItem(PKEY,PROXY);
+    localStorage.setItem(AKEY,AVWX_TOKEN);
+    localStorage.setItem(BKEY,AVWX_BASE);
+  }
   catch(e){ const h=document.getElementById("hint");
     if(h) h.textContent="這個瀏覽器不讓網頁存資料，改動只在本次開啟期間有效。下載後用 Safari 或 Chrome 開就會記住。"; }
 }
@@ -478,6 +493,101 @@ function stampText(){
 }
 setInterval(stampText,60000);
 
+/* ── AVWX：結構化 TAF 與 METAR ─────────────────── */
+function avwxVis(v,units){
+  if(!v) return null;
+  if(v.repr&&/^P/.test(v.repr)) return 10000;
+  if(v.value==null) return null;
+  const u=(units&&units.visibility)||"m";
+  if(u==="sm") return v.value*1609;
+  return v.value>=9999?10000:v.value;
+}
+function avwxCeil(clouds){
+  if(!Array.isArray(clouds)) return null;
+  let c=null;
+  clouds.forEach(x=>{
+    if(!/^(BKN|OVC|VV)$/.test(x.type||"")) return;
+    if(x.altitude==null) return;
+    const ft=x.altitude*100;
+    if(c===null||ft<c) c=ft;
+  });
+  return c;
+}
+function avwxFlags(codes){
+  const reprs=(codes||[]).map(c=>c.repr||c.value||"").filter(Boolean);
+  const j=reprs.join(" ");
+  return {
+    ts:/TS/.test(j), heavy:/(^|\s)\+/.test(j), fz:/FZ/.test(j),
+    sn:/SN|SG|PL|GS/.test(j), fg:/FG/.test(j), sq:/SQ|FC/.test(j),
+    wx:reprs.map(r=>wxText(r)).filter(Boolean)
+  };
+}
+function avwxSpeed(v,units){
+  if(!v||v.value==null) return 0;
+  const u=(units&&units.wind_speed)||"kt";
+  return u==="m/s"?v.value*1.94384:(u==="kmh"?v.value*0.539957:v.value);
+}
+function normAvwxTaf(j){
+  if(!j||!j.raw) return null;
+  const groups=(j.forecast||[]).map(p=>{
+    const f=avwxFlags(p.wx_codes);
+    const kind=p.probability?"PROB":({FROM:"FM",BECMG:"BECMG",TEMPO:"TEMPO",INTER:"TEMPO"}[p.type]||"MAIN");
+    return Object.assign(f,{
+      kind,
+      wind:avwxSpeed(p.wind_speed,j.units),
+      gust:avwxSpeed(p.wind_gust,j.units),
+      vis:avwxVis(p.visibility,j.units),
+      ceil:avwxCeil(p.clouds),
+      txt:p.raw||""
+    });
+  });
+  const st=j.start_time&&j.start_time.repr, en=j.end_time&&j.end_time.repr;
+  return {raw:j.raw, valid:(st&&en)?st+"/"+en:null, issue:j.time&&j.time.dt, groups};
+}
+function normAvwxMetar(j){
+  if(!j||!j.raw) return null;
+  const u=j.units||{};
+  let alt=j.altimeter&&j.altimeter.value;
+  if(alt!=null&&(u.altimeter==="inHg"||alt<100)) alt=alt*33.8639;
+  const visM=avwxVis(j.visibility,u);
+  return {
+    icaoId:j.station, rawOb:j.raw,
+    wdir:(j.wind_direction&&(j.wind_direction.repr==="VRB"?"VRB":j.wind_direction.value)),
+    wspd:avwxSpeed(j.wind_speed,u), wgst:j.wind_gust?avwxSpeed(j.wind_gust,u):null,
+    visib:visM==null?null:(visM>=10000?"10+":String(visM/1609)),
+    temp:j.temperature&&j.temperature.value, dewp:j.dewpoint&&j.dewpoint.value,
+    altim:alt, wxString:(j.wx_codes||[]).map(c=>c.repr).join(" "),
+    clouds:(j.clouds||[]).map(c=>({cover:c.type,base:c.altitude==null?null:c.altitude*100})),
+    fltCat:j.flight_rules, reportTime:j.time&&j.time.dt
+  };
+}
+
+async function pool(items,n,fn){
+  const out=[]; let i=0;
+  await Promise.all(Array(Math.min(n,items.length)).fill(0).map(async()=>{
+    while(i<items.length){ const k=i++; try{ out[k]=await fn(items[k]); }catch(e){ out[k]=null; } }
+  }));
+  return out;
+}
+
+async function fetchAVWX(ids){
+  if(!AVWX_TOKEN&&AVWX_BASE==="https://avwx.rest") throw new Error("未設定 AVWX token");
+  const q=AVWX_TOKEN?("?token="+encodeURIComponent(AVWX_TOKEN)):"";
+  const get=async(kind,icao)=>{
+    const txt=await tryFetch(AVWX_BASE+"/api/"+kind+"/"+icao+q,14000);
+    const j=JSON.parse(txt);
+    if(j.error) throw new Error(j.error);
+    return j;
+  };
+  const taf={},metar={};
+  const tr=await pool(ids,5,x=>get("taf",x));
+  tr.forEach((j,n)=>{ const t=normAvwxTaf(j); if(t) taf[ids[n]]=t; });
+  if(!Object.keys(taf).length) throw new Error("AVWX 沒有回傳 TAF，請確認 token 或額度");
+  const mr=await pool(ids,5,x=>get("metar",x));
+  mr.forEach((j,n)=>{ const m=normAvwxMetar(j); if(m) metar[ids[n]]=m; });
+  return {taf,metar};
+}
+
 /* ── 取得 TAF / METAR：優先同網域快取，其次多重中繼 ─────────────────── */
 let relayUsed="", tafLog=[];
 
@@ -549,18 +659,31 @@ async function fetchAWC(){
   const out={taf:{},metar:{}};
   if(!ids.length){tafOK=0;tafFail="沒有 ICAO 代碼";return out;}
 
+  // 1. AVWX（結構化解析，需 token 或自架站台）
+  if(AVWX_TOKEN||AVWX_BASE!=="https://avwx.rest"){
+    try{
+      const a=await fetchAVWX(ids);
+      tafOK=Object.keys(a.taf).length;
+      if(tafOK){ relayUsed="AVWX"; tafFail=""; return a; }
+    }catch(e){ tafLog.push("AVWX："+e.message); }
+  }
+
+  // 2. 倉庫快取（GitHub Actions 產生的 AWC 原始資料）
   try{
     const c=await localCache();
-    c.taf.forEach(x=>{ if(x&&x.icaoId&&x.rawTAF) out.taf[x.icaoId]=x; });
+    c.taf.forEach(x=>{ if(x&&x.icaoId&&x.rawTAF){const t=parseTAF(x.rawTAF); if(t){t.issue=x.issueTime; out.taf[x.icaoId]=t;} } });
     c.metar.forEach(x=>{ if(x&&x.icaoId&&x.rawOb) out.metar[x.icaoId]=x; });
     tafOK=Object.keys(out.taf).length;
     if(tafOK){ relayUsed="倉庫快取"; tafFail=""; return out; }
   }catch(e){ tafLog.push("倉庫快取："+e.message); }
 
+  // 3. AWC 加中繼
   try{
-    (await awcFetch("taf",ids)).forEach(x=>{ if(x&&x.icaoId&&x.rawTAF) out.taf[x.icaoId]=x; });
+    (await awcFetch("taf",ids)).forEach(x=>{
+      if(x&&x.icaoId&&x.rawTAF){const t=parseTAF(x.rawTAF); if(t){t.issue=x.issueTime; out.taf[x.icaoId]=t;}}
+    });
     tafOK=Object.keys(out.taf).length;
-    tafFail=tafOK?"":"中繼有回應但沒有 TAF 資料";
+    tafFail=tafOK?"":(tafLog[0]||"中繼有回應但沒有 TAF 資料");
   }catch(e){ tafOK=0; tafFail=e.message; }
   try{
     (await awcFetch("metar",ids)).forEach(x=>{ if(x&&x.icaoId&&x.rawOb) out.metar[x.icaoId]=x; });
@@ -594,15 +717,11 @@ async function load(){
     }).map(d=>Object.assign(d,{risk:assess(d)}));
 
     const icao=(s.k||"").toUpperCase();
-    const tafRaw=awc.taf[icao], metar=awc.metar[icao];
-    const taf=tafRaw?parseTAF(tafRaw.rawTAF):null;
+    const taf=awc.taf[icao]||null, metar=awc.metar[icao]||null;
     const tafRisk=taf?assessTAF(taf):null;
-    if(taf&&tafRaw.issueTime) taf.issue=tafRaw.issueTime;
     return Object.assign({},s,{
       days, mlvl:days.reduce((m,d)=>Math.max(m,d.risk.lvl),0),
-      taf, tafRisk,
-      metar:metar||null,
-      lvl:tafRisk?tafRisk.lvl:0
+      taf, tafRisk, metar, lvl:tafRisk?tafRisk.lvl:0
     });
   });
   fetchedAt=new Date(); if(tafOK) tafAt=fetchedAt;
@@ -827,6 +946,28 @@ document.getElementById("reset").addEventListener("click",()=>{
 });
 
 document.getElementById("proxy").value=PROXY;
+document.getElementById("avwxToken").value=AVWX_TOKEN;
+document.getElementById("avwxBase").value=AVWX_BASE;
+document.getElementById("saveAvwx").addEventListener("click",()=>{
+  AVWX_TOKEN=document.getElementById("avwxToken").value.trim();
+  AVWX_BASE=(document.getElementById("avwxBase").value.trim()||"https://avwx.rest").replace(/\/+$/,"");
+  document.getElementById("avwxBase").value=AVWX_BASE;
+  refresh();
+});
+document.getElementById("testAvwx").addEventListener("click",async()=>{
+  const box=document.getElementById("avwxOut");
+  AVWX_TOKEN=document.getElementById("avwxToken").value.trim();
+  AVWX_BASE=(document.getElementById("avwxBase").value.trim()||"https://avwx.rest").replace(/\/+$/,"");
+  box.innerHTML='<p class="hint">以 RCTP 測試中</p>';
+  const t0=Date.now();
+  try{
+    const r=await fetchAVWX(["RCTP"]);
+    const t=r.taf.RCTP;
+    box.innerHTML='<p class="hint">'+esc("成功　"+(Date.now()-t0)+" ms　解析出 "+t.groups.length+" 個時段")+
+      '<br>'+esc(t.raw.slice(0,120))+'</p>';
+  }catch(e){ box.innerHTML='<p class="hint">'+esc("失敗："+e.message)+'</p>'; }
+});
+
 document.getElementById("testRelay").addEventListener("click",async()=>{
   const box=document.getElementById("relayOut");
   PROXY=document.getElementById("proxy").value.trim();
