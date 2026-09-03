@@ -154,13 +154,14 @@ footer{padding:18px 8px 4px;font-size:11.5px;line-height:1.8;color:var(--ink-3)}
 
 nav{
   position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 16px);
-  display:flex;gap:4px;padding:6px;background:rgba(255,255,255,.68);
+  display:flex;gap:2px;padding:6px;max-width:calc(100vw - 24px);
+  background:rgba(255,255,255,.68);
   -webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);
   border-radius:999px;box-shadow:var(--shadow);z-index:5;
 }
 nav button{
   border:0;cursor:pointer;font-family:inherit;background:transparent;color:var(--ink-3);
-  font-size:13px;padding:10px 18px;border-radius:999px;
+  font-size:12.5px;padding:10px 13px;border-radius:999px;white-space:nowrap;
 }
 nav button[aria-current="true"]{background:var(--ink);color:#fff;font-weight:500}
 nav button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
@@ -197,7 +198,7 @@ svg{display:block}
   <div class="card">
     <h2>所有航點</h2>
     <div class="list" id="list"></div>
-    <div class="acts"><button class="ghost" id="reset">還原內建清單</button></div>
+    <div class="acts"><button class="ghost" id="fixIcao">補上 ICAO 代碼</button><button class="ghost" id="reset">還原內建清單</button></div>
   </div>
   <div class="card">
     <h2>TAF 中繼</h2>
@@ -295,6 +296,19 @@ function save(){
   catch(e){ const h=document.getElementById("hint");
     if(h) h.textContent="這個瀏覽器不讓網頁存資料，改動只在本次開啟期間有效。下載後用 Safari 或 Chrome 開就會記住。"; }
 }
+
+function migrateICAO(){
+  let changed=0;
+  STATIONS.forEach(s=>{
+    if(s.k&&/^[A-Z]{4}$/.test(s.k.toUpperCase())) return;
+    const b=BUILTIN.find(x=>x.i===s.i)
+        ||BUILTIN.find(x=>Math.abs(x.la-s.la)<0.25&&Math.abs(x.lo-s.lo)<0.25);
+    if(b){ s.k=b.k; changed++; }
+  });
+  if(changed) save();
+  return changed;
+}
+migrateICAO();
 
 const WMO={0:["晴","sun"],1:["晴時多雲","sun"],2:["多雲","cloud"],3:["陰","cloud"],
  45:["霧","fog"],48:["凍霧","fog"],51:["毛毛雨","rain"],53:["毛毛雨","rain"],55:["強毛毛雨","rain"],
@@ -625,6 +639,12 @@ document.getElementById("list").addEventListener("click",e=>{
   if(dl){ STATIONS.splice(+dl.dataset.del,1); editing=-1; refresh(); return; }
   if(cx){ editing=-1; renderList(); return; }
   if(row){ editing=editing===+row.dataset.edit?-1:+row.dataset.edit; renderList(); }
+});
+
+document.getElementById("fixIcao").addEventListener("click",()=>{
+  const n=migrateICAO();
+  document.getElementById("hint").textContent=n?("已依內建清單補上 "+n+" 個 ICAO 代碼，正在重抓 TAF。"):"沒有可自動補上的站，請手動填入 ICAO。";
+  if(n) refresh(); else renderList();
 });
 
 document.getElementById("reset").addEventListener("click",()=>{
