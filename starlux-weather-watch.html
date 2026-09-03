@@ -318,13 +318,28 @@ function save(){
     if(h) h.textContent="這個瀏覽器不讓網頁存資料，改動只在本次開啟期間有效。下載後用 Safari 或 Chrome 開就會記住。"; }
 }
 
+// 內建清單以外的常見機場，供自訂航點自動補碼
+const IATA2ICAO={KHH:"RCKH",TSA:"RCSS",TNN:"RCNN",HUN:"RCYU",TTT:"RCFN",MZG:"RCQC",KNH:"RCBS",
+ HND:"RJTT",ITM:"RJOO",KOJ:"RJFK",OIT:"RJFO",HIJ:"RJOA",KKJ:"RJFR",AOJ:"RJSA",AXT:"RJSK",
+ ICN:"RKSI",GMP:"RKSS",CJU:"RKPC",TAE:"RKTN",MNL:"RPLL",KUL:"WMKK",PEN:"WMKP",BKI:"WBKK",
+ SGN:"VVTS",VCA:"VVCT",CXR:"VVCR",HPH:"VVCI",VII:"VVVD",UTP:"VTBU",HKT:"VTSP",USM:"VTSM",
+ SUB:"WARR",UPG:"WAAA",LOP:"WADL",SRG:"WAHS",PVG:"ZSPD",SHA:"ZSSS",PEK:"ZBAA",PKX:"ZBAD",
+ CAN:"ZGGG",SZX:"ZGSZ",XMN:"ZSAM",FOC:"ZSFZ",NRT:"RJAA",CDG:"LFPG",LHR:"EGLL",FRA:"EDDF",
+ AMS:"EHAM",VIE:"LOWW",MUC:"EDDM",ZRH:"LSZH",MXP:"LIMC",FCO:"LIRF",BCN:"LEBL",MAD:"LEMD",
+ HEL:"EFHK",ARN:"ESSA",CPH:"EKCH",OSL:"ENGM",WAW:"EPWA",BUD:"LHBP",IST:"LTFM",DXB:"OMDB",
+ DOH:"OTHH",SYD:"YSSY",MEL:"YMML",BNE:"YBBN",PER:"YPPH",AKL:"NZAA",YVR:"CYVR",YYZ:"CYYZ",
+ JFK:"KJFK",EWR:"KEWR",ORD:"KORD",ATL:"KATL",IAH:"KIAH",DEN:"KDEN",BOS:"KBOS",SAN:"KSAN",
+ HNL:"PHNL",GUM:"PGUM",ANC:"PANC"};
+
 function migrateICAO(){
   let changed=0;
   STATIONS.forEach(s=>{
     if(s.k&&/^[A-Z]{4}$/.test(s.k.toUpperCase())) return;
     const b=BUILTIN.find(x=>x.i===s.i)
         ||BUILTIN.find(x=>Math.abs(x.la-s.la)<0.25&&Math.abs(x.lo-s.lo)<0.25);
-    if(b){ s.k=b.k; changed++; }
+    if(b){ s.k=b.k; changed++; return; }
+    const alt=IATA2ICAO[(s.i||"").toUpperCase()];
+    if(alt){ s.k=alt; changed++; }
   });
   if(changed) save();
   return changed;
@@ -463,15 +478,15 @@ function stampText(){
 }
 setInterval(stampText,60000);
 
-/* ── 取得 TAF / METAR：多重中繼與診斷 ─────────────────── */
+/* ── 取得 TAF / METAR：優先同網域快取，其次多重中繼 ─────────────────── */
 let relayUsed="", tafLog=[];
 
 function relayList(){
   const out=[];
   if(PROXY) out.push({n:"自訂中繼",u:u=>PROXY+encodeURIComponent(u)});
-  out.push({n:"allorigins",u:u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u)});
-  out.push({n:"corsproxy",u:u=>"https://corsproxy.io/?url="+encodeURIComponent(u)});
   out.push({n:"codetabs",u:u=>"https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(u)});
+  out.push({n:"allorigins",u:u=>"https://api.allorigins.win/get?url="+encodeURIComponent(u),wrap:true});
+  out.push({n:"cors.workers",u:u=>"https://test.cors.workers.dev/?"+u});
   out.push({n:"直連",u:u=>u});
   const seen=new Set();
   return out.filter(r=>{const k=r.u("https://x/"); if(seen.has(k))return false; seen.add(k); return true;});
@@ -489,9 +504,14 @@ async function tryFetch(url,ms){
   }finally{ clearTimeout(t); }
 }
 
-function parseArray(txt){
-  const s=(txt||"").trim();
+function parseArray(txt,wrap){
+  let s=(txt||"").trim();
   if(!s) return [];
+  if(wrap){
+    const o=JSON.parse(s);
+    s=(o&&typeof o.contents==="string")?o.contents.trim():"";
+    if(!s) return [];
+  }
   if(s[0]!=="["&&s[0]!=="{") throw new Error("回傳不是 JSON，可能是中繼的錯誤頁");
   const j=JSON.parse(s);
   return Array.isArray(j)?j:(j.data&&Array.isArray(j.data)?j.data:[j]);
@@ -504,7 +524,7 @@ async function awcFetch(kind,ids){
   for(const r of relayList()){
     try{
       const rows=[];
-      for(const u of urls) rows.push(...parseArray(await tryFetch(r.u(u))));
+      for(const u of urls) rows.push(...parseArray(await tryFetch(r.u(u)),r.wrap));
       relayUsed=r.n;
       return rows;
     }catch(e){ tafLog.push(r.n+" 取 "+kind+"："+e.message); }
@@ -512,11 +532,31 @@ async function awcFetch(kind,ids){
   throw new Error(tafLog[tafLog.length-1]||"全部中繼都失敗");
 }
 
+// GitHub Actions 每 15 分鐘更新的同網域快取，沒有 CORS 問題
+async function localCache(){
+  const [t,m]=await Promise.all([
+    tryFetch("data/taf.json?t="+Date.now(),8000),
+    tryFetch("data/metar.json?t="+Date.now(),8000).catch(()=>"[]")
+  ]);
+  const taf=parseArray(t), metar=parseArray(m);
+  if(!taf.length) throw new Error("快取檔沒有資料");
+  return {taf,metar};
+}
+
 async function fetchAWC(){
   tafLog=[]; relayUsed="";
   const ids=[...new Set(STATIONS.map(s=>(s.k||"").toUpperCase()).filter(x=>/^[A-Z]{4}$/.test(x)))];
   const out={taf:{},metar:{}};
   if(!ids.length){tafOK=0;tafFail="沒有 ICAO 代碼";return out;}
+
+  try{
+    const c=await localCache();
+    c.taf.forEach(x=>{ if(x&&x.icaoId&&x.rawTAF) out.taf[x.icaoId]=x; });
+    c.metar.forEach(x=>{ if(x&&x.icaoId&&x.rawOb) out.metar[x.icaoId]=x; });
+    tafOK=Object.keys(out.taf).length;
+    if(tafOK){ relayUsed="倉庫快取"; tafFail=""; return out; }
+  }catch(e){ tafLog.push("倉庫快取："+e.message); }
+
   try{
     (await awcFetch("taf",ids)).forEach(x=>{ if(x&&x.icaoId&&x.rawTAF) out.taf[x.icaoId]=x; });
     tafOK=Object.keys(out.taf).length;
@@ -794,11 +834,14 @@ document.getElementById("testRelay").addEventListener("click",async()=>{
   const list=relayList();
   box.innerHTML='<p class="hint">測試中，每項最多等 14 秒</p>';
   const lines=[];
+  try{ const c=await localCache(); lines.push("倉庫快取　成功　"+c.taf.length+" 筆 TAF"); }
+  catch(e){ lines.push("倉庫快取　"+e.message); }
+  box.innerHTML='<p class="hint">'+lines.map(esc).join("<br>")+'</p>';
   for(const r of list){
     let msg;
     const t0=Date.now();
     try{
-      const rows=parseArray(await tryFetch(r.u(url)));
+      const rows=parseArray(await tryFetch(r.u(url)),r.wrap);
       const ok=rows.length&&rows[0].rawTAF;
       msg=ok?("成功　"+(Date.now()-t0)+" ms"):"連得上，但沒有 TAF 資料";
     }catch(e){ msg=e.message; }
