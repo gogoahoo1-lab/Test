@@ -331,7 +331,7 @@ function paintAll(){
 
 "use strict";
 /* ============ 狀態 ============ */
-var state = { dir:"long", bars:[], analysis:null, override:{}, lastReport:"" };
+var state = { dir:"long", bars:[], analysis:null, override:{}, lastReport:"", dataSym:null };
 var $ = function(id){ return document.getElementById(id); };
 var fmt = function(n,d){ if(n===null||n===undefined||!isFinite(n)) return "—"; return Number(n).toFixed(d===undefined?2:d); };
 
@@ -853,6 +853,7 @@ function loadBars(bars, srcLabel){
   }
   state.bars = bars; state.analysis = analyze(bars);
   state.override = {};                    // 換一批資料就清掉上一檔的手動勾選
+  state.dataSym = symCode();              // 記住這批資料屬於哪一檔
   $("dataMsg").setAttribute("data-s","ok");
   $("dataMsg").textContent = srcLabel + "：" + bars.length + " 根，" + bars[0].date + " → " + bars[bars.length-1].date + "，收盤 " + fmt(state.analysis.px) + "（手動勾選已重設）";
   autoPrices();
@@ -861,9 +862,14 @@ function loadBars(bars, srcLabel){
   return true;
 }
 $("btnParse").addEventListener("click", function(){
-  if (!$("raw").value.trim()){ runAutoFetch(); return; }   // 沒貼資料就自動抓
+  var code = symCode();
+  if (!$("raw").value.trim()){ runAutoFetch(); return; }              // 沒資料就自動抓
+  if (code && state.dataSym && code !== state.dataSym){                // 換了一檔股票，舊資料作廢
+    runAutoFetch(); return;
+  }
   var bars = parseText($("raw").value);
-  loadBars(bars, "已讀取");
+  var t = new Date();
+  loadBars(bars, (code || "已讀取") + "・" + ("0"+t.getHours()).slice(-2) + ":" + ("0"+t.getMinutes()).slice(-2) + " 重新健檢");
 });
 $("btnClear").addEventListener("click", function(){
   $("raw").value = ""; state.bars = []; state.analysis = null;
@@ -925,6 +931,15 @@ function showReport(t){
     $("copyMsg").after(pre);
   }
   pre.value = t; pre.select();
+}
+
+function symCode(){ return ($("sym").value||"").replace(/[^0-9A-Za-z]/g,"").toUpperCase(); }
+function setStatus(msg, isErr){
+  $("dataMsg").textContent = msg;
+  if (isErr) $("dataMsg").setAttribute("data-s","err"); else $("dataMsg").removeAttribute("data-s");
+  $("hero").setAttribute("data-state","neutral");
+  $("vTitle").textContent = isErr ? "抓不到資料" : "抓取中";
+  $("vWhy").textContent = msg;
 }
 
 /* ============ 自動抓取：多來源接力 ============ */
@@ -1008,8 +1023,7 @@ function autoFetch(code){
   function next(){
     if (i >= steps.length) return Promise.reject(new Error("all failed"));
     var name = steps[i][0], run = steps[i][1]; i++;
-    $("dataMsg").removeAttribute("data-s");
-    $("dataMsg").textContent = "抓取中…（" + name + "）";
+    setStatus("抓取中…（" + name + "）", false);
     return run().then(function(bars){
       if (!bars || bars.length < 30) throw new Error("too few");
       return { bars:bars, name:name };
@@ -1018,11 +1032,10 @@ function autoFetch(code){
   return next();
 }
 function runAutoFetch(){
-  var code = ($("sym").value||"").replace(/[^0-9A-Za-z]/g,"");
+  var code = symCode();
   if (code.length < 4){
     $("dataBox").open = true;
-    $("dataMsg").setAttribute("data-s","err");
-    $("dataMsg").textContent = "先填股票代號，例如 2330。也可以直接貼上日線。";
+    setStatus("先填股票代號，例如 2330。也可以直接貼上日線。", true);
     return;
   }
   $("btnParse").textContent = "抓取中…";
@@ -1033,8 +1046,9 @@ function runAutoFetch(){
     loadBars(res.bars, code + "・" + res.name);
   }).catch(function(){
     $("dataBox").open = true;
-    $("dataMsg").setAttribute("data-s","err");
-    $("dataMsg").textContent = "所有來源都抓不到 " + code + "。可能是代號錯誤，或瀏覽器擋住了跨網域請求——請改用貼上，或用 twse_daily.py 產生資料。";
+    var stale = state.dataSym && state.dataSym !== code
+      ? "　資料框裡還是 " + state.dataSym + " 的舊資料，請換成 " + code + " 的日線。" : "";
+    setStatus("所有來源都抓不到 " + code + "。可能是代號錯誤，或瀏覽器擋住跨網域請求——請改用貼上，或用 twse_daily.py 產生資料。" + stale, true);
   }).then(function(){ $("btnParse").textContent = "開始健檢"; });
 }
 $("btnFetch").addEventListener("click", runAutoFetch);
