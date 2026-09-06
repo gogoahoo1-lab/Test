@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="航點天氣">
 <meta name="theme-color" content="#EFEFED">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>航點天氣警戒</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -221,6 +223,13 @@ svg{display:block}
     <div class="acts"><button class="ghost" id="fixIcao">補上 ICAO 代碼</button><button class="ghost" id="reset">還原內建清單</button></div>
   </div>
   <div class="card">
+    <h2>推播通知</h2>
+    <div class="field"><input type="text" id="pushBase" placeholder="https://你的名稱.workers.dev"></div>
+    <p class="hint" id="pushHint">只有航點升到<b>嚴重</b>時才推播，狀況持續不會重複打擾。iPhone 必須先用 Safari 的分享選單「加入主畫面」，再從主畫面開啟這個 app 才能開啟通知，這是 iOS 的限制。</p>
+    <div class="acts"><button class="solid" id="pushOn">開啟通知</button><button class="ghost" id="pushOff">關閉</button><button class="ghost" id="pushTest">測試</button></div>
+    <div id="pushOut"></div>
+  </div>
+  <div class="card">
     <h2>AVWX 資料來源</h2>
     <div class="field"><input type="text" id="avwxToken" placeholder="AVWX API token"></div>
     <div class="field" style="margin-top:8px"><input type="text" id="avwxBase" placeholder="https://avwx.rest"></div>
@@ -241,6 +250,7 @@ svg{display:block}
   <div class="card">
     <h2>嚴重</h2>
     <div class="thr">
+      <div><span>火山灰</span><b>一律嚴重</b></div>
       <div><span>陣風</span><b>40 kt</b></div>
       <div><span>持續風</span><b>35 kt</b></div>
       <div><span>能見度，霧或低雲遮蔽</span><b>800 m</b></div>
@@ -377,7 +387,8 @@ const ICON={
  snow:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M6 12.2h8a3 3 0 0 0 .3-6 4.4 4.4 0 0 0-8.4-.6A3.3 3.3 0 0 0 6 12.2Z" ${S}/><path d="M7.4 15.6v2.2M6.4 16.2l2 1M8.4 16.2l-2 1M13 15.6v2.2M12 16.2l2 1M14 16.2l-2 1" ${S}/></svg>`,
  fog:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M6 11.4h8a3 3 0 0 0 .3-6 4.4 4.4 0 0 0-8.4-.6A3.3 3.3 0 0 0 6 11.4Z" ${S}/><path d="M4.4 14.2h11.2M6.4 17h7.6" ${S}/></svg>`,
  wind:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M2.6 7h9.2a2.4 2.4 0 1 0-2.4-2.6M2.6 11.4h12.6a2.4 2.4 0 1 1-2.4 2.6M2.6 15.4h5.6" ${S}/></svg>`,
- heat:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M8.6 11.6V4.2a1.7 1.7 0 0 1 3.4 0v7.4a3.4 3.4 0 1 1-3.4 0Z" ${S}/></svg>`
+ heat:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M8.6 11.6V4.2a1.7 1.7 0 0 1 3.4 0v7.4a3.4 3.4 0 1 1-3.4 0Z" ${S}/></svg>`,
+ ash:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M2.6 17.4 7.4 8.2h5.2l4.8 9.2Z" ${S}/><path d="M7.4 8.2 8.6 5.4M12.6 8.2l1.3-2.8" ${S}/><circle cx="10" cy="2.6" r="1" ${S}/><circle cx="15.4" cy="3.4" r=".8" ${S}/><circle cx="5.2" cy="3.6" r=".8" ${S}/></svg>`
 };
 
 /* ── TAF 解析 ─────────────────── */
@@ -385,7 +396,7 @@ const WXNAME={TS:"雷雨",TSRA:"雷雨",RA:"雨",SN:"雪",DZ:"毛毛雨",GR:"冰
  SG:"雪珠",FG:"霧",BR:"輕霧",HZ:"靄",FU:"煙",SA:"揚沙",DU:"塵",VA:"火山灰",SQ:"颮",FC:"漏斗雲",
  SS:"沙暴",DS:"塵暴",IC:"冰針",UP:"未知降水"};
 function decodeGroup(g){
-  const o={wind:0,gust:0,vis:null,ceil:null,ts:false,heavy:false,fz:false,sn:false,fg:false,sq:false,wx:[]};
+  const o={wind:0,gust:0,vis:null,ceil:null,ts:false,heavy:false,fz:false,sn:false,fg:false,sq:false,va:false,wx:[]};
   g.split(" ").forEach(t=>{
     let m=t.match(/^(\d{3}|VRB)(\d{2,3})(?:G(\d{2,3}))?(KT|MPS)$/);
     if(m){const f=m[4]==="MPS"?1.94384:1;o.wind=Math.max(o.wind,+m[2]*f);if(m[3])o.gust=Math.max(o.gust,+m[3]*f);return;}
@@ -404,10 +415,12 @@ function decodeGroup(g){
       if(/SN|SG|PL|GS/.test(ph))o.sn=true;
       if(ph==="FG")o.fg=true;
       if(ph==="SQ"||ph==="FC")o.sq=true;
+      if(/VA/.test(ph))o.va=true;
       const nm=(sev?"強":"")+(WXNAME[ph]||ph);
       if(!o.wx.includes(nm))o.wx.push(nm);
     }
     if(/^TS/.test(t))o.ts=true;
+    if(/^(VC)?VA$/.test(t))o.va=true;
   });
   return o;
 }
@@ -428,6 +441,8 @@ function assessTAF(t){
   const out=[];
   t.groups.forEach(g=>{
     const tmp=g.kind==="TEMPO"||g.kind==="PROB", tag=tmp?"（短時）":"";
+    // 嚴重：火山灰，發動機熄火與機體損傷風險，最優先
+    if(g.va)out.push([2,"火山灰"+tag,"ash"]);
     // 嚴重：強風
     if(g.gust>=50)out.push([2,"陣風 "+Math.round(g.gust)+" kt，颱風或強烈低壓"+tag,"wind"]);
     else if(g.gust>=40)out.push([2,"陣風 "+Math.round(g.gust)+" kt，側風與亂流"+tag,"wind"]);
@@ -518,7 +533,7 @@ function avwxFlags(codes){
   const j=reprs.join(" ");
   return {
     ts:/TS/.test(j), heavy:/(^|\s)\+/.test(j), fz:/FZ/.test(j),
-    sn:/SN|SG|PL|GS/.test(j), fg:/FG/.test(j), sq:/SQ|FC/.test(j),
+    sn:/SN|SG|PL|GS/.test(j), fg:/FG/.test(j), sq:/SQ|FC/.test(j), va:/VA/.test(j),
     wx:reprs.map(r=>wxText(r)).filter(Boolean)
   };
 }
@@ -565,28 +580,108 @@ function normAvwxMetar(j){
 async function pool(items,n,fn){
   const out=[]; let i=0;
   await Promise.all(Array(Math.min(n,items.length)).fill(0).map(async()=>{
-    while(i<items.length){ const k=i++; try{ out[k]=await fn(items[k]); }catch(e){ out[k]=null; } }
+    while(i<items.length){ const k=i++; try{ out[k]=await fn(items[k]); }catch(e){ out[k]={err:e.message}; } }
   }));
   return out;
 }
 
+// 帶狀態碼的請求，AVWX 用不同狀態碼表達不同意義，不能一律當失敗
+async function rawFetch(url,ms){
+  const c=new AbortController(), t=setTimeout(()=>c.abort(),ms||14000);
+  try{
+    const r=await fetch(url,{signal:c.signal});
+    const text=r.status===204?"":await r.text();
+    return {status:r.status,text};
+  }catch(e){
+    throw new Error(e.name==="AbortError"?"逾時":"網路或 CORS 阻擋");
+  }finally{ clearTimeout(t); }
+}
+
+// AVWX 免費方案是每日額度，快取可大幅減少呼叫次數
+const ACACHE="jx-avwx-cache";
+const TTL={taf:20*60*1000, metar:8*60*1000};
+function cacheGet(kind,icao){
+  try{
+    const c=JSON.parse(localStorage.getItem(ACACHE)||"{}")[kind+":"+icao];
+    if(c&&Date.now()-c.t<TTL[kind]) return c.d;
+  }catch(e){}
+  return null;
+}
+function cachePut(kind,icao,d){
+  try{
+    const all=JSON.parse(localStorage.getItem(ACACHE)||"{}");
+    all[kind+":"+icao]={t:Date.now(),d};
+    localStorage.setItem(ACACHE,JSON.stringify(all));
+  }catch(e){}
+}
+
+let avwxWrap=null;   // null 直連，否則為中繼包裝函式
+function avwxURL(kind,icao){
+  return AVWX_BASE+"/api/"+kind+"/"+icao+(AVWX_TOKEN?"?token="+encodeURIComponent(AVWX_TOKEN):"");
+}
+async function avwxOne(kind,icao){
+  const hit=cacheGet(kind,icao);
+  if(hit) return {data:hit,cached:true};
+  const base=avwxURL(kind,icao);
+  const {status,text}=await rawFetch(avwxWrap?avwxWrap.u(base):base);
+  if(status===204) return {skip:"無報文"};
+  if(status===400) return {skip:"AVWX 不認得此代碼"};
+  if(status===401) throw new Error("HTTP 401，缺少 token");
+  if(status===403) throw new Error("HTTP 403，token 被拒或方案不符");
+  if(status===429) throw new Error("HTTP 429，已達每日額度");
+  if(status>=400) throw new Error("HTTP "+status);
+  let body=text;
+  if(avwxWrap&&avwxWrap.wrap){ const o=JSON.parse(text||"{}"); body=o.contents||""; }
+  if(!body.trim()) return {skip:"空回應"};
+  const j=JSON.parse(body);
+  if(j.error) return {skip:String(j.error)};
+  cachePut(kind,icao,j);
+  return {data:j};
+}
+
+// 先用單站探路：直連不通就改走中繼，避免 37 站各撞一次 CORS
+async function avwxProbe(icao){
+  avwxWrap=null;
+  try{
+    const r=await avwxOne("taf",icao);
+    if(r.data||r.skip) return;
+  }catch(e){
+    if(!/CORS|逾時/.test(e.message)) throw e;
+  }
+  for(const r of relayList()){
+    if(r.n==="直連") continue;
+    avwxWrap=r;
+    try{ const t=await avwxOne("taf",icao); if(t.data||t.skip) return; }catch(e){}
+  }
+  avwxWrap=null;
+  throw new Error("直連與中繼都連不上 AVWX");
+}
+
 async function fetchAVWX(ids){
   if(!AVWX_TOKEN&&AVWX_BASE==="https://avwx.rest") throw new Error("未設定 AVWX token");
-  const q=AVWX_TOKEN?("?token="+encodeURIComponent(AVWX_TOKEN)):"";
-  const get=async(kind,icao)=>{
-    const txt=await tryFetch(AVWX_BASE+"/api/"+kind+"/"+icao+q,14000);
-    const j=JSON.parse(txt);
-    if(j.error) throw new Error(j.error);
-    return j;
-  };
-  const taf={},metar={};
-  const tr=await pool(ids,5,x=>get("taf",x));
-  tr.forEach((j,n)=>{ const t=normAvwxTaf(j); if(t) taf[ids[n]]=t; });
-  if(!Object.keys(taf).length) throw new Error("AVWX 沒有回傳 TAF，請確認 token 或額度");
-  const mr=await pool(ids,5,x=>get("metar",x));
-  mr.forEach((j,n)=>{ const m=normAvwxMetar(j); if(m) metar[ids[n]]=m; });
+  await avwxProbe(ids[0]);
+  const taf={},metar={},skips=[];
+  let hard=null;
+
+  const tr=await pool(ids,3,async x=>avwxOne("taf",x));
+  tr.forEach((r,n)=>{
+    if(!r) return;
+    if(r.err){ if(/401|403|429/.test(r.err)) hard=hard||r.err; return; }
+    if(r.skip){ skips.push(ids[n]+" "+r.skip); return; }
+    const t=normAvwxTaf(r.data); if(t) taf[ids[n]]=t;
+  });
+  if(hard) throw new Error(hard);
+  if(!Object.keys(taf).length) throw new Error(skips.length?("無可用 TAF："+skips[0]):"AVWX 沒有回傳 TAF");
+
+  const mr=await pool(ids,3,async x=>avwxOne("metar",x));
+  mr.forEach((r,n)=>{
+    if(!r||r.err||r.skip) return;
+    const m=normAvwxMetar(r.data); if(m) metar[ids[n]]=m;
+  });
+  avwxSkips=skips;
   return {taf,metar};
 }
+let avwxSkips=[];
 
 /* ── 取得 TAF / METAR：優先同網域快取，其次多重中繼 ─────────────────── */
 let relayUsed="", tafLog=[];
@@ -664,7 +759,10 @@ async function fetchAWC(){
     try{
       const a=await fetchAVWX(ids);
       tafOK=Object.keys(a.taf).length;
-      if(tafOK){ relayUsed="AVWX"; tafFail=""; return a; }
+      if(tafOK){
+        relayUsed="AVWX"+(avwxWrap?"／"+avwxWrap.n:"")+(avwxSkips.length?"，"+avwxSkips.length+" 站無報文":"");
+        tafFail=""; return a;
+      }
     }catch(e){ tafLog.push("AVWX："+e.message); }
   }
 
@@ -718,7 +816,12 @@ async function load(){
 
     const icao=(s.k||"").toUpperCase();
     const taf=awc.taf[icao]||null, metar=awc.metar[icao]||null;
-    const tafRisk=taf?assessTAF(taf):null;
+    let tafRisk=taf?assessTAF(taf):null;
+    if(ashInMetar(metar)){
+      tafRisk=tafRisk||{lvl:0,notes:[],icon:"ash"};
+      if(!tafRisk.notes.some(n=>/火山灰/.test(n))) tafRisk.notes.unshift("METAR 觀測到火山灰");
+      tafRisk.lvl=2; tafRisk.icon="ash";
+    }
     return Object.assign({},s,{
       days, mlvl:days.reduce((m,d)=>Math.max(m,d.risk.lvl),0),
       taf, tafRisk, metar, lvl:tafRisk?tafRisk.lvl:0
@@ -737,10 +840,13 @@ function renderTabs(){
 }
 
 function severity(s){
-  if(!s.taf||!s.tafRisk) return 0;
+  if(!s.tafRisk) return 0;
+  if(!s.taf) return s.tafRisk.lvl*100+14;
   let peak=0,hits=0;
+  if(s.tafRisk.icon==="ash") peak=1.40;
   s.taf.groups.forEach(g=>{
     let x=0;
+    if(g.va)x=Math.max(x,1.40);
     if(g.gust)x=Math.max(x,g.gust/40);
     if(g.wind)x=Math.max(x,g.wind/45);
     if(g.ts)x=Math.max(x,1.15);
@@ -825,6 +931,14 @@ function metarBlock(s){
     '</div></div>';
 }
 
+// METAR 實況若觀測到火山灰，即使 TAF 沒寫也一律列為嚴重
+function ashInMetar(m){
+  if(!m) return false;
+  const tok=t=>/^[+-]?(VC)?VA$/.test(t);
+  if((m.wxString||"").split(/\s+/).some(tok)) return true;
+  return (m.rawOb||"").split(" RMK")[0].split(/\s+/).some(tok);
+}
+
 function tafHead(s){
   const bits=[];
   if(s.taf.valid) bits.push("有效 "+s.taf.valid);
@@ -835,7 +949,7 @@ function tafHead(s){
 function render(){
   renderTabs();
   const list=DATA.filter(s=>filter==="all"||s.r===filter);
-  const withTaf=list.filter(s=>s.taf);
+  const withTaf=list.filter(s=>s.taf||s.tafRisk);
   const flagged=withTaf.filter(s=>s.lvl>0).map(s=>Object.assign(s,{sc:severity(s)})).sort((a,b)=>b.sc-a.sc);
   const sev=flagged.filter(s=>s.lvl>1);
 
@@ -856,10 +970,10 @@ function render(){
       '<h3>'+esc(s.c)+'<small>'+esc(s.i)+(s.k?' '+esc(s.k):'')+'</small>'+
       '<span class="tag">'+(s.lvl>1?'嚴重':'觀察')+'</span></h3>'+
       '<p>'+s.tafRisk.notes.join('，')+'</p>'+
-      '<p class="when">'+esc(tafHead(s))+'</p>'+
+      '<p class="when">'+esc(s.taf?tafHead(s):"依 METAR 實況判讀，此站無 TAF")+'</p>'+
       '</div></div>'+
       metarBlock(s)+
-      '<p class="raw"><span>TAF 原文</span>'+esc(s.taf.raw)+'</p>'+
+      (s.taf?'<p class="raw"><span>TAF 原文</span>'+esc(s.taf.raw)+'</p>':'')+
       (s.metar&&s.metar.rawOb?'<p class="raw"><span>METAR 原文</span>'+esc(s.metar.rawOb)+'</p>':'')+
       '</div>').join("")
     : '<div class="card"><p class="thr">'+(withTaf.length?'這個範圍內，各站 TAF 都沒有達到門檻。':'尚未取得 TAF。')+'</p></div>';
@@ -958,14 +1072,20 @@ document.getElementById("testAvwx").addEventListener("click",async()=>{
   const box=document.getElementById("avwxOut");
   AVWX_TOKEN=document.getElementById("avwxToken").value.trim();
   AVWX_BASE=(document.getElementById("avwxBase").value.trim()||"https://avwx.rest").replace(/\/+$/,"");
-  box.innerHTML='<p class="hint">以 RCTP 測試中</p>';
+  box.innerHTML='<p class="hint">測試中</p>';
+  const lines=[];
   const t0=Date.now();
   try{
-    const r=await fetchAVWX(["RCTP"]);
-    const t=r.taf.RCTP;
-    box.innerHTML='<p class="hint">'+esc("成功　"+(Date.now()-t0)+" ms　解析出 "+t.groups.length+" 個時段")+
-      '<br>'+esc(t.raw.slice(0,120))+'</p>';
-  }catch(e){ box.innerHTML='<p class="hint">'+esc("失敗："+e.message)+'</p>'; }
+    await avwxProbe("RCTP");
+    lines.push("連線方式　"+(avwxWrap?avwxWrap.n:"直連")+"　"+(Date.now()-t0)+" ms");
+    for(const id of ["RCTP","RJAA","RCMQ"]){
+      try{
+        const r=await avwxOne("taf",id);
+        lines.push(id+"　"+(r.data?("成功，"+((r.data.forecast||[]).length)+" 個時段"+(r.cached?"（快取）":"")):r.skip));
+      }catch(e){ lines.push(id+"　"+e.message); }
+    }
+  }catch(e){ lines.push("失敗："+e.message); }
+  box.innerHTML='<p class="hint">'+lines.map(esc).join("<br>")+'</p>';
 });
 
 document.getElementById("testRelay").addEventListener("click",async()=>{
@@ -1046,6 +1166,95 @@ document.getElementById("nav").addEventListener("click",e=>{
   document.getElementById("tabs").classList.toggle("hidden",view==="info"||view==="manage");
   window.scrollTo({top:0,behavior:"smooth"});
 });
+/* ── 推播通知 ─────────────────── */
+const PBKEY="jx-push-base";
+let PUSH_BASE="";
+try{ PUSH_BASE=localStorage.getItem(PBKEY)||""; }catch(e){}
+
+const pushMsg=t=>{ document.getElementById("pushOut").innerHTML='<p class="hint">'+esc(t).replace(/\n/g,"<br>")+'</p>'; };
+const b64ToU8=s=>{
+  const p="=".repeat((4-s.length%4)%4);
+  const b=atob((s+p).replace(/-/g,"+").replace(/_/g,"/"));
+  return Uint8Array.from(b,c=>c.charCodeAt(0));
+};
+const standalone=()=>window.matchMedia("(display-mode: standalone)").matches||window.navigator.standalone===true;
+
+async function swReady(){
+  if(!("serviceWorker" in navigator)) throw new Error("這個瀏覽器不支援 Service Worker");
+  const reg=await navigator.serviceWorker.register("sw.js",{scope:"./"});
+  await navigator.serviceWorker.ready;
+  if(reg.active&&PUSH_BASE) reg.active.postMessage({type:"config",api:PUSH_BASE});
+  return reg;
+}
+
+async function pushEnable(){
+  PUSH_BASE=document.getElementById("pushBase").value.trim().replace(/\/+$/,"");
+  if(!PUSH_BASE) return pushMsg("請先填入推播伺服器網址");
+  try{ localStorage.setItem(PBKEY,PUSH_BASE); }catch(e){}
+
+  if(!("Notification" in window)||!("PushManager" in window))
+    return pushMsg("這個瀏覽器不支援推播。iPhone 需 iOS 16.4 以上，且必須從主畫面的 app 開啟。");
+  if(/iPhone|iPad/.test(navigator.userAgent)&&!standalone())
+    return pushMsg("請先用分享選單「加入主畫面」，再從主畫面開啟這個 app，然後回到這裡開啟通知。");
+
+  try{
+    pushMsg("設定中");
+    const reg=await swReady();
+    const perm=await Notification.requestPermission();
+    if(perm!=="granted") return pushMsg("你拒絕了通知權限。可到 iOS 設定裡這個 app 的通知項目重新開啟。");
+
+    const kr=await fetch(PUSH_BASE+"/key");
+    const kj=await kr.json();
+    if(!kj.key) throw new Error("伺服器沒有回傳 VAPID 公鑰");
+
+    let sub=await reg.pushManager.getSubscription();
+    if(sub) await sub.unsubscribe();
+    sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToU8(kj.key)});
+
+    const r=await fetch(PUSH_BASE+"/subscribe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(sub)});
+    if(!r.ok) throw new Error("訂閱登記失敗 HTTP "+r.status);
+    pushMsg("已開啟。有航點升到嚴重時就會通知你。");
+  }catch(e){ pushMsg("失敗："+e.message); }
+}
+
+async function pushDisable(){
+  try{
+    const reg=await navigator.serviceWorker.getRegistration();
+    const sub=reg&&await reg.pushManager.getSubscription();
+    if(sub){
+      if(PUSH_BASE) await fetch(PUSH_BASE+"/unsubscribe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({endpoint:sub.endpoint})}).catch(()=>{});
+      await sub.unsubscribe();
+    }
+    pushMsg("已關閉推播。");
+  }catch(e){ pushMsg("失敗："+e.message); }
+}
+
+async function pushSelfTest(){
+  PUSH_BASE=document.getElementById("pushBase").value.trim().replace(/\/+$/,"");
+  const lines=[];
+  lines.push("主畫面模式　"+(standalone()?"是":"否，iPhone 需從主畫面開啟才能推播"));
+  lines.push("通知權限　"+(("Notification" in window)?Notification.permission:"不支援"));
+  try{
+    const reg=await navigator.serviceWorker.getRegistration();
+    const sub=reg&&await reg.pushManager.getSubscription();
+    lines.push("訂閱狀態　"+(sub?"已訂閱":"未訂閱"));
+  }catch(e){ lines.push("訂閱狀態　"+e.message); }
+  if(PUSH_BASE){
+    try{
+      const r=await fetch(PUSH_BASE+"/alerts",{cache:"no-store"});
+      const j=await r.json();
+      const n=(j.items||[]).length;
+      lines.push("伺服器目前嚴重航點　"+n+" 站"+(n?"："+j.items.map(x=>x.name).join("、"):""));
+    }catch(e){ lines.push("伺服器連線　"+e.message); }
+  }
+  pushMsg(lines.join("\n"));
+}
+
+document.getElementById("pushBase").value=PUSH_BASE;
+document.getElementById("pushOn").addEventListener("click",pushEnable);
+document.getElementById("pushOff").addEventListener("click",pushDisable);
+document.getElementById("pushTest").addEventListener("click",pushSelfTest);
+if(PUSH_BASE&&"serviceWorker" in navigator) swReady().catch(()=>{});
 
 renderList();
 load().catch(err=>{
