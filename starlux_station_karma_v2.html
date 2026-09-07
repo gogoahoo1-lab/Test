@@ -208,6 +208,13 @@ thead th{
   background:var(--card);box-shadow:0 1px 0 var(--line);
 }
 tbody td{border-bottom:1px solid #F1EFE9}
+th[data-sort]{cursor:pointer;-webkit-user-select:none;user-select:none;white-space:nowrap;transition:color .15s}
+th[data-sort]:hover{color:var(--ink)}
+th[data-sort]::after{content:"↕";opacity:.3;margin-left:5px;font-size:10px}
+th[data-sort].asc::after{content:"↑";opacity:1;color:var(--ink)}
+th[data-sort].desc::after{content:"↓";opacity:1;color:var(--ink)}
+th[data-sort].asc,th[data-sort].desc{color:var(--ink);font-weight:500}
+.sorthint{font-size:12px;color:var(--muted);margin:0 0 10px 6px}
 tbody tr:last-child td{border-bottom:0}
 td.n,th.n{text-align:right;font-weight:600;font-style:italic;font-size:16px}
 th.n{font-style:normal;font-weight:400;font-size:12px}
@@ -634,9 +641,10 @@ td.n,th.n,td.c{white-space:nowrap}
 </div>
 
 <template id="r-9" data-title="美國｜各站房舍" data-sub="6 個場站 · 合計 1,985,211 TWD · 平均 19,207 /坪">
+  <p class="sorthint">點欄位標題可依該欄排序（再點一次切換升／降冪）</p>
   <div class="panel">
-    <table>
-      <thead><tr><th>場站</th><th class="n">m²</th><th class="n">坪</th><th class="n">編制</th><th class="n">租金</th><th class="n">每坪</th></tr></thead>
+    <table class="sortable">
+      <thead><tr><th data-sort="text">場站</th><th class="n" data-sort="num">m²</th><th class="n" data-sort="num">坪</th><th class="n" data-sort="num">編制</th><th class="n" data-sort="num">租金</th><th class="n" data-sort="num">每坪</th></tr></thead>
       <tbody><tr><td>LAX 1</td><td class="n">52.4</td><td class="n">15.8</td><td class="n">8</td><td class="n">334,849</td><td class="n">21,126</td></tr><tr><td>LAX 2</td><td class="n">51</td><td class="n">15.4</td><td class="n">7</td><td class="n">448,704</td><td class="n">29,080</td></tr><tr><td>SFO</td><td class="n">61</td><td class="n">18.4</td><td class="n">7</td><td class="n">487,044</td><td class="n">26,398</td></tr><tr><td>SEA</td><td class="n">21.08</td><td class="n">6.4</td><td class="n">10</td><td class="n">135,181</td><td class="n">21,188</td></tr><tr><td>ONT</td><td class="n">107.5</td><td class="n">32.5</td><td class="n">7</td><td class="n">227,369</td><td class="n">6,992</td></tr><tr><td>PHX</td><td class="n">48.68</td><td class="n">14.7</td><td class="n">5</td><td class="n">352,064</td><td class="n">23,901</td></tr><tr class="grp"><td>合計</td><td class="n">341.7</td><td class="n">103.4</td><td class="n">44</td><td class="n">1,985,211</td><td class="n">19,207</td></tr></tbody>
     </table>
   </div>
@@ -645,9 +653,10 @@ td.n,th.n,td.c{white-space:nowrap}
 坪數換算：1 平方米 = 0.3025 坪。</div>
 </template>
 <template id="r-6" data-title="日本｜各站房舍" data-sub="14 個場站 · 合計 1,772,107 TWD · 平均 8,250 /坪">
+  <p class="sorthint">點欄位標題可依該欄排序（再點一次切換升／降冪）</p>
   <div class="panel">
-    <table>
-      <thead><tr><th>場站</th><th class="n">m²</th><th class="n">坪</th><th class="n">編制</th><th class="n">租金</th><th class="n">每坪</th></tr></thead>
+    <table class="sortable">
+      <thead><tr><th data-sort="text">場站</th><th class="n" data-sort="num">m²</th><th class="n" data-sort="num">坪</th><th class="n" data-sort="num">編制</th><th class="n" data-sort="num">租金</th><th class="n" data-sort="num">每坪</th></tr></thead>
       <tbody><tr><td>KIX(運務)</td><td class="n">72.36</td><td class="n">21.9</td><td class="n">15</td><td class="n">322,045</td><td class="n">14,712</td></tr><tr><td>KIX(組員)</td><td class="n">72.36</td><td class="n">21.9</td><td class="n">1</td><td class="n">257,413</td><td class="n">11,759</td></tr><tr><td>NRT(運務)</td><td class="n">63.59</td><td class="n">19.2</td><td class="n">17</td><td class="n">216,303</td><td class="n">11,242</td></tr><tr><td>NRT(組員)</td><td class="n">62.8</td><td class="n">19.0</td><td class="n">3</td><td class="n">170,745</td><td class="n">8,987</td></tr><tr><td>OKA</td><td class="n">36.67</td><td class="n">11.1</td><td class="n">10</td><td class="n">66,475</td><td class="n">5,994</td></tr><tr><td>FUK</td><td class="n">42.37</td><td class="n">12.8</td><td class="n">8</td><td class="n">112,908</td><td class="n">8,807</td></tr><tr><td>SDJ</td><td class="n">32.32</td><td class="n">9.8</td><td class="n">5</td><td class="n">37,442</td><td class="n">3,828</td></tr><tr><td>CTS</td><td class="n">60.35</td><td class="n">18.3</td><td class="n">12</td><td class="n">122,996</td><td class="n">6,736</td></tr><tr><td>KMJ</td><td class="n">58.54</td><td class="n">17.7</td><td class="n">6</td><td class="n">106,785</td><td class="n">6,030</td></tr><tr><td>NGO</td><td class="n">54</td><td class="n">16.3</td><td class="n">8</td><td class="n">112,697</td><td class="n">6,897</td></tr><tr><td>HKD</td><td class="n">42.34</td><td class="n">12.8</td><td class="n">5</td><td class="n">78,326</td><td class="n">6,114</td></tr><tr><td>TAK</td><td class="n">32.26</td><td class="n">9.8</td><td class="n">4</td><td class="n">36,551</td><td class="n">3,745</td></tr><tr><td>UKB</td><td class="n">51.03</td><td class="n">15.4</td><td class="n">8</td><td class="n">129,931</td><td class="n">8,415</td></tr><tr><td>SHI</td><td class="n">29</td><td class="n">8.8</td><td class="n">4</td><td class="n">1,490</td><td class="n">170</td></tr><tr class="grp"><td>合計</td><td class="n">710.0</td><td class="n">214.8</td><td class="n">106</td><td class="n">1,772,107</td><td class="n">8,250</td></tr></tbody>
     </table>
   </div>
@@ -656,9 +665,10 @@ td.n,th.n,td.c{white-space:nowrap}
 坪數換算：1 平方米 = 0.3025 坪。</div>
 </template>
 <template id="r-0" data-title="越南｜各站房舍" data-sub="7 個場站 · 合計 527,838 TWD · 平均 5,689 /坪">
+  <p class="sorthint">點欄位標題可依該欄排序（再點一次切換升／降冪）</p>
   <div class="panel">
-    <table>
-      <thead><tr><th>場站</th><th class="n">m²</th><th class="n">坪</th><th class="n">編制</th><th class="n">租金</th><th class="n">每坪</th></tr></thead>
+    <table class="sortable">
+      <thead><tr><th data-sort="text">場站</th><th class="n" data-sort="num">m²</th><th class="n" data-sort="num">坪</th><th class="n" data-sort="num">編制</th><th class="n" data-sort="num">租金</th><th class="n" data-sort="num">每坪</th></tr></thead>
       <tbody><tr><td>DAD</td><td class="n">47.7</td><td class="n">14.4</td><td class="n">10</td><td class="n">74,174</td><td class="n">5,140</td></tr><tr><td>HAN(運務)</td><td class="n">72</td><td class="n">21.8</td><td class="n">9</td><td class="n">121,489</td><td class="n">5,578</td></tr><tr><td>HAN(組員)</td><td class="n">48</td><td class="n">14.5</td><td class="n">3</td><td class="n">91,476</td><td class="n">6,300</td></tr><tr><td>SGN(運務)</td><td class="n">55.2</td><td class="n">16.7</td><td class="n">10</td><td class="n">98,952</td><td class="n">5,925</td></tr><tr><td>SGN(組員)</td><td class="n">63</td><td class="n">19.1</td><td class="n">3</td><td class="n">120,063</td><td class="n">6,299</td></tr><tr><td>PQC(房舍一)</td><td class="n">10.8</td><td class="n">3.3</td><td class="n">5</td><td class="n">11,934</td><td class="n">3,650</td></tr><tr><td>PQC(房舍二)</td><td class="n">10</td><td class="n">3.0</td><td class="n">3</td><td class="n">9,750</td><td class="n">3,228</td></tr><tr class="grp"><td>合計</td><td class="n">306.7</td><td class="n">92.8</td><td class="n">43</td><td class="n">527,838</td><td class="n">5,689</td></tr></tbody>
     </table>
   </div>
@@ -667,9 +677,10 @@ td.n,th.n,td.c{white-space:nowrap}
 坪數換算：1 平方米 = 0.3025 坪。</div>
 </template>
 <template id="r-2" data-title="港澳｜各站房舍" data-sub="2 個場站 · 合計 409,722 TWD · 平均 11,119 /坪">
+  <p class="sorthint">點欄位標題可依該欄排序（再點一次切換升／降冪）</p>
   <div class="panel">
-    <table>
-      <thead><tr><th>場站</th><th class="n">m²</th><th class="n">坪</th><th class="n">編制</th><th class="n">租金</th><th class="n">每坪</th></tr></thead>
+    <table class="sortable">
+      <thead><tr><th data-sort="text">場站</th><th class="n" data-sort="num">m²</th><th class="n" data-sort="num">坪</th><th class="n" data-sort="num">編制</th><th class="n" data-sort="num">租金</th><th class="n" data-sort="num">每坪</th></tr></thead>
       <tbody><tr><td>MFM</td><td class="n">61.83</td><td class="n">18.7</td><td class="n">14</td><td class="n">197,266</td><td class="n">10,549</td></tr><tr><td>HKG</td><td class="n">60</td><td class="n">18.1</td><td class="n">11</td><td class="n">212,456</td><td class="n">11,706</td></tr><tr class="grp"><td>合計</td><td class="n">121.8</td><td class="n">36.8</td><td class="n">25</td><td class="n">409,722</td><td class="n">11,119</td></tr></tbody>
     </table>
   </div>
@@ -678,9 +689,10 @@ td.n,th.n,td.c{white-space:nowrap}
 坪數換算：1 平方米 = 0.3025 坪。</div>
 </template>
 <template id="r-1" data-title="菲律賓｜各站房舍" data-sub="3 個場站 · 合計 181,809 TWD · 平均 2,914 /坪">
+  <p class="sorthint">點欄位標題可依該欄排序（再點一次切換升／降冪）</p>
   <div class="panel">
-    <table>
-      <thead><tr><th>場站</th><th class="n">m²</th><th class="n">坪</th><th class="n">編制</th><th class="n">租金</th><th class="n">每坪</th></tr></thead>
+    <table class="sortable">
+      <thead><tr><th data-sort="text">場站</th><th class="n" data-sort="num">m²</th><th class="n" data-sort="num">坪</th><th class="n" data-sort="num">編制</th><th class="n" data-sort="num">租金</th><th class="n" data-sort="num">每坪</th></tr></thead>
       <tbody><tr><td>CEB</td><td class="n">112</td><td class="n">33.9</td><td class="n">10</td><td class="n">97,567</td><td class="n">2,880</td></tr><tr><td>CRK</td><td class="n">61</td><td class="n">18.4</td><td class="n">8</td><td class="n">57,462</td><td class="n">3,114</td></tr><tr><td>MNL</td><td class="n">33.3</td><td class="n">10.1</td><td class="n">9</td><td class="n">26,780</td><td class="n">2,659</td></tr><tr class="grp"><td>合計</td><td class="n">206.3</td><td class="n">62.4</td><td class="n">27</td><td class="n">181,809</td><td class="n">2,914</td></tr></tbody>
     </table>
   </div>
@@ -689,9 +701,10 @@ td.n,th.n,td.c{white-space:nowrap}
 坪數換算：1 平方米 = 0.3025 坪。</div>
 </template>
 <template id="r-10" data-title="歐洲｜各站房舍" data-sub="1 個場站 · 合計 163,207 TWD · 平均 11,835 /坪">
+  <p class="sorthint">點欄位標題可依該欄排序（再點一次切換升／降冪）</p>
   <div class="panel">
-    <table>
-      <thead><tr><th>場站</th><th class="n">m²</th><th class="n">坪</th><th class="n">編制</th><th class="n">租金</th><th class="n">每坪</th></tr></thead>
+    <table class="sortable">
+      <thead><tr><th data-sort="text">場站</th><th class="n" data-sort="num">m²</th><th class="n" data-sort="num">坪</th><th class="n" data-sort="num">編制</th><th class="n" data-sort="num">租金</th><th class="n" data-sort="num">每坪</th></tr></thead>
       <tbody><tr><td>PRG</td><td class="n">45.6</td><td class="n">13.8</td><td class="n">4</td><td class="n">163,207</td><td class="n">11,835</td></tr><tr class="grp"><td>合計</td><td class="n">45.6</td><td class="n">13.8</td><td class="n">4</td><td class="n">163,207</td><td class="n">11,835</td></tr></tbody>
     </table>
   </div>
@@ -700,9 +713,10 @@ td.n,th.n,td.c{white-space:nowrap}
 坪數換算：1 平方米 = 0.3025 坪。</div>
 </template>
 <template id="r-8" data-title="印尼｜各站房舍" data-sub="1 個場站 · 合計 88,200 TWD · 平均 5,951 /坪">
+  <p class="sorthint">點欄位標題可依該欄排序（再點一次切換升／降冪）</p>
   <div class="panel">
-    <table>
-      <thead><tr><th>場站</th><th class="n">m²</th><th class="n">坪</th><th class="n">編制</th><th class="n">租金</th><th class="n">每坪</th></tr></thead>
+    <table class="sortable">
+      <thead><tr><th data-sort="text">場站</th><th class="n" data-sort="num">m²</th><th class="n" data-sort="num">坪</th><th class="n" data-sort="num">編制</th><th class="n" data-sort="num">租金</th><th class="n" data-sort="num">每坪</th></tr></thead>
       <tbody><tr><td>CGK</td><td class="n">49</td><td class="n">14.8</td><td class="n">4</td><td class="n">88,200</td><td class="n">5,951</td></tr><tr class="grp"><td>合計</td><td class="n">49.0</td><td class="n">14.8</td><td class="n">4</td><td class="n">88,200</td><td class="n">5,951</td></tr></tbody>
     </table>
   </div>
@@ -711,9 +725,10 @@ td.n,th.n,td.c{white-space:nowrap}
 坪數換算：1 平方米 = 0.3025 坪。</div>
 </template>
 <template id="r-4" data-title="新加坡｜各站房舍" data-sub="1 個場站 · 合計 77,187 TWD · 平均 5,102 /坪">
+  <p class="sorthint">點欄位標題可依該欄排序（再點一次切換升／降冪）</p>
   <div class="panel">
-    <table>
-      <thead><tr><th>場站</th><th class="n">m²</th><th class="n">坪</th><th class="n">編制</th><th class="n">租金</th><th class="n">每坪</th></tr></thead>
+    <table class="sortable">
+      <thead><tr><th data-sort="text">場站</th><th class="n" data-sort="num">m²</th><th class="n" data-sort="num">坪</th><th class="n" data-sort="num">編制</th><th class="n" data-sort="num">租金</th><th class="n" data-sort="num">每坪</th></tr></thead>
       <tbody><tr><td>SIN</td><td class="n">50.01</td><td class="n">15.1</td><td class="n">6</td><td class="n">77,187</td><td class="n">5,102</td></tr><tr class="grp"><td>合計</td><td class="n">50.0</td><td class="n">15.1</td><td class="n">6</td><td class="n">77,187</td><td class="n">5,102</td></tr></tbody>
     </table>
   </div>
@@ -722,9 +737,10 @@ td.n,th.n,td.c{white-space:nowrap}
 坪數換算：1 平方米 = 0.3025 坪。</div>
 </template>
 <template id="r-7" data-title="韓國｜各站房舍" data-sub="1 個場站 · 合計 75,969 TWD · 平均 3,878 /坪">
+  <p class="sorthint">點欄位標題可依該欄排序（再點一次切換升／降冪）</p>
   <div class="panel">
-    <table>
-      <thead><tr><th>場站</th><th class="n">m²</th><th class="n">坪</th><th class="n">編制</th><th class="n">租金</th><th class="n">每坪</th></tr></thead>
+    <table class="sortable">
+      <thead><tr><th data-sort="text">場站</th><th class="n" data-sort="num">m²</th><th class="n" data-sort="num">坪</th><th class="n" data-sort="num">編制</th><th class="n" data-sort="num">租金</th><th class="n" data-sort="num">每坪</th></tr></thead>
       <tbody><tr><td>PUS</td><td class="n">64.75</td><td class="n">19.6</td><td class="n">8</td><td class="n">75,969</td><td class="n">3,878</td></tr><tr class="grp"><td>合計</td><td class="n">64.8</td><td class="n">19.6</td><td class="n">8</td><td class="n">75,969</td><td class="n">3,878</td></tr></tbody>
     </table>
   </div>
@@ -733,9 +749,10 @@ td.n,th.n,td.c{white-space:nowrap}
 坪數換算：1 平方米 = 0.3025 坪。</div>
 </template>
 <template id="r-3" data-title="泰國｜各站房舍" data-sub="2 個場站 · 合計 63,914 TWD · 平均 1,563 /坪">
+  <p class="sorthint">點欄位標題可依該欄排序（再點一次切換升／降冪）</p>
   <div class="panel">
-    <table>
-      <thead><tr><th>場站</th><th class="n">m²</th><th class="n">坪</th><th class="n">編制</th><th class="n">租金</th><th class="n">每坪</th></tr></thead>
+    <table class="sortable">
+      <thead><tr><th data-sort="text">場站</th><th class="n" data-sort="num">m²</th><th class="n" data-sort="num">坪</th><th class="n" data-sort="num">編制</th><th class="n" data-sort="num">租金</th><th class="n" data-sort="num">每坪</th></tr></thead>
       <tbody><tr><td>BKK</td><td class="n">56.2</td><td class="n">17.0</td><td class="n">18</td><td class="n">35,313</td><td class="n">2,077</td></tr><tr><td>CNX</td><td class="n">79</td><td class="n">23.9</td><td class="n">6</td><td class="n">28,601</td><td class="n">1,197</td></tr><tr class="grp"><td>合計</td><td class="n">135.2</td><td class="n">40.9</td><td class="n">24</td><td class="n">63,914</td><td class="n">1,563</td></tr></tbody>
     </table>
   </div>
@@ -744,9 +761,10 @@ td.n,th.n,td.c{white-space:nowrap}
 坪數換算：1 平方米 = 0.3025 坪。</div>
 </template>
 <template id="r-5" data-title="馬來西亞｜各站房舍" data-sub="1 個場站 · 合計 30,010 TWD · 平均 2,308 /坪">
+  <p class="sorthint">點欄位標題可依該欄排序（再點一次切換升／降冪）</p>
   <div class="panel">
-    <table>
-      <thead><tr><th>場站</th><th class="n">m²</th><th class="n">坪</th><th class="n">編制</th><th class="n">租金</th><th class="n">每坪</th></tr></thead>
+    <table class="sortable">
+      <thead><tr><th data-sort="text">場站</th><th class="n" data-sort="num">m²</th><th class="n" data-sort="num">坪</th><th class="n" data-sort="num">編制</th><th class="n" data-sort="num">租金</th><th class="n" data-sort="num">每坪</th></tr></thead>
       <tbody><tr><td>KUL</td><td class="n">42.97</td><td class="n">13.0</td><td class="n">8</td><td class="n">30,010</td><td class="n">2,308</td></tr><tr class="grp"><td>合計</td><td class="n">43.0</td><td class="n">13.0</td><td class="n">8</td><td class="n">30,010</td><td class="n">2,308</td></tr></tbody>
     </table>
   </div>
@@ -755,18 +773,20 @@ td.n,th.n,td.c{white-space:nowrap}
 坪數換算：1 平方米 = 0.3025 坪。</div>
 </template>
 <template id="r-all" data-title="全部場站租金" data-sub="39 個場站，依租金高至低排序">
+  <p class="sorthint">點欄位標題可依該欄排序（再點一次切換升／降冪）</p>
   <div class="panel">
-    <table>
-      <thead><tr><th>場站</th><th>區域</th><th class="n">坪</th><th class="n">編制</th><th class="n">租金</th><th class="n">每坪</th></tr></thead>
+    <table class="sortable">
+      <thead><tr><th data-sort="text">場站</th><th data-sort="text">區域</th><th class="n" data-sort="num">坪</th><th class="n" data-sort="num">編制</th><th class="n" data-sort="num">租金</th><th class="n" data-sort="num">每坪</th></tr></thead>
       <tbody><tr><td>SFO</td><td class="c">美國</td><td class="n">18.4</td><td class="n">7</td><td class="n">487,044</td><td class="n">26,398</td></tr><tr><td>LAX 2</td><td class="c">美國</td><td class="n">15.4</td><td class="n">7</td><td class="n">448,704</td><td class="n">29,080</td></tr><tr><td>PHX</td><td class="c">美國</td><td class="n">14.7</td><td class="n">5</td><td class="n">352,064</td><td class="n">23,901</td></tr><tr><td>LAX 1</td><td class="c">美國</td><td class="n">15.8</td><td class="n">8</td><td class="n">334,849</td><td class="n">21,126</td></tr><tr><td>KIX(運務)</td><td class="c">日本</td><td class="n">21.9</td><td class="n">15</td><td class="n">322,045</td><td class="n">14,712</td></tr><tr><td>KIX(組員)</td><td class="c">日本</td><td class="n">21.9</td><td class="n">1</td><td class="n">257,413</td><td class="n">11,759</td></tr><tr><td>ONT</td><td class="c">美國</td><td class="n">32.5</td><td class="n">7</td><td class="n">227,369</td><td class="n">6,992</td></tr><tr><td>NRT(運務)</td><td class="c">日本</td><td class="n">19.2</td><td class="n">17</td><td class="n">216,303</td><td class="n">11,242</td></tr><tr><td>HKG</td><td class="c">港澳</td><td class="n">18.1</td><td class="n">11</td><td class="n">212,456</td><td class="n">11,706</td></tr><tr><td>MFM</td><td class="c">港澳</td><td class="n">18.7</td><td class="n">14</td><td class="n">197,266</td><td class="n">10,549</td></tr><tr><td>NRT(組員)</td><td class="c">日本</td><td class="n">19.0</td><td class="n">3</td><td class="n">170,745</td><td class="n">8,987</td></tr><tr><td>PRG</td><td class="c">歐洲</td><td class="n">13.8</td><td class="n">4</td><td class="n">163,207</td><td class="n">11,835</td></tr><tr><td>SEA</td><td class="c">美國</td><td class="n">6.4</td><td class="n">10</td><td class="n">135,181</td><td class="n">21,188</td></tr><tr><td>UKB</td><td class="c">日本</td><td class="n">15.4</td><td class="n">8</td><td class="n">129,931</td><td class="n">8,415</td></tr><tr><td>CTS</td><td class="c">日本</td><td class="n">18.3</td><td class="n">12</td><td class="n">122,996</td><td class="n">6,736</td></tr><tr><td>HAN(運務)</td><td class="c">越南</td><td class="n">21.8</td><td class="n">9</td><td class="n">121,489</td><td class="n">5,578</td></tr><tr><td>SGN(組員)</td><td class="c">越南</td><td class="n">19.1</td><td class="n">3</td><td class="n">120,063</td><td class="n">6,299</td></tr><tr><td>FUK</td><td class="c">日本</td><td class="n">12.8</td><td class="n">8</td><td class="n">112,908</td><td class="n">8,807</td></tr><tr><td>NGO</td><td class="c">日本</td><td class="n">16.3</td><td class="n">8</td><td class="n">112,697</td><td class="n">6,897</td></tr><tr><td>KMJ</td><td class="c">日本</td><td class="n">17.7</td><td class="n">6</td><td class="n">106,785</td><td class="n">6,030</td></tr><tr><td>SGN(運務)</td><td class="c">越南</td><td class="n">16.7</td><td class="n">10</td><td class="n">98,952</td><td class="n">5,925</td></tr><tr><td>CEB</td><td class="c">菲律賓</td><td class="n">33.9</td><td class="n">10</td><td class="n">97,567</td><td class="n">2,880</td></tr><tr><td>HAN(組員)</td><td class="c">越南</td><td class="n">14.5</td><td class="n">3</td><td class="n">91,476</td><td class="n">6,300</td></tr><tr><td>CGK</td><td class="c">印尼</td><td class="n">14.8</td><td class="n">4</td><td class="n">88,200</td><td class="n">5,951</td></tr><tr><td>HKD</td><td class="c">日本</td><td class="n">12.8</td><td class="n">5</td><td class="n">78,326</td><td class="n">6,114</td></tr><tr><td>SIN</td><td class="c">新加坡</td><td class="n">15.1</td><td class="n">6</td><td class="n">77,187</td><td class="n">5,102</td></tr><tr><td>PUS</td><td class="c">韓國</td><td class="n">19.6</td><td class="n">8</td><td class="n">75,969</td><td class="n">3,878</td></tr><tr><td>DAD</td><td class="c">越南</td><td class="n">14.4</td><td class="n">10</td><td class="n">74,174</td><td class="n">5,140</td></tr><tr><td>OKA</td><td class="c">日本</td><td class="n">11.1</td><td class="n">10</td><td class="n">66,475</td><td class="n">5,994</td></tr><tr><td>CRK</td><td class="c">菲律賓</td><td class="n">18.4</td><td class="n">8</td><td class="n">57,462</td><td class="n">3,114</td></tr><tr><td>SDJ</td><td class="c">日本</td><td class="n">9.8</td><td class="n">5</td><td class="n">37,442</td><td class="n">3,828</td></tr><tr><td>TAK</td><td class="c">日本</td><td class="n">9.8</td><td class="n">4</td><td class="n">36,551</td><td class="n">3,745</td></tr><tr><td>BKK</td><td class="c">泰國</td><td class="n">17.0</td><td class="n">18</td><td class="n">35,313</td><td class="n">2,077</td></tr><tr><td>KUL</td><td class="c">馬來西亞</td><td class="n">13.0</td><td class="n">8</td><td class="n">30,010</td><td class="n">2,308</td></tr><tr><td>CNX</td><td class="c">泰國</td><td class="n">23.9</td><td class="n">6</td><td class="n">28,601</td><td class="n">1,197</td></tr><tr><td>MNL</td><td class="c">菲律賓</td><td class="n">10.1</td><td class="n">9</td><td class="n">26,780</td><td class="n">2,659</td></tr><tr><td>PQC(房舍一)</td><td class="c">越南</td><td class="n">3.3</td><td class="n">5</td><td class="n">11,934</td><td class="n">3,650</td></tr><tr><td>PQC(房舍二)</td><td class="c">越南</td><td class="n">3.0</td><td class="n">3</td><td class="n">9,750</td><td class="n">3,228</td></tr><tr><td>SHI</td><td class="c">日本</td><td class="n">8.8</td><td class="n">4</td><td class="n">1,490</td><td class="n">170</td></tr></tbody>
     </table>
   </div>
   <div class="tip">租金與每坪租金單位為 TWD，依當前預算匯率 B262 換算；坪數由平方米乘以 0.3025 換算。</div>
 </template>
 <template id="r-space" data-title="人均空間" data-sub="編制人數對應坪數，高至低排序">
+  <p class="sorthint">點欄位標題可依該欄排序（再點一次切換升／降冪）</p>
   <div class="panel">
-    <table>
-      <thead><tr><th>場站</th><th>區域</th><th class="n">編制</th><th class="n">坪</th><th class="n">人均坪</th></tr></thead>
+    <table class="sortable">
+      <thead><tr><th data-sort="text">場站</th><th data-sort="text">區域</th><th class="n" data-sort="num">編制</th><th class="n" data-sort="num">坪</th><th class="n" data-sort="num">人均坪</th></tr></thead>
       <tbody><tr><td>KIX(組員)</td><td class="c">日本</td><td class="n">1</td><td class="n">21.9</td><td class="n">21.9</td></tr><tr><td>SGN(組員)</td><td class="c">越南</td><td class="n">3</td><td class="n">19.1</td><td class="n">6.4</td></tr><tr><td>NRT(組員)</td><td class="c">日本</td><td class="n">3</td><td class="n">19.0</td><td class="n">6.3</td></tr><tr><td>HAN(組員)</td><td class="c">越南</td><td class="n">3</td><td class="n">14.5</td><td class="n">4.8</td></tr><tr><td>ONT</td><td class="c">美國</td><td class="n">7</td><td class="n">32.5</td><td class="n">4.6</td></tr><tr><td>CNX</td><td class="c">泰國</td><td class="n">6</td><td class="n">23.9</td><td class="n">4.0</td></tr><tr><td>CGK</td><td class="c">印尼</td><td class="n">4</td><td class="n">14.8</td><td class="n">3.7</td></tr><tr><td>PRG</td><td class="c">歐洲</td><td class="n">4</td><td class="n">13.8</td><td class="n">3.4</td></tr><tr><td>CEB</td><td class="c">菲律賓</td><td class="n">10</td><td class="n">33.9</td><td class="n">3.4</td></tr><tr><td>KMJ</td><td class="c">日本</td><td class="n">6</td><td class="n">17.7</td><td class="n">3.0</td></tr><tr><td>PHX</td><td class="c">美國</td><td class="n">5</td><td class="n">14.7</td><td class="n">2.9</td></tr><tr><td>SFO</td><td class="c">美國</td><td class="n">7</td><td class="n">18.4</td><td class="n">2.6</td></tr><tr><td>HKD</td><td class="c">日本</td><td class="n">5</td><td class="n">12.8</td><td class="n">2.6</td></tr><tr><td>SIN</td><td class="c">新加坡</td><td class="n">6</td><td class="n">15.1</td><td class="n">2.5</td></tr><tr><td>PUS</td><td class="c">韓國</td><td class="n">8</td><td class="n">19.6</td><td class="n">2.4</td></tr><tr><td>TAK</td><td class="c">日本</td><td class="n">4</td><td class="n">9.8</td><td class="n">2.4</td></tr><tr><td>HAN(運務)</td><td class="c">越南</td><td class="n">9</td><td class="n">21.8</td><td class="n">2.4</td></tr><tr><td>CRK</td><td class="c">菲律賓</td><td class="n">8</td><td class="n">18.4</td><td class="n">2.3</td></tr><tr><td>LAX 2</td><td class="c">美國</td><td class="n">7</td><td class="n">15.4</td><td class="n">2.2</td></tr><tr><td>SHI</td><td class="c">日本</td><td class="n">4</td><td class="n">8.8</td><td class="n">2.2</td></tr><tr><td>NGO</td><td class="c">日本</td><td class="n">8</td><td class="n">16.3</td><td class="n">2.0</td></tr><tr><td>LAX 1</td><td class="c">美國</td><td class="n">8</td><td class="n">15.8</td><td class="n">2.0</td></tr><tr><td>SDJ</td><td class="c">日本</td><td class="n">5</td><td class="n">9.8</td><td class="n">2.0</td></tr><tr><td>UKB</td><td class="c">日本</td><td class="n">8</td><td class="n">15.4</td><td class="n">1.9</td></tr><tr><td>SGN(運務)</td><td class="c">越南</td><td class="n">10</td><td class="n">16.7</td><td class="n">1.7</td></tr><tr><td>HKG</td><td class="c">港澳</td><td class="n">11</td><td class="n">18.1</td><td class="n">1.6</td></tr><tr><td>KUL</td><td class="c">馬來西亞</td><td class="n">8</td><td class="n">13.0</td><td class="n">1.6</td></tr><tr><td>FUK</td><td class="c">日本</td><td class="n">8</td><td class="n">12.8</td><td class="n">1.6</td></tr><tr><td>CTS</td><td class="c">日本</td><td class="n">12</td><td class="n">18.3</td><td class="n">1.5</td></tr><tr><td>KIX(運務)</td><td class="c">日本</td><td class="n">15</td><td class="n">21.9</td><td class="n">1.5</td></tr><tr><td>DAD</td><td class="c">越南</td><td class="n">10</td><td class="n">14.4</td><td class="n">1.4</td></tr><tr><td>MFM</td><td class="c">港澳</td><td class="n">14</td><td class="n">18.7</td><td class="n">1.3</td></tr><tr><td>NRT(運務)</td><td class="c">日本</td><td class="n">17</td><td class="n">19.2</td><td class="n">1.1</td></tr><tr><td>MNL</td><td class="c">菲律賓</td><td class="n">9</td><td class="n">10.1</td><td class="n">1.1</td></tr><tr><td>OKA</td><td class="c">日本</td><td class="n">10</td><td class="n">11.1</td><td class="n">1.1</td></tr><tr><td>PQC(房舍二)</td><td class="c">越南</td><td class="n">3</td><td class="n">3.0</td><td class="n">1.0</td></tr><tr><td>BKK</td><td class="c">泰國</td><td class="n">18</td><td class="n">17.0</td><td class="n">0.9</td></tr><tr><td>PQC(房舍一)</td><td class="c">越南</td><td class="n">5</td><td class="n">3.3</td><td class="n">0.7</td></tr><tr><td>SEA</td><td class="c">美國</td><td class="n">10</td><td class="n">6.4</td><td class="n">0.6</td></tr></tbody>
     </table>
   </div>
@@ -1116,6 +1136,32 @@ td.n,th.n,td.c{white-space:nowrap}
   document.querySelectorAll('[data-open]').forEach(function(b){
     b.addEventListener('click',function(){last=b;open(b.dataset.open);});
   });
+  // 表頭點擊排序
+  body.addEventListener('click',function(e){
+    var th=e.target.closest('th[data-sort]');
+    if(!th) return;
+    var table=th.closest('table'), tb=table.tBodies[0];
+    var idx=[].indexOf.call(th.parentNode.children, th);
+    var dir = th.classList.contains('desc') ? 'asc' : (th.classList.contains('asc') ? 'desc' : (th.dataset.sort==='num' ? 'desc' : 'asc'));
+    table.querySelectorAll('th[data-sort]').forEach(function(x){x.classList.remove('asc','desc');});
+    th.classList.add(dir);
+
+    var rows=[].slice.call(tb.rows),
+        pinned=rows.filter(function(r){return r.classList.contains('grp');}),
+        data=rows.filter(function(r){return !r.classList.contains('grp');});
+    function val(r){
+      var t=(r.cells[idx]||{}).textContent||'';
+      if(th.dataset.sort==='num'){var n=parseFloat(t.replace(/[^0-9.\-]/g,'')); return isNaN(n)?-Infinity:n;}
+      return t.trim();
+    }
+    data.sort(function(a,b){
+      var x=val(a),y=val(b),r;
+      if(typeof x==='number') r=x-y; else r=x.localeCompare(y,'zh-Hant');
+      return dir==='asc'?r:-r;
+    });
+    data.concat(pinned).forEach(function(r){tb.appendChild(r);});
+  });
+
   document.getElementById('sheet-close').addEventListener('click',close);
   sheet.addEventListener('click',function(e){if(e.target===sheet) close();});
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!sheet.hidden) close();});
