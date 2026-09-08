@@ -216,11 +216,12 @@ th[data-sort].desc::after{content:"↓";opacity:1;color:var(--ink)}
 th[data-sort].asc,th[data-sort].desc{color:var(--ink);font-weight:500}
 .sorthint{font-size:12px;color:var(--muted);margin:0 0 10px 6px}
 .rsub{display:none}
-.u-m{display:none}
-table.m2 .u-p{display:none}
-table.m2 tr.u-m{display:table-row}
+td.u-m,th.u-m{display:none}
 tr.u-m{display:none}
-table.m2 .u-m{display:table-cell}
+table.m2 td.u-p,table.m2 th.u-p{display:none}
+table.m2 tr.u-p{display:none}
+table.m2 td.u-m,table.m2 th.u-m{display:table-cell}
+table.m2 tr.u-m{display:table-row}
 .unitbar{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted);margin:0 6px 8px}
 .seg{display:inline-flex;border:1px solid rgba(11,11,12,.16);border-radius:999px;overflow:hidden;background:var(--card)}
 .seg button{border:0;background:none;font-family:inherit;font-size:12.5px;color:var(--ink);padding:5px 14px;cursor:pointer}
@@ -1438,7 +1439,7 @@ td.n,th.n,td.c{white-space:nowrap}
     body.querySelectorAll('.seg button[data-unit]').forEach(function(x){
       x.setAttribute('aria-pressed', (x.dataset.unit==='m2')===m2);
     });
-    body.querySelectorAll('table.sortable').forEach(function(t){t.classList.toggle('m2', m2);});
+    body.querySelectorAll('table').forEach(function(t){t.classList.toggle('m2', m2);});
   });
 
   // 表頭點擊排序
