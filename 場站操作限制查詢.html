@@ -1,0 +1,2812 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>場站操作限制查詢</title>
+<style>
+:root{
+  --ink:#0A1420; --panel:#12202E; --panel2:#182C3E; --raise:#20384C;
+  --line:rgba(190,215,235,.14); --line2:rgba(190,215,235,.07);
+  --text:#E9F0F6; --muted:#8CA3B8; --dim:#5F7387;
+  --gold:#DCC086;
+  --ok:#3FC492; --warn:#F0A73E; --no:#F0665C; --na:#7A8DA0;
+  --r:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1100px 620px at 78% -12%, rgba(220,192,134,.10), transparent 62%),
+    radial-gradient(900px 520px at 5% 0%, rgba(63,196,146,.07), transparent 60%),
+    var(--ink);
+  color:var(--text);
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:15px; line-height:1.62; -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:0 18px 72px}
+
+/* ---------- header ---------- */
+header.top{padding:26px 0 14px;display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
+.mark{display:flex;align-items:center;gap:12px}
+.mark .jx{
+  width:44px;height:44px;border-radius:11px;display:grid;place-items:center;
+  background:linear-gradient(145deg,#26415a,#101d29);
+  border:1px solid rgba(220,192,134,.35);
+  color:var(--gold);font-weight:700;letter-spacing:.06em;font-size:17px;
+}
+h1{font-size:22px;line-height:1.25;margin:0;font-weight:700;letter-spacing:.01em}
+.sub{color:var(--muted);font-size:12.5px;margin-top:2px}
+.stat{margin-left:auto;display:flex;gap:22px}
+.stat div{text-align:right}
+.stat b{display:block;font-size:21px;font-weight:700;color:var(--gold);line-height:1.2}
+.stat span{font-size:11.5px;color:var(--muted)}
+
+/* ---------- tabs ---------- */
+nav.tabs{
+  display:flex;gap:4px;background:rgba(255,255,255,.045);border:1px solid var(--line2);
+  padding:4px;border-radius:12px;margin:14px 0 22px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+}
+nav.tabs button{
+  flex:1 0 auto;min-width:96px;appearance:none;border:0;background:transparent;color:var(--muted);
+  font:inherit;font-size:14px;font-weight:600;padding:9px 14px;border-radius:9px;cursor:pointer;
+  transition:background .15s,color .15s;white-space:nowrap;
+}
+nav.tabs button:hover{color:var(--text)}
+nav.tabs button[aria-selected="true"]{background:var(--raise);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+nav.tabs button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* ---------- controls ---------- */
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.search{position:relative;flex:1 1 240px;min-width:200px}
+.search input{
+  width:100%;background:var(--panel);border:1px solid var(--line);color:var(--text);
+  font:inherit;padding:11px 14px 11px 38px;border-radius:11px;
+}
+.search input::placeholder{color:#66809a}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.5}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{
+  appearance:none;border:1px solid var(--line);background:transparent;color:var(--muted);
+  font:inherit;font-size:13px;padding:7px 13px;border-radius:999px;cursor:pointer;transition:.15s;
+}
+.chip:hover{color:var(--text);border-color:rgba(220,192,134,.4)}
+.chip[aria-pressed="true"]{background:var(--gold);color:#15202b;border-color:var(--gold);font-weight:600}
+input:focus-visible,button:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* ---------- station grid ---------- */
+.regionrow{margin-bottom:14px}
+.regionrow h3{
+  font-size:12px;font-weight:600;color:var(--muted);margin:0 0 8px;
+  display:flex;align-items:center;gap:10px;
+}
+.regionrow h3::after{content:"";flex:1;height:1px;background:var(--line2)}
+.codes{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:7px}
+.code{
+  appearance:none;border:1px solid var(--line);background:var(--panel);color:var(--text);
+  font:inherit;font-weight:700;font-size:15px;letter-spacing:.06em;
+  padding:11px 4px 9px;border-radius:11px;cursor:pointer;transition:.14s;position:relative;
+}
+.code:hover{background:var(--panel2);transform:translateY(-1px)}
+.code[aria-pressed="true"]{background:var(--gold);color:#15202b;border-color:var(--gold)}
+.code .bar{display:flex;gap:2px;justify-content:center;margin-top:6px}
+.code .bar i{width:5px;height:3px;border-radius:2px;background:var(--na);opacity:.85}
+.code[aria-pressed="true"] .bar i{opacity:1}
+.code.empty{opacity:.55}
+
+/* ---------- detail ---------- */
+.detail{margin-top:22px}
+.stationhead{
+  display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;
+  padding:20px 22px;border-radius:var(--r) var(--r) 0 0;
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
+  border:1px solid var(--line);border-bottom:0;
+}
+.bigcode{font-size:44px;font-weight:800;letter-spacing:.06em;line-height:1;color:var(--gold)}
+.stationhead .meta{color:var(--muted);font-size:13px;padding-bottom:5px}
+.actions{margin-left:auto;display:flex;gap:8px;padding-bottom:4px}
+.btn{
+  appearance:none;border:1px solid var(--line);background:transparent;color:var(--muted);
+  font:inherit;font-size:13px;padding:7px 13px;border-radius:9px;cursor:pointer
+}
+.btn:hover{color:var(--text);border-color:rgba(220,192,134,.45)}
+
+.strip{
+  display:grid;grid-template-columns:repeat(9,1fr);gap:1px;background:var(--line2);
+  border:1px solid var(--line);border-top:0;overflow:hidden;
+}
+.slot{
+  background:var(--panel);padding:11px 6px 12px;text-align:center;cursor:pointer;transition:.14s;
+  border:0;color:inherit;font:inherit;
+}
+.slot:hover{background:var(--panel2)}
+.slot .lb{font-size:10.5px;color:var(--muted);display:block;line-height:1.35;min-height:2.7em}
+.slot .dot{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:26px;height:26px;border-radius:50%;font-size:13px;font-weight:700;margin-top:5px;
+}
+.slot.on{box-shadow:inset 0 -3px 0 var(--gold)}
+.d-ok{background:rgba(63,196,146,.16);color:var(--ok);border:1px solid rgba(63,196,146,.4)}
+.d-warn{background:rgba(240,167,62,.16);color:var(--warn);border:1px solid rgba(240,167,62,.42)}
+.d-no{background:rgba(240,102,92,.16);color:var(--no);border:1px solid rgba(240,102,92,.42)}
+.d-na{background:rgba(122,141,160,.14);color:var(--na);border:1px solid rgba(122,141,160,.32)}
+
+.cards{margin-top:18px;display:grid;gap:11px}
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+  padding:15px 17px;border-left:3px solid var(--na);
+}
+.card.k-ok{border-left-color:var(--ok)}
+.card.k-warn{border-left-color:var(--warn)}
+.card.k-no{border-left-color:var(--no)}
+.card h4{margin:0;font-size:15px;font-weight:700;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tag{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:6px}
+.t-ok{background:rgba(63,196,146,.15);color:var(--ok)}
+.t-warn{background:rgba(240,167,62,.15);color:var(--warn)}
+.t-no{background:rgba(240,102,92,.15);color:var(--no)}
+.t-na{background:rgba(122,141,160,.14);color:var(--na)}
+.timepill{
+  font-size:12.5px;font-weight:600;color:var(--gold);background:rgba(220,192,134,.1);
+  border:1px solid rgba(220,192,134,.28);padding:3px 10px;border-radius:6px;white-space:pre-line
+}
+.note{margin:9px 0 0;color:#C6D5E2;font-size:13.6px;white-space:pre-line}
+.nonote{margin:7px 0 0;color:var(--muted);font-size:13px}
+
+/* ---------- matrix ---------- */
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--panel)}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:13px}
+th,td{padding:9px 8px;text-align:center;border-bottom:1px solid var(--line2);white-space:nowrap}
+thead th{
+  position:sticky;top:0;z-index:3;background:var(--panel2);color:var(--muted);
+  font-size:11.5px;font-weight:600;border-bottom:1px solid var(--line)
+}
+tbody th{
+  position:sticky;left:0;z-index:2;background:var(--panel);text-align:left;
+  font-weight:700;letter-spacing:.05em;padding-left:14px
+}
+thead th:first-child{left:0;z-index:4}
+tbody tr:hover td{background:rgba(255,255,255,.03)}
+td.cell{cursor:pointer}
+.mk{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:7px;font-weight:700;font-size:12px}
+.m-ok{background:rgba(63,196,146,.17);color:var(--ok)}
+.m-warn{background:rgba(240,167,62,.17);color:var(--warn)}
+.m-no{background:rgba(240,102,92,.17);color:var(--no)}
+.m-na{background:rgba(122,141,160,.12);color:var(--na)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:12.5px;margin:12px 2px 0}
+.legend span{display:flex;align-items:center;gap:7px}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+/* ---------- contacts ---------- */
+.contactgrid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.ccard{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.ccard header{
+  display:flex;align-items:baseline;gap:12px;padding:14px 17px;
+  background:linear-gradient(180deg,var(--panel2),transparent);border-bottom:1px solid var(--line2)
+}
+.ccard header b{font-size:22px;letter-spacing:.07em;color:var(--gold)}
+.ccard header span{font-size:12.5px;color:var(--muted)}
+.side{padding:13px 17px;border-bottom:1px solid var(--line2)}
+.side:last-child{border-bottom:0}
+.side .role{font-size:11.5px;color:var(--muted);margin-bottom:5px}
+.side .unit{font-weight:700;margin-bottom:6px}
+.lines{white-space:pre-line;font-size:13.3px;color:#C6D5E2}
+.lines a{color:var(--gold);text-decoration:none;border-bottom:1px dotted rgba(220,192,134,.5)}
+.lines a:hover{border-bottom-style:solid}
+.cnote{padding:12px 17px;background:rgba(240,167,62,.07);font-size:13px;white-space:pre-line;color:#DCC9AC}
+
+/* ---------- calculator ---------- */
+.calcnote{color:var(--muted);font-size:13px;margin:0 0 16px}
+.leg{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:15px 17px;margin-bottom:11px}
+.leg .lhead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.leg .lhead .n{
+  width:24px;height:24px;border-radius:7px;background:var(--raise);color:var(--gold);
+  display:grid;place-items:center;font-size:12px;font-weight:700
+}
+.leg .lhead strong{font-size:14px}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(122px,1fr));gap:10px}
+.f label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:4px}
+.f input{
+  width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);
+  font:inherit;font-size:14px;padding:8px 10px;border-radius:9px
+}
+.f input::-webkit-calendar-picker-indicator{filter:invert(.7)}
+.out{
+  margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);
+  display:flex;gap:22px;flex-wrap:wrap;align-items:baseline
+}
+.out div span{display:block;font-size:11.5px;color:var(--muted)}
+.out div b{font-size:20px;font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums}
+.out div b small{font-size:11px;color:var(--warn);margin-left:3px;font-weight:700}
+.rm{margin-left:auto;appearance:none;background:transparent;border:0;color:var(--muted);cursor:pointer;font:inherit;font-size:13px}
+.rm:hover{color:var(--no)}
+.addleg{
+  width:100%;padding:12px;border:1px dashed var(--line);background:transparent;color:var(--muted);
+  border-radius:var(--r);font:inherit;font-size:14px;cursor:pointer
+}
+.addleg:hover{color:var(--gold);border-color:rgba(220,192,134,.45)}
+
+.hint{color:var(--muted);font-size:12.5px;margin-top:26px;padding-top:14px;border-top:1px solid var(--line2)}
+.hidden{display:none !important}
+
+@media (max-width:820px){
+  .strip{grid-template-columns:repeat(3,1fr)}
+  .slot .lb{min-height:auto}
+  .bigcode{font-size:36px}
+  .stat{margin-left:0;width:100%;justify-content:flex-start;gap:26px}
+  .stat div{text-align:left}
+}
+@media print{
+  body{background:#fff;color:#000}
+  nav.tabs,.controls,.actions,.addleg,.rm,.codes,.regionrow{display:none !important}
+  .card,.stationhead,.strip,.slot{background:#fff !important;color:#000 !important;border-color:#bbb !important}
+  .bigcode,.timepill{color:#000 !important}
+  .note{color:#222 !important}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="mark">
+    <div class="jx">JX</div>
+    <div>
+      <h1>場站操作限制查詢</h1>
+      <div class="sub">轉降、滯機加油、下客入境的第一線判斷依據</div>
+    </div>
+  </div>
+  <div class="stat">
+    <div><b id="statStations">0</b><span>收錄場站</span></div>
+    <div><b id="statRegions">0</b><span>營運區域</span></div>
+    <div><b id="statPending">0</b><span>資料待補</span></div>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" id="t-lookup" aria-selected="true" data-panel="p-lookup">場站限制</button>
+  <button role="tab" id="t-matrix" aria-selected="false" data-panel="p-matrix">全站對照</button>
+  <button role="tab" id="t-contact" aria-selected="false" data-panel="p-contact">備降聯絡</button>
+  <button role="tab" id="t-calc" aria-selected="false" data-panel="p-calc">到離試算</button>
+</nav>
+
+<!-- ===== 場站限制 ===== -->
+<section id="p-lookup" role="tabpanel" aria-labelledby="t-lookup">
+  <div class="controls">
+    <div class="search">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="輸入場站代碼，例如 NRT、BKK" autocomplete="off">
+    </div>
+    <div class="chips" id="regionChips"></div>
+  </div>
+  <div id="stationList"></div>
+  <div class="detail" id="detail"></div>
+</section>
+
+<!-- ===== 全站對照 ===== -->
+<section id="p-matrix" role="tabpanel" aria-labelledby="t-matrix" class="hidden">
+  <div class="controls">
+    <div class="chips" id="matrixChips"></div>
+  </div>
+  <div class="tablewrap"><table id="matrix"></table></div>
+  <div class="legend">
+    <span><i style="background:var(--ok)"></i>可／無限制</span>
+    <span><i style="background:var(--warn)"></i>需申請或有條件</span>
+    <span><i style="background:var(--no)"></i>不可</span>
+    <span><i style="background:var(--na)"></i>不適用或待補</span>
+    <span>點任一格看詳細備註</span>
+  </div>
+  <div class="cards" id="matrixDetail"></div>
+</section>
+
+<!-- ===== 備降聯絡 ===== -->
+<section id="p-contact" role="tabpanel" aria-labelledby="t-contact" class="hidden">
+  <p class="calcnote">台灣區備降站翼上／翼下單位聯絡窗口。號碼與信箱可直接點擊撥出或寄信。</p>
+  <div class="contactgrid" id="contacts"></div>
+</section>
+
+<!-- ===== 到離試算 ===== -->
+<section id="p-calc" role="tabpanel" aria-labelledby="t-calc" class="hidden">
+  <p class="calcnote">逐段串接：填入起飛時間、飛時與時差，往下自動推算各段到達與再起飛時間。時差填「本段目的地時間 − 本段出發地時間」，例如 TPE 飛 BKK 填 −1。</p>
+  <div id="legs"></div>
+  <button class="addleg" id="addLeg">＋ 增加下一段航段</button>
+</section>
+
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。</p>
+</div>
+
+<script>
+const DATA = {
+ "meta": {
+  "items": [
+   {
+    "key": "curfew",
+    "label": "Curfew 宵禁",
+    "polarity": "presence"
+   },
+   {
+    "key": "catering",
+    "label": "當地上餐",
+    "polarity": "permit"
+   },
+   {
+    "key": "fuel",
+    "label": "滯機加油",
+    "polarity": "permit"
+   },
+   {
+    "key": "divert",
+    "label": "可否轉降",
+    "polarity": "permit"
+   },
+   {
+    "key": "deplane",
+    "label": "可否下客",
+    "polarity": "permit"
+   },
+   {
+    "key": "entry",
+    "label": "可否入境",
+    "polarity": "permit"
+   },
+   {
+    "key": "duty",
+    "label": "免稅品攜帶限制",
+    "polarity": "presence"
+   },
+   {
+    "key": "crew",
+    "label": "組員特殊作業",
+    "polarity": "permit"
+   },
+   {
+    "key": "other",
+    "label": "其他特殊限制",
+    "polarity": "presence"
+   }
+  ]
+ },
+ "stations": [
+  {
+   "code": "TPE",
+   "region": "東北亞",
+   "items": {
+    "curfew": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "deplane": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "entry": {
+     "status": "V",
+     "time": null,
+     "note": "有簽證/免簽者: 可入境。\n無簽證者: 由航空公司安排住移民署指定的過境旅館。\n前置作業：需先告知移民署旅客國籍和轉機情況。"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "1.航班取消: (所有物品)確定下次飛: 店保管 / 不確定: 退費\n2.飛機轉降: (所有物品)決定入境: 無特別規定 / 過境: 航空公司保管\n3.過境/轉機: (超過100ml)必須拋棄或改託運(不能用密封袋)\n4.異地提貨: (所有物品)只要TPE有貨，可提；無貨需聯絡原店"
+    },
+    "crew": {
+     "status": "N/A",
+     "time": null,
+     "note": ""
+    },
+    "other": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "RMQ",
+   "region": "東北亞",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "2300-0700",
+     "note": "可申請延長宵禁，\n塔臺視情況嚴重/急迫性，\n回覆是否延長宵禁。"
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": "加油:時間2100LT-0600LT加油，需額外收取人力費"
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "無法轉降廣體機"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "需入境才允許下客，旅客無法僅下客在候機室等候。"
+    },
+    "entry": {
+     "status": "V",
+     "time": null,
+     "note": "入境需先知會移民署該班次旅客國籍及是否有轉機旅客"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "1.超過1.5L可免稅帶進台灣，無須拋棄\n2.若超過1.5公升且，低於5L需走紅色通道，採人工申報補稅\n3.超過5L，需拋棄或存關處理"
+    },
+    "crew": {
+     "status": "N/A",
+     "time": null,
+     "note": ""
+    },
+    "other": {
+     "status": "V",
+     "time": null,
+     "note": "CIQS配合航站宵禁時間值勤，若有延長需另外告知加派人力。"
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "KHH",
+   "region": "東北亞",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "0000-0630",
+     "note": ""
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "可受理之最大航機為E類(翼展65feet以下)"
+    },
+    "deplane": {
+     "status": "V",
+     "time": null,
+     "note": "可下客於未作業中的候機室等候，但因目前航站缺接駁車，如需下客要等候接駁車或等候託機至可用之空橋停機坪。"
+    },
+    "entry": {
+     "status": "V",
+     "time": null,
+     "note": "符合入境台灣之旅客可辦理入境，如原為過境之旅客且無法透過立即申請取得入境資格則需以過境方式辦理由航空公司安排住宿於合格之過境旅館(由移民署認定)。"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "1.航班取消: (所有物品)確定下次飛: 店保管 / 不確定: 退費\n2.飛機轉降: (所有物品)決定入境: 無特別規定 / 過境: 航空公司保管\n3.過境/轉機: (超過100ml)必須拋棄或改託運(不能用密封袋)\n4.異地提貨: (所有物品)只要高雄有貨，可提；無貨需聯絡原店"
+    },
+    "crew": {
+     "status": "N/A",
+     "time": null,
+     "note": ""
+    },
+    "other": {
+     "status": "V",
+     "time": null,
+     "note": "任何航班異常需通知航站營安組、航務組(及傳送異常航班通報表)，及CIQS，接收轉降航班訊息後立即通知地勤代理公司及加油公司，且預先通報航務組安排機坪及滯機加油需求請航務組通知消防隊待命。"
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "HKG",
+   "region": "東北亞",
+   "items": {
+    "curfew": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "1. 提前告知協調GHSP人力\n2.通知CIQS並於航機抵達前傳送APIS"
+    },
+    "deplane": {
+     "status": "V",
+     "time": null,
+     "note": "1. 需提前通知安檢及GHSP，若只是下客不入境，需過轉機安檢，全部作部約需費時1小時左右，轉機安檢同時要遵守LAGs的手提規範。\n2. 航機抵達前要先傳送APIS"
+    },
+    "entry": {
+     "status": "V",
+     "time": null,
+     "note": "1. 一般旅客: 免簽國可直接入境。台灣旅客需有台胞卡或線上申請港簽方可入境。\n2. 組員: 越南護照組員需持有簽證才得以入境。其它國籍組員憑GD及護照與crew permit入境。\n3. 航機抵達前要先傳送APIS"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "1. 只能攜帶19支煙或1支雪茄 (如多於1支，總重量不可超過25克)；或25克其他製成煙草。(轉機不受限)\n2. 攜帶1公升酒類，需年滿18Y。(轉機不受限，但需要裝入免稅品袋內)\n3. GHSP與香港機場管制區內不提供存關服務。\n4. 轉機安檢原則上需符合 LAG 手提限制；GHSP 不提供代收發服務。"
+    },
+    "crew": {
+     "status": "X",
+     "time": null,
+     "note": "需申請簽證。"
+    },
+    "other": {
+     "status": "V",
+     "time": null,
+     "note": "只要轉降至香港，務必於航機抵達前傳送組員與旅客APIS，違者罰鍰HKD100,000。"
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "MFM",
+   "region": "東北亞",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": null,
+     "note": "(1)每週1/3/5早上4:00-6:00LT, 機場跑道維修及暫停起降。\n(2)2026/10/25-2027/3/27因機場擴建工作, 早上00:00-08:00LT機場跑道暫停起降。"
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "需提前向機場當局申請及批核."
+    },
+    "deplane": {
+     "status": "V",
+     "time": null,
+     "note": "1. 需向機場主任通報原因, 若所有旅客短暫停留候機樓等候需通知機場保安及GHSP配合.  \n2. DIV航班抵逹前務必完成APIS傳送."
+    },
+    "entry": {
+     "status": "V",
+     "time": null,
+     "note": "1.未具備入境澳門條件的旅客需於候機樓等候至次天航班離澳。\n2.組員可憑GD入境。"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "機場保安只接受旅客持有密封袋及收據的免稅品前往候機樓等候, 若不具備密封條件將由旅客決定並放棄. (機場及GHSP不提供存關服務) 若旅客入境澳門則必須依照海關規定及是否進行申報手續。"
+    },
+    "crew": {
+     "status": "X",
+     "time": null,
+     "note": "需申請簽證。"
+    },
+    "other": {
+     "status": "V",
+     "time": null,
+     "note": "1. DIV航班務必抵逹前傳送APIS. 2. 因機場停機坪容量不足(特別機場於2025年開始機場擴建工程), DIV航班務必提前向機場主任申請及批核, 如果條件符合或航班短暫停留不過夜, 最多可能寬體機1架或窄體機2架(Case by case)。"
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "NRT",
+   "region": "東北亞",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "2400-0600",
+     "note": "當局將視情況嚴重/急迫性，評估延長宵禁。\n(航機機務問題將無法延長)"
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "任何航機轉降日本後，離場前必需取得JCAB/CAB核可，使得離場。"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "需提前通知CIQs"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "(1)需提前通知CIQs，確認其人力及動線。\n(2)為確保CIQs及GHSP人力可調配，最晚於21:00前確定執行大批退關需求。"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "如旅客退關，則需將免稅品存關。"
+    },
+    "crew": {
+     "status": "△",
+     "time": null,
+     "note": "【須事先向場站確認】\n1.需簽證，免簽國籍除外。\n2.可PAX IN，JX提供Shore Pass，但須事先通知場站協助申請。"
+    },
+    "other": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "FUK",
+   "region": "東北亞",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "2200-0700",
+     "note": "(1) 航機需於 2145L 前 pushback approved。\n(2) 航機需於 2159L 前 take off。"
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "△",
+     "time": null,
+     "note": "(1) Broker (WFS) 合約限制。\n(2) Mainami 可執行，前提為需取得三方同意（機場公司、燃油 Broker、航空公司）。"
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "任何航機轉降日本後，離場前必需取得JCAB/CAB核可，使得離場。"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "(1) 需提前確認 CIQs 人力（通常轉機安檢沒有配置固定人員，需提前至少 30 分鐘告知）。\n(2) 需提前確認 GHSP 人力。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "(1) 需提前向當地 CIQs 申請獲准。\n(2) 需提前確認 GHSP 人力。"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "(1) 當日返航：轉機安檢原則上需符合 LAG 手提限制；GHSP 不提供代收發服務。\n(2) 隔夜返航：需存關，將產生存關費用。"
+    },
+    "crew": {
+     "status": "△",
+     "time": null,
+     "note": "【須事先向場站確認】\n1.需簽證，免簽國籍除外。\n2.可PAX IN，JX提供Shore Pass，但須事先通知場站協助申請。"
+    },
+    "other": {
+     "status": "V",
+     "time": null,
+     "note": "(1) 地勤代理 GSE 多數均置放於機場國内航廈。如有調度需求，準備時間需 20-40 分鐘不等。\n(2) 如有訂餐或協助旅客代訂外部餐食進入管制區，需事先通知關務取得許可，方得携入管制區。"
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "CTS",
+   "region": "東北亞",
+   "items": {
+    "curfew": {
+     "status": "X",
+     "time": null,
+     "note": "本場站22:00～07:00有噪音管制，然如特殊事由如機務問題或轉降等緊急或不可避免之情事不在此限。"
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": "KAFCO可執行，前提為需取得三方同意\n（機場公司、燃油 Broker、航空公司)"
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "任何航機轉降日本後，離場前必需取得JCAB/CAB核可，使得離場。"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "(1)需提前確認CIQs人力/報備機場公司(保安單位)同意與否。\n(2)需提前確認GHSP人力。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "(1) 需提前向當地CIQs申請獲准。\n(2) 需提前確認GHSP人力。"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "(1)當日返航: 轉機安檢原則上需符合 LAG 手提限制。\n(2)隔夜返航:地勤代理代為申請通關文件，保管於地勤代理辦公室，隔日於管制區歸還予旅客。"
+    },
+    "crew": {
+     "status": "△",
+     "time": null,
+     "note": "【須事先向場站確認】\n1.需簽證，免簽國籍除外。\n2.可PAX IN，JX提供Shore Pass，但須事先通知場站協助申請。"
+    },
+    "other": {
+     "status": "V",
+     "time": null,
+     "note": "(1)雖CTS為24小時營運，但代理公司值班時段僅配合國內線航班運作（最晚至當地22:00）。由於人力配置有限，國際線航班19:00以後的航班若需支援，可能需耗時2小時以上召集人員返回機場，且不保證能配合。\n(2)外部餐食進管制區，需先取得機場保安許可，方得携入。"
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "OKA",
+   "region": "東北亞",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "2200-0600\n航廈關閉",
+     "note": "(1) 雖跑道24H運作，然航廈及CIQS於末班機2200結束後停止作業並關閉。\n(2) 特殊情況需提前/延後作業，場站必須事前以書面提出申請，相關額外支出由航空公司負擔。"
+    },
+    "catering": {
+     "status": "X",
+     "time": null,
+     "note": "當地有空廚，但無合作量能"
+    },
+    "fuel": {
+     "status": "△",
+     "time": null,
+     "note": "(1) 僅有轉降及異常航班可滯機加油。\n(2) 夜間無人值班，需耗時召集相關作業人員返回機場。"
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "任何航機轉降日本後，離場前必需取得JCAB/CAB核可，使得離場。"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "(1)原則上僅可加油不可下客。\n(2)若因組員超時等不可抗力原因必須下客時, 場站應事前通知，並取得相關單位JCAB、Local CAB、當地CIQs核可，同時確認機場公司、GHSP人力配置及作業量能。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "(1) 無轉機區域, 下機必須入境，無法僅於候機室等候。\n(2) 組員超時等不可抗力原因必須下客時, 場站應事前通知，並取得JCAB、Local CAB、當地CIQs核可，同時確認機場公司、GHSP人力配置及作業量能。\n(3) JCAB及Local CAB希望旅客在原班機抵達後，即由原班機離場，不得另安排額外的ferry航段。\n(4) 若非台日航線，旅客入境恐有簽證問題。"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "(1)將依當時情況，配合海關要求辦理相關作業。\n(2)依以往經驗，曾配合海關要求進行統一控管，並將物件編號提供予官方；待航班返還旅客後，再行通知官方確認處理完成。\n(3)亦有可能須存關，產生相關存關費用。"
+    },
+    "crew": {
+     "status": "△",
+     "time": null,
+     "note": "【須事先向場站確認】\n1.需簽證，免簽國籍除外。\n2.可PAX IN，JX提供Shore Pass，但須事先通知場站協助申請。"
+    },
+    "other": {
+     "status": "V",
+     "time": null,
+     "note": "(1) OKA起降雖為24H，惟因夜間無人值班，若於該時段需作業，恐須耗時至少1.5小時以上以召集相關人員返回機場。\n(2) 如有攜帶外部餐食進入管制區之需求，須以書面向海關提出申請，經核准後方可攜入。\n(3) 若遇緊急情況需派ferry空機加班支援，亦須於JCAB上班時間內提出申請，經核准後方可自TPE起飛。"
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "SDJ",
+   "region": "東北亞",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "2200-0730",
+     "note": "建議於2130前後推，且需於2200通過No Return Point規定，視情況展延宵禁至2300。"
+    },
+    "catering": {
+     "status": "X",
+     "time": null,
+     "note": "預計2026/10開始當地上餐"
+    },
+    "fuel": {
+     "status": "△",
+     "time": null,
+     "note": "僅有轉降航班可滯機加油"
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "任何航機轉降日本後，離場前必需取得JCAB/CAB核可，使得離場。"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "如異常，需提前通知CAB, CIQs及機場公司並取得獲准。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "如異常，需提前通知CAB, CIQs及機場公司並取得獲准。"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "(1) 隔夜返航：需存關，將產生存關費用。 \n(2) 當日返航：需存關，將產生存關費用。\n註：仙台無轉機安檢，旅客僅能入境，免稅品皆須存關。"
+    },
+    "crew": {
+     "status": "△",
+     "time": null,
+     "note": "【須事先向場站確認】\n1.需簽證，免簽國籍除外。\n2.可PAX IN，JX提供Shore Pass，但須事先通知場站協助申請。"
+    },
+    "other": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "KIX",
+   "region": "東北亞",
+   "items": {
+    "curfew": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "X",
+     "time": null,
+     "note": "Mainami 限制\n(特殊情況須事先通知並取得同意)"
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "任何航機轉降日本後，離場前必需取得JCAB/CAB核可，使得離場。"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "(1) 需提前通知CIQs並取得獲准。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "(1) 需提前通知CIQs並取得獲准。"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "(1) 轉機再回到出境: 100ml 液體手提限制。\n→ 如立即返航，則地勤代理可代為保管於登機閘口。\n→ 如隔夜，則需存放海關，將產生存關費用。 \nJPY1,500~2,500/ pcs 不等 (按物品大小/容量收費, 單件不超過30KG)"
+    },
+    "crew": {
+     "status": "△",
+     "time": null,
+     "note": "【須事先向場站確認】\n1.需簽證，免簽國籍除外。\n2.可PAX IN，JX提供Shore Pass，但須事先通知場站協助申請。"
+    },
+    "other": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "KMJ",
+   "region": "東北亞",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "2130-0730",
+     "note": "建議於2100前後推，且需於2130通過No Return Point，視情況展延宵禁至2230。"
+    },
+    "catering": {
+     "status": "X",
+     "time": null,
+     "note": "當地無空廚"
+    },
+    "fuel": {
+     "status": "X",
+     "time": null,
+     "note": "idemitsu 限制\n(特殊情況須事先通知並取得同意)"
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "任何航機轉降日本後，離場前必需取得JCAB/CAB核可，使得離場。"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "(1) 需提前通知CIQs並取得獲准。\n(2)旅客下機後僅能依照入境流程入境，無法不入境於候機室內等候。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "(1)需提前通知CIQs並取得獲准。\n(2)無簽證之旅客移民署將視情況決定滯留機場或提供Shore pass予旅客，飯店需於機場附近。)"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "(1)轉降航班若下客皆需入境，再離境時若免稅品超過LAG限制，皆需託運。\n(2)僅KMJ當站出發航班旅客，若需退關入境再離境，才允許將免稅品暫放登機門區域或存關。"
+    },
+    "crew": {
+     "status": "△",
+     "time": null,
+     "note": "【須事先向場站確認】\n1.需簽證，免簽國籍除外。\n2.可PAX IN，JX提供Shore Pass，但須事先通知場站協助申請。"
+    },
+    "other": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "NGO",
+   "region": "東北亞",
+   "items": {
+    "curfew": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "任何航機轉降日本後，離場前必需取得JCAB/CAB核可，使得離場。"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "需提前通知CIQs並取得獲准。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "1.必須事先取得 CIQ (海關、檢驗檢疫) 的核准。\n2.必須符合所有的入境要求。"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "1.液體限制：100 毫升規定一律適用。\n2.同日出發：免稅品登機門保管。\n3.隔日出發：免稅品海關保稅區保管（需付費）。\n4.退款：名古屋免稅品可退款（食物除外）。"
+    },
+    "crew": {
+     "status": "△",
+     "time": null,
+     "note": "【須事先向場站確認】\n1.需簽證，免簽國籍除外。\n2.可PAX IN，JX提供Shore Pass，但須事先通知場站協助申請。"
+    },
+    "other": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "HKD",
+   "region": "東北亞",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "2030-0730",
+     "note": "需於2030前通過No Return Point，航機需於2000後推。宵禁可延長一小時，需於2100前後推，且2130前通過No Return Point。"
+    },
+    "catering": {
+     "status": "X",
+     "time": null,
+     "note": "當地無空廚"
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "任何航機轉降日本後，離場前必需取得JCAB/CAB核可，使得離場。"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "須提前通知CIQs並取得獲准\n暫時下客(當日需返台)：檢疫須至機艙內確認；完成後全數旅客可至出境候機室等候。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "(1)需事先通知CIQS並取得獲准\n(2)組員/MM需有Shorpass"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "免稅品經JX REP向海關申報後，可暫存在登機門的保管室，出境後統一歸還"
+    },
+    "crew": {
+     "status": "△",
+     "time": null,
+     "note": "【須事先向場站確認】\n1.需簽證，免簽國籍除外。\n2.可PAX IN，JX提供Shore Pass，但須事先通知場站協助申請。"
+    },
+    "other": {
+     "status": "V",
+     "time": null,
+     "note": "如轉降需入境，需先提前取得CIQS許可，否則可能無人力。"
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "TAK",
+   "region": "東北亞",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "2200-0700",
+     "note": "建議於2130前後推，且需於22:00通過No Return Point規定。"
+    },
+    "catering": {
+     "status": "X",
+     "time": null,
+     "note": "當地無空廚"
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "任何航機轉降日本後，離場前必需取得JCAB/CAB核可，使得離場。"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "旅客下機後僅能依照入境流程入境，無法不入境於候機室內等候。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "需提前通知CIQs並取得獲准。"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "若有購買免稅品入境，補付稅金即可攜帶入境。"
+    },
+    "crew": {
+     "status": "△",
+     "time": null,
+     "note": "【須事先向場站確認】\n1.需簽證，免簽國籍除外。\n2.可PAX IN，JX提供Shore Pass，但須事先通知場站協助申請。"
+    },
+    "other": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "UKB",
+   "region": "東北亞",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "2300-0700",
+     "note": "如會超過2300，可提前詢問機場與CIQS人力是否可配合。"
+    },
+    "catering": {
+     "status": "X",
+     "time": null,
+     "note": "當地無空廚"
+    },
+    "fuel": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "X",
+     "time": null,
+     "note": "目前屬Charter FLT機場，非*Emergency不接受轉降。"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "須通知KAPK&CIQS並取得同意"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "須通知KAPK&CIQS並取得同意，並事先提交PM。"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "如旅客退關，則需將免稅品先退貨(UKB出發)。"
+    },
+    "crew": {
+     "status": "△",
+     "time": null,
+     "note": "【須事先向場站確認】\n1.需簽證，免簽國籍除外。\n2.可PAX IN，JX提供Shore Pass，但須事先通知場站協助申請。"
+    },
+    "other": {
+     "status": "V",
+     "time": null,
+     "note": "Charter包機形式預計至2030年。"
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "SHI",
+   "region": "東北亞",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "1930-0800",
+     "note": "(1) 航廈關閉:1900-0900；跑道關閉:1930-0800\n(2) 航廈之後配合JX航班提早至0800L開始營運。"
+    },
+    "catering": {
+     "status": "X",
+     "time": null,
+     "note": "當地無空廚"
+    },
+    "fuel": {
+     "status": "△",
+     "time": null,
+     "note": "(1) 一般加油須1.5小時前提出通知。\n(2) Contact Hour: 0830-1600L\n(3) 僅有轉降及異常航班可滯機加油。"
+    },
+    "divert": {
+     "status": "X",
+     "time": null,
+     "note": "無額外地勤代理人力"
+    },
+    "deplane": {
+     "status": "X",
+     "time": null,
+     "note": "無額外CIQs人力"
+    },
+    "entry": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    },
+    "duty": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    },
+    "crew": {
+     "status": "△",
+     "time": null,
+     "note": "【須事先向場站確認】\n1.需簽證，免簽國籍除外。\n2.可PAX IN，JX提供Shore Pass，但須事先通知場站協助申請。"
+    },
+    "other": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "PUS",
+   "region": "東北亞",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "2300-0600",
+     "note": ""
+    },
+    "catering": {
+     "status": "X",
+     "time": null,
+     "note": "預計2027/1開始當地上餐"
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": "需事先通知機場消防單位"
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "1. 提前告知協調GHSP人力\n2.通知CIQS並於航機抵達前傳送APIS"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "場站應事前通知，並取得相關單位MOLIT、KAC、當地CIQs核可，同時確認機場公司、GHSP人力配置及作業量能。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "場站需事前通知，並取得相關單位MOLIT、KAC、當地CIQs核可，同時確認機場公司、GHSP人力配置及作業量能。"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "免稅品經GHSP 向海關申報後，可暫存在登機門的保管室，出境後統一歸還"
+    },
+    "crew": {
+     "status": "X",
+     "time": null,
+     "note": "可以旅客進/On GD出。\n【註1】:台、日籍旅客入境需申請K-ETA，線上審查時間約為72小時，費用為KRW 1萬。\n【註2】:越籍組員須需申請簽證，其餘國籍簽證需求請檢視該國簽證規範。"
+    },
+    "other": {
+     "status": "V",
+     "time": null,
+     "note": "1.若需入境，皆必須事先取得MOLIT核准，並向KAC通報，同時取得CIQ入境許可。\n2.預計2026/10月才開始當地上餐。"
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "MNL",
+   "region": "東南亞",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "0030-0530",
+     "note": "跑道預計每週一、每週三 0030L–0530L 關閉，例行性維護。"
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": "滯機加油作業旅客不能下機，需留在機上等候加油完成"
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "GHSP人力需提前通知協調"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "原則上不允許下客，需取得移民署同意，並須將出發/目的地是否為菲律賓境內之航班納入考量。如為滯機加油作業，旅客不可下機。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "若轉降航班在抵達後又宣布確定取消，具入境資格旅客可入境。如該國籍旅客無入境簽證，則必須由航空公司向移民局提交\"入境許可申請函\"，並等候移民局的告知，決定旅客可否入境。"
+    },
+    "duty": {
+     "status": "△",
+     "time": null,
+     "note": "免稅品必須妥善保管並完整記錄。\n航空公司需準備完整的清單，供海關進行核對"
+    },
+    "crew": {
+     "status": "X",
+     "time": null,
+     "note": "需申請簽證。"
+    },
+    "other": {
+     "status": "V",
+     "time": null,
+     "note": "所有轉降航班均須取得機場 AOD（Airline Operations Division） 的許可,同時提交 General Declaration (GD)。"
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "CRK",
+   "region": "東南亞",
+   "items": {
+    "curfew": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "提前告知協調GHSP人力"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "原則上不允許下客，需取得移民署同意：若非出發/目的地為菲律賓之航班，移民署表示均停放外接駁坪執行旅客滯機加油。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "免簽證旅客可入境；需簽證/無簽證旅客無法入境，只能於候機室內滯留。"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "免稅品可攜帶入境、過境、直接返回機上\n離開機場後如新航班則須遵照LAG規定辦理托運出境"
+    },
+    "crew": {
+     "status": "X",
+     "time": null,
+     "note": "需申請簽證。"
+    },
+    "other": {
+     "status": "V",
+     "time": null,
+     "note": "原則上不符合免簽資格之旅客僅能待在客艙內無法下機(僅滯機加油，不下客)。若原出發/目的地為菲律賓之場站才有機會下客，可於候機室內等候。"
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "CEB",
+   "region": "東南亞",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "0300-0500",
+     "note": ""
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "GHSP人力需提前通知協調"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "需取得移民署同意才可下機於登機門區域"
+    },
+    "entry": {
+     "status": "X",
+     "time": null,
+     "note": "因目的地非宿霧，只可安排入住飯店，無法入境，需事先取得移民署同意。\n1.無簽證旅客: 移民署將依旅客人數比例指派移民官至飯店全程駐點；\n2.台灣籍旅客: 入境菲律賓屬免簽（未超過免簽停留天數情況下無需另行辦理簽證）。"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "1.免稅品須密封(附收據)；若已開封宿霧海關官員將依情況進行個案檢查。\n2.免稅品金額上限為200美元，超額部分將由海關徵收稅金。\n*轉降航班若需安排旅客住宿，免稅品部分若仍是密封及完整狀態:\n入境樓層-海關官員會向旅客另外徵收稅金，旅客支付後可隨身攜帶，若旅客不另外支付，免稅品可存於海關處(需支付存放費用)。\n出境樓層-OTS(Office forTransportation Security)表示允許旅客可攜帶\"。"
+    },
+    "crew": {
+     "status": "X",
+     "time": null,
+     "note": "需申請簽證。"
+    },
+    "other": {
+     "status": "V",
+     "time": null,
+     "note": "1.IMMI說明因宿霧之前未有類似情況發生，菲律賓籍旅客若要求由宿霧入境則會另行討論。\n2.旅客入住期間，航空公司須負擔移民官之 陪同費用（人員配置比例為 30 名旅客：1 名移民官），飯店由航空公司負責安排，同時，場站亦需安排 Security Service Provider 進行留守。"
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "HAN",
+   "region": "東南亞",
+   "items": {
+    "curfew": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "任何航機轉降越南，需告知新離場時間，進行新Landing Permit申請，才能離場。"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "原則上不允許下客，\n特殊個案應向官方單位申請並取得取可。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "須事先向官方單位申請並取得許可\n(通常有入境需求才得以申請下客，無法讓旅客在候機室等待)"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "免稅品可攜帶入境，需保留收據且不得拆封"
+    },
+    "crew": {
+     "status": "△",
+     "time": null,
+     "note": "需事先與場站確認是否得以收受。"
+    },
+    "other": {
+     "status": "V",
+     "time": null,
+     "note": "Landing permit的申請，由越南分公司負責。\n原則上聯繫CAAV為優先選項，若在非上班時段(週一至週五08:00L-17:00L)，得由VATM審批Landing permit之申請。"
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "DAD",
+   "region": "東南亞",
+   "items": {
+    "curfew": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "任何航機轉降越南，需告知新離場時間，進行新Landing Permit申請，才能離場。"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "原則上不允許下客，\n特殊個案應向官方單位申請並取得取可。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "須事先向官方單位申請並取得許可"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "(1) 免稅品可攜入境，應保留原購買收據且不可拆封\n(2) 不符LAG規定之免稅品應裝入免稅品密封袋才可手提攜帶出境"
+    },
+    "crew": {
+     "status": "X",
+     "time": null,
+     "note": "需申請簽證。"
+    },
+    "other": {
+     "status": "V",
+     "time": null,
+     "note": "Landing permit的申請，由越南分公司負責。\n原則上聯繫CAAV為優先選項，若在非上班時段(週一至週五08:00L-17:00L)，得由VATM審批Landing permit之申請。"
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "SGN",
+   "region": "東南亞",
+   "items": {
+    "curfew": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "任何航機轉降越南，需告知新離場時間，進行新Landing Permit申請，才能離場。"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "原則上不允許下客，\n特殊個案應向官方單位申請並取得取可。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "須事先向官方單位申請並取得許可"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "(1)入境越南：通過海關後方可拆封免稅品 (請保留購買憑證)；若提前拆封，海關查驗時可能視為一般商品並課稅。\n(2)轉機航班(包含異常轉降)：若STEB封袋破損或未保持完整，轉機安檢可能沒收，尤其液體超過100ml者。\n※結論：請勿在入境越南前拆封免稅商品。"
+    },
+    "crew": {
+     "status": "△",
+     "time": null,
+     "note": "需事先與場站確認是否得以收受。"
+    },
+    "other": {
+     "status": "V",
+     "time": null,
+     "note": "Landing permit的申請，由越南分公司負責。\n原則上聯繫CAAV為優先選項，若在非上班時段(週一至週五08:00L-17:00L)，得由VATM審批Landing permit之申請。"
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "PQC",
+   "region": "東南亞",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "2330-0430",
+     "note": "跑道維護(A4114/25 NOTAM)\n如有特殊狀況則須先向機場公司申請並取得許可。"
+    },
+    "catering": {
+     "status": "X",
+     "time": null,
+     "note": "當地無空廚"
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "任何航機轉降越南，需告知新離場時間，進行新Landing Permit申請，才能離場。"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "原則上不允許下客，\n特殊個案應向官方單位申請並取得取可。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "如有下客需求須向官方單位申請並取得許可"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "免稅品可攜帶入境\n離開機場後如新航班則須遵照LAG規定辦理託運出境"
+    },
+    "crew": {
+     "status": "△",
+     "time": null,
+     "note": "需事先與場站確認是否得以收受。若可，則需當日移民署值日官核准及公司擔保公文。"
+    },
+    "other": {
+     "status": "V",
+     "time": null,
+     "note": "Landing permit的申請，由越南分公司負責。\n原則上聯繫CAAV為優先選項，若在非上班時段(週一至週五08:00L-17:00L)，得由VATM審批Landing permit之申請。"
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "BKK",
+   "region": "東南亞",
+   "items": {
+    "curfew": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "接獲轉降需求後，需即時通知地勤代理、ATC及AOT（機場公司）。若轉降後需再次起飛離場，則須由CPD向CAAT申請時段（Slot），並由BKK站在CAAT系統內完成飛航許可（Permit）申請作業。"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "須先向機場公司提出申請後方可辦理下客作業，旅客需在候機室等候，直至航機完成相關作業並可起飛前往原定目的地。\n無論原目的地位於泰國境內或境外，皆須返回原定目的地。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "1.臨時休息: 允許短暫到境內旅館休息，但不算正式入境。\n2.最終目的地: 飛機修好後，所有人(含本國人)必須繼續飛往原目的地，不得中途離開從BKK入境。\n3.防範措施: 休息期間，護照會被移民署收走保管，防止旅客逃脫。"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "1.可攜帶下機，並在出發時將所有免稅品放入託運行李中。\n2.部分受限制或高價值物品在抵達時可能需由海關保管，待離開泰國時再取回，並必須作為託運行李裝載出境。"
+    },
+    "crew": {
+     "status": "X",
+     "time": null,
+     "note": "需申請簽證。"
+    },
+    "other": {
+     "status": "V",
+     "time": null,
+     "note": "機組員可在泰國境內不同機場下機或登機，但須具備相關證明文件，例如 GD（General Declaration）之入出紀錄。\n地面停留時間限制：無特別限制，因曼谷機場（BKK）為24小時運作。但若需過夜或停留超過12小時，須以正式公文向AOT申請核准。\n停機位安排：多數在外譏坪；過夜停放，須取得AOT核准。"
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "CNX",
+   "region": "東南亞",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "0200-0600",
+     "note": "如因航班延誤或轉降等因素\n導致航班須於此區間到/離場\n須向機場公司申請取得許可後方可操作"
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "接獲轉降需求時須立即通知機場公司\n以及向CAAT提出landing permit申請"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "如有下客需求須向機場公司申請並取得許可"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "如有下客需求須向機場公司申請並取得許可"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "免稅品可攜帶入境\n如購買時間尚為24HR內且備妥收據及包裝未拆封,則可於出境時隨身攜帶\n如包裝已拆封或購買時間已超過24HR，僅能放置於託運行李"
+    },
+    "crew": {
+     "status": "X",
+     "time": null,
+     "note": "需申請簽證。"
+    },
+    "other": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "KUL",
+   "region": "東南亞",
+   "items": {
+    "curfew": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "轉降航班無須申請Flight and Landing Permit，維持原Call Sign、Refuel and Go回原目的地。"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "轉降航班通常僅加油即返回原目的地，特殊情況下客需經機場單位及AVSEC同意。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "需向機場單位申請並取得許可。"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "免稅品可攜帶入境，離開機場後如新航班則須遵照LAG規定辦理託運"
+    },
+    "crew": {
+     "status": "X",
+     "time": null,
+     "note": "需申請簽證。"
+    },
+    "other": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "SIN",
+   "region": "東南亞",
+   "items": {
+    "curfew": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "航班抵達前一小時需通知機場公司"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "需入境才允許下客，旅客僅能於機上等候，如個案需向機場保安公司提出申請並取得許可。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "如必須入境(AOG/組員工時)，至少於航班抵達前一小時申請，需向機場保安公司提出申請並取得許可"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "機場公司於候機室統一收取，於出境時統一於候機室發放"
+    },
+    "crew": {
+     "status": "X",
+     "time": null,
+     "note": "需申請簽證。"
+    },
+    "other": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "CGK",
+   "region": "東南亞",
+   "items": {
+    "curfew": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": "油公司Pertamina可為321/339/359/35K加油入機"
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "須盡早通報DGCA及OTBAN取得Flight Approval。\nGHSP可於系協助申請SLOT及PARKING。"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "特殊情況須向CIQS通報取得許可後方可下客。"
+    },
+    "entry": {
+     "status": "V",
+     "time": null,
+     "note": "特殊情況須向CIQS通報取得許可後方可入境。"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "須向海關通報並依當天海關指示作業(集中保管或旅客自行保管)。"
+    },
+    "crew": {
+     "status": "X",
+     "time": null,
+     "note": "需申請簽證。"
+    },
+    "other": {
+     "status": "V",
+     "time": null,
+     "note": "組員如GD身份入境，改PAX身份出境，須在office hour向IMMI Office申請Exit Permit並繳費，最快6小時才能核准。"
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "DPS",
+   "region": "東南亞",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "(每周二)\n0200-0700",
+     "note": "每周二凌晨2-7點為機場例行跑道關閉維護。該時段航機禁止降落、起飛"
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "接獲轉降需求時須立即通知機場公司。機場每周二凌晨2-7時跑道維護關閉、機場每年一日寧靜日將拒絕任何起飛降落。"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "需事先經過DPS IMMIGRATION同意。可選擇讓旅客於機上等待或下機於指定區域集合。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "能否入境取決於旅客國籍是否為免簽或可申辦VOA。無法免簽或申辦VOA之國籍將需列出送交移民署個別判定。"
+    },
+    "duty": {
+     "status": "V",
+     "time": null,
+     "note": "若最終判定旅客須入境，則可攜帶免稅品入境。"
+    },
+    "crew": {
+     "status": "X",
+     "time": null,
+     "note": "需申請簽證。"
+    },
+    "other": {
+     "status": "V",
+     "time": null,
+     "note": "組員如GD身份入境，改PAX身份出境，須在office hour向IMMI Office申請Exit Permit並繳費，最快6小時才能核准。"
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "LAX",
+   "region": "北美",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "2230-0600",
+     "note": "2230-0000(CBP加班裕度)\n註:0000-0600(CBP全下班)\n0100-0600(TSA下班)"
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "因CBP人力安排問題，需事先申請取得許可。"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "因CBP人力安排問題，需事先申請取得許可。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "因CBP人力安排問題，需事先申請取得許可。"
+    },
+    "duty": {
+     "status": "X",
+     "time": null,
+     "note": "需遵照LAG規範。"
+    },
+    "crew": {
+     "status": "X",
+     "time": null,
+     "note": "需申請C1/D簽證。"
+    },
+    "other": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "SFO",
+   "region": "北美",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "0000-0600",
+     "note": "0000-0600(CBP全下班)\n0200-0415(TSA下班)\n註: 晚STA 1-2小時需通知CBP。"
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": "不可加油登(離)機，可接受旅客於機上滯機加油"
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "可接受轉降,唯抵達前須向FAA申請Landing right,同時需向SFO申請Slot雙重許可後始得接受非計畫性轉降"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "視乎不同情況而定,如為醫療臨時轉降則需透過SFO安排醫療車輛後送事宜,如機械故障,視乎嚴重程度安排,且如涉及國際抵達,需配合CBP工作時間"
+    },
+    "entry": {
+     "status": "V",
+     "time": null,
+     "note": "若原班機為抵達美國的航班，於本場入境原則上同意，並根據全美國統一的入境標準審查旅客證照，若美國離場返台航班臨時轉降則視為國內線無通關問題"
+    },
+    "duty": {
+     "status": "X",
+     "time": null,
+     "note": "免稅品可悉出入境，然需遵守LAG規範,超過需放棄。"
+    },
+    "crew": {
+     "status": "X",
+     "time": null,
+     "note": "需申請C1/D簽證。"
+    },
+    "other": {
+     "status": "V",
+     "time": null,
+     "note": "如需入境，長官答覆原則上至少需3小時前申請。"
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "SEA",
+   "region": "北美",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "2130-0600",
+     "note": "2130-0600(CBP全下班)\nTSA(24小時上班)"
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "因CBP人力安排問題，需事先申請取得許可。"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "因CBP人力安排問題，需事先申請取得許可。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "因CBP人力安排問題，需事先申請取得許可。"
+    },
+    "duty": {
+     "status": "X",
+     "time": null,
+     "note": "需遵照LAG規範。"
+    },
+    "crew": {
+     "status": "X",
+     "time": null,
+     "note": "需申請C1/D簽證。"
+    },
+    "other": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "ONT",
+   "region": "北美",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "0030-1530",
+     "note": "<2025/10/26起>\n0030-1530(CBP全下班)\nTSA(24小時)"
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": "Prior approval is required. CBP operating hours restruction applied. JX cut off time is 2100L"
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "Prior approval is required. CBP operating hours restruction applied. JX cut off time is 2100L"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "Prior approval is required. CBP operating hours restruction applied. JX cut off time is 2100L"
+    },
+    "duty": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    },
+    "crew": {
+     "status": "X",
+     "time": null,
+     "note": "需申請C1/D簽證。"
+    },
+    "other": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "PHX",
+   "region": "北美",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "2030-0800",
+     "note": "2030-0800(CBP全下班)\nTSA(24小時)"
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "deplane": {
+     "status": "△",
+     "time": null,
+     "note": "因CBP人力安排問題，需事先申請取得許可。"
+    },
+    "entry": {
+     "status": "△",
+     "time": null,
+     "note": "因CBP人力安排問題，需事先申請取得許可。"
+    },
+    "duty": {
+     "status": "X",
+     "time": null,
+     "note": "需遵照LAG規範。"
+    },
+    "crew": {
+     "status": "X",
+     "time": null,
+     "note": "需申請C1/D簽證。"
+    },
+    "other": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "DFW",
+   "region": "北美",
+   "items": {
+    "curfew": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "catering": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "deplane": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "entry": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "duty": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "crew": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "other": {
+     "status": null,
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 0
+  },
+  {
+   "code": "IAD",
+   "region": "北美",
+   "items": {
+    "curfew": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "catering": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "deplane": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "entry": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "duty": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "crew": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "other": {
+     "status": null,
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 0
+  },
+  {
+   "code": "PRG",
+   "region": "歐洲",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "夏季: 2300-0700\n冬季: 2200-0600",
+     "note": "噪音管制期間(UTC 2100Z-0500Z)，如有作業需求需申請許可。"
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "deplane": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "entry": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "duty": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    },
+    "crew": {
+     "status": "V",
+     "time": null,
+     "note": "1.可無簽證入境，但不可離開PRG此國家，建議再與場站確認。\n2.可乘客入境(走組員通道)，持GD並告知以組員身分出境。\n3.若組員身分入境而旅客身分離境，須持GD告知長官將以旅客離境，離境時須持當初入境的GD。"
+    },
+    "other": {
+     "status": "X",
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 9
+  },
+  {
+   "code": "SYD",
+   "region": "紐澳",
+   "items": {
+    "curfew": {
+     "status": "V",
+     "time": "2300-0600",
+     "note": "若超時，將罰款110萬澳幣(約2400萬台幣)"
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "deplane": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "entry": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "duty": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "crew": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "other": {
+     "status": null,
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 2
+  },
+  {
+   "code": "AKL",
+   "region": "紐澳",
+   "items": {
+    "curfew": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "catering": {
+     "status": "V",
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "deplane": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "entry": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "duty": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "crew": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "other": {
+     "status": null,
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 1
+  }
+ ],
+ "contacts": [
+  {
+   "code": "TPE",
+   "above": {
+    "unit": "星宇",
+    "tel": "OIC: 9830-2526/2528",
+    "email": "tpekk@starlux-airlines.com"
+   },
+   "below": {
+    "unit": "JX",
+    "tel": "JX",
+    "email": "JX"
+   },
+   "note": ""
+  },
+  {
+   "code": "KHH",
+   "above": {
+    "unit": "台灣天際",
+    "tel": "SM:楊玫娟經理 / 0931-911-816\nOIC: 07-805-7198\nOIC公務機: 0905-390-657",
+    "email": "SM: corinnayang@tsgs.com.tw\nOIC: khhoic@tsgs.com.tw"
+   },
+   "below": {
+    "unit": "台勤",
+    "tel": "OCC: 07-805-7779",
+    "email": "OCC: koocc@taichin.com.tw"
+   },
+   "note": "加油: 中油\n場站: 已備有A350 bypass Pin及地面耳機"
+  },
+  {
+   "code": "RMQ",
+   "above": {
+    "unit": "星宇",
+    "tel": "OIC: 9850-2712",
+    "email": "rmqkkjx@starlux-airlines.com"
+   },
+   "below": {
+    "unit": "台勤",
+    "tel": "",
+    "email": ""
+   },
+   "note": ""
+  },
+  {
+   "code": "TSA",
+   "above": {
+    "unit": "華信",
+    "tel": "OCC: 02-2514-2046\nPax OIC: \n02-2514-2071 或 0975-519-673\nRamp OIC: 02-8770-2032",
+    "email": "OCC: \njcoic@mandarin-airlines.com /TTY:TSAJCAE\nPax OIC: \ntsaoict1@mandarin-airlines.com / TTY:TSATTAE"
+   },
+   "below": {
+    "unit": "台勤",
+    "tel": "余志明 站經理: 0963-568-289\n周聰隆(航機作業組主任): 02-8770-2646#210\nOCC: 02-8770-2646#213",
+    "email": "余'R: cmyu@taichin.com.tw\n周'R: tlchou@taichin.com.tw\nOCC: toocc@taichin.com.tw"
+   },
+   "note": ""
+  }
+ ]
+};
+const ITEMS = DATA.meta.items;
+const SHORT = {curfew:"宵禁",catering:"上餐",fuel:"加油",divert:"轉降",deplane:"下客",entry:"入境",duty:"免稅",crew:"組員",other:"其他"};
+const FULL = {
+  curfew:"Curfew 宵禁", catering:"當地上餐", fuel:"可否滯機加油", divert:"可否轉降",
+  deplane:"可否下客", entry:"可否入境", duty:"免稅品攜帶限制",
+  crew:"組員特殊作業（無簽證入境／回程 On GD 值勤）", other:"其他特殊限制"
+};
+
+/* 判讀規則：permit 類 V=可、△=需申請、X=不可；presence 類 V=有規定要注意、X=無 */
+function read(key, st){
+  const pol = (ITEMS.find(i=>i.key===key)||{}).polarity;
+  if(!st) return {k:"na", mark:"–", text:"資料待補"};
+  if(st==="N/A") return {k:"na", mark:"—", text:"不適用"};
+  if(pol==="presence"){
+    if(st==="V") return {k:"warn", mark:"!", text:key==="curfew"?"有宵禁":"有規定"};
+    if(st==="X") return {k:"ok", mark:"○", text:key==="curfew"?"無宵禁":"無特別限制"};
+    return {k:"warn", mark:"!", text:st};
+  }
+  if(st==="V") return {k:"ok", mark:"✓", text:"可"};
+  if(st==="△") return {k:"warn", mark:"△", text:"需申請／有條件"};
+  if(st==="X") return {k:"no", mark:"✕", text:"不可"};
+  return {k:"na", mark:"?", text:st};
+}
+
+const REGIONS = [...new Set(DATA.stations.map(s=>s.region))];
+let region = "全部", query = "", current = null, matrixKey = "divert";
+
+document.getElementById("statStations").textContent = DATA.stations.length;
+document.getElementById("statRegions").textContent = REGIONS.length;
+document.getElementById("statPending").textContent = DATA.stations.filter(s=>s.filled<9).length;
+
+/* ---- tabs ---- */
+document.querySelectorAll('nav.tabs button').forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(x=>x.setAttribute("aria-selected", x===b));
+    document.querySelectorAll('section[role=tabpanel]').forEach(p=>p.classList.toggle("hidden", p.id!==b.dataset.panel));
+    window.scrollTo({top:0});
+  };
+});
+
+/* ---- 區域 chips ---- */
+const rc = document.getElementById("regionChips");
+["全部",...REGIONS].forEach(r=>{
+  const b=document.createElement("button");
+  b.className="chip"; b.textContent=r; b.setAttribute("aria-pressed", r===region);
+  b.onclick=()=>{region=r; [...rc.children].forEach(c=>c.setAttribute("aria-pressed", c===b)); renderList();};
+  rc.appendChild(b);
+});
+document.getElementById("q").addEventListener("input", e=>{ query = e.target.value.trim().toUpperCase(); renderList(); });
+
+/* ---- 場站清單 ---- */
+function renderList(){
+  const host = document.getElementById("stationList");
+  host.innerHTML = "";
+  const groups = REGIONS.filter(r=>region==="全部"||r===region);
+  let shown = 0;
+  groups.forEach(r=>{
+    const list = DATA.stations.filter(s=>s.region===r && s.code.includes(query));
+    if(!list.length) return;
+    shown += list.length;
+    const box=document.createElement("div"); box.className="regionrow";
+    const h=document.createElement("h3"); h.textContent=r; box.appendChild(h);
+    const grid=document.createElement("div"); grid.className="codes";
+    list.forEach(s=>{
+      const b=document.createElement("button");
+      b.className="code"+(s.filled?"":" empty");
+      b.setAttribute("aria-pressed", current && current.code===s.code);
+      const bar = ITEMS.map(i=>{
+        const c = read(i.key, s.items[i.key].status).k;
+        return `<i style="background:var(--${c==='ok'?'ok':c==='warn'?'warn':c==='no'?'no':'na'})"></i>`;
+      }).join("");
+      b.innerHTML = s.code + `<span class="bar">${bar}</span>`;
+      b.onclick = ()=>{ current = s; renderList(); renderDetail(); };
+      grid.appendChild(b);
+    });
+    box.appendChild(grid); host.appendChild(box);
+  });
+  if(!shown) host.innerHTML = `<p class="calcnote">找不到「${query}」。換個代碼或清除搜尋條件試試。</p>`;
+}
+
+/* ---- 場站詳細 ---- */
+function renderDetail(){
+  const host = document.getElementById("detail");
+  if(!current){ host.innerHTML=""; return; }
+  const s = current;
+  const slots = ITEMS.map(i=>{
+    const r = read(i.key, s.items[i.key].status);
+    return `<button class="slot" data-key="${i.key}">
+      <span class="lb">${SHORT[i.key]}</span>
+      <span class="dot d-${r.k}">${r.mark}</span>
+    </button>`;
+  }).join("");
+
+  const cards = ITEMS.map(i=>{
+    const it = s.items[i.key], r = read(i.key, it.status);
+    const time = (i.key==="curfew" && it.time) ? `<span class="timepill">${it.time}</span>` : "";
+    const body = it.note
+      ? `<p class="note">${esc(it.note)}</p>`
+      : `<p class="nonote">${it.status ? "無額外備註" : "此欄尚未建檔"}</p>`;
+    return `<article class="card k-${r.k}" id="c-${i.key}">
+      <h4>${FULL[i.key]}<span class="tag t-${r.k}">${r.text}</span>${time}</h4>
+      ${body}
+    </article>`;
+  }).join("");
+
+  host.innerHTML = `
+    <div class="stationhead">
+      <div class="bigcode">${s.code}</div>
+      <div class="meta">${s.region}${s.filled<9?" ・ 部分欄位待補":""}</div>
+      <div class="actions"><button class="btn" onclick="window.print()">列印本站</button></div>
+    </div>
+    <div class="strip">${slots}</div>
+    <div class="cards">${cards}</div>`;
+
+  host.querySelectorAll(".slot").forEach(b=>{
+    b.onclick=()=>{
+      host.querySelectorAll(".slot").forEach(x=>x.classList.toggle("on", x===b));
+      document.getElementById("c-"+b.dataset.key).scrollIntoView({behavior:"smooth",block:"center"});
+    };
+  });
+  host.scrollIntoView({behavior:"smooth",block:"start"});
+}
+function esc(t){return t.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+/* ---- 全站對照 ---- */
+const mc = document.getElementById("matrixChips");
+ITEMS.forEach(i=>{
+  const b=document.createElement("button");
+  b.className="chip"; b.textContent=SHORT[i.key];
+  b.setAttribute("aria-pressed", i.key===matrixKey);
+  b.onclick=()=>{matrixKey=i.key; [...mc.children].forEach(c=>c.setAttribute("aria-pressed", c===b)); renderMatrixDetail();};
+  mc.appendChild(b);
+});
+function renderMatrix(){
+  const t = document.getElementById("matrix");
+  t.innerHTML = `<thead><tr><th>場站</th>${ITEMS.map(i=>`<th>${SHORT[i.key]}</th>`).join("")}</tr></thead>
+  <tbody>${DATA.stations.map(s=>`<tr><th>${s.code}</th>${ITEMS.map(i=>{
+    const r = read(i.key, s.items[i.key].status);
+    return `<td class="cell" data-code="${s.code}" data-key="${i.key}"><span class="mk m-${r.k}">${r.mark}</span></td>`;
+  }).join("")}</tr>`).join("")}</tbody>`;
+  t.querySelectorAll("td.cell").forEach(td=>{
+    td.onclick=()=>{ matrixKey = td.dataset.key;
+      [...mc.children].forEach(c=>c.setAttribute("aria-pressed", c.textContent===SHORT[matrixKey]));
+      renderMatrixDetail(td.dataset.code);
+    };
+  });
+}
+function renderMatrixDetail(focus){
+  const host = document.getElementById("matrixDetail");
+  host.innerHTML = DATA.stations.map(s=>{
+    const it = s.items[matrixKey], r = read(matrixKey, it.status);
+    if(!it.note && !it.status) return "";
+    const time = (matrixKey==="curfew" && it.time) ? `<span class="timepill">${it.time}</span>` : "";
+    return `<article class="card k-${r.k}"${focus===s.code?' id="focusrow"':''}>
+      <h4>${s.code}<span class="tag t-${r.k}">${r.text}</span>${time}</h4>
+      ${it.note?`<p class="note">${esc(it.note)}</p>`:`<p class="nonote">無額外備註</p>`}
+    </article>`;
+  }).join("");
+  const f = document.getElementById("focusrow");
+  if(f) f.scrollIntoView({behavior:"smooth",block:"center"});
+}
+
+/* ---- 備降聯絡 ---- */
+function linkify(text){
+  let out = esc(text);
+  out = out.replace(/([\w.+-]+@[\w.-]+\.\w+)/g, '<a href="mailto:$1">$1</a>');
+  out = out.replace(/(?<![\w@.-])(\d{2,4}-\d{3,4}-?\d{3,4}(?:#\d+)?|\d{4}-\d{4}|\d{9,10})(?![\w@.-])/g,
+    m=>`<a href="tel:${m.replace(/[^\d#]/g,"")}">${m}</a>`);
+  return out;
+}
+document.getElementById("contacts").innerHTML = DATA.contacts.map(c=>{
+  const side=(role,o)=> (o.unit||o.tel||o.email) ? `<div class="side">
+      <div class="role">${role}</div>
+      <div class="unit">${esc(o.unit||"—")}</div>
+      <div class="lines">${[o.tel,o.email].filter(x=>x&&x!=="JX").map(linkify).join("\n")||"無提供窗口"}</div>
+    </div>` : "";
+  return `<div class="ccard">
+    <header><b>${c.code}</b><span>台灣區備降站</span></header>
+    ${side("翼上單位", c.above)}
+    ${side("翼下單位", c.below)}
+    ${c.note?`<div class="cnote">${esc(c.note)}</div>`:""}
+  </div>`;
+}).join("");
+
+/* ---- 到離試算 ---- */
+let legs = [
+  {no:"", dep:"19:30", ft:"01:30", tz:"0", aabi:"00:10", gt:"01:00"},
+  {no:"", dep:"", ft:"02:00", tz:"0", aabi:"00:10", gt:"01:00"}
+];
+function toMin(v){ if(!v) return null; const m=/^(\d{1,2}):(\d{2})$/.exec(v.trim()); return m? (+m[1])*60 + (+m[2]) : null; }
+function fmt(min){ const d=Math.floor(min/1440); const t=((min%1440)+1440)%1440;
+  return {t:String(Math.floor(t/60)).padStart(2,"0")+":"+String(t%60).padStart(2,"0"), d:d};
+}
+function renderLegs(){
+  const host = document.getElementById("legs");
+  host.innerHTML = "";
+  let carry = null;
+  legs.forEach((L,idx)=>{
+    if(idx>0 && carry!==null){ const f=fmt(carry); L.dep = f.t; }
+    const dep = toMin(L.dep), ft = toMin(L.ft), aabi = toMin(L.aabi)||0, gt = toMin(L.gt)||0;
+    const tz = parseFloat(L.tz||"0");
+    let etaLocal=null, next=null;
+    if(dep!==null && ft!==null){
+      let base = dep + ft + (idx>0 && carry!==null ? Math.floor(carry/1440)*1440 : 0);
+      etaLocal = base + Math.round(tz*60);
+      next = etaLocal + aabi + gt;
+    }
+    carry = next;
+    const e = etaLocal!==null?fmt(etaLocal):null, n = next!==null?fmt(next):null;
+    const el = document.createElement("div"); el.className="leg";
+    el.innerHTML = `
+      <div class="lhead"><span class="n">${idx+1}</span><strong>第 ${idx+1} 段</strong>
+        ${legs.length>1?`<button class="rm" data-rm="${idx}">移除</button>`:""}</div>
+      <div class="fields">
+        <div class="f"><label>航班號</label><input data-i="${idx}" data-k="no" value="${L.no}" placeholder="JX316"></div>
+        <div class="f"><label>起飛 ETD（當地）</label><input data-i="${idx}" data-k="dep" value="${L.dep}" placeholder="19:30"${idx>0?" readonly":""}></div>
+        <div class="f"><label>飛時</label><input data-i="${idx}" data-k="ft" value="${L.ft}" placeholder="02:00"></div>
+        <div class="f"><label>時差（小時）</label><input data-i="${idx}" data-k="tz" value="${L.tz}" placeholder="-1"></div>
+        <div class="f"><label>抵達→靠檔</label><input data-i="${idx}" data-k="aabi" value="${L.aabi}" placeholder="00:10"></div>
+        <div class="f"><label>地停</label><input data-i="${idx}" data-k="gt" value="${L.gt}" placeholder="01:00"></div>
+      </div>
+      <div class="out">
+        <div><span>抵達 ETA（當地）</span><b>${e?e.t:"--:--"}${e&&e.d?`<small>+${e.d}</small>`:""}</b></div>
+        <div><span>可再起飛</span><b>${n?n.t:"--:--"}${n&&n.d?`<small>+${n.d}</small>`:""}</b></div>
+      </div>`;
+    host.appendChild(el);
+  });
+  host.querySelectorAll("input").forEach(inp=>{
+    inp.oninput = ()=>{ legs[+inp.dataset.i][inp.dataset.k] = inp.value;
+      const pos = inp.selectionStart; renderLegs();
+      const again = document.querySelector(`input[data-i="${inp.dataset.i}"][data-k="${inp.dataset.k}"]`);
+      if(again){ again.focus(); try{again.setSelectionRange(pos,pos);}catch(e){} }
+    };
+  });
+  host.querySelectorAll("[data-rm]").forEach(b=>{
+    b.onclick=()=>{ legs.splice(+b.dataset.rm,1); renderLegs(); };
+  });
+}
+document.getElementById("addLeg").onclick = ()=>{
+  legs.push({no:"", dep:"", ft:"02:00", tz:"0", aabi:"00:10", gt:"01:00"}); renderLegs();
+};
+
+renderMatrix(); renderMatrixDetail(); renderLegs();
+current = DATA.stations.find(s=>s.code==="NRT") || DATA.stations[0];
+renderList();
+(function(){ const s=Element.prototype.scrollIntoView; Element.prototype.scrollIntoView=function(){};
+  renderDetail(); Element.prototype.scrollIntoView=s; })();
+</script>
+</body>
+</html>
