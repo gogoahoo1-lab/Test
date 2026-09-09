@@ -587,14 +587,11 @@ async function pool(items,n,fn){
 
 // 帶狀態碼的請求，AVWX 用不同狀態碼表達不同意義，不能一律當失敗
 async function rawFetch(url,ms){
-  const c=new AbortController(), t=setTimeout(()=>c.abort(),ms||14000);
-  try{
-    const r=await fetch(url,{signal:c.signal});
-    const text=r.status===204?"":await r.text();
-    return {status:r.status,text};
-  }catch(e){
-    throw new Error(e.name==="AbortError"?"逾時":"網路或 CORS 阻擋");
-  }finally{ clearTimeout(t); }
+  let r;
+  try{ r=await withTimeout(fetch(url),ms); }
+  catch(e){ throw new Error(netErr(e)); }
+  const text=r.status===204?"":await r.text();
+  return {status:r.status,text};
 }
 
 // AVWX 免費方案是每日額度，快取可大幅減少呼叫次數
@@ -641,20 +638,31 @@ async function avwxOne(kind,icao){
 
 // 先用單站探路：直連不通就改走中繼，避免 37 站各撞一次 CORS
 async function avwxProbe(icao){
+  const tries=[];
+  const fatal=e=>/HTTP (401|403|429)/.test(e.message);
   avwxWrap=null;
   try{
     const r=await avwxOne("taf",icao);
-    if(r.data||r.skip) return;
+    if(r.data) return;
+    tries.push("直連："+(r.skip||"空回應"));
   }catch(e){
-    if(!/CORS|逾時/.test(e.message)) throw e;
+    if(fatal(e)) throw e;              // token 或額度問題，換中繼也沒用
+    tries.push("直連："+e.message);
   }
   for(const r of relayList()){
     if(r.n==="直連") continue;
     avwxWrap=r;
-    try{ const t=await avwxOne("taf",icao); if(t.data||t.skip) return; }catch(e){}
+    try{
+      const t=await avwxOne("taf",icao);
+      if(t.data) return;
+      tries.push(r.n+"："+(t.skip||"空回應"));
+    }catch(e){
+      if(fatal(e)){ avwxWrap=null; throw e; }
+      tries.push(r.n+"："+e.message);
+    }
   }
   avwxWrap=null;
-  throw new Error("直連與中繼都連不上 AVWX");
+  throw new Error(tries.join("　"));
 }
 
 async function fetchAVWX(ids){
@@ -697,16 +705,27 @@ function relayList(){
   return out.filter(r=>{const k=r.u("https://x/"); if(seen.has(k))return false; seen.add(k); return true;});
 }
 
+// 逾時用 Promise.race，不傳 AbortSignal 給 fetch
+// 有些沙箱環境會把 fetch 轉發給外層視窗，signal 物件無法被複製而導致請求失敗
+function withTimeout(p,ms){
+  let t;
+  return Promise.race([
+    Promise.resolve(p).finally(()=>clearTimeout(t)),
+    new Promise((_,rej)=>{ t=setTimeout(()=>rej(new Error("逾時")),ms||14000); })
+  ]);
+}
+function netErr(e){
+  const m=(e&&e.message)||"連線失敗";
+  if(m==="逾時") return m;
+  return /Failed to fetch|NetworkError|Load failed|denied|blocked/i.test(m)?"網路或 CORS 阻擋":m;
+}
 async function tryFetch(url,ms){
-  const c=new AbortController(), t=setTimeout(()=>c.abort(),ms||14000);
-  try{
-    const r=await fetch(url,{signal:c.signal});
-    const txt=await r.text();
-    if(!r.ok) throw new Error("HTTP "+r.status);
-    return txt;
-  }catch(e){
-    throw new Error(e.name==="AbortError"?"逾時":(e.message||"連線失敗"));
-  }finally{ clearTimeout(t); }
+  let r;
+  try{ r=await withTimeout(fetch(url),ms); }
+  catch(e){ throw new Error(netErr(e)); }
+  const txt=await r.text();
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  return txt;
 }
 
 function parseArray(txt,wrap){
@@ -859,6 +878,108 @@ function severity(s){
   return s.tafRisk.lvl*100+peak*10+hits;
 }
 
+/* ── 航路 SIGMET ─────────────────── */
+const HAZ={VA:"火山灰",TC:"熱帶氣旋",TS:"雷雨",TURB:"亂流",ICE:"積冰",MTW:"山岳波",
+ DS:"塵暴",SS:"沙暴",RDOACT:"放射性雲","RDOACT CLD":"放射性雲",IFR:"低雲低能見",MTN:"山區遮蔽"};
+const QUAL={SEV:"嚴重",EMBD:"雲中",ISOL:"零星",OCNL:"偶發",FRQ:"頻繁",OBSC:"遮蔽",SQL:"颮線"};
+
+// 航路上遇到就當嚴重的危害
+function sigLevel(s){
+  const h=(s.hazard||"").toUpperCase(), q=(s.qualifier||"").toUpperCase();
+  if(/VA|TC|RDOACT/.test(h)) return 2;
+  if(q==="SEV") return 2;
+  return 1;
+}
+
+// 大圓航線取樣
+function gcPoints(a,b,n){
+  const R=Math.PI/180, D=180/Math.PI;
+  const p1=a.la*R,l1=a.lo*R,p2=b.la*R,l2=b.lo*R;
+  const d=2*Math.asin(Math.min(1,Math.sqrt(
+    Math.sin((p2-p1)/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin((l2-l1)/2)**2)));
+  const out=[];
+  for(let i=0;i<=n;i++){
+    const f=i/n;
+    if(!d){ out.push({la:a.la,lo:a.lo}); continue; }
+    const A=Math.sin((1-f)*d)/Math.sin(d), B=Math.sin(f*d)/Math.sin(d);
+    const x=A*Math.cos(p1)*Math.cos(l1)+B*Math.cos(p2)*Math.cos(l2);
+    const y=A*Math.cos(p1)*Math.sin(l1)+B*Math.cos(p2)*Math.sin(l2);
+    const z=A*Math.sin(p1)+B*Math.sin(p2);
+    out.push({la:Math.atan2(z,Math.hypot(x,y))*D, lo:Math.atan2(y,x)*D});
+  }
+  return out;
+}
+
+// 射線法，並處理跨換日線的多邊形
+function inPoly(pt,poly){
+  if(!poly||poly.length<3) return false;
+  const lons=poly.map(p=>p.lon);
+  const wrap=(Math.max(...lons)-Math.min(...lons))>180;
+  const fx=v=>wrap&&v<0?v+360:v;
+  const px=fx(pt.lo), py=pt.la;
+  let inside=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+    const xi=fx(poly[i].lon), yi=poly[i].lat, xj=fx(poly[j].lon), yj=poly[j].lat;
+    if(((yi>py)!==(yj>py))&&(px<(xj-xi)*(py-yi)/(yj-yi)+xi)) inside=!inside;
+  }
+  return inside;
+}
+
+function sigCoords(s){
+  if(Array.isArray(s.coords)&&s.coords.length) return s.coords;
+  const g=s.geom||s.geometry;
+  if(g&&g.type==="Polygon"&&g.coordinates&&g.coordinates[0])
+    return g.coordinates[0].map(c=>({lon:c[0],lat:c[1]}));
+  return null;
+}
+
+function sigActive(s){
+  const to=s.validTimeTo||s.validTimeTo===0?s.validTimeTo:null;
+  if(to==null) return true;
+  const t=typeof to==="number"?to*1000:Date.parse(String(to).replace(" ","T")+"Z");
+  return isNaN(t)?true:t>Date.now();
+}
+
+function sigLabel(s){
+  const h=(s.hazard||"").toUpperCase();
+  const q=(s.qualifier||"").toUpperCase();
+  const name=HAZ[h]||h||"未分類";
+  const pre=QUAL[q]?QUAL[q]:"";
+  const band=(s.base!=null||s.top!=null)
+    ? "　FL"+(s.base!=null?String(Math.round(s.base/100)).padStart(3,"0"):"---")+
+      "／"+(s.top!=null?String(Math.round(s.top/100)).padStart(3,"0"):"---")
+    : "";
+  return pre+name+band;
+}
+
+async function fetchSigmets(){
+  const parse=t=>{ const j=parseArray(t); return j; };
+  try{
+    const t=await tryFetch("data/isigmet.json?t="+Date.now(),8000);
+    const j=parse(t);
+    if(j.length) return {rows:j,src:"倉庫快取"};
+  }catch(e){}
+  const url="https://aviationweather.gov/api/data/isigmet?format=json";
+  for(const r of relayList()){
+    try{ return {rows:parse(await tryFetch(r.u(url)),r.wrap),src:r.n}; }
+    catch(e){}
+  }
+  throw new Error("取不到 SIGMET");
+}
+
+function routeHazards(origin,dest,rows){
+  const pts=gcPoints(origin,dest,60);
+  const hits=[];
+  rows.forEach(s=>{
+    if(!sigActive(s)) return;
+    const poly=sigCoords(s);
+    if(!poly) return;
+    const idx=pts.findIndex(p=>inPoly(p,poly));
+    if(idx<0) return;
+    hits.push({s,lvl:sigLevel(s),at:Math.round(idx/60*100)});
+  });
+  return hits.sort((a,b)=>b.lvl-a.lvl);
+}
 /* ── METAR 實況呈現 ─────────────────── */
 const COVER={CLR:"晴空",SKC:"晴空",CAVOK:"良好",NCD:"無雲",NSC:"無顯著雲",FEW:"少雲",SCT:"疏雲",BKN:"裂雲",OVC:"密雲",OVX:"垂直能見度"};
 const WXTOK={DZ:"毛毛雨",RA:"雨",SN:"雪",SG:"雪珠",PL:"冰珠",GR:"冰雹",GS:"霰",IC:"冰針",UP:"未知降水",
@@ -1074,6 +1195,20 @@ document.getElementById("testAvwx").addEventListener("click",async()=>{
   AVWX_BASE=(document.getElementById("avwxBase").value.trim()||"https://avwx.rest").replace(/\/+$/,"");
   box.innerHTML='<p class="hint">測試中</p>';
   const lines=[];
+
+  // 先確認這個環境到底能不能對外連線
+  lines.push("執行位置　"+location.protocol+"//"+(location.host||"本機檔案")+(window.top!==window.self?"　在 iframe 內":""));
+  let netOK=false;
+  try{
+    await rawFetch("https://api.open-meteo.com/v1/forecast?latitude=25&longitude=121&current=temperature_2m",8000);
+    netOK=true; lines.push("對外連線　正常");
+  }catch(e){
+    lines.push("對外連線　"+e.message);
+    lines.push("這個環境擋掉了所有跨網域請求，不是 AVWX 的問題。請在部署後的網站測試，或把檔案下載後用 Safari、Chrome 開啟。");
+  }
+  box.innerHTML='<p class="hint">'+lines.map(esc).join("<br>")+'</p>';
+  if(!netOK) return;
+
   const t0=Date.now();
   try{
     await avwxProbe("RCTP");
@@ -1084,7 +1219,10 @@ document.getElementById("testAvwx").addEventListener("click",async()=>{
         lines.push(id+"　"+(r.data?("成功，"+((r.data.forecast||[]).length)+" 個時段"+(r.cached?"（快取）":"")):r.skip));
       }catch(e){ lines.push(id+"　"+e.message); }
     }
-  }catch(e){ lines.push("失敗："+e.message); }
+  }catch(e){
+    lines.push("失敗，各路徑結果如下");
+    String(e.message).split("　").forEach(x=>lines.push("　"+x));
+  }
   box.innerHTML='<p class="hint">'+lines.map(esc).join("<br>")+'</p>';
 });
 
