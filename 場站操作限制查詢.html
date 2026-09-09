@@ -8,7 +8,7 @@
 :root{
   --ink:#0A1420; --panel:#12202E; --panel2:#182C3E; --raise:#20384C;
   --line:rgba(190,215,235,.14); --line2:rgba(190,215,235,.07);
-  --text:#E9F0F6; --muted:#8CA3B8; --dim:#5F7387;
+  --text:#E9F0F6; --muted:#8CA3B8; --dim:#5F7governing;
   --gold:#DCC086;
   --ok:#3FC492; --warn:#F0A73E; --no:#F0665C; --na:#7A8DA0;
   --r:14px;
@@ -210,6 +210,21 @@ td.cell{cursor:pointer}
   width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);
   font:inherit;font-size:14px;padding:8px 10px;border-radius:9px
 }
+.step{display:flex;align-items:stretch;background:var(--panel2);border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.step input{
+  flex:1;min-width:0;background:transparent;border:0;border-radius:0;text-align:center;
+  padding:8px 2px;font-variant-numeric:tabular-nums;letter-spacing:.02em
+}
+.step input[readonly]{color:var(--gold)}
+.step button{
+  width:32px;flex:0 0 32px;border:0;background:transparent;color:var(--muted);
+  font:inherit;font-size:17px;line-height:1;cursor:pointer;transition:.12s;user-select:none
+}
+.step button:hover{color:var(--gold);background:rgba(220,192,134,.09)}
+.step button:active{background:rgba(220,192,134,.18)}
+.f .sub2{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--warn);margin-top:4px;min-height:1.2em}
+.f .sub2 button{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-size:11px;cursor:pointer;text-decoration:underline}
+.f .sub2 button:hover{color:var(--gold)}
 .f input::-webkit-calendar-picker-indicator{filter:invert(.7)}
 .out{
   margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);
@@ -220,6 +235,16 @@ td.cell{cursor:pointer}
 .out div b small{font-size:11px;color:var(--warn);margin-left:3px;font-weight:700}
 .rm{margin-left:auto;appearance:none;background:transparent;border:0;color:var(--muted);cursor:pointer;font:inherit;font-size:13px}
 .rm:hover{color:var(--no)}
+.cfbox{margin-top:12px;padding-top:11px;border-top:1px dashed var(--line);display:grid;gap:6px}
+.cf{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;font-size:13px;padding:8px 12px;border-radius:9px;background:rgba(255,255,255,.035)}
+.cf .who{font-weight:700;letter-spacing:.05em;min-width:96px}
+.cf .win{color:var(--muted);font-size:12.5px}
+.cf .verdict{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.cf-ok{box-shadow:inset 3px 0 0 var(--ok)} .cf-ok .verdict{color:var(--ok)}
+.cf-warn{box-shadow:inset 3px 0 0 var(--warn)} .cf-warn .verdict{color:var(--warn)}
+.cf-no{box-shadow:inset 3px 0 0 var(--no)} .cf-no .verdict{color:var(--no)}
+.cf-na{box-shadow:inset 3px 0 0 var(--na)} .cf-na .verdict{color:var(--na)}
+.stn input{text-transform:uppercase;letter-spacing:.09em;font-weight:700}
 .addleg{
   width:100%;padding:12px;border:1px dashed var(--line);background:transparent;color:var(--muted);
   border-radius:var(--r);font:inherit;font-size:14px;cursor:pointer
@@ -308,9 +333,10 @@ td.cell{cursor:pointer}
 
 <!-- ===== 到離試算 ===== -->
 <section id="p-calc" role="tabpanel" aria-labelledby="t-calc" class="hidden">
-  <p class="calcnote">逐段串接：填入起飛時間、飛時與時差，往下自動推算各段到達與再起飛時間。時差填「本段目的地時間 − 本段出發地時間」，例如 TPE 飛 BKK 填 −1。</p>
+  <p class="calcnote">以場站為單位往下串接：每一格代表航路上的一個場站，每個場站只填一次。第一站填出發時間與飛時；之後每站填時差、抵達→靠檔與地停，系統自動推算抵達與可再起飛時間，並比對該站宵禁算出剩餘裕度。欄位可直接輸入，也可用 − ＋ 微調（飛時 20 分鐘一階、其餘時間 10 分鐘一階、時差 1 小時一階），或用鍵盤上下鍵。時差填「本站時間 − 上一站時間」，例如 TPE 飛 NRT 填 +1。</p>
+  <datalist id="codes"></datalist>
   <div id="legs"></div>
-  <button class="addleg" id="addLeg">＋ 增加下一段航段</button>
+  <button class="addleg" id="addLeg">＋ 增加下一個場站</button>
 </section>
 
 <p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。</p>
@@ -2745,68 +2771,221 @@ document.getElementById("contacts").innerHTML = DATA.contacts.map(c=>{
 }).join("");
 
 /* ---- 到離試算 ---- */
-let legs = [
-  {no:"", dep:"19:30", ft:"01:30", tz:"0", aabi:"00:10", gt:"01:00"},
-  {no:"", dep:"", ft:"02:00", tz:"0", aabi:"00:10", gt:"01:00"}
+const STEP = 10;                 // 一般時間欄位每階 10 分鐘
+const FTSTEP = 20;               // 飛時每階 20 分鐘
+const TZSTEP = 60;               // 時差每階 1 小時
+
+/* 每一筆＝航路上的一個場站。
+   tz / aabi / gt 描述「飛進這一站之後」的作業；dep / delta / ft 描述「從這一站離場」。
+   第一站沒有進場作業，最後一站沒有續飛。 */
+let stops = [
+  {code:"TPE", tz:"0", aabi:"00:10", gt:"01:00", dep:"19:30", delta:0, ft:"03:00"},
+  {code:"NRT", tz:"1", aabi:"00:10", gt:"01:00", dep:"",      delta:0, ft:"03:00"}
 ];
-function toMin(v){ if(!v) return null; const m=/^(\d{1,2}):(\d{2})$/.exec(v.trim()); return m? (+m[1])*60 + (+m[2]) : null; }
-function fmt(min){ const d=Math.floor(min/1440); const t=((min%1440)+1440)%1440;
-  return {t:String(Math.floor(t/60)).padStart(2,"0")+":"+String(t%60).padStart(2,"0"), d:d};
-}
-function renderLegs(){
-  const host = document.getElementById("legs");
-  host.innerHTML = "";
-  let carry = null;
-  legs.forEach((L,idx)=>{
-    if(idx>0 && carry!==null){ const f=fmt(carry); L.dep = f.t; }
-    const dep = toMin(L.dep), ft = toMin(L.ft), aabi = toMin(L.aabi)||0, gt = toMin(L.gt)||0;
-    const tz = parseFloat(L.tz||"0");
-    let etaLocal=null, next=null;
-    if(dep!==null && ft!==null){
-      let base = dep + ft + (idx>0 && carry!==null ? Math.floor(carry/1440)*1440 : 0);
-      etaLocal = base + Math.round(tz*60);
-      next = etaLocal + aabi + gt;
+document.getElementById("codes").innerHTML =
+  DATA.stations.map(s=>`<option value="${s.code}">${s.region}</option>`).join("");
+
+function toMin(v){ if(v===null||v===undefined) return null;
+  const m=/^\s*(\d{1,3}):(\d{2})\s*$/.exec(String(v)); return m ? (+m[1])*60 + (+m[2]) : null; }
+const pad = n => String(n).padStart(2,"0");
+function dur(m){ m=Math.max(0,Math.round(m)); return pad(Math.floor(m/60))+":"+pad(m%60); }
+function clock(abs){ const t=((Math.round(abs)%1440)+1440)%1440; return pad(Math.floor(t/60))+":"+pad(t%60); }
+function dayOff(abs){ return Math.floor(Math.round(abs)/1440); }
+function span(m){ const h=Math.floor(m/60), x=m%60; return (h?h+" 小時 ":"")+x+" 分"; }
+
+/* ---- 宵禁解析 ---- */
+function hhmm(x){ return ((+x.slice(0,2))*60 + (+x.slice(2))) % 1440; }
+function parseCurfew(txt){
+  const out=[]; let carry="";
+  String(txt||"").split(/\n/).forEach(line=>{
+    const re=/(\d{4})\s*[-–~至]\s*(\d{4})/g; let m, hit=false;
+    while((m=re.exec(line))){
+      hit=true;
+      const own = line.slice(0,m.index).replace(/[:：()（）]/g," ").trim();
+      out.push({label:(carry+" "+own).trim(), s:hhmm(m[1]), e:hhmm(m[2]), raw:m[1]+"-"+m[2]});
     }
-    carry = next;
-    const e = etaLocal!==null?fmt(etaLocal):null, n = next!==null?fmt(next):null;
-    const el = document.createElement("div"); el.className="leg";
-    el.innerHTML = `
-      <div class="lhead"><span class="n">${idx+1}</span><strong>第 ${idx+1} 段</strong>
-        ${legs.length>1?`<button class="rm" data-rm="${idx}">移除</button>`:""}</div>
-      <div class="fields">
-        <div class="f"><label>航班號</label><input data-i="${idx}" data-k="no" value="${L.no}" placeholder="JX316"></div>
-        <div class="f"><label>起飛 ETD（當地）</label><input data-i="${idx}" data-k="dep" value="${L.dep}" placeholder="19:30"${idx>0?" readonly":""}></div>
-        <div class="f"><label>飛時</label><input data-i="${idx}" data-k="ft" value="${L.ft}" placeholder="02:00"></div>
-        <div class="f"><label>時差（小時）</label><input data-i="${idx}" data-k="tz" value="${L.tz}" placeholder="-1"></div>
-        <div class="f"><label>抵達→靠檔</label><input data-i="${idx}" data-k="aabi" value="${L.aabi}" placeholder="00:10"></div>
-        <div class="f"><label>地停</label><input data-i="${idx}" data-k="gt" value="${L.gt}" placeholder="01:00"></div>
-      </div>
-      <div class="out">
-        <div><span>抵達 ETA（當地）</span><b>${e?e.t:"--:--"}${e&&e.d?`<small>+${e.d}</small>`:""}</b></div>
-        <div><span>可再起飛</span><b>${n?n.t:"--:--"}${n&&n.d?`<small>+${n.d}</small>`:""}</b></div>
-      </div>`;
-    host.appendChild(el);
+    if(!hit){ const t=line.replace(/[:：()（）]/g," ").trim(); if(t) carry=t; }
   });
-  host.querySelectorAll("input").forEach(inp=>{
-    inp.oninput = ()=>{ legs[+inp.dataset.i][inp.dataset.k] = inp.value;
-      const pos = inp.selectionStart; renderLegs();
-      const again = document.querySelector(`input[data-i="${inp.dataset.i}"][data-k="${inp.dataset.k}"]`);
-      if(again){ again.focus(); try{again.setSelectionRange(pos,pos);}catch(e){} }
+  return out;
+}
+function curfewOf(code){
+  code = (code||"").toUpperCase().trim();
+  if(!code) return null;
+  const s = DATA.stations.find(x=>x.code===code);
+  if(!s) return {code, unknown:true};
+  const it = s.items.curfew;
+  if(it.status!=="V") return {code, none:true};
+  return {code, ranges:parseCurfew(it.time), note:it.note};
+}
+const inR  = (t,r)=> r.s<r.e ? (t>=r.s && t<r.e) : (t>=r.s || t<r.e);
+const toStart = (t,r)=> (((r.s - t) % 1440) + 1440) % 1440;
+
+function curfewRow(role, code, abs){
+  if(!code) return "";
+  const c = curfewOf(code);
+  const t = abs===null ? null : ((Math.round(abs)%1440)+1440)%1440;
+  const head = `<span class="who">${role} ${c.code}</span>`;
+  if(c.unknown) return `<div class="cf cf-na">${head}<span class="win">此代碼不在資料庫</span><span class="verdict">—</span></div>`;
+  if(c.none)    return `<div class="cf cf-ok">${head}<span class="win">無宵禁</span><span class="verdict">不受限</span></div>`;
+  if(!c.ranges.length)
+    return `<div class="cf cf-warn">${head}<span class="win">有宵禁，時間需查場站備註</span><span class="verdict">請確認</span></div>`;
+  if(t===null)
+    return `<div class="cf cf-na">${head}<span class="win">宵禁 ${c.ranges.map(r=>r.raw).join(" / ")}</span><span class="verdict">待填時間</span></div>`;
+  return c.ranges.map(r=>{
+    const lb = r.label ? r.label+" " : "";
+    if(inR(t,r))
+      return `<div class="cf cf-no">${head}<span class="win">${lb}宵禁 ${r.raw}　${clock(t)}</span><span class="verdict">落在宵禁內</span></div>`;
+    const left = toStart(t,r);
+    const k = left<=60 ? "warn" : "ok";
+    return `<div class="cf cf-${k}">${head}<span class="win">${lb}宵禁 ${r.raw}　${clock(t)}</span><span class="verdict">裕度 ${span(left)}</span></div>`;
+  }).join("");
+}
+
+/* ---- 串接計算：arr[i] 抵達本站、dep[i] 自本站離場 ---- */
+function chain(){
+  const arr=[], dep=[];
+  arr[0] = null;
+  dep[0] = toMin(stops[0].dep);
+  for(let i=1;i<stops.length;i++){
+    const prev = stops[i-1], here = stops[i];
+    const ft = toMin(prev.ft);
+    if(dep[i-1]===null || ft===null){ arr[i]=null; dep[i]=null; continue; }
+    arr[i] = dep[i-1] + ft + Math.round((parseFloat(here.tz||"0")||0)*60);
+    dep[i] = arr[i] + (toMin(here.aabi)||0) + (toMin(here.gt)||0) + (here.delta||0);
+  }
+  return {arr, dep};
+}
+
+function bump(i,k,d){
+  const S = stops[i];
+  if(k==="dep"){
+    if(i===0){ let m=toMin(S.dep); if(m===null) m=0; S.dep = clock(m+d); }
+    else { S.delta = (S.delta||0) + d; }
+  } else if(k==="tz"){
+    S.tz = String(Math.round(((parseFloat(S.tz||"0")||0) + d/60)*100)/100);
+  } else {
+    let m=toMin(S[k]); if(m===null) m=0; S[k] = dur(m+d);
+  }
+  renderLegs(i+":"+k);
+}
+
+function field(label,i,k,value,opts){
+  opts = opts||{};
+  const step = opts.step || STEP;
+  return `<div class="f">
+    <label>${label}</label>
+    <div class="step">
+      <button type="button" data-b="${i}|${k}|${-step}" aria-label="${label}減少">−</button>
+      <input data-i="${i}" data-k="${k}" data-step="${step}" value="${value}"
+             ${opts.readonly?"readonly":""} placeholder="${opts.ph||""}">
+      <button type="button" data-b="${i}|${k}|${step}" aria-label="${label}增加">＋</button>
+    </div>
+    ${opts.sub||'<div class="sub2"></div>'}
+  </div>`;
+}
+function stationField(label,i){
+  return `<div class="f stn">
+    <label>${label}</label>
+    <input data-i="${i}" data-k="code" value="${esc(stops[i].code||"")}" list="codes"
+           placeholder="TPE" maxlength="4">
+    <div class="sub2"></div></div>`;
+}
+
+function renderLegs(focusKey){
+  const host = document.getElementById("legs");
+  const {arr, dep} = chain();
+  host.innerHTML = stops.map((S,i)=>{
+    const first = i===0, last = i===stops.length-1;
+    const code = (S.code||"").toUpperCase().trim();
+    const a = arr[i]!==null && arr[i]!==undefined ? {t:clock(arr[i]), d:dayOff(arr[i])} : null;
+    const p = dep[i]!==null && dep[i]!==undefined ? {t:clock(dep[i]), d:dayOff(dep[i])} : null;
+    const delta = S.delta||0;
+    const depSub = first ? '<div class="sub2"></div>'
+      : `<div class="sub2">${delta ? `${delta>0?"晚":"早"} ${Math.abs(delta)} 分 <button type="button" data-reset="${i}">回自動</button> ` : ""}${
+          p&&p.d?`<span style="color:var(--muted)">跨日 +${p.d}</span>`:""}</div>`;
+
+    let fields = "";
+    if(first){
+      fields = stationField("出發站", 0)
+        + field("起飛 ETD（當地）", 0, "dep", S.dep||"", {ph:"19:30"})
+        + field("飛時", 0, "ft", S.ft, {step:FTSTEP, ph:"03:00"});
+    } else {
+      fields = stationField(last?"抵達站":"出發站", i)
+        + field("時差（小時）", i, "tz", S.tz, {step:TZSTEP, ph:"1"})
+        + field("抵達→靠檔", i, "aabi", S.aabi, {ph:"00:10"})
+        + field("地停", i, "gt", S.gt, {ph:"01:00"})
+        + (last ? "" :
+             field("起飛 ETD（自動串接）", i, "dep", p?p.t:"--:--", {readonly:true, sub:depSub})
+           + field("飛時", i, "ft", S.ft, {step:FTSTEP, ph:"03:00"}));
+    }
+
+    const out = first
+      ? `<div><span>起飛 ETD</span><b>${S.dep||"--:--"}</b></div>`
+      : `<div><span>抵達 ETA（當地）</span><b>${a?a.t:"--:--"}${a&&a.d?`<small>+${a.d}</small>`:""}</b></div>
+         <div><span>可再起飛</span><b>${p?p.t:"--:--"}${p&&p.d?`<small>+${p.d}</small>`:""}</b></div>`;
+
+    const checks = (first
+      ? [curfewRow("出發", code, dep[0])]
+      : [curfewRow("抵達", code, arr[i]), curfewRow("再起飛", code, dep[i])]
+    ).filter(Boolean).join("");
+
+    const via = first
+      ? `${code||"—"} 出發`
+      : `${(stops[i-1].code||"—").toUpperCase()} → ${code||"—"}`;
+
+    return `<div class="leg">
+      <div class="lhead"><span class="n">${i+1}</span><strong>${via}</strong>
+        ${stops.length>2?`<button class="rm" data-rm="${i}">移除</button>`:""}</div>
+      <div class="fields">${fields}</div>
+      <div class="out">${out}</div>
+      ${checks?`<div class="cfbox">${checks}</div>`:""}
+    </div>`;
+  }).join("");
+
+  host.querySelectorAll("input[data-k]").forEach(inp=>{
+    if(!inp.readOnly){
+      inp.oninput = ()=>{
+        const i = +inp.dataset.i, k = inp.dataset.k;
+        stops[i][k] = k==="code" ? inp.value.toUpperCase() : inp.value;
+        const pos = inp.selectionStart;
+        renderLegs(i+":"+k);
+        const again = document.querySelector(`input[data-i="${i}"][data-k="${k}"]`);
+        if(again){ again.focus(); try{ again.setSelectionRange(pos,pos); }catch(e){} }
+      };
+    }
+    inp.onkeydown = ev=>{
+      if(ev.key!=="ArrowUp" && ev.key!=="ArrowDown") return;
+      if(inp.dataset.k==="code") return;
+      ev.preventDefault();
+      const s = +(inp.dataset.step || STEP);
+      bump(+inp.dataset.i, inp.dataset.k, ev.key==="ArrowUp" ? s : -s);
     };
   });
-  host.querySelectorAll("[data-rm]").forEach(b=>{
-    b.onclick=()=>{ legs.splice(+b.dataset.rm,1); renderLegs(); };
+  host.querySelectorAll("[data-b]").forEach(b=>{
+    const [i,k,d] = b.dataset.b.split("|");
+    b.onclick = ()=> bump(+i, k, +d);
   });
+  host.querySelectorAll("[data-reset]").forEach(b=>{
+    b.onclick = ()=>{ stops[+b.dataset.reset].delta = 0; renderLegs(); };
+  });
+  host.querySelectorAll("[data-rm]").forEach(b=>{
+    b.onclick = ()=>{ stops.splice(+b.dataset.rm,1); stops[0].delta=0; renderLegs(); };
+  });
+
+  if(focusKey){
+    const [i,k] = focusKey.split(":");
+    const el = document.querySelector(`input[data-i="${i}"][data-k="${k}"]`);
+    if(el && document.activeElement!==el) el.focus();
+  }
 }
 document.getElementById("addLeg").onclick = ()=>{
-  legs.push({no:"", dep:"", ft:"02:00", tz:"0", aabi:"00:10", gt:"01:00"}); renderLegs();
+  stops.push({code:"", tz:"0", aabi:"00:10", gt:"01:00", dep:"", delta:0, ft:"03:00"});
+  renderLegs();
 };
 
 renderMatrix(); renderMatrixDetail(); renderLegs();
 current = DATA.stations.find(s=>s.code==="NRT") || DATA.stations[0];
-renderList();
-(function(){ const s=Element.prototype.scrollIntoView; Element.prototype.scrollIntoView=function(){};
-  renderDetail(); Element.prototype.scrollIntoView=s; })();
+renderList(); renderDetail(); window.scrollTo({top:0});
 </script>
 </body>
 </html>
