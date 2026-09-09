@@ -173,6 +173,10 @@ footer{padding:18px 8px 4px;font-size:11.5px;line-height:1.8;color:var(--ink-3)}
 .thr div{display:flex;gap:12px;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)}
 .thr div:last-child{border-bottom:0}
 .thr b{font-weight:300;font-size:16px;letter-spacing:-.04em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.facts{margin-top:14px;border-top:1px solid var(--line)}
+.facts div{padding:8px 0}
+.facts span{color:var(--ink-3)}
+.facts b{font-size:14px;font-weight:400;letter-spacing:0;white-space:normal;text-align:right}
 
 nav{
   position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 16px);
@@ -228,6 +232,20 @@ svg{display:block}
     <p class="hint" id="pushHint">只有航點升到<b>嚴重</b>時才推播，狀況持續不會重複打擾。iPhone 必須先用 Safari 的分享選單「加入主畫面」，再從主畫面開啟這個 app 才能開啟通知，這是 iOS 的限制。</p>
     <div class="acts"><button class="solid" id="pushOn">開啟通知</button><button class="ghost" id="pushOff">關閉</button><button class="ghost" id="pushTest">測試</button></div>
     <div id="pushOut"></div>
+  </div>
+  <div class="card">
+    <h2>地震與海嘯</h2>
+    <div class="row">
+      <label><span>啟用</span><input type="text" id="qOn" placeholder="開 或 關"></label>
+      <label><span>規模門檻</span><input type="text" id="qMag" placeholder="6"></label>
+    </div>
+    <div class="row">
+      <label><span>地震半徑 km</span><input type="text" id="qKm" placeholder="300"></label>
+      <label><span>海嘯半徑 km</span><input type="text" id="qSea" placeholder="800"></label>
+    </div>
+    <p class="hint">資料取自 USGS 全球地震摘要，涵蓋過去 24 小時規模 4.5 以上事件。航點在半徑內且達到規模門檻，或該事件帶有海嘯警報旗標，該站一律列為<b>嚴重</b>。海嘯半徑通常設得比地震大，因為影響範圍沿海岸傳播。</p>
+    <div class="acts"><button class="solid" id="saveQuake">儲存並重抓</button><button class="ghost" id="testQuake">測試</button></div>
+    <div id="quakeOut"></div>
   </div>
   <div class="card">
     <h2>AVWX 資料來源</h2>
@@ -323,6 +341,9 @@ const BUILTIN=[
 ];
 
 const KEY="jx-weather-stations", PKEY="jx-weather-proxy", AKEY="jx-avwx-token", BKEY="jx-avwx-base";
+const QKEY="jx-quake";
+let QUAKE={on:true,mag:6,km:300,sea:800};
+try{ const q=JSON.parse(localStorage.getItem(QKEY)||"null"); if(q) QUAKE=Object.assign(QUAKE,q); }catch(e){}
 const DEFAULT_PROXY="https://api.allorigins.win/raw?url=";
 let STATIONS=[],PROXY=DEFAULT_PROXY,AVWX_TOKEN="",AVWX_BASE="https://avwx.rest";
 try{
@@ -338,6 +359,7 @@ function save(){
     localStorage.setItem(PKEY,PROXY);
     localStorage.setItem(AKEY,AVWX_TOKEN);
     localStorage.setItem(BKEY,AVWX_BASE);
+    localStorage.setItem(QKEY,JSON.stringify(QUAKE));
   }
   catch(e){ const h=document.getElementById("hint");
     if(h) h.textContent="這個瀏覽器不讓網頁存資料，改動只在本次開啟期間有效。下載後用 Safari 或 Chrome 開就會記住。"; }
@@ -388,6 +410,7 @@ const ICON={
  fog:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M6 11.4h8a3 3 0 0 0 .3-6 4.4 4.4 0 0 0-8.4-.6A3.3 3.3 0 0 0 6 11.4Z" ${S}/><path d="M4.4 14.2h11.2M6.4 17h7.6" ${S}/></svg>`,
  wind:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M2.6 7h9.2a2.4 2.4 0 1 0-2.4-2.6M2.6 11.4h12.6a2.4 2.4 0 1 1-2.4 2.6M2.6 15.4h5.6" ${S}/></svg>`,
  heat:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M8.6 11.6V4.2a1.7 1.7 0 0 1 3.4 0v7.4a3.4 3.4 0 1 1-3.4 0Z" ${S}/></svg>`,
+ quake:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M1.6 10.4h3l2-5.4 2.8 10.6 2.4-7.2 1.6 2h4.6" ${S}/></svg>`,
  ash:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M2.6 17.4 7.4 8.2h5.2l4.8 9.2Z" ${S}/><path d="M7.4 8.2 8.6 5.4M12.6 8.2l1.3-2.8" ${S}/><circle cx="10" cy="2.6" r="1" ${S}/><circle cx="15.4" cy="3.4" r=".8" ${S}/><circle cx="5.2" cy="3.6" r=".8" ${S}/></svg>`
 };
 
@@ -497,7 +520,7 @@ const dayName=s=>["日","一","二","三","四","五","六"][new Date(s+"T00:00:
 const dayNum=s=>{const d=new Date(s+"T00:00:00");return (d.getMonth()+1)+"/"+d.getDate();};
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
 
-let DATA=[],filter="all",view="alerts",editing=-1,fetchedAt=null,tafAt=null,tafOK=0,tafFail="";
+let DATA=[],quakeFail="",filter="all",view="alerts",editing=-1,fetchedAt=null,tafAt=null,tafOK=0,tafFail="";
 
 function stampText(){
   const el=document.getElementById("stamp"); if(!fetchedAt) return;
@@ -665,6 +688,14 @@ async function avwxProbe(icao){
   throw new Error(tries.join("　"));
 }
 
+// 使用者常直接貼整條 API 網址，這裡把 token 抽出來
+function cleanToken(v){
+  let t=String(v||"").trim().replace(/^["']|["']$/g,"");
+  const m=t.match(/[?&]token=([^&\s]+)/i);
+  if(m) t=decodeURIComponent(m[1]);
+  return t.replace(/^Bearer\s+/i,"").trim();
+}
+
 async function fetchAVWX(ids){
   if(!AVWX_TOKEN&&AVWX_BASE==="https://avwx.rest") throw new Error("未設定 AVWX token");
   await avwxProbe(ids[0]);
@@ -814,7 +845,12 @@ async function load(){
   const url="https://api.open-meteo.com/v1/forecast?latitude="+la+"&longitude="+lo+
    "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max"+
    "&hourly=visibility,weather_code&forecast_days=5&timezone=auto&wind_speed_unit=kn";
-  const [modelRes,awc]=await Promise.all([fetch(url),fetchAWC()]);
+  const [modelRes,awc,quakes]=await Promise.all([
+    fetch(url),
+    fetchAWC(),
+    fetchQuakes().catch(e=>{ quakeFail=e.message; return []; })
+  ]);
+  if(quakes.length) quakeFail="";
   if(!modelRes.ok) throw new Error("HTTP "+modelRes.status);
   let j=await modelRes.json(); if(!Array.isArray(j)) j=[j];
 
@@ -841,9 +877,16 @@ async function load(){
       if(!tafRisk.notes.some(n=>/火山灰/.test(n))) tafRisk.notes.unshift("METAR 觀測到火山灰");
       tafRisk.lvl=2; tafRisk.icon="ash";
     }
+    const qn=quakeNotes(s,quakes);
+    if(qn.length){
+      tafRisk=tafRisk||{lvl:0,notes:[],icon:"quake"};
+      tafRisk.notes=qn.concat(tafRisk.notes);
+      tafRisk.lvl=2;
+      if(!/火山灰/.test(tafRisk.notes[qn.length]||"")) tafRisk.icon="quake";
+    }
     return Object.assign({},s,{
       days, mlvl:days.reduce((m,d)=>Math.max(m,d.risk.lvl),0),
-      taf, tafRisk, metar, lvl:tafRisk?tafRisk.lvl:0
+      taf, tafRisk, metar, quakes:qn, lvl:tafRisk?tafRisk.lvl:0
     });
   });
   fetchedAt=new Date(); if(tafOK) tafAt=fetchedAt;
@@ -860,6 +903,7 @@ function renderTabs(){
 
 function severity(s){
   if(!s.tafRisk) return 0;
+  if(s.quakes&&s.quakes.length) return s.tafRisk.lvl*100+16;
   if(!s.taf) return s.tafRisk.lvl*100+14;
   let peak=0,hits=0;
   if(s.tafRisk.icon==="ash") peak=1.40;
@@ -980,6 +1024,88 @@ function routeHazards(origin,dest,rows){
   });
   return hits.sort((a,b)=>b.lvl-a.lvl);
 }
+// 航點頁的 METAR 逐項欄位
+function metarFacts(s){
+  const m=s.metar;
+  if(!m) return '';
+  const row=(k,v)=>v?'<div><span>'+k+'</span><b>'+esc(v)+'</b></div>':'';
+  const spd=m.wspd==null?null:Math.round(m.wspd);
+  const dir=m.wdir==="VRB"?"不定向":(m.wdir==null?null:String(m.wdir).padStart(3,"0")+"°");
+  const wind=spd===0?"靜風":(spd==null?null:(dir?dir+"　":"")+spd+" kt"+(m.wgst?"　陣風 "+Math.round(m.wgst)+" kt":""));
+  const h=rh(m.temp,m.dewp);
+  let hpa=m.altim==null?null:(m.altim<100?m.altim*33.8639:m.altim);
+  const t=m.reportTime||m.obsTime;
+  let when=null;
+  if(t){
+    const d=new Date(String(t).replace(" ","T")+(/[Zz]|\+/.test(String(t))?"":"Z"));
+    if(!isNaN(d)) when=d.toLocaleString("zh-TW",{hour12:false,month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})+
+      "　"+String(d.getUTCHours()).padStart(2,"0")+String(d.getUTCMinutes()).padStart(2,"0")+"Z";
+  }
+  const cat={VFR:"VFR 目視",MVFR:"MVFR 邊際目視",IFR:"IFR 儀器",LIFR:"LIFR 低於儀器"}[(m.fltCat||"").toUpperCase()]||m.fltCat;
+  const body=[
+    row("風",wind),
+    row("能見度",visText(m.visib)),
+    row("天氣",wxText(m.wxString)),
+    row("雲層",cloudText(m.clouds)||(m.clouds&&!m.clouds.length?"無顯著雲":null)),
+    row("溫度",m.temp==null?null:Math.round(m.temp)+" °C"),
+    row("露點",m.dewp==null?null:Math.round(m.dewp)+" °C"),
+    row("相對濕度",h==null?null:h+" %"),
+    row("修正海平面氣壓",hpa==null?null:Math.round(hpa)+" hPa"),
+    row("飛行類別",cat),
+    row("觀測時間",when)
+  ].join("");
+  return body?'<div class="thr facts">'+body+'</div>':'';
+}
+
+/* ── 地震與海嘯 ─────────────────── */
+// 資料來源：USGS 全球地震摘要，支援跨網域直連
+function haversine(a,b){
+  const R=6371, r=Math.PI/180;
+  const dla=(b.la-a.la)*r, dlo=(b.lo-a.lo)*r;
+  const h=Math.sin(dla/2)**2+Math.cos(a.la*r)*Math.cos(b.la*r)*Math.sin(dlo/2)**2;
+  return 2*R*Math.asin(Math.min(1,Math.sqrt(h)));
+}
+
+async function fetchQuakes(){
+  if(!QUAKE.on) return [];
+  const url="https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson";
+  let txt=null;
+  try{ txt=await tryFetch(url,12000); }
+  catch(e){
+    for(const r of relayList()){
+      if(r.n==="直連") continue;
+      try{
+        const t=await tryFetch(r.u(url),12000);
+        txt=r.wrap?(JSON.parse(t||"{}").contents||""):t;
+        if(txt) break;
+      }catch(e2){}
+    }
+  }
+  if(!txt) throw new Error("取不到地震資料");
+  const j=JSON.parse(txt);
+  return (j.features||[]).filter(f=>f&&f.properties&&f.geometry).map(f=>({
+    mag:f.properties.mag, place:f.properties.place, tsunami:f.properties.tsunami===1,
+    time:f.properties.time, lo:f.geometry.coordinates[0], la:f.geometry.coordinates[1],
+    depth:f.geometry.coordinates[2]
+  })).filter(q=>q.mag!=null);
+}
+
+// 強震或海嘯警報一律嚴重
+function quakeNotes(s,quakes){
+  const out=[];
+  (quakes||[]).forEach(q=>{
+    const d=haversine(s,q);
+    const hrs=q.time?Math.round((Date.now()-q.time)/3600000):null;
+    const when=hrs==null?"":(hrs<1?"　1 小時內":"　"+hrs+" 小時前");
+    if(q.tsunami&&d<=QUAKE.sea)
+      out.push("海嘯警報，M"+q.mag.toFixed(1)+" 震央距 "+Math.round(d)+" km"+when);
+    else if(q.mag>=QUAKE.mag&&d<=QUAKE.km)
+      out.push("強震 M"+q.mag.toFixed(1)+"，震央距 "+Math.round(d)+" km"+when);
+  });
+  return out;
+}
+
+/* ── 地震與海嘯 END ─────────────────── */
 /* ── METAR 實況呈現 ─────────────────── */
 const COVER={CLR:"晴空",SKC:"晴空",CAVOK:"良好",NCD:"無雲",NSC:"無顯著雲",FEW:"少雲",SCT:"疏雲",BKN:"裂雲",OVC:"密雲",OVX:"垂直能見度"};
 const WXTOK={DZ:"毛毛雨",RA:"雨",SN:"雪",SG:"雪珠",PL:"冰珠",GR:"冰雹",GS:"霰",IC:"冰針",UP:"未知降水",
@@ -1106,8 +1232,10 @@ function render(){
     return '<div class="card stn"><h3>'+esc(s.c)+'<small>'+esc(s.i)+(s.k?' '+esc(s.k):'')+'</small>'+
       (r&&r.lvl?'<span class="tag">'+(r.lvl>1?'嚴重':'觀察')+'</span>':'')+'</h3>'+
       metarBlock(s)+
+      metarFacts(s)+
       (r?'<p class="note'+(r.lvl?'':' quiet')+'">'+(r.lvl?r.notes.join('　'):'TAF 內無達標的惡劣天氣')+'</p>':'')+
-      (s.taf?'<p class="raw"><span>'+esc(tafHead(s))+'</span>'+esc(s.taf.raw)+'</p>':'')+'</div>';
+      (s.taf?'<p class="raw"><span>'+esc(tafHead(s))+'</span>'+esc(s.taf.raw)+'</p>':'')+
+      (s.metar&&s.metar.rawOb?'<p class="raw"><span>METAR 原文</span>'+esc(s.metar.rawOb)+'</p>':'')+'</div>';
   }).join("");
 
   document.getElementById("viewForecast").innerHTML=
@@ -1181,17 +1309,54 @@ document.getElementById("reset").addEventListener("click",()=>{
 });
 
 document.getElementById("proxy").value=PROXY;
+document.getElementById("qOn").value=QUAKE.on?"開":"關";
+document.getElementById("qMag").value=QUAKE.mag;
+document.getElementById("qKm").value=QUAKE.km;
+document.getElementById("qSea").value=QUAKE.sea;
+function readQuake(){
+  const v=document.getElementById("qOn").value.trim();
+  QUAKE.on=!/^(關|off|0|no|false)$/i.test(v);
+  document.getElementById("qOn").value=QUAKE.on?"開":"關";
+  const num=(id,def)=>{const n=parseFloat(document.getElementById(id).value);return isFinite(n)&&n>0?n:def;};
+  QUAKE.mag=num("qMag",6); QUAKE.km=num("qKm",300); QUAKE.sea=num("qSea",800);
+  document.getElementById("qMag").value=QUAKE.mag;
+  document.getElementById("qKm").value=QUAKE.km;
+  document.getElementById("qSea").value=QUAKE.sea;
+}
+document.getElementById("saveQuake").addEventListener("click",()=>{ readQuake(); refresh(); });
+document.getElementById("testQuake").addEventListener("click",async()=>{
+  readQuake();
+  const box=document.getElementById("quakeOut");
+  box.innerHTML='<p class="hint">查詢中</p>';
+  const lines=[];
+  try{
+    const qs=await fetchQuakes();
+    lines.push("過去 24 小時規模 4.5 以上　"+qs.length+" 起");
+    const big=qs.filter(q=>q.mag>=QUAKE.mag);
+    lines.push("達規模門檻　"+big.length+" 起"+(qs.some(q=>q.tsunami)?"，其中有海嘯警報":""));
+    const hits=[];
+    STATIONS.forEach(st=>{ quakeNotes(st,qs).forEach(n=>hits.push(st.c+"　"+n)); });
+    if(hits.length) hits.slice(0,6).forEach(x=>lines.push(x));
+    else lines.push("目前沒有航點落在影響範圍內");
+    const near=qs.map(q=>({q,d:Math.min(...STATIONS.map(st=>haversine(st,q)))})).sort((a,b)=>a.d-b.d)[0];
+    if(near) lines.push("最近的一起　M"+near.q.mag.toFixed(1)+"　距最近航點 "+Math.round(near.d)+" km");
+  }catch(e){ lines.push("失敗："+e.message); }
+  box.innerHTML='<p class="hint">'+lines.map(esc).join("<br>")+'</p>';
+});
+
 document.getElementById("avwxToken").value=AVWX_TOKEN;
 document.getElementById("avwxBase").value=AVWX_BASE;
 document.getElementById("saveAvwx").addEventListener("click",()=>{
-  AVWX_TOKEN=document.getElementById("avwxToken").value.trim();
+  AVWX_TOKEN=cleanToken(document.getElementById("avwxToken").value);
+  document.getElementById("avwxToken").value=AVWX_TOKEN;
   AVWX_BASE=(document.getElementById("avwxBase").value.trim()||"https://avwx.rest").replace(/\/+$/,"");
   document.getElementById("avwxBase").value=AVWX_BASE;
   refresh();
 });
 document.getElementById("testAvwx").addEventListener("click",async()=>{
   const box=document.getElementById("avwxOut");
-  AVWX_TOKEN=document.getElementById("avwxToken").value.trim();
+  AVWX_TOKEN=cleanToken(document.getElementById("avwxToken").value);
+  document.getElementById("avwxToken").value=AVWX_TOKEN;
   AVWX_BASE=(document.getElementById("avwxBase").value.trim()||"https://avwx.rest").replace(/\/+$/,"");
   box.innerHTML='<p class="hint">測試中</p>';
   const lines=[];
