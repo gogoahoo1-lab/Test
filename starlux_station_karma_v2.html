@@ -245,6 +245,8 @@ tr.grp td{
 
 
 
+
+
 /* 各站綜合資訊 */
 .apname{display:block;font-size:11.5px;color:var(--muted);font-weight:400;line-height:1.3;margin-top:3px}
 .card.grad .apname{color:rgba(255,255,255,.72)}
@@ -261,13 +263,13 @@ tr.grp td{
 .rpill:hover{border-color:rgba(11,11,12,.4)}
 .rpill[aria-selected="true"]{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:500}
 .rpill:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.rpill:disabled{opacity:.45;cursor:default}
+.nostation{background:rgba(255,255,255,.6);border-radius:20px;padding:26px;text-align:center;color:var(--muted);font-size:14px;margin:0 0 14px}
 .findbox input{
   width:100%;font-family:inherit;font-size:14px;padding:9px 14px;border-radius:999px;
   border:1px solid rgba(11,11,12,.16);background:rgba(255,255,255,.7);color:var(--ink);
 }
 .findbox input:focus{outline:2px solid var(--ink);outline-offset:-1px}
-.nostation{background:rgba(255,255,255,.6);border-radius:20px;padding:26px;text-align:center;color:var(--muted);font-size:14px;margin:0 0 14px}
-.rpill:disabled{opacity:.45;cursor:default}
 table.kv td{vertical-align:top}
 table.kv td.lab{width:38%;color:var(--muted);font-size:12.5px;line-height:1.45}
 table.kv td.val{font-size:13.5px;line-height:1.55;word-break:break-word}
@@ -275,8 +277,6 @@ table.kv td.val{font-size:13.5px;line-height:1.55;word-break:break-word}
   table.kv td.lab{width:42%;font-size:12px}
   table.kv td.val{font-size:13px}
 }
-
-
 
 /* ---------- 防跑版 ---------- */
 html{overflow-x:clip}
@@ -776,16 +776,16 @@ td.n,th.n,td.c{white-space:nowrap}
   <div id="p4" hidden>
     <div class="hero">
       <div class="hero-main">
-        <p class="eyebrow">40 個場站 · 4 個區域</p>
+        <p class="eyebrow">39 個場站 · 4 個區域</p>
         <h1>各站綜合資訊</h1>
-        <div class="bignum"><span class="v">40</span><span class="u">站 · 作業資料表</span></div>
+        <div class="bignum"><span class="v">39</span><span class="u">站 · 作業資料表</span></div>
         <p class="hero-note">每站涵蓋機場辦公室、地勤代理、機場資訊、報到櫃檯、法規、機組員、輪椅與特殊服務等約 70 個欄位。</p>
         <div class="gauge-row">
-          <div class="tier"><b>19</b><span>東北亞</span></div><div class="tier"><b>15</b><span>東南亞</span></div><div class="tier"><b>5</b><span>北美</span></div><div class="tier"><b>1</b><span>歐洲</span></div>
+          <div class="tier"><b>19</b><span>東北亞</span></div><div class="tier"><b>14</b><span>東南亞</span></div><div class="tier"><b>5</b><span>北美</span></div><div class="tier"><b>1</b><span>歐洲</span></div>
         </div>
         <div class="infobar">
           <div class="chips2">
-            <button class="rpill" data-region="ne" aria-selected="true">東北亞 19</button><button class="rpill" data-region="se" aria-selected="false">東南亞 15</button><button class="rpill" data-region="na" aria-selected="false">北美 5</button><button class="rpill" data-region="eu" aria-selected="false">歐洲 1</button>
+            <button class="rpill" data-region="ne" aria-selected="true">東北亞 19</button><button class="rpill" data-region="se" aria-selected="false">東南亞 14</button><button class="rpill" data-region="na" aria-selected="false">北美 5</button><button class="rpill" data-region="eu" aria-selected="false">歐洲 1</button>
           </div>
           <div class="findbox"><input type="search" id="qstation" placeholder="搜尋場站代碼或機場名稱…" autocomplete="off"></div>
         </div>
@@ -1046,16 +1046,6 @@ td.n,th.n,td.c{white-space:nowrap}
             <span class="stat"><span class="n">8</span><span class="s">編制人力</span></span>
           </div>
         </button>
-        <button class="card" data-open="s-MNL-1" data-key="MNL Ninoy Aquino Int&#x27;l Airport">
-          <div class="top">
-            <span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 16l20-9-6 14-4-5z"/></svg></span>
-            <span class="go"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
-          </div>
-          <h3>MNL（1）<span class="apname">Ninoy Aquino Int&#x27;l Airport</span></h3>
-          <div class="foot">
-            <span class="stat"><span class="n">5</span><span class="s">編制人力</span></span>
-          </div>
-        </button>
         <button class="card" data-open="s-SIN" data-key="SIN Changi Int&#x27;l Airport">
           <div class="top">
             <span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 16l20-9-6 14-4-5z"/></svg></span>
@@ -1116,12 +1106,12 @@ td.n,th.n,td.c{white-space:nowrap}
             <span class="stat"><span class="n">3</span><span class="s">編制人力</span></span>
           </div>
         </button>
-        <button class="card" data-open="s-MNL-2" data-key="MNL MNL Ninoy Aquino International Airport">
+        <button class="card" data-open="s-MNL" data-key="MNL MNL Ninoy Aquino International Airport">
           <div class="top">
             <span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 16l20-9-6 14-4-5z"/></svg></span>
             <span class="go"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
           </div>
-          <h3>MNL（2）<span class="apname">MNL Ninoy Aquino International Airport</span></h3>
+          <h3>MNL<span class="apname">MNL Ninoy Aquino International Airport</span></h3>
           <div class="foot">
             <span class="stat"><span class="n">9</span><span class="s">編制人力</span></span>
           </div>
@@ -1577,15 +1567,22 @@ td.n,th.n,td.c{white-space:nowrap}
   <div class="tip">F＝頭等艙區、J＝商務艙區，包廂另計。席次最多為 TPE T2（133 席），其次為 BKK SAT衛星廊廈（92 席）。</div>
 </template>
 
-<template id="l-f" data-title="頭等艙服務單價" data-sub="11 個場站提供 · 出境與入境 Escort 人力單價（TWD）"><p class="sorthint">點欄位標題可依該欄排序（再點一次切換升／降冪）</p>
+<template id="l-f" data-title="頭等艙服務單價" data-sub="11 個場站提供 · 單價 TWD"><p class="sorthint">點欄位標題可依該欄排序（再點一次切換升／降冪）</p>
   <div class="panel">
-    <h4>出境貴賓室 · 出境／入境 Escort 人力單價</h4>
+    <h4>出境</h4>
     <table class="sortable">
-      <thead><tr><th data-sort="text">場站</th><th class="sm-hide" data-sort="text">區域</th><th class="n" data-sort="num">出境貴賓室</th><th class="n" data-sort="num">出境Escort<br>人力單價</th><th class="n" data-sort="num">TTL</th><th class="n" data-sort="num">入境Escort<br>人力單價</th></tr></thead>
-      <tbody><tr><td>LAX<span class="rsub">USA</span></td><td class="c sm-hide">USA</td><td class="n">21,753.5</td><td class="n">1,252</td><td class="n">23,005.5</td><td class="n">1,252</td></tr><tr><td>TPE<span class="rsub">TWN</span></td><td class="c sm-hide">TWN</td><td class="n">5,000</td><td class="n">5,000</td><td class="n">10,000</td><td class="n">5,000</td></tr><tr><td>SIN<span class="rsub">SGP</span></td><td class="c sm-hide">SGP</td><td class="n">2,112</td><td class="n">4,440</td><td class="n">6,552</td><td class="n">4,200</td></tr><tr><td>NRT<span class="rsub">JPN</span></td><td class="c sm-hide">JPN</td><td class="n">2,159.7</td><td class="n">1,442</td><td class="n">3,601.7</td><td class="n">1,442</td></tr><tr><td>SGN<span class="rsub">VNM</span></td><td class="c sm-hide">VNM</td><td class="n">1,721.5</td><td class="n">1,620</td><td class="n">3,341.5</td><td class="n">1,620</td></tr><tr><td>BKK<span class="rsub">THA</span></td><td class="c sm-hide">THA</td><td class="n">1,520</td><td class="n">1,453.5</td><td class="n">2,973.5</td><td class="n">2,774</td></tr><tr><td>KIX<span class="rsub">JPN</span></td><td class="c sm-hide">JPN</td><td class="n">1,318.4</td><td class="n">1,545</td><td class="n">2,863.4</td><td class="n">1,545</td></tr><tr><td>SFO<span class="rsub">USA</span></td><td class="c sm-hide">USA</td><td class="n">1,424.2</td><td class="n">1,220.7</td><td class="n">2,644.8</td><td class="n">1,220.7</td></tr><tr><td>ONT<span class="rsub">USA</span></td><td class="c sm-hide">USA</td><td class="n">1,095.5</td><td class="n">1,126.8</td><td class="n">2,222.3</td><td class="n">1,126.8</td></tr><tr><td>SEA<span class="rsub">USA</span></td><td class="c sm-hide">USA</td><td class="n">1,095.5</td><td class="n">1,064.2</td><td class="n">2,159.7</td><td class="n">1,064.2</td></tr><tr><td>PHX<span class="rsub">USA</span></td><td class="c sm-hide">USA</td><td class="n">1,408.5</td><td class="n">0</td><td class="n">1,408.5</td><td class="n">0</td></tr></tbody>
+      <thead><tr><th data-sort="text">場站</th><th class="sm-hide" data-sort="text">區域</th><th class="n" data-sort="num">貴賓室</th><th class="n" data-sort="num">Escort<br>人力單價</th><th class="n" data-sort="num">TTL</th></tr></thead>
+      <tbody><tr><td>LAX<span class="rsub">USA</span></td><td class="c sm-hide">USA</td><td class="n">21,753.5</td><td class="n">1,252</td><td class="n">23,005.5</td></tr><tr><td>TPE<span class="rsub">TWN</span></td><td class="c sm-hide">TWN</td><td class="n">5,000</td><td class="n">5,000</td><td class="n">10,000</td></tr><tr><td>SIN<span class="rsub">SGP</span></td><td class="c sm-hide">SGP</td><td class="n">2,112</td><td class="n">4,440</td><td class="n">6,552</td></tr><tr><td>NRT<span class="rsub">JPN</span></td><td class="c sm-hide">JPN</td><td class="n">2,159.7</td><td class="n">1,442</td><td class="n">3,601.7</td></tr><tr><td>SGN<span class="rsub">VNM</span></td><td class="c sm-hide">VNM</td><td class="n">1,721.5</td><td class="n">1,620</td><td class="n">3,341.5</td></tr><tr><td>BKK<span class="rsub">THA</span></td><td class="c sm-hide">THA</td><td class="n">1,520</td><td class="n">1,453.5</td><td class="n">2,973.5</td></tr><tr><td>KIX<span class="rsub">JPN</span></td><td class="c sm-hide">JPN</td><td class="n">1,318.4</td><td class="n">1,545</td><td class="n">2,863.4</td></tr><tr><td>SFO<span class="rsub">USA</span></td><td class="c sm-hide">USA</td><td class="n">1,424.2</td><td class="n">1,220.7</td><td class="n">2,644.8</td></tr><tr><td>ONT<span class="rsub">USA</span></td><td class="c sm-hide">USA</td><td class="n">1,095.5</td><td class="n">1,126.8</td><td class="n">2,222.3</td></tr><tr><td>SEA<span class="rsub">USA</span></td><td class="c sm-hide">USA</td><td class="n">1,095.5</td><td class="n">1,064.2</td><td class="n">2,159.7</td></tr><tr><td>PHX<span class="rsub">USA</span></td><td class="c sm-hide">USA</td><td class="n">1,408.5</td><td class="n">0</td><td class="n">1,408.5</td></tr></tbody>
     </table>
   </div>
-  <div class="tip">TTL＝出境貴賓室 ＋ 出境Escort 人力單價；入境Escort 人力單價為旅客入境時之接送人力費用，獨立計價、不計入 TTL。
+  <div class="panel">
+    <h4>入境</h4>
+    <table class="sortable">
+      <thead><tr><th data-sort="text">場站</th><th class="sm-hide" data-sort="text">區域</th><th class="n" data-sort="num">Escort 人力單價</th></tr></thead>
+      <tbody><tr><td>TPE<span class="rsub">TWN</span></td><td class="c sm-hide">TWN</td><td class="n">5,000</td></tr><tr><td>SIN<span class="rsub">SGP</span></td><td class="c sm-hide">SGP</td><td class="n">4,200</td></tr><tr><td>BKK<span class="rsub">THA</span></td><td class="c sm-hide">THA</td><td class="n">2,774</td></tr><tr><td>SGN<span class="rsub">VNM</span></td><td class="c sm-hide">VNM</td><td class="n">1,620</td></tr><tr><td>KIX<span class="rsub">JPN</span></td><td class="c sm-hide">JPN</td><td class="n">1,545</td></tr><tr><td>NRT<span class="rsub">JPN</span></td><td class="c sm-hide">JPN</td><td class="n">1,442</td></tr><tr><td>LAX<span class="rsub">USA</span></td><td class="c sm-hide">USA</td><td class="n">1,252</td></tr><tr><td>SFO<span class="rsub">USA</span></td><td class="c sm-hide">USA</td><td class="n">1,220.7</td></tr><tr><td>ONT<span class="rsub">USA</span></td><td class="c sm-hide">USA</td><td class="n">1,126.8</td></tr><tr><td>SEA<span class="rsub">USA</span></td><td class="c sm-hide">USA</td><td class="n">1,064.2</td></tr><tr><td>PHX<span class="rsub">USA</span></td><td class="c sm-hide">USA</td><td class="n">0</td></tr></tbody>
+    </table>
+  </div>
+  <div class="tip">TTL＝出境貴賓室 ＋ 出境Escort 人力單價；入境Escort 人力單價獨立計價、不計入 TTL。
 其餘 23 個場站未提供頭等艙貴賓室或 Escort 服務。
 其他服務：SGN 782.5。
 PHX 的出境Escort 人力單價為 0，TTL 等同出境貴賓室單價；BKK 的入境單價（2,774）高於出境（1,453.5）。</div>
@@ -3286,73 +3283,6 @@ SHI 暫無貴賓室服務，改以餐券 JPY 2,300 替代。
   </div>
 </template>
 
-<template id="s-MNL-1" data-title="MNL（1）" data-sub="東南亞 · Ninoy Aquino Int&#x27;l Airport">
-  <div class="panel">
-    <h4>Airport Office</h4>
-    <table class="kv"><tbody><tr><td class="lab">Physical Address</td><td class="val">Room 407, 4th Floor. IPt Bldg. NAIA Terminal 1, Paranaque City 1300 Philippines.</td></tr><tr><td class="lab">Local Manpower (SM &amp; Local Hires)</td><td class="val">5</td></tr><tr><td class="lab">TTY</td><td class="val">MNLKKJX, MNLFFJX, MNLSOXH</td></tr></tbody></table>
-  </div>
-  <div class="panel">
-    <h4>Ground Handling Service Provider</h4>
-    <table class="kv"><tbody><tr><td class="lab">Passenger Handling (Above-wing)</td><td class="val">Philippine Airport Ground Support Solutions, Inc. (PAGSS)</td></tr><tr><td class="lab">Ramp Handling (Below-wing)</td><td class="val">Same as above</td></tr><tr><td class="lab">Cargo</td><td class="val">Same as above</td></tr><tr><td class="lab">Maintenance</td><td class="val">A-PLUS</td></tr><tr><td class="lab">Catering · Local Catering</td><td class="val">No</td></tr><tr><td class="lab">GHSP</td><td class="val">NIL</td></tr><tr><td class="lab">Fuel Provider</td><td class="val">PETRON (Agent: AEG Fuels)</td></tr><tr><td class="lab">Fuel Into-plane</td><td class="val">Filipinas Aviation Services, Inc. (FASI)</td></tr><tr><td class="lab">Lounge</td><td class="val">PAGSS Premium Lounge</td></tr></tbody></table>
-  </div>
-  <div class="panel">
-    <h4>Airport</h4>
-    <table class="kv"><tbody><tr><td class="lab">Airport Operator</td><td class="val">Manila International Airport Authority (MIAA)</td></tr><tr><td class="lab">Terminal In-use</td><td class="val">Terminal 3</td></tr><tr><td class="lab">To Downtown - Vehicle</td><td class="val">Approx. 15mins (via expressway)</td></tr><tr><td class="lab">To Downtown - MRT/Train</td><td class="val">Approx. 1H by MRT (by foot 3km (50mins) to MRT)<br>Bus not avaialble.</td></tr><tr><td class="lab">Acceptance of  Boarding Pass in PED (Security)</td><td class="val">N/A</td></tr><tr><td class="lab">Acceptance of  Boarding Pass in PED (Gate)</td><td class="val">Available</td></tr><tr><td class="lab">Curfew Limit (LT)</td><td class="val">NIL</td></tr><tr><td class="lab">Diversion Airport</td><td class="val">CRK / CEB / KHH</td></tr><tr><td class="lab">Diversion Curfew Limit (LT)</td><td class="val">NIL / 0300-0500 / 0000-0630</td></tr><tr><td class="lab">Numbers of Runway</td><td class="val">2</td></tr><tr><td class="lab">Runway Designator</td><td class="val">06/24 | 13/31</td></tr></tbody></table>
-  </div>
-  <div class="panel">
-    <h4>Check-in Counter</h4>
-    <table class="kv"><tbody><tr><td class="lab">Applicable Counter (Aircraft type: First / Premium CKI / Bag Drop / General / Special Assistance) EX. A321: NIL / 2 / 3 / 1 / NIL</td><td class="val">(1) J/CLS, (3) Y/CLS</td></tr><tr><td class="lab">Counter Island</td><td class="val">No designated counter (Vary on daily basis)</td></tr><tr><td class="lab">Line Service Provider</td><td class="val">SITA</td></tr><tr><td class="lab">Counter Opening Time</td><td class="val">2.5H-1H prior to STD</td></tr><tr><td class="lab">CUSS  - Self Check-in</td><td class="val">N/A</td></tr><tr><td class="lab">CUSS  - Self Check-in Opening Time</td><td class="val">N/A</td></tr><tr><td class="lab">CUSS  - Self Bag Drop</td><td class="val">N/A</td></tr><tr><td class="lab">CUSS  - Self Bag Drop Opening Time</td><td class="val">N/A</td></tr><tr><td class="lab">Credit Card Terminal</td><td class="val">Available</td></tr></tbody></table>
-  </div>
-  <div class="panel">
-    <h4>Transit Service</h4>
-    <table class="kv"><tbody><tr><td class="lab">Transit Counter</td><td class="val">Available</td></tr><tr><td class="lab">I/I MCT</td><td class="val">120mins<br>Note: only allow within same terminal. If pax will arrive at T1 and will depart from T3, pax will need to clear immigration and customs.</td></tr><tr><td class="lab">I/D MCT</td><td class="val">All should clear immigration and customs, all bags should be tag to MNL only.</td></tr></tbody></table>
-  </div>
-  <div class="panel">
-    <h4>Immigration</h4>
-    <table class="kv"><tbody><tr><td class="lab">Arrival Card</td><td class="val">Yes (Must fill out e-travel)</td></tr></tbody></table>
-  </div>
-  <div class="panel">
-    <h4>Custom</h4>
-    <table class="kv"><tbody><tr><td class="lab">Custom Declaration</td><td class="val">Yes (Must fill out the form)</td></tr><tr><td class="lab">In-flight Video</td><td class="val">N/A</td></tr></tbody></table>
-  </div>
-  <div class="panel">
-    <h4>Fueling During Passenger On-board, Embarkation, Disembarkation</h4>
-    <table class="kv"><tbody><tr><td class="lab">Applicability</td><td class="val">Available</td></tr><tr><td class="lab">Special Regulation</td><td class="val">Firefighting arrangement is necessary</td></tr></tbody></table>
-  </div>
-  <div class="panel">
-    <h4>In-flight Waste</h4>
-    <table class="kv"><tbody><tr><td class="lab">Sorting Requirement</td><td class="val">N/A</td></tr></tbody></table>
-  </div>
-  <div class="panel">
-    <h4>Aircraft Disinsection</h4>
-    <table class="kv"><tbody><tr><td class="lab">Necessity</td><td class="val">Yes</td></tr><tr><td class="lab">Procedures</td><td class="val">Write down the series number of can on Gendec.</td></tr><tr><td class="lab">Necessary Number of Can</td><td class="val">A321neo: <br>(1) for Cabin, (1) for Cargo Compartment</td></tr></tbody></table>
-  </div>
-  <div class="panel">
-    <h4>Crew</h4>
-    <table class="kv"><tbody><tr><td class="lab">Layover</td><td class="val">N/A</td></tr><tr><td class="lab">Notification</td><td class="val">1. The whole crew must carry GD and pass the immigration at the same time.<br>2. The whole crew must wear uniforms, carry passport and ID while pass the immigration.<br>3. The crew must complete the customs declaration form and the Arrival Card.<br>4. The passenger and cargo compartment of the aircraft shall be sprayed with disinfectant in accordance with international regulations and the serial number of the empty bottle should be noted on the GD.<br>5. The regulation of duty-free goods for the crew is the same as that for normal passengers.</td></tr><tr><td class="lab">Acceptance for Guarantee Letter (for crew without Passport)</td><td class="val">N/A</td></tr></tbody></table>
-  </div>
-  <div class="panel">
-    <h4>Documents for Local</h4>
-    <table class="kv"><tbody><tr><td class="lab">General Declaration</td><td class="val">10</td></tr><tr><td class="lab">Passenger Manifest</td><td class="val">10 (9 copy from TPE, the rest 1 will be printed by Local)</td></tr><tr><td class="lab">Cargo Manifest</td><td class="val">10</td></tr><tr><td class="lab">Bingo Sheet</td><td class="val">1</td></tr><tr><td class="lab">Other</td><td class="val">Empty Insecticide</td></tr></tbody></table>
-  </div>
-  <div class="panel">
-    <h4>Wheelchair</h4>
-    <table class="kv"><tbody><tr><td class="lab">WCHR</td><td class="val">Available</td></tr><tr><td class="lab">WCHS</td><td class="val">Available</td></tr><tr><td class="lab">WCHC</td><td class="val">Available</td></tr><tr><td class="lab">Manual Wheelchair - (Dept.) Proceed to Gate</td><td class="val">Available</td></tr><tr><td class="lab">Manual Wheelchair - (Arr.) Collect at Shipside</td><td class="val">Available</td></tr><tr><td class="lab">Power-driven Wheelchair - (Dept.) Proceed to Gate</td><td class="val">Available</td></tr><tr><td class="lab">Power-driven Wheelchair - (Arr.) Collect at Shipside</td><td class="val">Available</td></tr><tr><td class="lab">Special Regulation</td><td class="val">N/A</td></tr></tbody></table>
-  </div>
-  <div class="panel">
-    <h4>Baby Stroller</h4>
-    <table class="kv"><tbody><tr><td class="lab">(Dept.) Proceed to Gate</td><td class="val">Available</td></tr><tr><td class="lab">(Arr.) Collect at Shipside</td><td class="val">Available</td></tr><tr><td class="lab">Special Regulation</td><td class="val">N/A</td></tr></tbody></table>
-  </div>
-  <div class="panel">
-    <h4>AVIH</h4>
-    <table class="kv"><tbody><tr><td class="lab">Acceptance in Cargo Hold</td><td class="val">Available</td></tr><tr><td class="lab">Restriction</td><td class="val">Follow Operator&#x27;s Policy</td></tr><tr><td class="lab">Special Regulation</td><td class="val">N/A</td></tr></tbody></table>
-  </div>
-  <div class="panel">
-    <h4>STCR</h4>
-    <table class="kv"><tbody><tr><td class="lab">Acceptance</td><td class="val">Available</td></tr><tr><td class="lab">Special Regulation</td><td class="val">N/A</td></tr></tbody></table>
-  </div>
-</template>
-
 <template id="s-SIN" data-title="SIN" data-sub="東南亞 · Changi Int&#x27;l Airport">
   <div class="panel">
     <h4>Airport Office</h4>
@@ -3755,7 +3685,7 @@ SHI 暫無貴賓室服務，改以餐券 JPY 2,300 替代。
   </div>
 </template>
 
-<template id="s-MNL-2" data-title="MNL（2）" data-sub="東南亞 · MNL Ninoy Aquino International Airport">
+<template id="s-MNL" data-title="MNL" data-sub="東南亞 · MNL Ninoy Aquino International Airport">
   <div class="panel">
     <h4>Airport Office</h4>
     <table class="kv"><tbody><tr><td class="lab">Physical Address</td><td class="val">Room 2.1.16.32, Level 2, Mezzanine Area, Andrews Avenue, Villamor, Barangay 191, Pasay City 1309 Metro Manila, Philippines</td></tr><tr><td class="lab">Local Manpower (SM &amp; Local Hires)</td><td class="val">9</td></tr><tr><td class="lab">TTY</td><td class="val">MNLKKJX</td></tr></tbody></table>
@@ -4634,6 +4564,8 @@ SHI 暫無貴賓室服務，改以餐券 JPY 2,300 替代。
   document.querySelectorAll('[data-open]').forEach(function(b){
     b.addEventListener('click',function(){last=b;open(b.dataset.open);});
   });
+
+
 
 
 
