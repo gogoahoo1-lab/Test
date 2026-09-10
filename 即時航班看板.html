@@ -135,6 +135,19 @@ td.num{text-align:right}
 .tag.D{color:var(--amber);border-color:#6b5220;background:rgba(255,176,46,.1)}
 .st{font-size:12.5px}
 .st.ok{color:var(--good)} .st.late{color:var(--warn)} .st.cx{color:var(--bad)}
+/* ---------- 狀態欄 ---------- */
+.stcell{display:flex;flex-direction:column;gap:2px;min-width:118px}
+.stcell .lead{font-size:12.5px;font-weight:700}
+.stcell .sub{font-size:11.5px;color:var(--dim)}
+.stcell .lead.done{color:var(--good)}
+.stcell .lead.wait{color:var(--cyan)}
+.stcell .lead.late{color:var(--warn)}
+.stcell .lead.cx{color:var(--bad)}
+/* ---------- 看板分段標題 ---------- */
+.bhead{display:flex;align-items:baseline;gap:10px;margin:18px 0 8px}
+.bhead h3{margin:0;font-size:15px}
+.bhead .cnt{font-size:12.5px;color:var(--dim)}
+.bhead .tag{margin-left:2px}
 .al{font-weight:600}
 .empty{padding:40px 16px;text-align:center;color:var(--dim);font-size:14px}
 
@@ -406,7 +419,7 @@ ul.doc li{margin:5px 0}
       <div id="fAirlines"></div>
     </div>
     <div class="kpis" id="boardKpis"></div>
-    <div class="tbox"><table id="boardTable"></table></div>
+    <div id="boardSections"></div>
     <p class="note" id="boardCount" style="margin-top:8px"></p>
   </div>
 </section>
@@ -944,13 +957,35 @@ function filterBoard(){
 /* =========================================================
    渲染：看板
    ========================================================= */
+/* 狀態欄：先講「到底飛了沒」，再講準點與否，最後帶上來源的備註文字。 */
 function statusCell(f){
-  if(f.cancelled) return '<span class="st cx">取消</span>';
-  if(f.delay == null) return '<span class="st" style="color:var(--dim)">' + esc(f.status || "—") + "</span>";
-  if(f.delay > 15) return '<span class="st late">延誤 ' + f.delay + " 分</span>";
-  if(f.delay < -15) return '<span class="st ok">早 ' + Math.abs(f.delay) + " 分</span>";
-  return '<span class="st ok">準點</span>';
+  var arr = f.dir === "A";
+  var lead, cls, parts = [];
+
+  if(f.cancelled){
+    lead = "取消"; cls = "cx";
+  }else if(f.act){
+    lead = arr ? "已抵達" : "已離場"; cls = "done";
+  }else{
+    lead = arr ? "尚未抵達" : "尚未離場"; cls = "wait";
+    parts.push(f.est ? "預估 " + f.est : "僅表定");
+  }
+
+  if(!f.cancelled && f.delay != null){
+    if(f.delay > 15) parts.push('<b style="color:var(--warn);font-weight:600">延誤 ' + f.delay + " 分</b>");
+    else if(f.delay < -15) parts.push("早 " + Math.abs(f.delay) + " 分");
+    else parts.push('<b style="color:var(--good);font-weight:600">準點</b>');
+  }
+
+  // 來源備註若跟上面已經講過的意思重複（已到達 vs 已抵達、取消 vs 取消），就不再重複一次
+  var remark = String(f.status || "").trim();
+  var dup = /^(已?(到達|抵達|降落|起飛|離站|出發)|取消|延誤|準點|on ?time|arrived|landed|departed|delayed|cancell?ed)$/i;
+  if(remark && !dup.test(remark)) parts.push(esc(remark));
+
+  return '<div class="stcell"><span class="lead ' + cls + '">' + esc(lead) + "</span>" +
+    (parts.length ? '<span class="sub">' + parts.join("・") + "</span>" : "") + "</div>";
 }
+
 function renderBoard(){
   var rows = filterBoard();
   var key = boardSort.key, dr = boardSort.dir;
@@ -977,8 +1012,8 @@ function renderBoard(){
     kpi("", "航點數", Object.keys(peers).length);
 
   var head = [
-    ["dir","方向"], ["station","場站"], ["sched","排定"], ["flightNo","航班"], ["airline","航空公司"],
-    ["peer","航點"], ["act","實際／預估"], ["delay","狀態"], ["terminal","航廈"],
+    ["delay","狀態"], ["station","場站"], ["sched","排定"], ["flightNo","航班"], ["airline","航空公司"],
+    ["peer","航點"], ["act","實際／預估"], ["terminal","航廈"],
     ["gate","門"], ["counter","櫃檯"], ["belt","轉盤"], ["aircraft","機型"], ["date","日期"]
   ];
   var thead = "<thead><tr>" + head.map(function(h){
@@ -986,26 +1021,57 @@ function renderBoard(){
       h[1] + (boardSort.key === h[0] ? (boardSort.dir > 0 ? " ↑" : " ↓") : "") + "</th>";
   }).join("") + "</tr></thead>";
 
-  var body = rows.slice(0, 4000).map(function(f){
+  function rowHtml(f){
     return "<tr>" +
-      '<td><span class="tag ' + f.dir + '">' + (f.dir === "A" ? "到場" : "離場") + "</span></td>" +
+      "<td>" + statusCell(f) + "</td>" +
       '<td class="mono">' + esc(f.station || "—") + "</td>" +
       '<td class="mono">' + esc(f.sched || "—") + "</td>" +
       '<td class="mono" style="color:var(--amber);font-weight:600">' + esc(f.flightNo) + "</td>" +
       '<td class="al">' + esc(f.airline) + (alName(f.airline) ? ' <span class="note">' + esc(alName(f.airline)) + "</span>" : "") + "</td>" +
       "<td>" + esc(f.peer || "—") + (aptName(f.peer) ? ' <span class="note">' + esc(aptName(f.peer)) + "</span>" : "") + "</td>" +
       '<td class="mono">' + esc(f.act || f.est || "—") + (f.act ? "" : (f.est ? " (E)" : "")) + "</td>" +
-      "<td>" + statusCell(f) + "</td>" +
       "<td>" + esc(f.terminal || "—") + "</td><td>" + esc(f.gate || "—") + "</td>" +
       "<td>" + esc(f.counter || "—") + "</td><td>" + esc(f.belt || "—") + "</td>" +
       "<td>" + esc(f.aircraft || "—") + "</td>" +
       '<td class="mono note">' + esc(f.date || "—") + "</td></tr>";
-  }).join("");
+  }
 
-  $("boardTable").innerHTML = thead + "<tbody>" + (body || '<tr><td colspan="14" class="empty">沒有符合條件的航班。放寬篩選，或先到「TDX 桃園機場」抓取資料。</td></tr>') + "</tbody>";
-  $("boardCount").textContent = "顯示 " + Math.min(rows.length, 4000) + " ／ " + rows.length + " 筆" + (rows.length > 4000 ? "（超過 4000 筆已截斷）" : "");
+  // 表格已經沒有「方向」欄，改用區塊標題交代這一段是到場還是離場
+  var scope = [];
+  var selApt = selectedCodes(boardApts);
+  if(selApt.length && selApt.length <= 4) scope.push(selApt.map(function(c){ return c || "未標示"; }).join("、"));
+  var dv = $("fDate").value;
+  if(dv !== "all") scope.push(dv);
+  var scopeTxt = scope.length ? "　" + scope.join("　·　") : "";
 
-  var ths = $("boardTable").querySelectorAll("th[data-sort]");
+  function section(dir, list){
+    var title = dir === "A" ? "到場航班" : "離場航班";
+    return '<div class="bhead"><span class="tag ' + dir + '">' + (dir === "A" ? "到場" : "離場") + "</span>" +
+      "<h3>" + title + "</h3>" +
+      '<span class="cnt">' + list.length + " 班" + esc(scopeTxt) + "</span></div>" +
+      '<div class="tbox"><table>' + thead + "<tbody>" +
+      (list.length ? list.map(rowHtml).join("")
+                   : '<tr><td colspan="13" class="empty">這個條件下沒有' + title + "。</td></tr>") +
+      "</tbody></table></div>";
+  }
+
+  var shown = rows.slice(0, 4000);
+  var dirSel = $("fDir").value;
+  var html;
+  if(!rows.length){
+    html = '<div class="empty">沒有符合條件的航班。放寬篩選，或先到「TDX 桃園機場」抓取資料。</div>';
+  }else if(dirSel === "A" || dirSel === "D"){
+    html = section(dirSel, shown);
+  }else{
+    html = section("A", shown.filter(function(f){ return f.dir === "A"; })) +
+           section("D", shown.filter(function(f){ return f.dir === "D"; }));
+  }
+  $("boardSections").innerHTML = html;
+
+  $("boardCount").textContent = "顯示 " + shown.length + " ／ " + rows.length + " 筆" +
+    (rows.length > 4000 ? "（超過 4000 筆已截斷）" : "");
+
+  var ths = $("boardSections").querySelectorAll("th[data-sort]");
   for(var i=0;i<ths.length;i++){
     ths[i].addEventListener("click", onBoardSort);
     ths[i].addEventListener("keydown", function(e){ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); onBoardSort.call(this); } });
