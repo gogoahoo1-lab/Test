@@ -143,6 +143,12 @@ td.num{text-align:right}
 .stcell .lead.wait{color:var(--cyan)}
 .stcell .lead.late{color:var(--warn)}
 .stcell .lead.cx{color:var(--bad)}
+/* ---------- 定期班表 7 日格 ---------- */
+.gsday{text-align:center;font-size:12px;white-space:nowrap}
+.gsday.we{color:var(--amber)}
+.gs-on{color:var(--good);font-weight:700}
+.gs-off{color:#38546e}
+.gsrow-dir{font-size:11.5px}
 /* ---------- 看板分段標題 ---------- */
 .bhead{display:flex;align-items:baseline;gap:10px;margin:18px 0 8px}
 .bhead h3{margin:0;font-size:15px}
@@ -166,6 +172,12 @@ td.num{text-align:right}
 .hist .h span{text-align:center;color:var(--dim);font-size:10.5px;padding-top:4px}
 .legend{display:flex;gap:16px;color:var(--dim);font-size:12.5px;margin-top:10px;flex-wrap:wrap}
 .legend i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
+.chart{width:100%;height:auto;display:block;margin-top:14px}
+.callout{background:var(--bg2);border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:8px;padding:12px 14px;margin-top:14px;font-size:13.5px;line-height:1.7}
+.callout b{color:var(--amber)}
+.delta{font-size:12px;margin-left:6px}
+.delta.up{color:var(--good)} .delta.down{color:var(--bad)} .delta.flat{color:var(--dim)}
+.hot{background:rgba(255,122,122,.13)}
 .dow{display:flex;gap:3px}
 .dow b{
   width:21px;height:21px;line-height:20px;text-align:center;border-radius:5px;font-size:11.5px;font-weight:600;
@@ -212,6 +224,7 @@ ul.doc li{margin:5px 0}
     <button data-tab="board" aria-selected="false">到離看板</button>
     <button data-tab="airline" aria-selected="false">航空公司</button>
     <button data-tab="sched" aria-selected="false">班表分析</button>
+    <button data-tab="otd" aria-selected="false">準點分析</button>
     <button data-tab="help" aria-selected="false">格式說明</button>
   </nav>
 </header>
@@ -440,9 +453,49 @@ ul.doc li{margin:5px 0}
 
 <!-- ============ SCHEDULE ============ -->
 <section id="tab-sched" hidden>
+
   <div class="card">
-    <h2>班表分析</h2>
-    <p>依觀測到的營運日推估每週班次、航點與到離時間。場站與航空公司都不選＝全部。</p>
+    <h2>定期班表（未來 7 天）</h2>
+    <p>來源為 TDX 的<b>航空定期時刻表</b>，是航空公司公告的班表，不是從到離紀錄推估的。進入本頁會自動載入，每 6 小時重抓一次。</p>
+    <div class="row">
+      <label class="f">航空公司
+        <input type="text" id="gsAirline" value="JX" size="4" maxlength="3">
+      </label>
+      <label class="f">天數
+        <select id="gsDays">
+          <option value="7" selected>未來 7 天</option>
+          <option value="14">未來 14 天</option>
+          <option value="30">未來 30 天</option>
+        </select>
+      </label>
+      <label class="f">起始日
+        <input type="date" id="gsStart">
+      </label>
+      <label class="f">方向
+        <select id="gsDir">
+          <option value="all">出發＋抵達</option>
+          <option value="D">只看自台灣出發</option>
+          <option value="A">只看抵達台灣</option>
+        </select>
+      </label>
+      <label class="f">彙整
+        <select id="gsGroup">
+          <option value="flight">依航班號</option>
+          <option value="peer">依航點</option>
+        </select>
+      </label>
+      <button class="btn primary" id="btnGsLoad">重新載入班表</button>
+      <span class="note" id="gsStatus"></span>
+    </div>
+    <div id="gsPeers" style="margin-top:12px"></div>
+    <div id="gsMsg" style="margin-top:10px"></div>
+    <div class="kpis" id="gsKpis"></div>
+    <div id="gsBody"></div>
+  </div>
+
+  <div class="card">
+    <h2>觀測班表分析</h2>
+    <p>依實際抓到的到離紀錄推估每週班次、航點與到離時間。場站與航空公司都不選＝全部。</p>
     <div id="sApts"></div>
     <div id="sAirlines" style="margin-top:8px"></div>
     <div class="row" style="margin-top:12px">
@@ -460,6 +513,34 @@ ul.doc li{margin:5px 0}
   </div>
 </section>
 
+<!-- ============ ON-TIME ============ -->
+<section id="tab-otd" hidden>
+  <div class="card">
+    <h2>月度準點分析</h2>
+    <p>用排定時間與實際時間的差距計算。TDX 即時航班只給前日／當日／次日，整月要靠每天抓取累積下來的紀錄，累積愈久愈完整。</p>
+    <div id="oApts"></div>
+    <div id="oAirlines" style="margin-top:8px"></div>
+    <div class="row" style="margin-top:12px">
+      <label class="f">月份
+        <select id="oMonth"></select>
+      </label>
+      <label class="f">方向
+        <select id="oDir"><option value="all">到場＋離場</option><option value="A">只看到場</option><option value="D">只看離場</option></select>
+      </label>
+      <label class="f">準點門檻
+        <select id="oThr"><option value="15" selected>15 分內</option><option value="0">不得晚於表定</option><option value="30">30 分內</option><option value="60">60 分內</option></select>
+      </label>
+      <label class="f">計算基準
+        <select id="oBase"><option value="act" selected>只用實際時間</option><option value="any">實際優先，缺則用預估</option></select>
+      </label>
+      <label class="f">航班最少班次
+        <select id="oMin"><option value="1">1 班以上</option><option value="3" selected>3 班以上</option><option value="5">5 班以上</option><option value="10">10 班以上</option></select>
+      </label>
+    </div>
+    <div id="oBody"></div>
+  </div>
+</section>
+
 <!-- ============ HELP ============ -->
 <section id="tab-help" hidden>
   <div class="card">
@@ -471,7 +552,10 @@ ul.doc li{margin:5px 0}
       <li>「資料匯入」頁籤用於：TPE 以外的機場、歷史檔案回填、離線資料、或任何非 TDX 的來源。到場、離場兩支 API 分兩次貼即可，系統會累加。</li>
       <li>若來源沒有方向欄位（例如只有到場那支 API），把「方向判定」改成<b>整批視為到場</b>再匯入。</li>
       <li>去重規則：<code>方向＋場站＋日期＋航空公司＋航班號</code> 相同視為同一筆，後匯入的覆蓋舊的，所以同一天重複抓不會灌水。加上航空公司是必要的，因為 TDX 的 <code>FlightNumber</code> 常常只有數字（例如 <code>0002</code>），少了航空公司代碼，不同家的同號航班會互相蓋掉。</li>
-      <li>要累積多天資料做班表，就讓它每天抓一次；跨越的天數愈多，每週班次推估愈準。班表是從實際觀測到的營運日推估，不是航空公司公告的定期班表。</li>
+      <li>「班表分析」上半部是 <b>TDX 定期班表</b>（<code>/Air/GeneralSchedule/International</code>、<code>/Domestic</code>），
+      直接拿航空公司公告的每週飛行日展開成未來 7 天，預設只抓 JX。進頁自動載入，6 小時內用快取，可改代碼看別家。</li>
+      <li>想知道某個航點有幾支航班號，把「彙整」切到<b>依航點</b>，表格會依航班號數由多到少排；航點篩選面板的數字也是同一個意思。勾起某個航點再切回<b>依航班號</b>，就只看那條航線的班表。</li>
+      <li>下半部「觀測班表分析」是從實際抓到的到離紀錄推估的，跨越天數愈多愈準；兩者來源不同，數字不一定完全吻合。</li>
       <li>資料只存在這個分頁，關掉就沒了。要留存請按<b>匯出資料檔</b>，下次用<b>讀入資料檔</b>接回來。</li>
     </ul>
     <h3>可辨識的欄位</h3>
@@ -488,6 +572,14 @@ ul.doc li{margin:5px 0}
     <ul class="doc">
       <li>準點：實際或預估時間與排定時間相差 15 分鐘以內；延誤：晚於排定 15 分鐘以上。沒有實際時間的航班不計入準點率。</li>
       <li>每週班次：該航班在資料中出現過的<b>不同星期幾</b>數量。同一天飛兩班同號航班只算一次。</li>
+    </ul>
+    <h3>準點分析</h3>
+    <ul class="doc">
+      <li>月份下拉只會列出資料庫裡真的有紀錄的月份。TDX 即時航班只涵蓋前日／當日／次日，所以要看整月、要跟上月比，都得靠每天抓取累積。</li>
+      <li>準點門檻預設 15 分內；計算基準預設<b>只用實際時間</b>，還沒起降的航班自然不列入。若想把預估時間也算進去，改成「實際優先，缺則用預估」，數字會比較樂觀。</li>
+      <li>時段是依<b>排定時間</b>分時，所以「18 時特別容易延誤」指的是表定 18:00–18:59 的航班，不是實際在那個時間起降的航班。</li>
+      <li>每個時段至少要有 3 班可比對，才會納入最容易延誤時段的排名，避免單一班次左右結論。</li>
+      <li>各航班表的「可比對班次」門檻可調；準點率低於 60% 的航班會以紅底標示。</li>
     </ul>
   </div>
 </section>
@@ -507,7 +599,9 @@ var boardSort = { key: "sched", dir: 1 };
 var alSort = { key: "total", dir: -1 };
 var boardAirlines = {}, boardApts = {};
 var alAirlines = {}, alApts = {};
-var schedAirlines = {}, schedApts = {};
+var schedAirlines = { JX:true }, schedApts = {};
+var otdAirlines = {}, otdApts = {};
+var otdSort = { key: "rate", dir: 1 };
 
 /* =========================================================
    字典
@@ -530,7 +624,7 @@ var AIRLINES = {
   FX:"聯邦快遞", "5X":"UPS", "5Y":"Atlas Air", CV:"盧森堡貨航", CK:"中國貨運航空", GI:"itali", K4:"Kalitta"
 };
 var AIRPORTS = {
-  TPE:"桃園", TSA:"松山", KHH:"高雄", RMQ:"台中", CYI:"嘉義", PIF:"屏東", MFK:"馬祖北竿", TNN:"台南", HUN:"花蓮", TTT:"台東", MZG:"澎湖", KNH:"金門", LZN:"馬祖南竿",
+  TPE:"桃園", TSA:"松山", KHH:"高雄", RMQ:"台中", CYI:"嘉義", PIF:"屏東", MFK:"馬祖北竿", TNN:"台南", HUN:"花蓮", TTT:"台東", MZG:"澎湖", KNH:"金門", LZN:"馬祖南竿", KYD:"蘭嶼", GNI:"綠島", WOT:"望安", CMJ:"七美",
   NRT:"東京成田", HND:"東京羽田", KIX:"大阪關西", ITM:"大阪伊丹", NGO:"名古屋", FUK:"福岡", CTS:"札幌新千歲", OKA:"沖繩那霸",
   KOJ:"鹿兒島", HIJ:"廣島", KMJ:"熊本", TAK:"高松", OKJ:"岡山", KMQ:"小松", SDJ:"仙台", AXT:"秋田", AOJ:"青森", HKD:"函館",
   ICN:"首爾仁川", GMP:"首爾金浦", PUS:"釜山", CJU:"濟州", TAE:"大邱", KWJ:"光州", MWX:"務安",
@@ -1332,6 +1426,22 @@ function topKey(o){
    chips / 篩選器
    ========================================================= */
 function pickerItems(kind){
+  if(kind === "gspeer"){
+    // 每個航點底下有幾個不同班號 —— 數字直接就是「這個航點有幾支航班號」
+    var pm = {};
+    GS.rows.forEach(function(r){
+      var dep = String(r.DepartureAirportID || "").toUpperCase();
+      var arr = String(r.ArrivalAirportID || "").toUpperCase();
+      var d = TW_APTS[dep] ? "D" : (TW_APTS[arr] ? "A" : "");
+      var peer = d === "D" ? arr : dep;
+      if(!peer) return;
+      if(!pm[peer]) pm[peer] = {};
+      pm[peer][gsFlightNo(r.FlightNumber, GS.airline)] = 1;
+    });
+    return Object.keys(pm).sort().map(function(k){
+      return { code:k, label:k, name:aptName(k) || "", n:Object.keys(pm[k]).length };
+    });
+  }
   if(kind === "apt"){
     var m = {};
     DB.flights.forEach(function(f){ var k = f.station || ""; m[k] = (m[k] || 0) + 1; });
@@ -1368,9 +1478,10 @@ function renderPicker(container, store, kind, title, cb){
   });
 
   var label;
-  if(!picked.length) label = "全部 " + list.length + (kind === "apt" ? " 個場站" : " 家");
+  var unit = kind === "apt" ? " 個場站" : (kind === "gspeer" ? " 個航點" : " 家");
+  if(!picked.length) label = "全部 " + list.length + unit;
   else if(picked.length <= 5) label = "已選 " + picked.join("、");
-  else label = "已選 " + picked.length + (kind === "apt" ? " 個場站" : " 家");
+  else label = "已選 " + picked.length + unit;
 
   var items = shown.map(function(a){
     return '<label class="alrow' + (store[a.code] ? " on" : "") + '">' +
@@ -1483,7 +1594,7 @@ function loadFlightDB(){ try{ var x=JSON.parse(localStorage.getItem("flightBoard
 
 /* 資料量大時，全部分頁一起重繪會明顯卡頓；只畫目前看得到的那一頁，
    其他頁標記為待重繪，切過去時才畫。 */
-var tabDirty = { board:true, airline:true, sched:true };
+var tabDirty = { board:true, airline:true, sched:true, otd:true };
 var activeTab = "tdx";
 
 function renderActiveTab(){
@@ -1493,7 +1604,10 @@ function renderActiveTab(){
     tabDirty.airline = false; renderAlChips(); renderAirlines();
   }else if(activeTab === "sched" && tabDirty.sched){
     tabDirty.sched = false; renderSchedChips(); renderSched();
+  }else if(activeTab === "otd" && tabDirty.otd){
+    tabDirty.otd = false; renderOtdChips(); renderOtd();
   }
+  if(activeTab === "sched") gsFetch(false);   // 進頁自動載入，6 小時內用快取
 }
 
 function refreshAll(){
@@ -1505,8 +1619,350 @@ function refreshAll(){
   $("stDays").textContent = Object.keys(dates).length;
   renderDateFilter();
   renderBatches();
-  tabDirty.board = tabDirty.airline = tabDirty.sched = true;
+  tabDirty.board = tabDirty.airline = tabDirty.sched = tabDirty.otd = true;
   renderActiveTab();
+}
+
+/* =========================================================
+   準點分析
+   ========================================================= */
+function odDelay(f, base){
+  var ref = (base === "act") ? f.act : (f.act || f.est);
+  if(!ref || !f.sched) return null;
+  var a = toMin(ref), s = toMin(f.sched);
+  if(a == null || s == null) return null;
+  var d = a - s;
+  if(d > 720) d -= 1440;
+  if(d < -720) d += 1440;
+  return d;
+}
+function ymList(){
+  var m = {};
+  DB.flights.forEach(function(f){ if(f.date) m[f.date.slice(0,7)] = 1; });
+  return Object.keys(m).sort();
+}
+function prevYm(ym){
+  var y = parseInt(ym.slice(0,4),10), mo = parseInt(ym.slice(5,7),10) - 1;
+  if(mo < 1){ mo = 12; y--; }
+  return y + "-" + pad2(mo);
+}
+function ymLabel(ym){ return ym.slice(0,4) + " 年 " + parseInt(ym.slice(5,7),10) + " 月"; }
+function kpiRaw(cls, label, html){ return '<div class="kpi ' + cls + '"><u>' + esc(label) + "</u><b>" + html + "</b></div>"; }
+function fmtPct(v){ return v == null ? "—" : (Math.round(v*10)/10) + "%"; }
+function fmtMin(v){ return v == null ? "—" : (v > 0 ? "+" : "") + (Math.round(v*10)/10) + " 分"; }
+
+function otdRows(ym){
+  var selA = selectedCodes(otdAirlines), selS = selectedCodes(otdApts), dir = $("oDir").value;
+  return DB.flights.filter(function(f){
+    if(!f.date || f.date.slice(0,7) !== ym) return false;
+    if(selA.length && selA.indexOf(f.airline) < 0) return false;
+    if(selS.length && selS.indexOf(f.station || "") < 0) return false;
+    if(dir !== "all" && f.dir !== dir) return false;
+    return true;
+  });
+}
+function otdStats(rows, thr, base){
+  var s = { n:rows.length, meas:0, ontime:0, l15:0, l30:0, l60:0, early:0, cx:0, sum:0, max:null };
+  rows.forEach(function(f){
+    if(f.cancelled){ s.cx++; return; }
+    var d = odDelay(f, base);
+    if(d == null) return;
+    s.meas++; s.sum += d;
+    if(d <= thr) s.ontime++;
+    if(d > 15) s.l15++;
+    if(d > 30) s.l30++;
+    if(d > 60) s.l60++;
+    if(d < -15) s.early++;
+    if(s.max == null || d > s.max) s.max = d;
+  });
+  s.rate = s.meas ? s.ontime / s.meas * 100 : null;
+  s.avg = s.meas ? s.sum / s.meas : null;
+  return s;
+}
+function deltaHtml(cur, prev, kind){
+  if(cur == null || prev == null) return "";
+  var d = cur - prev;
+  if(Math.abs(d) < 0.05) return '<span class="delta flat">持平</span>';
+  var good = kind === "rate" ? (d > 0) : (d < 0);
+  var txt = (d > 0 ? "▲" : "▼") + (Math.round(Math.abs(d)*10)/10) + (kind === "rate" ? " pp" : " 分");
+  return '<span class="delta ' + (good ? "up" : "down") + '">' + txt + "</span>";
+}
+
+/* 班次柱 ＋ 準點率折線（左軸 %）＋ 平均延誤折線（右軸 分） */
+function comboChart(labels, bars, rate, delay){
+  var W = 760, H = 250, L = 44, R = 52, T = 14, B = 34;
+  var iw = W - L - R, ih = H - T - B;
+  var n = labels.length;
+  if(!n) return "";
+  var step = iw / n, bw = Math.max(2, step * 0.6);
+  var bmax = Math.max.apply(null, bars.concat([1]));
+  var dvals = delay.filter(function(v){ return v != null; });
+  var dmax = dvals.length ? Math.max.apply(null, dvals.concat([10])) : 10;
+  var dmin = dvals.length ? Math.min.apply(null, dvals.concat([0])) : 0;
+  dmax = Math.ceil(dmax/10)*10; dmin = Math.floor(Math.min(dmin,0)/10)*10;
+  var dspan = (dmax - dmin) || 10;
+  var o = '<svg class="chart" viewBox="0 0 ' + W + " " + H + '" xmlns="http://www.w3.org/2000/svg">';
+  [0,25,50,75,100].forEach(function(p){
+    var y = T + ih - ih*p/100;
+    o += '<line x1="' + L + '" y1="' + y.toFixed(1) + '" x2="' + (W-R) + '" y2="' + y.toFixed(1) + '" stroke="#28455f" stroke-width="1"/>';
+    o += '<text x="' + (L-8) + '" y="' + (y+4).toFixed(1) + '" fill="#8fa9c2" font-size="11" text-anchor="end">' + p + '%</text>';
+    var dv = dmin + dspan*p/100;
+    o += '<text x="' + (W-R+8) + '" y="' + (y+4).toFixed(1) + '" fill="#5ad1e6" font-size="11">' + Math.round(dv) + "</text>";
+  });
+  o += '<text x="' + (W-R+8) + '" y="' + (T-2) + '" fill="#5ad1e6" font-size="10">分</text>';
+  bars.forEach(function(v,i){
+    var h = ih * 0.55 * (v/bmax);
+    var x = L + step*i + (step-bw)/2;
+    o += '<rect x="' + x.toFixed(1) + '" y="' + (T+ih-h).toFixed(1) + '" width="' + bw.toFixed(1) +
+         '" height="' + Math.max(0,h).toFixed(1) + '" fill="#2f5f7d" opacity=".7"><title>' +
+         esc(labels[i]) + "：" + v + " 班</title></rect>";
+  });
+  function series(vals, toY, color){
+    var pts = [], out = "";
+    vals.forEach(function(v,i){
+      if(v == null) return;
+      pts.push([L + step*i + step/2, toY(v), i, v]);
+    });
+    for(var k=1;k<pts.length;k++){
+      if(pts[k][2] - pts[k-1][2] > 1) continue;
+      out += '<line x1="' + pts[k-1][0].toFixed(1) + '" y1="' + pts[k-1][1].toFixed(1) + '" x2="' + pts[k][0].toFixed(1) +
+             '" y2="' + pts[k][1].toFixed(1) + '" stroke="' + color + '" stroke-width="2"/>';
+    }
+    pts.forEach(function(p){
+      out += '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="2.6" fill="' + color + '"><title>' +
+        esc(labels[p[2]]) + "：" + (Math.round(p[3]*10)/10) + "</title></circle>";
+    });
+    return out;
+  }
+  o += series(delay, function(v){ return T + ih - ih*(v-dmin)/dspan; }, "#5ad1e6");
+  o += series(rate, function(v){ return T + ih - ih*v/100; }, "#ffb02e");
+  var every = Math.max(1, Math.ceil(n/16));
+  labels.forEach(function(lb,i){
+    if(i % every) return;
+    o += '<text x="' + (L+step*i+step/2).toFixed(1) + '" y="' + (H-12) + '" fill="#8fa9c2" font-size="10.5" text-anchor="middle">' + esc(lb) + "</text>";
+  });
+  o += '<line x1="' + L + '" y1="' + (T+ih) + '" x2="' + (W-R) + '" y2="' + (T+ih) + '" stroke="#35597a" stroke-width="1"/>';
+  o += "</svg>";
+  return o;
+}
+var OTD_LEGEND = '<div class="legend"><span><i style="background:#2f5f7d"></i>班次（相對高度）</span>' +
+  '<span><i style="background:var(--amber)"></i>準點率（左軸）</span>' +
+  '<span><i style="background:var(--cyan)"></i>平均延誤分鐘（右軸）</span></div>';
+
+function renderOtdMonths(){
+  var list = ymList();
+  var sel = $("oMonth"), cur = sel.value;
+  sel.innerHTML = list.map(function(m){ return '<option value="' + m + '">' + ymLabel(m) + "</option>"; }).join("");
+  if(list.indexOf(cur) >= 0) sel.value = cur;
+  else if(list.length) sel.value = list[list.length-1];
+  return list;
+}
+function renderOtdChips(){
+  renderPicker($("oApts"), otdApts, "apt", "場站篩選", renderOtd);
+  renderPicker($("oAirlines"), otdAirlines, "al", "航空公司篩選", renderOtd);
+}
+
+function renderOtd(){
+  var box = $("oBody");
+  if(!DB.flights.length){ box.innerHTML = '<div class="empty">尚未有資料。先到「TDX 桃園機場」抓取，或到「資料匯入」貼一份航班資料。</div>'; return; }
+  var months = renderOtdMonths();
+  if(!months.length){ box.innerHTML = '<div class="empty">資料裡沒有日期，無法做月度分析。</div>'; return; }
+
+  var ym = $("oMonth").value || months[months.length-1];
+  var thr = parseInt($("oThr").value,10);
+  var base = $("oBase").value;
+  var minN = parseInt($("oMin").value,10);
+
+  var rows = otdRows(ym);
+  var st = otdStats(rows, thr, base);
+  var pym = prevYm(ym);
+  var hasPrev = months.indexOf(pym) >= 0;
+  var pst = hasPrev ? otdStats(otdRows(pym), thr, base) : null;
+
+  if(!rows.length){
+    box.innerHTML = '<div class="empty">' + ymLabel(ym) + " 在目前條件下沒有航班。</div>";
+    return;
+  }
+
+  var html = "";
+  html += '<div class="kpis">' +
+    kpi("", "航班筆數", rows.length) +
+    kpi("", "可計算筆數", st.meas) +
+    kpiRaw("g", "準點率", fmtPct(st.rate) + (pst ? deltaHtml(st.rate, pst.rate, "rate") : "")) +
+    kpiRaw("c", "平均誤差", fmtMin(st.avg) + (pst ? deltaHtml(st.avg, pst.avg, "min") : "")) +
+    kpi("r", "延誤 >15／>30／>60", st.l15 + " ／ " + st.l30 + " ／ " + st.l60) +
+    kpi("r", "取消", st.cx) + "</div>";
+
+  if(pst){
+    html += '<div class="callout">對比 ' + ymLabel(pym) + "：準點率 " + fmtPct(pst.rate) + " → <b>" + fmtPct(st.rate) +
+      "</b>，平均誤差 " + fmtMin(pst.avg) + " → <b>" + fmtMin(st.avg) + "</b>，可計算筆數 " + pst.meas + " → " + st.meas + "。</div>";
+  } else {
+    html += '<div class="msg info">資料庫裡沒有 ' + ymLabel(pym) + " 的紀錄，無法做上月對比。每天抓取累積後，下個月就能比。</div>";
+  }
+  if(st.meas < rows.length * 0.5){
+    html += '<div class="msg info">' + rows.length + " 筆裡只有 " + st.meas +
+      " 筆有實際時間可比對。剛抓進來、還沒起降的航班本來就沒有實際時間；若想把預估時間也納入，把「計算基準」改成實際優先。</div>";
+  }
+
+  // ---- 每日趨勢 ----
+  var byDay = {};
+  rows.forEach(function(f){
+    var d = f.date;
+    if(!byDay[d]) byDay[d] = [];
+    byDay[d].push(f);
+  });
+  var days = Object.keys(byDay).sort();
+  var dLabels = days.map(function(d){ return String(parseInt(d.slice(8,10),10)); });
+  var dBars = [], dRate = [], dAvg = [], dStats = [];
+  days.forEach(function(d){
+    var s = otdStats(byDay[d], thr, base);
+    dStats.push({ date:d, s:s });
+    dBars.push(byDay[d].length);
+    dRate.push(s.rate);
+    dAvg.push(s.avg);
+  });
+  html += "<h3>每日準點率與延誤趨勢</h3>" + comboChart(dLabels, dBars, dRate, dAvg) + OTD_LEGEND;
+
+  var rated = dStats.filter(function(x){ return x.s.rate != null && x.s.meas >= 3; });
+  if(rated.length >= 2){
+    var best = rated.slice().sort(function(a,b){ return b.s.rate - a.s.rate; })[0];
+    var worst = rated.slice().sort(function(a,b){ return a.s.rate - b.s.rate; })[0];
+    var half = Math.floor(rated.length/2);
+    var f1 = rated.slice(0,half), f2 = rated.slice(half);
+    function avgRate(a){ return a.reduce(function(x,y){ return x + y.s.rate; },0) / (a.length||1); }
+    var trend = avgRate(f2) - avgRate(f1);
+    html += '<div class="callout">最好的一天是 <b>' + best.date + "</b>（" + fmtPct(best.s.rate) + "、" + best.s.meas +
+      " 班），最差是 <b>" + worst.date + "</b>（" + fmtPct(worst.s.rate) + "、平均 " + fmtMin(worst.s.avg) + "）。" +
+      "月中之後" + (trend > 1 ? "準點率回升約 " + Math.round(trend) + " pp" : (trend < -1 ? "準點率下滑約 " + Math.round(Math.abs(trend)) + " pp" : "大致持平")) + "。</div>";
+  }
+  html += "<details><summary>展開每日明細</summary>" +
+    '<div class="tbox" style="max-height:340px"><table><thead><tr><th>日期</th><th>星期</th><th>班次</th><th>可計算</th><th>準點率</th><th>平均誤差</th><th>延誤 &gt;15</th><th>最大延誤</th><th>取消</th></tr></thead><tbody>' +
+    dStats.map(function(x){
+      var w = dowOf(x.date);
+      return '<tr><td class="mono">' + x.date + "</td><td>" + (w == null ? "—" : DOW[w]) +
+        '</td><td class="num mono">' + x.s.n + '</td><td class="num mono">' + x.s.meas +
+        '</td><td class="num mono">' + fmtPct(x.s.rate) + '</td><td class="num mono">' + fmtMin(x.s.avg) +
+        '</td><td class="num mono">' + x.s.l15 + '</td><td class="num mono">' + (x.s.max == null ? "—" : x.s.max + " 分") +
+        '</td><td class="num mono">' + x.s.cx + "</td></tr>";
+    }).join("") + "</tbody></table></div></details>";
+
+  // ---- 時段 ----
+  var byHour = [];
+  for(var h=0; h<24; h++) byHour.push([]);
+  rows.forEach(function(f){
+    if(!f.sched) return;
+    var hh = parseInt(f.sched.slice(0,2),10);
+    if(isNaN(hh) || hh < 0 || hh > 23) return;
+    byHour[hh].push(f);
+  });
+  var hLabels = [], hBars = [], hRate = [], hAvg = [], hStats = [];
+  byHour.forEach(function(list, i){
+    var s = otdStats(list, thr, base);
+    hStats.push({ h:i, s:s });
+    hLabels.push(String(i));
+    hBars.push(list.length);
+    hRate.push(s.rate);
+    hAvg.push(s.avg);
+  });
+  html += "<h3>各時段準點表現（依排定時間分時）</h3>" + comboChart(hLabels, hBars, hRate, hAvg) + OTD_LEGEND;
+
+  var hRanked = hStats.filter(function(x){ return x.s.meas >= 3; });
+  if(hRanked.length){
+    var worstH = hRanked.slice().sort(function(a,b){ return (a.s.rate - b.s.rate) || (b.s.avg - a.s.avg); }).slice(0,3);
+    var bestH = hRanked.slice().sort(function(a,b){ return (b.s.rate - a.s.rate) || (a.s.avg - b.s.avg); })[0];
+    html += '<div class="callout">最容易延誤的時段：' + worstH.map(function(x){
+        return "<b>" + pad2(x.h) + ":00–" + pad2(x.h) + ":59</b>（準點 " + fmtPct(x.s.rate) + "、平均 " + fmtMin(x.s.avg) + "、" + x.s.meas + " 班）";
+      }).join("；") + "。表現最好的是 <b>" + pad2(bestH.h) + ":00</b> 時段（" + fmtPct(bestH.s.rate) + "）。" +
+      "只計入該時段至少 3 班可比對的資料。</div>";
+    var worstSet = {}; worstH.forEach(function(x){ worstSet[x.h] = 1; });
+    html += '<div class="tbox" style="max-height:340px"><table><thead><tr><th>時段</th><th>班次</th><th>可計算</th><th>準點率</th><th>平均誤差</th><th>延誤 &gt;15</th><th>延誤 &gt;30</th><th>最大延誤</th></tr></thead><tbody>' +
+      hStats.filter(function(x){ return x.s.n > 0; }).map(function(x){
+        return '<tr class="' + (worstSet[x.h] ? "hot" : "") + '"><td class="mono">' + pad2(x.h) + ":00–" + pad2(x.h) + ':59</td><td class="num mono">' + x.s.n +
+          '</td><td class="num mono">' + x.s.meas + '</td><td class="num mono">' + fmtPct(x.s.rate) +
+          '</td><td class="num mono">' + fmtMin(x.s.avg) + '</td><td class="num mono">' + x.s.l15 +
+          '</td><td class="num mono">' + x.s.l30 + '</td><td class="num mono">' + (x.s.max == null ? "—" : x.s.max + " 分") + "</td></tr>";
+      }).join("") + "</tbody></table></div>";
+  }
+
+  // ---- 航空公司 ----
+  var byAl = {};
+  rows.forEach(function(f){ (byAl[f.airline] = byAl[f.airline] || []).push(f); });
+  var alKeys = Object.keys(byAl);
+  if(alKeys.length > 1){
+    var alRows = alKeys.map(function(k){ return { code:k, s:otdStats(byAl[k], thr, base) }; })
+      .sort(function(a,b){ return (b.s.rate == null ? -1 : b.s.rate) - (a.s.rate == null ? -1 : a.s.rate); });
+    html += "<h3>各航空公司（" + ymLabel(ym) + "）</h3>" +
+      '<div class="tbox" style="max-height:340px"><table><thead><tr><th>航空公司</th><th>班次</th><th>可計算</th><th>準點率</th><th>平均誤差</th><th>延誤 &gt;15</th><th>取消</th></tr></thead><tbody>' +
+      alRows.map(function(x){
+        return '<tr><td class="al">' + esc(x.code) + ' <span class="note">' + esc(alName(x.code)) + '</span></td><td class="num mono">' + x.s.n +
+          '</td><td class="num mono">' + x.s.meas + '</td><td class="num mono">' + fmtPct(x.s.rate) +
+          '</td><td class="num mono">' + fmtMin(x.s.avg) + '</td><td class="num mono">' + x.s.l15 +
+          '</td><td class="num mono">' + x.s.cx + "</td></tr>";
+      }).join("") + "</tbody></table></div>";
+  }
+
+  // ---- 各航班 ----
+  var byFl = {};
+  rows.forEach(function(f){
+    var k = f.dir + "|" + f.flightNo;
+    if(!byFl[k]) byFl[k] = { flightNo:f.flightNo, airline:f.airline, dir:f.dir, station:f.station || "—", peers:{}, times:{}, list:[] };
+    byFl[k].list.push(f);
+    if(f.peer) byFl[k].peers[f.peer] = 1;
+    if(f.sched) byFl[k].times[f.sched] = (byFl[k].times[f.sched] || 0) + 1;
+  });
+  var flRows = Object.keys(byFl).map(function(k){
+    var g = byFl[k], s = otdStats(g.list, thr, base);
+    return { flight:g.flightNo, airline:g.airline, dir:g.dir, station:g.station,
+             peer:Object.keys(g.peers).sort().join(" ") || "—", sched:topKey(g.times) || "—",
+             n:s.n, meas:s.meas, rate:s.rate, avg:s.avg, l15:s.l15, max:s.max, cx:s.cx };
+  }).filter(function(r){ return r.meas >= minN; });
+
+  html += "<h3>各航班準點表現</h3>";
+  if(!flRows.length){
+    html += '<div class="empty">沒有航班達到「至少 ' + minN + " 班可比對」的門檻。把門檻調低，或再多累積幾天資料。</div>";
+  } else {
+    var k2 = otdSort.key, dr2 = otdSort.dir;
+    flRows.sort(function(a,b){
+      var va = a[k2], vb = b[k2];
+      if(va == null) va = -99999; if(vb == null) vb = -99999;
+      if(va < vb) return -1*dr2;
+      if(va > vb) return 1*dr2;
+      return 0;
+    });
+    var head = [["flight","航班"],["airline","航空"],["dir","方向"],["station","場站"],["peer","航點"],
+                ["sched","排定"],["n","班次"],["meas","可計算"],["rate","準點率"],["avg","平均誤差"],
+                ["l15","延誤 >15"],["max","最大延誤"],["cx","取消"]];
+    html += '<div class="tbox"><table id="otdFlightTable"><thead><tr>' + head.map(function(h){
+      return '<th data-otd="' + h[0] + '" tabindex="0" class="' + (otdSort.key === h[0] ? "sorted" : "") + '">' + h[1] +
+        (otdSort.key === h[0] ? (otdSort.dir > 0 ? " ↑" : " ↓") : "") + "</th>";
+    }).join("") + "</tr></thead><tbody>" +
+    flRows.map(function(r){
+      var cls = r.rate == null ? "" : (r.rate < 60 ? "hot" : "");
+      return '<tr class="' + cls + '"><td class="mono" style="color:var(--amber);font-weight:600">' + esc(r.flight) +
+        '</td><td class="al">' + esc(r.airline) + '</td><td><span class="tag ' + r.dir + '">' + (r.dir === "A" ? "到場" : "離場") +
+        "</span></td><td>" + esc(r.station) + "</td><td>" + esc(r.peer) +
+        (aptName(r.peer) ? ' <span class="note">' + esc(aptName(r.peer)) + "</span>" : "") +
+        '</td><td class="mono">' + esc(r.sched) + '</td><td class="num mono">' + r.n +
+        '</td><td class="num mono">' + r.meas + '</td><td class="num mono" style="font-weight:700">' + fmtPct(r.rate) +
+        '</td><td class="num mono">' + fmtMin(r.avg) + '</td><td class="num mono">' + r.l15 +
+        '</td><td class="num mono">' + (r.max == null ? "—" : r.max + " 分") + '</td><td class="num mono">' + r.cx + "</td></tr>";
+    }).join("") + "</tbody></table></div>";
+    html += '<p class="note" style="margin-top:8px">共 ' + flRows.length + " 支航班達門檻；準點率低於 60% 的列以紅底標示。</p>";
+  }
+
+  box.innerHTML = html;
+
+  var ths = box.querySelectorAll("th[data-otd]");
+  for(var i=0;i<ths.length;i++){
+    ths[i].addEventListener("click", onOtdSort);
+    ths[i].addEventListener("keydown", function(e){ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); onOtdSort.call(this); } });
+  }
+}
+function onOtdSort(){
+  var k = this.getAttribute("data-otd");
+  if(otdSort.key === k) otdSort.dir *= -1;
+  else { otdSort.key = k; otdSort.dir = (k === "rate" || k === "flight" || k === "peer" || k === "sched") ? 1 : -1; }
+  renderOtd();
 }
 
 /* =========================================================
@@ -1518,7 +1974,7 @@ function switchTab(name){
     var on = btns[i].getAttribute("data-tab") === name;
     btns[i].setAttribute("aria-selected", on ? "true" : "false");
   }
-  ["tdx","import","board","airline","sched","help"].forEach(function(t){
+  ["tdx","import","board","airline","sched","otd","help"].forEach(function(t){
     $("tab-" + t).hidden = (t !== name);
   });
   activeTab = name;
@@ -1695,8 +2151,8 @@ async function tdxToken(){
 var TDX_PAGES = [1000, 300, 100];  // 每頁筆數，由大而小；頁數愈少，請求次數愈少
 var TDX_MAX_PAGES = 40;
 
-async function tdxGetPage(token, path, top, skip, what){
-  var url = TDX_BASE + path + "?$format=JSON&$top=" + top + "&$skip=" + skip;
+async function tdxGetPage(token, path, top, skip, what, extra){
+  var url = TDX_BASE + path + "?$format=JSON&$top=" + top + "&$skip=" + skip + (extra ? "&" + extra : "");
   var r = await tdxFetch(url,{
     headers:{
       "Authorization":"Bearer " + token,
@@ -1712,12 +2168,12 @@ async function tdxGetPage(token, path, top, skip, what){
 }
 
 /* TDX 的 $top 預設值只有 30 筆。不分頁抓，就只會拿到 30 筆航班。 */
-async function tdxGetAll(token, path, onProgress, what){
+async function tdxGetAll(token, path, onProgress, what, extra){
   var all = [], pi = 0, skip = 0, lastSig = null;
   for(var i=0;i<TDX_MAX_PAGES;i++){
     var page = TDX_PAGES[pi], j;
     try{
-      j = await tdxGetPage(token, path, page, skip, what);
+      j = await tdxGetPage(token, path, page, skip, what, extra);
     }catch(e){
       // $top 太大被端點拒絕時，換小一級重試；429 已在 tdxFetch 處理過
       if(all.length === 0 && pi < TDX_PAGES.length - 1 && !/429/.test(e.message)){ pi++; i--; continue; }
@@ -1893,6 +2349,307 @@ async function updateTDX(){
   }finally{
     tdxRunning = false;
   }
+}
+
+/* =========================================================
+   定期班表（TDX 航空定期時刻表）
+   FIDS 只有前日／當日／次日，要看未來 7 天的班表得用這支。
+   ========================================================= */
+var TW_APTS = { TPE:1,TSA:1,KHH:1,RMQ:1,CYI:1,TNN:1,HUN:1,TTT:1,MZG:1,KNH:1,LZN:1,MFK:1,PIF:1,KYD:1,GNI:1,WOT:1,CMJ:1 };
+var GS_DOW = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+var GS_DOW_TW = ["日","一","二","三","四","五","六"];
+var GS = { airline:"", fetchedAt:0, rows:[] };
+var gsPeers = {};   // 航點篩選，空的＝全部
+var gsRunning = false;
+
+function gsLoadCache(){
+  try{
+    var j = JSON.parse(localStorage.getItem("gsCache") || "null");
+    if(j && j.rows && j.rows.length) GS = j;
+  }catch(e){}
+}
+function gsSaveCache(){ try{ localStorage.setItem("gsCache", JSON.stringify(GS)); }catch(e){} }
+function gsShow(html, kind){
+  var el = $("gsMsg");
+  if(el) el.innerHTML = html ? '<div class="msg ' + (kind || "ok") + '">' + html + "</div>" : "";
+}
+function gsAddDays(iso, n){
+  var p = iso.split("-");
+  var d = new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10) + n);
+  return d.getFullYear() + "-" + pad2(d.getMonth()+1) + "-" + pad2(d.getDate());
+}
+/* "19:40+1" -> {hhmm:"19:40", plus:1}；定期班表用 +N 表示跨日 */
+function gsTime(t){
+  var raw = String(t == null ? "" : t).trim();
+  var m = /([+-]\d+)\s*$/.exec(raw);
+  return { hhmm: m ? raw.slice(0, m.index).trim() : raw, plus: m ? parseInt(m[1], 10) : 0, raw: raw };
+}
+
+/* "JX0002" -> "JX2"；定期班表的班號本來就含航空公司代碼 */
+function gsFlightNo(raw, al){
+  var fn = String(raw == null ? "" : raw).trim().toUpperCase().replace(/\s+/g, "");
+  if(al && fn.indexOf(al) === 0){
+    var d = fn.slice(al.length).replace(/^0+/, "");
+    return al + (d || "0");
+  }
+  return fn;
+}
+
+async function gsFetch(force){
+  var al = String(($("gsAirline") && $("gsAirline").value) || "JX").trim().toUpperCase();
+  if(!/^[A-Z0-9]{2,3}$/.test(al)){ gsShow("航空公司代碼要是 2～3 碼，例如 JX。", "err"); return; }
+
+  var fresh = GS.airline === al && GS.rows.length && (Date.now() - GS.fetchedAt) < 6*3600*1000;
+  if(!force && fresh){ gsRender(); return; }
+
+  if(gsRunning) return;
+  if(!$("tdxClientId").value.trim() || !$("tdxClientSecret").value.trim()){
+    gsShow("還沒填 TDX Client ID／Secret。到「TDX 桃園機場」頁籤填好之後，這裡就會自動載入。", "err");
+    gsRender();
+    return;
+  }
+
+  gsRunning = true;
+  var st = $("gsStatus");
+  if(st) st.textContent = "載入 " + al + " 定期班表…";
+
+  try{
+    var token = await tdxToken();
+    var filter = "$filter=" + encodeURIComponent("AirlineID eq '" + al + "'");
+    var intl = await tdxGetAll(token, "/Air/GeneralSchedule/International", function(n){
+      if(st) st.textContent = al + " 國際定期班表…" + n + " 筆";
+    }, al + " 國際定期班表", filter);
+
+    var dom = [];
+    try{
+      dom = await tdxGetAll(token, "/Air/GeneralSchedule/Domestic", function(n){
+        if(st) st.textContent = al + " 國內定期班表…" + n + " 筆";
+      }, al + " 國內定期班表", filter);
+    }catch(e){ dom = []; }   // 純國際線的航空公司這支會是空的，失敗不影響主流程
+
+    GS = { airline: al, fetchedAt: Date.now(), rows: intl.concat(dom) };
+    gsSaveCache();
+
+    if(st) st.textContent = al + " 班表已更新｜" + new Date().toLocaleTimeString("zh-TW",{hour12:false});
+    if(!GS.rows.length){
+      gsShow("TDX 沒有回傳 " + al + " 的定期班表資料。確認代碼是否正確，或這家航空公司是否在台灣有定期航線。", "err");
+    }else{
+      gsShow("");
+    }
+    gsRender();
+  }catch(e){
+    if(st) st.textContent = "班表載入失敗";
+    gsShow("定期班表載入失敗：" + e.message, "err");
+    gsRender();
+  }finally{
+    gsRunning = false;
+  }
+}
+
+/* 把定期班表展開成指定起始日之後 N 天的實際班次 */
+function gsExpand(){
+  var days = Number(($("gsDays") && $("gsDays").value) || 7) || 7;
+  var start = ($("gsStart") && $("gsStart").value) || twDate();
+  var dirSel = ($("gsDir") && $("gsDir").value) || "all";
+  var selPeer = selectedCodes(gsPeers);
+  var al = GS.airline;
+
+  var dates = [];
+  for(var i=0;i<days;i++){
+    var iso = gsAddDays(start, i);
+    dates.push({ iso: iso, dow: dowOf(iso) });
+  }
+
+  var map = {}, order = [];
+  GS.rows.forEach(function(r){
+    var dep = String(r.DepartureAirportID || "").toUpperCase();
+    var arr = String(r.ArrivalAirportID || "").toUpperCase();
+    var dir = TW_APTS[dep] ? "D" : (TW_APTS[arr] ? "A" : "");
+    if(dirSel !== "all" && dir !== dirSel) return;
+
+    var peer = dir === "D" ? arr : dep;
+    if(selPeer.length && selPeer.indexOf(peer) < 0) return;
+
+    var sd = String(r.ScheduleStartDate || "").slice(0,10);
+    var ed = String(r.ScheduleEndDate || "").slice(0,10);
+
+    var on = dates.map(function(dt){
+      if(dt.dow == null) return false;
+      if(sd && dt.iso < sd) return false;
+      if(ed && dt.iso > ed) return false;
+      return !!r[GS_DOW[dt.dow]];
+    });
+    if(on.indexOf(true) < 0) return;
+
+    var fn = gsFlightNo(r.FlightNumber, al);
+    var dt = gsTime(r.DepartureTime), at = gsTime(r.ArrivalTime);
+
+    // 班表的星期是以「起點機場出發日」為準。抵台航班若跨日抵達，
+    // 對場站來說實際落地是隔天，這裡把打勾往後推，欄位一律代表台灣端的日期。
+    var shift = dir === "A" ? Math.max(0, at.plus) : 0;
+    if(shift){
+      var moved = on.map(function(){ return false; });
+      for(var q=0;q<on.length;q++) if(on[q] && q + shift < moved.length) moved[q + shift] = true;
+      on = moved;
+      if(on.indexOf(true) < 0) return;
+    }
+
+    var key = fn + "|" + dep + "|" + arr + "|" + dt.raw;
+    var g = map[key];
+    if(!g){
+      g = map[key] = {
+        flightNo: fn, dep: dep, arr: arr, dir: dir, peer: peer,
+        depTime: dt.raw, arrTime: at.raw,
+        twTime: dir === "A" ? (at.hhmm || "99:99") : (dt.hhmm || "99:99"),
+        terminal: r.Terminal || "", on: on.slice(), total: 0
+      };
+      order.push(g);
+    }else{
+      for(var k=0;k<on.length;k++) if(on[k]) g.on[k] = true;   // 同班號跨兩個班表期間時合併
+    }
+  });
+
+  order.forEach(function(g){
+    g.total = g.on.filter(Boolean).length;
+  });
+  // 用台灣端的時間排序，整張表才讀得像一天的場站時間軸
+  order.sort(function(a,b){
+    var ta = a.twTime || "99:99", tb = b.twTime || "99:99";
+    if(ta !== tb) return ta < tb ? -1 : 1;
+    return a.flightNo < b.flightNo ? -1 : 1;
+  });
+
+  return { dates: dates, rows: order };
+}
+
+function gsRender(){
+  var body = $("gsBody");
+  if(!body) return;
+
+  if(!GS.rows.length){
+    $("gsKpis").innerHTML = "";
+    if($("gsPeers")) $("gsPeers").innerHTML = "";
+    body.innerHTML = '<div class="empty">尚未載入定期班表。填好 TDX 憑證後按「重新載入班表」。</div>';
+    return;
+  }
+
+  renderPicker($("gsPeers"), gsPeers, "gspeer", "航點篩選（數字＝該航點有幾支航班號）", gsRender);
+
+  var ex = gsExpand();
+  var dates = ex.dates, rows = ex.rows;
+
+  if(!rows.length){
+    $("gsKpis").innerHTML = "";
+    body.innerHTML = '<div class="empty">這個區間、方向與航點條件下，' + esc(GS.airline) + " 沒有定期班次。</div>";
+    return;
+  }
+
+  var totalLegs = 0, peers = {}, perDay = dates.map(function(){ return 0; });
+  rows.forEach(function(g){
+    totalLegs += g.total;
+    peers[g.dir === "D" ? g.arr : g.dep] = 1;
+    g.on.forEach(function(v,i){ if(v) perDay[i]++; });
+  });
+
+  var span = "";
+  var sds = [], eds = [];
+  GS.rows.forEach(function(r){
+    var a = String(r.ScheduleStartDate || "").slice(0,10), b = String(r.ScheduleEndDate || "").slice(0,10);
+    if(a) sds.push(a); if(b) eds.push(b);
+  });
+  if(sds.length && eds.length){
+    sds.sort(); eds.sort();
+    span = sds[0] + " ～ " + eds[eds.length-1];
+  }
+
+  var byPeer = {};
+  rows.forEach(function(g){
+    var pk = g.peer || "—";
+    var e = byPeer[pk];
+    if(!e){
+      e = byPeer[pk] = { peer:pk, nos:{}, D:0, A:0, total:0, on:dates.map(function(){ return 0; }),
+                         first:"99:99", last:"" };
+    }
+    e.nos[g.flightNo] = 1;
+    e[g.dir === "A" ? "A" : "D"] += g.total;
+    e.total += g.total;
+    g.on.forEach(function(v,i){ if(v) e.on[i]++; });
+    if(g.twTime && g.twTime < e.first) e.first = g.twTime;
+    if(g.twTime && g.twTime !== "99:99" && g.twTime > e.last) e.last = g.twTime;
+  });
+  var peerList = Object.keys(byPeer).map(function(k){ return byPeer[k]; });
+  peerList.sort(function(a,b){
+    var na = Object.keys(a.nos).length, nb = Object.keys(b.nos).length;
+    if(na !== nb) return nb - na;
+    return b.total - a.total;
+  });
+
+  $("gsKpis").innerHTML =
+    kpi("", "航班號", rows.length) +
+    kpi("c", dates.length + " 天總班次", totalLegs) +
+    kpi("g", "每日平均", (totalLegs / dates.length).toFixed(1)) +
+    kpi("", "航點數", Object.keys(peers).length);
+
+  var dayHead = dates.map(function(d,i){
+    var we = d.dow === 0 || d.dow === 6;
+    return '<th class="gsday' + (we ? " we" : "") + '">' + d.iso.slice(5).replace("-","/") +
+      '<br><span class="note">' + GS_DOW_TW[d.dow] + "（" + perDay[i] + "）</span></th>";
+  }).join("");
+
+  var groupBy = ($("gsGroup") && $("gsGroup").value) || "flight";
+  var head, tb;
+
+  if(groupBy === "peer"){
+    head = "<thead><tr><th>航點</th><th>航班號數</th><th>航班號</th><th>離台</th><th>抵台</th>" +
+      dayHead + "<th>" + dates.length + " 天班次</th></tr></thead>";
+    tb = peerList.map(function(e){
+      var nos = Object.keys(e.nos).sort();
+      return "<tr>" +
+        '<td class="mono" style="color:var(--amber);font-weight:600">' + esc(e.peer) +
+          (aptName(e.peer) ? ' <span class="note">' + esc(aptName(e.peer)) + "</span>" : "") + "</td>" +
+        '<td class="mono" style="font-weight:700">' + nos.length + "</td>" +
+        '<td class="mono">' + esc(nos.join("、")) + "</td>" +
+        '<td class="mono">' + e.D + "</td>" +
+        '<td class="mono">' + e.A + "</td>" +
+        e.on.map(function(n){
+          return '<td class="gsday ' + (n ? "gs-on" : "gs-off") + '">' + (n || "·") + "</td>";
+        }).join("") +
+        '<td class="mono">' + e.total + "</td></tr>";
+    }).join("");
+
+    body.innerHTML = '<div class="tbox" style="margin-top:12px"><table>' + head + "<tbody>" + tb + "</tbody></table></div>" +
+      '<p class="note" style="margin-top:8px">依航點彙整，預設按航班號數由多到少排。' +
+      "日期欄裡的數字是當天飛這個航點的班次數（含來回），日期一律是台灣端的日期。" +
+      "想看某個航點的細節，就在上面的航點篩選勾起來，再把「彙整」切回<b>依航班號</b>。" +
+      (span ? "<br>班表有效期間：" + esc(span) : "") + "</p>";
+    return;
+  }
+
+  head = "<thead><tr><th>方向</th><th>班號</th><th>航線</th><th>出發</th><th>抵達</th><th>航廈</th>" +
+    dayHead + "<th>班次</th></tr></thead>";
+
+  tb = rows.map(function(g){
+    var route = g.dir === "D"
+      ? esc(g.dep) + " → " + esc(g.arr) + (aptName(g.arr) ? ' <span class="note">' + esc(aptName(g.arr)) + "</span>" : "")
+      : esc(g.dep) + (aptName(g.dep) ? ' <span class="note">' + esc(aptName(g.dep)) + "</span>" : "") + " → " + esc(g.arr);
+    return "<tr>" +
+      '<td><span class="tag ' + (g.dir === "A" ? "A" : "D") + '">' + (g.dir === "A" ? "抵台" : "離台") + "</span></td>" +
+      '<td class="mono" style="color:var(--amber);font-weight:600">' + esc(g.flightNo) + "</td>" +
+      "<td>" + route + "</td>" +
+      '<td class="mono">' + esc(g.depTime || "—") + "</td>" +
+      '<td class="mono">' + esc(g.arrTime || "—") + "</td>" +
+      "<td>" + esc(g.terminal || "—") + "</td>" +
+      g.on.map(function(v){
+        return '<td class="gsday ' + (v ? "gs-on" : "gs-off") + '">' + (v ? "●" : "·") + "</td>";
+      }).join("") +
+      '<td class="mono">' + g.total + "</td></tr>";
+  }).join("");
+
+  body.innerHTML = '<div class="tbox" style="margin-top:12px"><table>' + head + "<tbody>" + tb + "</tbody></table></div>" +
+    '<p class="note" style="margin-top:8px">● 表示該日有班；日期欄位一律是<b>台灣端的日期</b>。' +
+    "出發與抵達時間都是當地時間，<code>+1</code> 代表跨日；抵台航班若跨日落地，打勾已經往後推一天。" +
+    "資料為航空公司公告的定期班表，臨時加班、包機或當日取消不會反映在這裡。" +
+    (span ? "<br>班表有效期間：" + esc(span) : "") + "</p>";
 }
 
 function startTDXAuto(){
@@ -2190,6 +2947,7 @@ function shift(hhmm, mins){
   ["fDir","fDate","fStatus"].forEach(function(id){ $(id).addEventListener("change", renderBoard); });
   $("fSearch").addEventListener("input", renderBoard);
   ["sDir","sGroup","sSort"].forEach(function(id){ $(id).addEventListener("change", renderSched); });
+  ["oMonth","oDir","oThr","oBase","oMin"].forEach(function(id){ $(id).addEventListener("change", renderOtd); });
   loadFlightDB();
   var t = new Date();
   $("defDate").placeholder = t.getFullYear() + "-" + pad2(t.getMonth()+1) + "-" + pad2(t.getDate());
@@ -2211,6 +2969,18 @@ function shift(hhmm, mins){
     }
   }catch(e){}
   renderTdxApts();
+
+  gsLoadCache();
+  if($("gsStart") && !$("gsStart").value) $("gsStart").value = twDate();
+  if($("gsAirline")) $("gsAirline").value = localStorage.getItem("gsAirline") || "JX";
+  if($("btnGsLoad")) $("btnGsLoad").addEventListener("click", function(){ gsFetch(true); });
+  ["gsDays","gsDir","gsStart","gsGroup"].forEach(function(id){
+    if($(id)) $(id).addEventListener("change", gsRender);
+  });
+  if($("gsAirline")) $("gsAirline").addEventListener("change", function(){
+    try{ localStorage.setItem("gsAirline", this.value.trim().toUpperCase()); }catch(e){}
+    gsFetch(true);
+  });
   switchTab("tdx");
   refreshAll();
 })();
