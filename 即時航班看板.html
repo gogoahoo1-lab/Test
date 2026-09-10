@@ -205,6 +205,9 @@ ul.doc li{margin:5px 0}
 
 <div class="wrap">
 
+<div id="dbWarn" hidden></div>
+
+
 
 
 
@@ -230,6 +233,15 @@ ul.doc li{margin:5px 0}
   <div class="row" style="margin-top:12px">
     <label class="f">其他場站代碼（逗號分隔，選填）
       <input type="text" id="tdxAptExtra" placeholder="例如 CYI,TNN" size="14">
+    </label>
+    <label class="f">請求間隔（防 429）
+      <select id="tdxGap">
+        <option value="500">0.5 秒</option>
+        <option value="1000">1 秒</option>
+        <option value="2000" selected>2 秒</option>
+        <option value="4000">4 秒</option>
+        <option value="8000">8 秒</option>
+      </select>
     </label>
     <label class="f">更新間隔
       <select id="tdxInterval">
@@ -261,7 +273,8 @@ ul.doc li{margin:5px 0}
   <div class="note" style="margin-top:10px">
     端點格式：<code>/Air/FIDS/Airport/Arrival/{IATA}</code> 與 <code>/Air/FIDS/Airport/Departure/{IATA}</code>，
     換場站只是換三碼（TPE 桃園、RMQ 台中、KHH 高雄、TSA 松山…）。每多選一個場站，每輪就多打兩組分頁請求。
-    抓取時會自動帶 <code>$top</code> 與 <code>$skip</code> 分頁，直到取完全部資料為止。Client Secret 不會顯示在畫面上，僅存在此瀏覽器。
+    抓取時會自動帶 <code>$top</code> 與 <code>$skip</code> 分頁（每頁 1000 筆），直到取完全部資料為止。
+    遇到 <code>429</code>（呼叫頻率超限）會自動退避重試；若仍失敗，把「請求間隔」調長或減少場站數。Client Secret 不會顯示在畫面上，僅存在此瀏覽器。
   </div>
 </section>
 
@@ -376,9 +389,6 @@ ul.doc li{margin:5px 0}
       <label class="f">方向
         <select id="fDir"><option value="all">到場＋離場</option><option value="A">只看到場</option><option value="D">只看離場</option></select>
       </label>
-      <label class="f">場站
-        <select id="fApt"><option value="all">全部場站</option></select>
-      </label>
       <label class="f">日期
         <select id="fDate"><option value="all">全部日期</option></select>
       </label>
@@ -390,6 +400,9 @@ ul.doc li{margin:5px 0}
       </label>
     </div>
     <div style="margin-top:12px">
+      <div id="fApts"></div>
+    </div>
+    <div style="margin-top:8px">
       <div id="fAirlines"></div>
     </div>
     <div class="kpis" id="boardKpis"></div>
@@ -402,7 +415,10 @@ ul.doc li{margin:5px 0}
 <section id="tab-airline" hidden>
   <div class="card">
     <h2>各家航空公司到離場</h2>
-    <p>依目前資料庫全部航班統計，點「看班表」可直接帶入班表分析。</p>
+    <p>可依場站與航空公司篩選；兩者都不選＝全部。點「看班表」可直接帶入班表分析。</p>
+    <div id="alApts"></div>
+    <div id="alAirlines" style="margin-top:8px"></div>
+    <div class="kpis" id="alKpis"></div>
     <div class="bars" id="alBars"></div>
     <div class="legend"><span><i style="background:var(--cyan)"></i>到場</span><span><i style="background:var(--amber)"></i>離場</span></div>
     <div class="tbox"><table id="alTable"></table></div>
@@ -413,12 +429,10 @@ ul.doc li{margin:5px 0}
 <section id="tab-sched" hidden>
   <div class="card">
     <h2>班表分析</h2>
-    <p>選定航空公司後，依觀測到的營運日推估每週班次、航點與到離時間。</p>
-    <div id="sAirlines"></div>
+    <p>依觀測到的營運日推估每週班次、航點與到離時間。場站與航空公司都不選＝全部。</p>
+    <div id="sApts"></div>
+    <div id="sAirlines" style="margin-top:8px"></div>
     <div class="row" style="margin-top:12px">
-      <label class="f">場站
-        <select id="sApt"><option value="all">全部場站</option></select>
-      </label>
       <label class="f">方向
         <select id="sDir"><option value="all">到場＋離場</option><option value="A">只看到場</option><option value="D">只看離場</option></select>
       </label>
@@ -478,8 +492,9 @@ var lastMap = null;       // 最近一次的欄位對應
 var lastKeys = [];
 var boardSort = { key: "sched", dir: 1 };
 var alSort = { key: "total", dir: -1 };
-var boardAirlines = {};   // code -> true
-var schedAirlines = {};
+var boardAirlines = {}, boardApts = {};
+var alAirlines = {}, alApts = {};
+var schedAirlines = {}, schedApts = {};
 
 /* =========================================================
    字典
@@ -797,7 +812,7 @@ function normalize(rows, map, opts){
 function showMsg(el, cls, html){ el.innerHTML = '<div class="msg ' + cls + '">' + html + "</div>"; }
 
 function doParse(){
-  var txt = $("raw").value.trim();
+  var txt = $("raw").value.replace(/^\uFEFF/, "").trim();
   var box = $("parseMsg");
   if(!txt){ showMsg(box, "err", "貼上區是空的。把 API 回傳的內容貼進來再按解析。"); return; }
 
@@ -910,12 +925,12 @@ function selectedCodes(store){
 }
 function filterBoard(){
   var dir = $("fDir").value, date = $("fDate").value, st = $("fStatus").value;
-  var apt = $("fApt") ? $("fApt").value : "all";
   var q = $("fSearch").value.trim().toUpperCase();
   var sel = selectedCodes(boardAirlines);
+  var selApt = selectedCodes(boardApts);
   return DB.flights.filter(function(f){
     if(dir !== "all" && f.dir !== dir) return false;
-    if(apt !== "all" && (f.station || "") !== apt) return false;
+    if(selApt.length && selApt.indexOf(f.station || "") < 0) return false;
     if(date !== "all" && f.date !== date) return false;
     if(sel.length && sel.indexOf(f.airline) < 0) return false;
     if(q && (f.flightNo.indexOf(q) < 0 && String(f.peer).indexOf(q) < 0 && String(aptName(f.peer)).indexOf(q) < 0)) return false;
@@ -987,7 +1002,7 @@ function renderBoard(){
       '<td class="mono note">' + esc(f.date || "—") + "</td></tr>";
   }).join("");
 
-  $("boardTable").innerHTML = thead + "<tbody>" + (body || '<tr><td colspan="14" class="empty">沒有符合條件的航班。放寬篩選，或先到「貼上資料」匯入。</td></tr>') + "</tbody>";
+  $("boardTable").innerHTML = thead + "<tbody>" + (body || '<tr><td colspan="14" class="empty">沒有符合條件的航班。放寬篩選，或先到「TDX 桃園機場」抓取資料。</td></tr>') + "</tbody>";
   $("boardCount").textContent = "顯示 " + Math.min(rows.length, 4000) + " ／ " + rows.length + " 筆" + (rows.length > 4000 ? "（超過 4000 筆已截斷）" : "");
 
   var ths = $("boardTable").querySelectorAll("th[data-sort]");
@@ -1009,8 +1024,16 @@ function kpi(cls, label, val){
    渲染：航空公司
    ========================================================= */
 function renderAirlines(){
+  var selAl = selectedCodes(alAirlines);
+  var selApt = selectedCodes(alApts);
+  var src = DB.flights.filter(function(f){
+    if(selAl.length && selAl.indexOf(f.airline) < 0) return false;
+    if(selApt.length && selApt.indexOf(f.station || "") < 0) return false;
+    return true;
+  });
+
   var stats = {};
-  DB.flights.forEach(function(f){
+  src.forEach(function(f){
     var s = stats[f.airline];
     if(!s){ s = stats[f.airline] = { code:f.airline, A:0, D:0, total:0, peers:{}, delays:[], cx:0, dates:{} }; }
     s.total++; s[f.dir]++;
@@ -1028,9 +1051,27 @@ function renderAirlines(){
     return s;
   });
   if(!list.length){
-    $("alBars").innerHTML = '<div class="empty">尚未匯入資料。</div>';
+    if($("alKpis")) $("alKpis").innerHTML = "";
+    $("alBars").innerHTML = '<div class="empty">' +
+      (DB.flights.length ? "這些篩選條件下沒有航班。清除篩選試試。" : "尚未匯入資料。") + "</div>";
     $("alTable").innerHTML = "";
     return;
+  }
+
+  if($("alKpis")){
+    var pAll = {}, dAll = {}, cxAll = 0, dlAll = [];
+    src.forEach(function(f){
+      if(f.peer) pAll[f.peer] = 1;
+      if(f.date) dAll[f.date] = 1;
+      if(f.cancelled) cxAll++; else if(f.delay != null) dlAll.push(f.delay);
+    });
+    $("alKpis").innerHTML =
+      kpi("", "篩選後班次", src.length) +
+      kpi("c", "航空公司", list.length) +
+      kpi("g", "準點率", dlAll.length ? Math.round(dlAll.filter(function(d){ return d <= 15; }).length / dlAll.length * 100) + "%" : "—") +
+      kpi("r", "取消", cxAll) +
+      kpi("", "航點數", Object.keys(pAll).length) +
+      kpi("", "涵蓋天數", Object.keys(dAll).length);
   }
   var max = Math.max.apply(null, list.map(function(s){ return s.total; }));
   var top = list.slice().sort(function(a,b){ return b.total - a.total; }).slice(0, 18);
@@ -1082,9 +1123,10 @@ function renderAirlines(){
     btns[j].addEventListener("click", function(){
       schedAirlines = {};
       schedAirlines[this.getAttribute("data-go")] = true;
+      schedApts = {};
+      selectedCodes(alApts).forEach(function(c){ schedApts[c] = true; });
+      tabDirty.sched = true;
       switchTab("sched");
-      renderSchedChips();
-      renderSched();
     });
   }
 }
@@ -1099,16 +1141,15 @@ function onAlSort(){
    ========================================================= */
 function renderSched(){
   var sel = selectedCodes(schedAirlines);
+  var selApt = selectedCodes(schedApts);
   var box = $("schedBody");
-  if(!DB.flights.length){ box.innerHTML = '<div class="empty">尚未匯入資料。先到「貼上資料」貼一份航班回傳內容。</div>'; return; }
-  if(!sel.length){ box.innerHTML = '<div class="empty">選一家以上航空公司，就會列出它們的每週班次、航點與到離時間。</div>'; return; }
+  if(!DB.flights.length){ box.innerHTML = '<div class="empty">尚未匯入資料。先到「TDX 桃園機場」抓取，或到「資料匯入」貼一份航班回傳內容。</div>'; return; }
 
   var dir = $("sDir").value, groupBy = $("sGroup").value, sortBy = $("sSort").value;
-  var sApt = $("sApt") ? $("sApt").value : "all";
   var rows = DB.flights.filter(function(f){
-    if(sel.indexOf(f.airline) < 0) return false;
+    if(sel.length && sel.indexOf(f.airline) < 0) return false;
+    if(selApt.length && selApt.indexOf(f.station || "") < 0) return false;
     if(dir !== "all" && f.dir !== dir) return false;
-    if(sApt !== "all" && (f.station || "") !== sApt) return false;
     return true;
   });
   if(!rows.length){ box.innerHTML = '<div class="empty">這些條件下沒有航班。換個方向或航空公司試試。</div>'; return; }
@@ -1152,7 +1193,7 @@ function renderSched(){
 
   var html = "";
   html += '<div class="kpis">' +
-    kpi("", "選定航司", sel.join("、")) +
+    kpi("", "選定航司", sel.length ? (sel.length <= 6 ? sel.join("、") : sel.length + " 家") : "全部") +
     kpi("", "觀測班次", rows.length) +
     kpi("c", "每週班次（推估）", weeklyTotal) +
     kpi("g", "航點數", Object.keys(peerAll).length) +
@@ -1224,43 +1265,65 @@ function topKey(o){
 /* =========================================================
    chips / 篩選器
    ========================================================= */
-function renderChips(container, store, cb){
-  var list = airlineList();
+function pickerItems(kind){
+  if(kind === "apt"){
+    var m = {};
+    DB.flights.forEach(function(f){ var k = f.station || ""; m[k] = (m[k] || 0) + 1; });
+    return Object.keys(m).sort().map(function(k){
+      return { code:k, label:k || "—", name:(k ? (aptName(k) || "") : "未標示場站"), n:m[k] };
+    });
+  }
+  return airlineList().map(function(a){
+    return { code:a.code, label:a.code, name:alName(a.code) || "", n:a.total };
+  });
+}
+
+/* 共用的收納式複選面板：不選＝全部 */
+function renderPicker(container, store, kind, title, cb){
+  if(!container) return;
+  var list = pickerItems(kind);
   if(!list.length){ container.innerHTML = '<span class="note">尚未匯入資料。</span>'; return; }
+
+  // 資料換過之後，先前選到的代碼可能已經不存在；留著會讓畫面顯示「全部」卻篩不出任何一筆
+  var live = {};
+  list.forEach(function(a){ live[a.code] = 1; });
+  for(var dead in store){ if(!live[dead]) delete store[dead]; }
 
   var q = String(container.getAttribute("data-q") || "");
   var qU = q.trim().toUpperCase();
   var open = container.getAttribute("data-open") === "1";
 
   var picked = [];
-  list.forEach(function(a){ if(store[a.code]) picked.push(a.code); });
+  list.forEach(function(a){ if(store[a.code]) picked.push(a.label); });
 
   var shown = list.filter(function(a){
     if(!qU) return true;
-    return a.code.indexOf(qU) >= 0 || String(alName(a.code) || "").toUpperCase().indexOf(qU) >= 0;
+    return a.label.toUpperCase().indexOf(qU) >= 0 || a.name.toUpperCase().indexOf(qU) >= 0;
   });
 
   var label;
-  if(!picked.length) label = "未篩選＝全部 " + list.length + " 家";
-  else if(picked.length <= 4) label = "已選 " + picked.join("、");
-  else label = "已選 " + picked.length + " 家";
+  if(!picked.length) label = "全部 " + list.length + (kind === "apt" ? " 個場站" : " 家");
+  else if(picked.length <= 5) label = "已選 " + picked.join("、");
+  else label = "已選 " + picked.length + (kind === "apt" ? " 個場站" : " 家");
 
   var items = shown.map(function(a){
     return '<label class="alrow' + (store[a.code] ? " on" : "") + '">' +
-      '<input type="checkbox" data-code="' + esc(a.code) + '"' + (store[a.code] ? " checked" : "") + '>' +
-      "<b>" + esc(a.code) + "</b><span>" + esc(alName(a.code) || "") + '</span><i>' + a.total + "</i></label>";
+      '<input type="checkbox" data-code="' + esc(a.code) + '"' + (store[a.code] ? " checked" : "") + ">" +
+      "<b>" + esc(a.label) + "</b><span>" + esc(a.name) + '</span><i>' + a.n + "</i></label>";
   }).join("");
 
   container.innerHTML =
     '<details class="alpick"' + (open ? " open" : "") + ">" +
-      "<summary>航空公司篩選<span class=\"pill\">" + esc(label) + "</span></summary>" +
+      "<summary>" + esc(title) + "<span class=\"pill\">" + esc(label) + "</span></summary>" +
       '<div class="altools">' +
         '<input type="search" class="alq" placeholder="搜尋代碼或名稱" value="' + esc(q) + '">' +
         '<button type="button" class="btn ghost tiny" data-act="all">全選</button>' +
-        '<button type="button" class="btn ghost tiny" data-act="none">清除</button>' +
+        '<button type="button" class="btn ghost tiny" data-act="none">清除（＝全部）</button>' +
       "</div>" +
-      '<div class="allist">' + (items || '<span class="note">沒有符合的航空公司。</span>') + "</div>" +
+      '<div class="allist">' + (items || '<span class="note">沒有符合的項目。</span>') + "</div>" +
     "</details>";
+
+  function again(){ renderPicker(container, store, kind, title, cb); }
 
   var det = container.querySelector("details");
   det.addEventListener("toggle", function(){ container.setAttribute("data-open", det.open ? "1" : "0"); });
@@ -1270,7 +1333,7 @@ function renderChips(container, store, cb){
     qi.addEventListener("input", function(){
       container.setAttribute("data-q", this.value);
       container.setAttribute("data-open", "1");
-      renderChips(container, store, cb);
+      again();
       var n = container.querySelector(".alq");
       if(n){ n.focus(); n.setSelectionRange(n.value.length, n.value.length); }
     });
@@ -1282,7 +1345,7 @@ function renderChips(container, store, cb){
       var c = this.getAttribute("data-code");
       if(this.checked) store[c] = true; else delete store[c];
       container.setAttribute("data-open", "1");
-      renderChips(container, store, cb);
+      again();
       cb();
     });
   }
@@ -1294,34 +1357,25 @@ function renderChips(container, store, cb){
       if(act === "none"){ for(var c in store) delete store[c]; }
       else { shown.forEach(function(a){ store[a.code] = true; }); }
       container.setAttribute("data-open", "1");
-      renderChips(container, store, cb);
+      again();
       cb();
     });
   }
 }
-function renderBoardChips(){ renderChips($("fAirlines"), boardAirlines, renderBoard); }
-function renderSchedChips(){ renderChips($("sAirlines"), schedAirlines, renderSched); }
 
-function stationList(){
-  var m = {};
-  DB.flights.forEach(function(f){ if(f.station) m[f.station] = (m[f.station] || 0) + 1; });
-  return Object.keys(m).sort().map(function(k){ return { code:k, n:m[k] }; });
+function renderBoardChips(){
+  renderPicker($("fApts"), boardApts, "apt", "場站篩選", renderBoard);
+  renderPicker($("fAirlines"), boardAirlines, "al", "航空公司篩選", renderBoard);
 }
-function renderAptFilter(){
-  var list = stationList();
-  ["fApt","sApt"].forEach(function(id){
-    var el = $(id);
-    if(!el) return;
-    var cur = el.value;
-    el.innerHTML = '<option value="all">全部場站</option>' + list.map(function(a){
-      return '<option value="' + esc(a.code) + '">' + esc(a.code) +
-        (aptName(a.code) ? " " + esc(aptName(a.code)) : "") + "（" + a.n + "）</option>";
-    }).join("");
-    var hit = false;
-    for(var i=0;i<el.options.length;i++) if(el.options[i].value === cur) hit = true;
-    el.value = hit ? cur : "all";
-  });
+function renderSchedChips(){
+  renderPicker($("sApts"), schedApts, "apt", "場站篩選", renderSched);
+  renderPicker($("sAirlines"), schedAirlines, "al", "航空公司篩選", renderSched);
 }
+function renderAlChips(){
+  renderPicker($("alApts"), alApts, "apt", "場站篩選", renderAirlines);
+  renderPicker($("alAirlines"), alAirlines, "al", "航空公司篩選", renderAirlines);
+}
+
 function renderDateFilter(){
   var dates = {};
   DB.flights.forEach(function(f){ if(f.date) dates[f.date] = 1; });
@@ -1342,8 +1396,39 @@ function renderBatches(){
         '</td><td class="num mono">' + b.added + '</td><td class="num mono">' + b.updated + '</td><td class="note">' + esc(b.dates) + "</td></tr>";
     }).join("") + "</tbody>";
 }
-function saveFlightDB(){ try{ localStorage.setItem("flightBoardDB", JSON.stringify(DB)); }catch(e){} }
+var dbSaveFailed = false;
+function saveFlightDB(){
+  var box = $("dbWarn");
+  try{
+    localStorage.setItem("flightBoardDB", JSON.stringify(DB));
+    dbSaveFailed = false;
+    if(box){ box.hidden = true; box.innerHTML = ""; }
+  }catch(e){
+    dbSaveFailed = true;
+    if(box){
+      box.hidden = false;
+      box.innerHTML = '<div class="msg err" style="margin-top:16px">資料量已超過瀏覽器本機儲存上限（' +
+        Math.round(JSON.stringify(DB).length / 1024) + ' KB），這次沒有存進 localStorage，關掉分頁就會遺失。' +
+        '建議到「資料匯入」按<b>匯出資料檔</b>保存，或把 TDX 的「保留範圍」改成只保留所選日期以減量。</div>';
+    }
+  }
+}
 function loadFlightDB(){ try{ var x=JSON.parse(localStorage.getItem("flightBoardDB")||"null"); if(x&&Array.isArray(x.flights)) DB=x; }catch(e){} }
+
+/* 資料量大時，全部分頁一起重繪會明顯卡頓；只畫目前看得到的那一頁，
+   其他頁標記為待重繪，切過去時才畫。 */
+var tabDirty = { board:true, airline:true, sched:true };
+var activeTab = "tdx";
+
+function renderActiveTab(){
+  if(activeTab === "board" && tabDirty.board){
+    tabDirty.board = false; renderBoardChips(); renderBoard();
+  }else if(activeTab === "airline" && tabDirty.airline){
+    tabDirty.airline = false; renderAlChips(); renderAirlines();
+  }else if(activeTab === "sched" && tabDirty.sched){
+    tabDirty.sched = false; renderSchedChips(); renderSched();
+  }
+}
 
 function refreshAll(){
   saveFlightDB();
@@ -1353,13 +1438,9 @@ function refreshAll(){
   $("stAirlines").textContent = Object.keys(als).length;
   $("stDays").textContent = Object.keys(dates).length;
   renderDateFilter();
-  renderAptFilter();
-  renderBoardChips();
-  renderSchedChips();
-  renderBoard();
-  renderAirlines();
-  renderSched();
   renderBatches();
+  tabDirty.board = tabDirty.airline = tabDirty.sched = true;
+  renderActiveTab();
 }
 
 /* =========================================================
@@ -1374,6 +1455,8 @@ function switchTab(name){
   ["tdx","import","board","airline","sched","help"].forEach(function(t){
     $("tab-" + t).hidden = (t !== name);
   });
+  activeTab = name;
+  renderActiveTab();
   window.scrollTo(0,0);
 }
 
@@ -1471,56 +1554,117 @@ function tdxShow(msg, cls){
   if(el) el.innerHTML = '<div class="msg ' + cls + '">' + msg + '</div>';
 }
 
+var tdxTokenCache = { token:null, exp:0, key:"" };
+var tdxLastCall = 0;
+
+function tdxSleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+function tdxGapMs(){ return Number($("tdxGap") ? $("tdxGap").value : 2000) || 2000; }
+
+/* TDX 對呼叫頻率有限制，兩次請求之間強制留間隔，避免整批 429。 */
+async function tdxThrottle(){
+  var wait = tdxGapMs() - (Date.now() - tdxLastCall);
+  if(wait > 0) await tdxSleep(wait);
+  tdxLastCall = Date.now();
+}
+
+function tdxBusy(msg){
+  var st = $("tdxStatus");
+  if(st) st.textContent = msg;
+}
+
+/* 429 就退避重試，不要直接把整輪抓取判死。 */
+async function tdxFetch(url, opts, what){
+  var backoff = [8000, 20000, 45000];
+  for(var attempt=0; attempt<=backoff.length; attempt++){
+    await tdxThrottle();
+    var r = await fetch(url, opts);
+    if(r.status !== 429) return r;
+
+    var ra = 0;
+    try{ ra = parseInt(r.headers.get("Retry-After") || "", 10) || 0; }catch(e){}
+    if(attempt === backoff.length){
+      throw new Error("TDX 回應 429（呼叫頻率超限），退避重試 " + backoff.length +
+        " 次仍失敗。請把「請求間隔」調長、減少同時抓取的場站，或等一兩分鐘再試。");
+    }
+    var wait = ra > 0 ? ra * 1000 : backoff[attempt];
+    tdxBusy("TDX 429 頻率超限，" + Math.round(wait/1000) + " 秒後重試" + (what ? "（" + what + "）" : "") + "…");
+    await tdxSleep(wait);
+  }
+}
+
 async function tdxToken(){
   var cid = $("tdxClientId").value.trim();
   var sec = $("tdxClientSecret").value.trim();
   if(!cid || !sec) throw new Error("請先輸入 TDX Client ID 與 Client Secret。");
+
+  // Token 有效期約一天，快取起來，省掉每輪一次的認證請求。
+  var key = cid + "|" + sec;
+  if(tdxTokenCache.token && tdxTokenCache.key === key && Date.now() < tdxTokenCache.exp){
+    return tdxTokenCache.token;
+  }
 
   var body = new URLSearchParams();
   body.set("grant_type","client_credentials");
   body.set("client_id",cid);
   body.set("client_secret",sec);
 
-  var r = await fetch(TDX_TOKEN_URL,{
+  var r = await tdxFetch(TDX_TOKEN_URL,{
     method:"POST",
     headers:{"Content-Type":"application/x-www-form-urlencoded"},
     body:body.toString(),
     cache:"no-store"
-  });
+  }, "取得 Token");
   if(!r.ok) throw new Error("TDX Token HTTP " + r.status);
   var j = await r.json();
   if(!j.access_token) throw new Error("TDX 沒有回傳 access_token。");
+
+  tdxTokenCache = {
+    token: j.access_token,
+    key: key,
+    exp: Date.now() + (Number(j.expires_in) > 60 ? (Number(j.expires_in) - 60) * 1000 : 3000000)
+  };
   return j.access_token;
 }
 
-var TDX_PAGE = 500;      // 每頁筆數
-var TDX_MAX_PAGES = 40;  // 最多抓 20000 筆，避免無限迴圈
+var TDX_PAGES = [1000, 300, 100];  // 每頁筆數，由大而小；頁數愈少，請求次數愈少
+var TDX_MAX_PAGES = 40;
 
-async function tdxGetPage(token, path, top, skip){
+async function tdxGetPage(token, path, top, skip, what){
   var url = TDX_BASE + path + "?$format=JSON&$top=" + top + "&$skip=" + skip;
-  var r = await fetch(url,{
+  var r = await tdxFetch(url,{
     headers:{
       "Authorization":"Bearer " + token,
       "Accept":"application/json"
     },
     cache:"no-store"
-  });
-  if(!r.ok) throw new Error("TDX HTTP " + r.status + "：" + r.statusText);
+  }, what);
+  if(!r.ok){
+    if(r.status === 401 || r.status === 403) tdxTokenCache = { token:null, exp:0, key:"" };
+    throw new Error("TDX HTTP " + r.status + (r.statusText ? "：" + r.statusText : ""));
+  }
   return await r.json();
 }
 
 /* TDX 的 $top 預設值只有 30 筆。不分頁抓，就只會拿到 30 筆航班。 */
-async function tdxGetAll(token, path, onProgress){
-  var all = [], page = TDX_PAGE, skip = 0;
+async function tdxGetAll(token, path, onProgress, what){
+  var all = [], pi = 0, skip = 0, lastSig = null;
   for(var i=0;i<TDX_MAX_PAGES;i++){
-    var j;
+    var page = TDX_PAGES[pi], j;
     try{
-      j = await tdxGetPage(token, path, page, skip);
+      j = await tdxGetPage(token, path, page, skip, what);
     }catch(e){
-      if(i === 0 && page > 100){ page = 100; i--; continue; }  // 部分端點 $top 上限較小
+      // $top 太大被端點拒絕時，換小一級重試；429 已在 tdxFetch 處理過
+      if(all.length === 0 && pi < TDX_PAGES.length - 1 && !/429/.test(e.message)){ pi++; i--; continue; }
       throw e;
     }
     var arr = Array.isArray(j) ? j : (findRecords(j) || []);
+    if(!arr.length) break;
+
+    // 端點若忽略 $skip 會一直回同一頁，這裡偵測到就停，避免白打 40 次請求
+    var sig = JSON.stringify(arr[0]);
+    if(sig === lastSig) break;
+    lastSig = sig;
+
     all = all.concat(arr);
     if(onProgress) onProgress(all.length);
     if(arr.length < page) break;
@@ -1542,8 +1686,13 @@ function tdxToRows(data, dir){
     var al = String(r.AirlineID == null ? "" : r.AirlineID).trim().toUpperCase();
     var fn = String(r.FlightNumber == null ? "" : r.FlightNumber).trim().toUpperCase().replace(/\s+/g, "");
     if(fn){
-      if(al && fn.indexOf(al) === 0) fn = al + fn.slice(al.length).replace(/^0+/, "");
-      else if(al && /^[0-9]+$/.test(fn)) fn = al + fn.replace(/^0+/, "");
+      var digits;
+      if(al && fn.indexOf(al) === 0) digits = fn.slice(al.length);
+      else if(al && /^[0-9]+$/.test(fn)) digits = fn;
+      if(digits != null){
+        digits = digits.replace(/^0+/, "");
+        fn = al + (digits || "0");
+      }
       r.FlightNumber = fn;
     }
     return r;
@@ -1600,11 +1749,16 @@ function tdxImport(data, dir, label, apt){
   return {raw:rows.length, count:kept, added:added, updated:updated, dates:dates, skipped:res.skipped};
 }
 
+var tdxRunning = false;
+
 async function updateTDX(){
   var st = $("tdxStatus");
+  if(tdxRunning){ tdxShow("上一輪抓取還沒跑完，已略過這次觸發（重複併發是 429 的主因之一）。", "info"); return; }
+
   var apts = tdxSelectedApts();
   if(!apts.length){ tdxShow("請至少選一個抓取場站。", "err"); return; }
 
+  tdxRunning = true;
   st.textContent = "取得 TDX Token…";
 
   try{
@@ -1618,12 +1772,12 @@ async function updateTDX(){
         st.textContent = apt + " 到場抓取中…";
         var arrRaw = await tdxGetAll(token, "/Air/FIDS/Airport/Arrival/" + apt, function(n){
           st.textContent = apt + " 到場…" + n + " 筆";
-        });
+        }, apt + " 到場");
 
         st.textContent = apt + " 離場抓取中…";
         var depRaw = await tdxGetAll(token, "/Air/FIDS/Airport/Departure/" + apt, function(n){
           st.textContent = apt + " 離場…" + n + " 筆";
-        });
+        }, apt + " 離場");
 
         var a = tdxImport(arrRaw, "A", "TDX 到場 " + apt, apt);
         var d = tdxImport(depRaw, "D", "TDX 離場 " + apt, apt);
@@ -1637,6 +1791,7 @@ async function updateTDX(){
         [a.dates, d.dates].forEach(function(m){ for(var k in m) all[k] = (all[k] || 0) + m[k]; });
       }catch(e){
         errs.push(apt + "：" + e.message);
+        if(/429/.test(e.message)) break;   // 已經被限流，繼續打下去只會更糟
       }
     }
 
@@ -1662,13 +1817,15 @@ async function updateTDX(){
       var hit = false;
       for(var j=0;j<sel.options.length;j++) if(sel.options[j].value === wantDate) hit = true;
       sel.value = hit ? wantDate : "all";
-      renderBoard();
+      if(activeTab === "board") renderBoard(); else tabDirty.board = true;
     }
   }catch(e){
     st.textContent = "TDX 更新失敗";
     tdxShow("TDX 更新失敗：" + e.message +
       "<br>若是瀏覽器 CORS 或認證問題，請改用後端 Proxy；不要把 Client Secret 部署到公開網站。",
       "err");
+  }finally{
+    tdxRunning = false;
   }
 }
 
@@ -1958,6 +2115,7 @@ function shift(hhmm, mins){
     if(confirm("清空全部 " + DB.flights.length + " 筆資料？此動作無法復原。")){
       DB = { flights: [], batches: [] };
       boardAirlines = {}; schedAirlines = {};
+      boardApts = {}; schedApts = {}; alAirlines = {}; alApts = {};
       $("mapCard").hidden = true;
       showMsg($("parseMsg"), "ok", "已清空。");
       refreshAll();
@@ -1973,6 +2131,12 @@ function shift(hhmm, mins){
   try{
     var savedApts = JSON.parse(localStorage.getItem("tdxApts") || "null");
     if(savedApts && typeof savedApts === "object") tdxApts = savedApts;
+    if($("tdxGap")){
+      $("tdxGap").value = localStorage.getItem("tdxGap") || "2000";
+      $("tdxGap").addEventListener("change", function(){
+        try{ localStorage.setItem("tdxGap", this.value); }catch(e){}
+      });
+    }
     if($("tdxAptExtra")){
       $("tdxAptExtra").value = localStorage.getItem("tdxAptExtra") || "";
       $("tdxAptExtra").addEventListener("change", function(){
@@ -1981,8 +2145,6 @@ function shift(hhmm, mins){
     }
   }catch(e){}
   renderTdxApts();
-  if($("fApt")) $("fApt").addEventListener("change", renderBoard);
-  if($("sApt")) $("sApt").addEventListener("change", renderSched);
   switchTab("tdx");
   refreshAll();
 })();
