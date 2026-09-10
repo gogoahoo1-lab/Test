@@ -471,9 +471,16 @@ ul.doc li{margin:5px 0}
           <option value="A">只看抵達台灣</option>
         </select>
       </label>
+      <label class="f">彙整
+        <select id="gsGroup">
+          <option value="flight">依航班號</option>
+          <option value="peer">依航點</option>
+        </select>
+      </label>
       <button class="btn primary" id="btnGsLoad">重新載入班表</button>
       <span class="note" id="gsStatus"></span>
     </div>
+    <div id="gsPeers" style="margin-top:12px"></div>
     <div id="gsMsg" style="margin-top:10px"></div>
     <div class="kpis" id="gsKpis"></div>
     <div id="gsBody"></div>
@@ -512,6 +519,7 @@ ul.doc li{margin:5px 0}
       <li>去重規則：<code>方向＋場站＋日期＋航空公司＋航班號</code> 相同視為同一筆，後匯入的覆蓋舊的，所以同一天重複抓不會灌水。加上航空公司是必要的，因為 TDX 的 <code>FlightNumber</code> 常常只有數字（例如 <code>0002</code>），少了航空公司代碼，不同家的同號航班會互相蓋掉。</li>
       <li>「班表分析」上半部是 <b>TDX 定期班表</b>（<code>/Air/GeneralSchedule/International</code>、<code>/Domestic</code>），
       直接拿航空公司公告的每週飛行日展開成未來 7 天，預設只抓 JX。進頁自動載入，6 小時內用快取，可改代碼看別家。</li>
+      <li>想知道某個航點有幾支航班號，把「彙整」切到<b>依航點</b>，表格會依航班號數由多到少排；航點篩選面板的數字也是同一個意思。勾起某個航點再切回<b>依航班號</b>，就只看那條航線的班表。</li>
       <li>下半部「觀測班表分析」是從實際抓到的到離紀錄推估的，跨越天數愈多愈準；兩者來源不同，數字不一定完全吻合。</li>
       <li>資料只存在這個分頁，關掉就沒了。要留存請按<b>匯出資料檔</b>，下次用<b>讀入資料檔</b>接回來。</li>
     </ul>
@@ -1373,6 +1381,22 @@ function topKey(o){
    chips / 篩選器
    ========================================================= */
 function pickerItems(kind){
+  if(kind === "gspeer"){
+    // 每個航點底下有幾個不同班號 —— 數字直接就是「這個航點有幾支航班號」
+    var pm = {};
+    GS.rows.forEach(function(r){
+      var dep = String(r.DepartureAirportID || "").toUpperCase();
+      var arr = String(r.ArrivalAirportID || "").toUpperCase();
+      var d = TW_APTS[dep] ? "D" : (TW_APTS[arr] ? "A" : "");
+      var peer = d === "D" ? arr : dep;
+      if(!peer) return;
+      if(!pm[peer]) pm[peer] = {};
+      pm[peer][gsFlightNo(r.FlightNumber, GS.airline)] = 1;
+    });
+    return Object.keys(pm).sort().map(function(k){
+      return { code:k, label:k, name:aptName(k) || "", n:Object.keys(pm[k]).length };
+    });
+  }
   if(kind === "apt"){
     var m = {};
     DB.flights.forEach(function(f){ var k = f.station || ""; m[k] = (m[k] || 0) + 1; });
@@ -1409,9 +1433,10 @@ function renderPicker(container, store, kind, title, cb){
   });
 
   var label;
-  if(!picked.length) label = "全部 " + list.length + (kind === "apt" ? " 個場站" : " 家");
+  var unit = kind === "apt" ? " 個場站" : (kind === "gspeer" ? " 個航點" : " 家");
+  if(!picked.length) label = "全部 " + list.length + unit;
   else if(picked.length <= 5) label = "已選 " + picked.join("、");
-  else label = "已選 " + picked.length + (kind === "apt" ? " 個場站" : " 家");
+  else label = "已選 " + picked.length + unit;
 
   var items = shown.map(function(a){
     return '<label class="alrow' + (store[a.code] ? " on" : "") + '">' +
@@ -1945,6 +1970,7 @@ var TW_APTS = { TPE:1,TSA:1,KHH:1,RMQ:1,CYI:1,TNN:1,HUN:1,TTT:1,MZG:1,KNH:1,LZN:
 var GS_DOW = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 var GS_DOW_TW = ["日","一","二","三","四","五","六"];
 var GS = { airline:"", fetchedAt:0, rows:[] };
+var gsPeers = {};   // 航點篩選，空的＝全部
 var gsRunning = false;
 
 function gsLoadCache(){
@@ -2036,6 +2062,7 @@ function gsExpand(){
   var days = Number(($("gsDays") && $("gsDays").value) || 7) || 7;
   var start = ($("gsStart") && $("gsStart").value) || twDate();
   var dirSel = ($("gsDir") && $("gsDir").value) || "all";
+  var selPeer = selectedCodes(gsPeers);
   var al = GS.airline;
 
   var dates = [];
@@ -2050,6 +2077,9 @@ function gsExpand(){
     var arr = String(r.ArrivalAirportID || "").toUpperCase();
     var dir = TW_APTS[dep] ? "D" : (TW_APTS[arr] ? "A" : "");
     if(dirSel !== "all" && dir !== dirSel) return;
+
+    var peer = dir === "D" ? arr : dep;
+    if(selPeer.length && selPeer.indexOf(peer) < 0) return;
 
     var sd = String(r.ScheduleStartDate || "").slice(0,10);
     var ed = String(r.ScheduleEndDate || "").slice(0,10);
@@ -2079,7 +2109,7 @@ function gsExpand(){
     var g = map[key];
     if(!g){
       g = map[key] = {
-        flightNo: fn, dep: dep, arr: arr, dir: dir,
+        flightNo: fn, dep: dep, arr: arr, dir: dir, peer: peer,
         depTime: dt.raw, arrTime: at.raw,
         twTime: dir === "A" ? (at.hhmm || "99:99") : (dt.hhmm || "99:99"),
         terminal: r.Terminal || "", on: on.slice(), total: 0
@@ -2109,16 +2139,19 @@ function gsRender(){
 
   if(!GS.rows.length){
     $("gsKpis").innerHTML = "";
+    if($("gsPeers")) $("gsPeers").innerHTML = "";
     body.innerHTML = '<div class="empty">尚未載入定期班表。填好 TDX 憑證後按「重新載入班表」。</div>';
     return;
   }
+
+  renderPicker($("gsPeers"), gsPeers, "gspeer", "航點篩選（數字＝該航點有幾支航班號）", gsRender);
 
   var ex = gsExpand();
   var dates = ex.dates, rows = ex.rows;
 
   if(!rows.length){
     $("gsKpis").innerHTML = "";
-    body.innerHTML = '<div class="empty">這個區間與方向下，' + esc(GS.airline) + " 沒有定期班次。</div>";
+    body.innerHTML = '<div class="empty">這個區間、方向與航點條件下，' + esc(GS.airline) + " 沒有定期班次。</div>";
     return;
   }
 
@@ -2140,6 +2173,28 @@ function gsRender(){
     span = sds[0] + " ～ " + eds[eds.length-1];
   }
 
+  var byPeer = {};
+  rows.forEach(function(g){
+    var pk = g.peer || "—";
+    var e = byPeer[pk];
+    if(!e){
+      e = byPeer[pk] = { peer:pk, nos:{}, D:0, A:0, total:0, on:dates.map(function(){ return 0; }),
+                         first:"99:99", last:"" };
+    }
+    e.nos[g.flightNo] = 1;
+    e[g.dir === "A" ? "A" : "D"] += g.total;
+    e.total += g.total;
+    g.on.forEach(function(v,i){ if(v) e.on[i]++; });
+    if(g.twTime && g.twTime < e.first) e.first = g.twTime;
+    if(g.twTime && g.twTime !== "99:99" && g.twTime > e.last) e.last = g.twTime;
+  });
+  var peerList = Object.keys(byPeer).map(function(k){ return byPeer[k]; });
+  peerList.sort(function(a,b){
+    var na = Object.keys(a.nos).length, nb = Object.keys(b.nos).length;
+    if(na !== nb) return nb - na;
+    return b.total - a.total;
+  });
+
   $("gsKpis").innerHTML =
     kpi("", "航班號", rows.length) +
     kpi("c", dates.length + " 天總班次", totalLegs) +
@@ -2152,11 +2207,39 @@ function gsRender(){
       '<br><span class="note">' + GS_DOW_TW[d.dow] + "（" + perDay[i] + "）</span></th>";
   }).join("");
 
-  var head = "<thead><tr><th>方向</th><th>班號</th><th>航線</th><th>出發</th><th>抵達</th><th>航廈</th>" +
-    dayHead + "<th>班次</th></tr></thead>";
-  var twCol = '<span class="note">日期欄位為台灣端日期</span>';
+  var groupBy = ($("gsGroup") && $("gsGroup").value) || "flight";
+  var head, tb;
 
-  var tb = rows.map(function(g){
+  if(groupBy === "peer"){
+    head = "<thead><tr><th>航點</th><th>航班號數</th><th>航班號</th><th>離台</th><th>抵台</th>" +
+      dayHead + "<th>" + dates.length + " 天班次</th></tr></thead>";
+    tb = peerList.map(function(e){
+      var nos = Object.keys(e.nos).sort();
+      return "<tr>" +
+        '<td class="mono" style="color:var(--amber);font-weight:600">' + esc(e.peer) +
+          (aptName(e.peer) ? ' <span class="note">' + esc(aptName(e.peer)) + "</span>" : "") + "</td>" +
+        '<td class="mono" style="font-weight:700">' + nos.length + "</td>" +
+        '<td class="mono">' + esc(nos.join("、")) + "</td>" +
+        '<td class="mono">' + e.D + "</td>" +
+        '<td class="mono">' + e.A + "</td>" +
+        e.on.map(function(n){
+          return '<td class="gsday ' + (n ? "gs-on" : "gs-off") + '">' + (n || "·") + "</td>";
+        }).join("") +
+        '<td class="mono">' + e.total + "</td></tr>";
+    }).join("");
+
+    body.innerHTML = '<div class="tbox" style="margin-top:12px"><table>' + head + "<tbody>" + tb + "</tbody></table></div>" +
+      '<p class="note" style="margin-top:8px">依航點彙整，預設按航班號數由多到少排。' +
+      "日期欄裡的數字是當天飛這個航點的班次數（含來回），日期一律是台灣端的日期。" +
+      "想看某個航點的細節，就在上面的航點篩選勾起來，再把「彙整」切回<b>依航班號</b>。" +
+      (span ? "<br>班表有效期間：" + esc(span) : "") + "</p>";
+    return;
+  }
+
+  head = "<thead><tr><th>方向</th><th>班號</th><th>航線</th><th>出發</th><th>抵達</th><th>航廈</th>" +
+    dayHead + "<th>班次</th></tr></thead>";
+
+  tb = rows.map(function(g){
     var route = g.dir === "D"
       ? esc(g.dep) + " → " + esc(g.arr) + (aptName(g.arr) ? ' <span class="note">' + esc(aptName(g.arr)) + "</span>" : "")
       : esc(g.dep) + (aptName(g.dep) ? ' <span class="note">' + esc(aptName(g.dep)) + "</span>" : "") + " → " + esc(g.arr);
@@ -2501,7 +2584,7 @@ function shift(hhmm, mins){
   if($("gsStart") && !$("gsStart").value) $("gsStart").value = twDate();
   if($("gsAirline")) $("gsAirline").value = localStorage.getItem("gsAirline") || "JX";
   if($("btnGsLoad")) $("btnGsLoad").addEventListener("click", function(){ gsFetch(true); });
-  ["gsDays","gsDir","gsStart"].forEach(function(id){
+  ["gsDays","gsDir","gsStart","gsGroup"].forEach(function(id){
     if($(id)) $(id).addEventListener("change", gsRender);
   });
   if($("gsAirline")) $("gsAirline").addEventListener("change", function(){
