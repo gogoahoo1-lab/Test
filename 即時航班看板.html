@@ -359,9 +359,25 @@ ul.doc li{margin:5px 0}
       <button class="btn primary" id="btnParse">解析並匯入</button>
       <button class="btn" id="btnDemo">載入示範資料</button>
       <button class="btn ghost" id="btnExport">匯出資料檔</button>
-      <button class="btn ghost" id="btnImportFile">讀入資料檔</button>
-      <input type="file" id="fileIn" accept=".json,application/json" hidden>
+      <button class="btn ghost" id="btnImportFile">讀入資料檔（可多選）</button>
+      <input type="file" id="fileIn" accept=".json,application/json" multiple hidden>
       <button class="btn danger" id="btnClear">清空全部</button>
+    </div>
+    <div class="row" style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px">
+      <label class="f">本機保留天數
+        <select id="keepDays">
+          <option value="14">最近 14 天</option>
+          <option value="21" selected>最近 21 天</option>
+          <option value="30">最近 30 天</option>
+          <option value="60">最近 60 天</option>
+          <option value="0">全部（容易爆容量）</option>
+        </select>
+      </label>
+      <span class="note" id="keepNote" style="align-self:flex-end;padding-bottom:8px"></span>
+    </div>
+    <div class="note" style="margin-top:8px">
+      保留天數只影響<b>存回瀏覽器</b>的量，不影響這次開著的分析：讀進來的整月資料在關掉分頁前都算得到。
+      舊資料本來就在每日下載的檔案裡，要做月報時再一次多選讀回來即可。
     </div>
     <div id="parseMsg"></div>
   </div>
@@ -602,7 +618,8 @@ ul.doc li{margin:5px 0}
       <li>時段是依<b>排定時間</b>分時，所以「18 時特別容易延誤」指的是表定 18:00–18:59 的航班，不是實際在那個時間起降的航班。</li>
       <li>每個時段至少要有 3 班可比對，才會納入最容易延誤時段的排名，避免單一班次左右結論。</li>
       <li>要累積整月資料，請在「TDX 桃園機場」頁勾選<b>每日自動下載存檔</b>，並讓自動更新每天跑。TDX 只保留前日／當日／次日，沒存下來就永久拿不回。</li>
-      <li>存下來的 <code>航班資料_YYYY-MM-DD.json</code> 可隨時用「資料匯入」的讀入資料檔接回來，重複讀同一天不會重複計算。</li>
+      <li>存下來的 <code>航班資料_YYYY-MM-DD.json</code> 可隨時用「資料匯入」的讀入資料檔接回來，<b>可一次多選</b>整個月的檔案，重複讀同一天不會重複計算。</li>
+      <li>瀏覽器本機儲存約 5MB，所以只保存「本機保留天數」內的資料（預設 21 天），且以精簡格式存放。要看更早的月份，把當時的每日檔案讀回來即可——讀進來的資料在關掉分頁前都能分析。</li>
       <li>場站篩選固定列出 TPE、RMQ、KHH、TSA 四站（後面數字是資料庫裡的筆數，0 代表還沒抓過），其餘場站依實際資料出現。</li>
       <li>各航班表的「可比對班次」門檻可調；準點率低於 60% 的航班會以紅底標示。</li>
     </ul>
@@ -1642,10 +1659,75 @@ function renderBatches(){
     }).join("") + "</tbody>";
 }
 var dbSaveFailed = false;
+/* localStorage 只有 5MB 上下，一天幾百筆很快就撐爆。
+   存檔時：(a) 只留保留天數內的資料，(b) 改成欄位陣列、去掉可重算的欄位（id／dow／delay）。 */
+var KEEP_KEY = "flightKeepDays";
+var keepDays = 21;
+var PACK_COLS = ["dir","station","date","airline","flightNo","peer","sched","act","est",
+                 "cancelled","status","terminal","gate","counter","belt","aircraft","codeshare"];
+
+function keepCutoff(){ return keepDays ? gsAddDays(twDate(), -(keepDays - 1)) : ""; }
+function flightsToKeep(){
+  var cut = keepCutoff();
+  if(!cut) return DB.flights;
+  return DB.flights.filter(function(f){ return !f.date || f.date >= cut; });
+}
+function packDB(rows){
+  return {
+    v: 2,
+    cols: PACK_COLS,
+    rows: rows.map(function(f){
+      return PACK_COLS.map(function(c){
+        var v = f[c];
+        if(c === "cancelled") return f.cancelled ? 1 : 0;
+        return (v == null || v === "") ? 0 : v;
+      });
+    }),
+    batches: DB.batches.slice(-30)
+  };
+}
+function rehydrate(f){
+  f.dow = dowOf(f.date);
+  f.id = f.dir + "|" + (f.station || "") + "|" + f.date + "|" + f.airline + "|" + f.flightNo;
+  var ref = f.act || f.est;
+  f.delay = null;
+  if(ref && f.sched){
+    var a = toMin(ref), sc = toMin(f.sched);
+    if(a != null && sc != null){
+      var d = a - sc;
+      if(d > 720) d -= 1440;
+      if(d < -720) d += 1440;
+      f.delay = d;
+    }
+  }
+  return f;
+}
+function unpackDB(x){
+  if(!x) return null;
+  if(Array.isArray(x.flights)) return { flights:x.flights.map(rehydrate), batches:x.batches || [] };   // 舊格式
+  if(x.v === 2 && Array.isArray(x.rows)){
+    var cols = x.cols || PACK_COLS;
+    return {
+      flights: x.rows.map(function(r){
+        var f = {};
+        cols.forEach(function(c,i){
+          var v = r[i];
+          if(c === "cancelled") f.cancelled = !!v;
+          else f[c] = (v === 0 ? "" : v);
+        });
+        return rehydrate(f);
+      }),
+      batches: x.batches || []
+    };
+  }
+  return null;
+}
+
 function saveFlightDB(){
   var box = $("dbWarn");
+  var kept = flightsToKeep();
   try{
-    localStorage.setItem("flightBoardDB", JSON.stringify(DB));
+    localStorage.setItem("flightBoardDB", JSON.stringify(packDB(kept)));
     dbSaveFailed = false;
     if(box){ box.hidden = true; box.innerHTML = ""; }
   }catch(e){
@@ -1653,12 +1735,29 @@ function saveFlightDB(){
     if(box){
       box.hidden = false;
       box.innerHTML = '<div class="msg err" style="margin-top:16px">資料量已超過瀏覽器本機儲存上限（' +
-        Math.round(JSON.stringify(DB).length / 1024) + ' KB），這次沒有存進 localStorage，關掉分頁就會遺失。' +
-        '建議到「資料匯入」按<b>匯出資料檔</b>保存，或把 TDX 的「保留範圍」改成只保留所選日期以減量。</div>';
+        Math.round(JSON.stringify(packDB(kept)).length / 1024) + ' KB），這次沒有存進 localStorage，關掉分頁就會遺失。' +
+        '請把「資料匯入」的<b>本機保留天數</b>調短，或按<b>匯出資料檔</b>保存後清空。</div>';
     }
   }
 }
-function loadFlightDB(){ try{ var x=JSON.parse(localStorage.getItem("flightBoardDB")||"null"); if(x&&Array.isArray(x.flights)) DB=x; }catch(e){} }
+function loadFlightDB(){
+  try{
+    var raw = JSON.parse(localStorage.getItem("flightBoardDB") || "null");
+    var d = unpackDB(raw);
+    if(d) DB = d;
+  }catch(e){}
+  try{
+    var k = localStorage.getItem(KEEP_KEY);
+    if(k != null) keepDays = parseInt(k, 10) || 0;
+  }catch(e){}
+}
+function keepNote(){
+  var el = $("keepNote");
+  if(!el) return;
+  var kept = flightsToKeep().length;
+  el.textContent = "記憶體 " + DB.flights.length + " 筆／本機保存 " + kept + " 筆" +
+    (keepDays ? "（" + keepCutoff() + " 起）" : "（全部）");
+}
 
 /* 資料量大時，全部分頁一起重繪會明顯卡頓；只畫目前看得到的那一頁，
    其他頁標記為待重繪，切過去時才畫。 */
@@ -1682,6 +1781,7 @@ function refreshAll(){
   saveFlightDB();
   var als = {}, dates = {};
   DB.flights.forEach(function(f){ als[f.airline] = 1; if(f.date) dates[f.date] = 1; });
+  keepNote();
   $("stFlights").textContent = DB.flights.length;
   $("stAirlines").textContent = Object.keys(als).length;
   $("stDays").textContent = Object.keys(dates).length;
@@ -1862,7 +1962,21 @@ function renderOtd(){
   var hasPrev = months.indexOf(pym) >= 0;
   var pst = hasPrev ? otdStats(otdRows(pym), thr, base) : null;
 
+  var selStns = selectedCodes(otdApts);
+  var missStns = selStns.filter(function(stn){
+    return !DB.flights.some(function(f){ return (f.station || "") === stn; });
+  });
+
   if(!rows.length){
+    if(missStns.length && missStns.length === selStns.length){
+      box.innerHTML = '<div class="msg info">' + esc(missStns.join("、")) +
+        " 還沒有抓過任何資料，所以分析不出東西。<br>" +
+        "TDX 的 FIDS 是一個場站一組端點，要有這些站的到離紀錄，得先把它們加進抓取清單。" +
+        '<br><br><button class="btn primary" id="otdFetchStns">把 ' + esc(missStns.join("、")) +
+        ' 加入 TDX 抓取並立即抓一輪</button></div>';
+      bindOtdFetch(missStns);
+      return;
+    }
     var anyThatMonth = DB.flights.some(function(f){ return f.date && f.date.slice(0,7) === ym; });
     box.innerHTML = anyThatMonth
       ? '<div class="empty">' + ymLabel(ym) + " 有紀錄，但目前的場站／航空公司／方向條件篩不出任何航班。把上面的篩選清掉試試。</div>"
@@ -1886,6 +2000,11 @@ function renderOtd(){
       "</b>，平均誤差 " + fmtMin(pst.avg) + " → <b>" + fmtMin(st.avg) + "</b>，可計算筆數 " + pst.meas + " → " + st.meas + "。</div>";
   } else {
     html += '<div class="msg info">資料庫裡沒有 ' + ymLabel(pym) + " 的紀錄，無法做上月對比。每天抓取累積後，下個月就能比。</div>";
+  }
+  if(missStns.length){
+    html += '<div class="msg info">' + esc(missStns.join("、")) +
+      " 目前沒有任何紀錄，下面的數字只包含有資料的場站。" +
+      '<br><button class="btn" id="otdFetchStns" style="margin-top:8px">把這些場站加入 TDX 抓取並立即抓一輪</button></div>';
   }
   if(st.meas < rows.length * 0.5){
     html += '<div class="msg info">' + rows.length + " 筆裡只有 " + st.meas +
@@ -1972,6 +2091,28 @@ function renderOtd(){
       }).join("") + "</tbody></table></div>";
   }
 
+  // ---- 各場站 ----
+  var byStn = {};
+  rows.forEach(function(f){ var k = f.station || "—"; (byStn[k] = byStn[k] || []).push(f); });
+  var stnKeys = Object.keys(byStn);
+  if(stnKeys.length > 1){
+    var stnRows = stnKeys.map(function(k){ return { code:k, s:otdStats(byStn[k], thr, base) }; })
+      .sort(function(a,b){ return (b.s.rate == null ? -1 : b.s.rate) - (a.s.rate == null ? -1 : a.s.rate); });
+    html += "<h3>各場站（" + ymLabel(ym) + "）</h3>" +
+      '<div class="tbox" style="max-height:340px"><table><thead><tr><th>場站</th><th>班次</th><th>到場</th><th>離場</th><th>可計算</th><th>準點率</th><th>平均誤差</th><th>延誤 &gt;15</th><th>取消</th></tr></thead><tbody>' +
+      stnRows.map(function(x){
+        var list = byStn[x.code];
+        var na = list.filter(function(f){ return f.dir === "A"; }).length;
+        return '<tr><td class="mono" style="color:var(--amber);font-weight:600">' + esc(x.code) +
+          (aptName(x.code) ? ' <span class="note">' + esc(aptName(x.code)) + "</span>" : "") +
+          '</td><td class="num mono">' + x.s.n + '</td><td class="num mono">' + na +
+          '</td><td class="num mono">' + (x.s.n - na) + '</td><td class="num mono">' + x.s.meas +
+          '</td><td class="num mono" style="font-weight:700">' + fmtPct(x.s.rate) +
+          '</td><td class="num mono">' + fmtMin(x.s.avg) + '</td><td class="num mono">' + x.s.l15 +
+          '</td><td class="num mono">' + x.s.cx + "</td></tr>";
+      }).join("") + "</tbody></table></div>";
+  }
+
   // ---- 航空公司 ----
   var byAl = {};
   rows.forEach(function(f){ (byAl[f.airline] = byAl[f.airline] || []).push(f); });
@@ -2040,11 +2181,25 @@ function renderOtd(){
 
   box.innerHTML = html;
 
+  bindOtdFetch(missStns);
+
   var ths = box.querySelectorAll("th[data-otd]");
   for(var i=0;i<ths.length;i++){
     ths[i].addEventListener("click", onOtdSort);
     ths[i].addEventListener("keydown", function(e){ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); onOtdSort.call(this); } });
   }
+}
+/* 準點分析裡選到還沒抓過的場站時，直接把它們加進 TDX 抓取清單並跑一輪，
+   免得使用者還要自己切分頁去勾。 */
+function bindOtdFetch(stns){
+  var btn = $("oBody").querySelector("#otdFetchStns");
+  if(!btn || !stns || !stns.length) return;
+  btn.addEventListener("click", function(){
+    stns.forEach(function(stn){ tdxApts[stn] = true; });
+    renderTdxApts();
+    switchTab("tdx");
+    updateTDX();
+  });
 }
 function onOtdSort(){
   var k = this.getAttribute("data-otd");
@@ -2148,32 +2303,75 @@ function maybeAutoDownload(){
   autoDlStatus("已自動存檔：" + r.name + "（" + r.n + " 筆）");
 }
 
-function importFile(file){
-  var r = new FileReader();
-  r.onload = function(){
-    try{
-      var d = JSON.parse(r.result);
-      if(!d || !Array.isArray(d.flights)) throw new Error("格式不符");
-      if($("mergeMode").value === "replace"){ DB.flights = []; DB.batches = []; }
-      var index = {};
-      DB.flights.forEach(function(f,i){ index[f.id] = i; });
-      var added = 0;
-      d.flights.forEach(function(f){
-        if(index[f.id] != null) DB.flights[index[f.id]] = f;
+/* 多檔匯入：一次選 30 個每日檔也讀得完，逐檔累加、自動去重。 */
+function readJsonFile(file){
+  return new Promise(function(resolve){
+    var r = new FileReader();
+    r.onload = function(){
+      try{
+        var d = JSON.parse(r.result);
+        var rows = Array.isArray(d && d.flights) ? d.flights : (unpackDB(d) || {}).flights;
+        if(!rows) throw new Error("格式不符");
+        resolve({ name:file.name, rows:rows });
+      }catch(e){
+        resolve({ name:file.name, err:e.message });
+      }
+    };
+    r.onerror = function(){ resolve({ name:file.name, err:"讀取失敗" }); };
+    r.readAsText(file);
+  });
+}
+function importFiles(fileList){
+  var files = [];
+  for(var i=0;i<fileList.length;i++) files.push(fileList[i]);
+  if(!files.length) return;
+
+  files.sort(function(a,b){ return a.name < b.name ? -1 : (a.name > b.name ? 1 : 0); });
+  showMsg($("parseMsg"), "info", "讀取 " + files.length + " 個檔案中…");
+
+  if($("mergeMode").value === "replace"){ DB.flights = []; DB.batches = []; }
+
+  var index = {};
+  DB.flights.forEach(function(f,i){ index[f.id] = i; });
+
+  Promise.all(files.map(readJsonFile)).then(function(results){
+    var totalRows = 0, added = 0, updated = 0, okFiles = 0, errs = [], dates = {};
+    results.forEach(function(res){
+      if(res.err){ errs.push(res.name + "：" + res.err); return; }
+      okFiles++;
+      res.rows.forEach(function(f){
+        if(!f || !f.flightNo) return;
+        if(f.id == null || f.dow === undefined || f.delay === undefined) rehydrate(f);
+        totalRows++;
+        if(f.date) dates[f.date] = 1;
+        if(index[f.id] != null){ DB.flights[index[f.id]] = f; updated++; }
         else { index[f.id] = DB.flights.length; DB.flights.push(f); added++; }
       });
-      DB.batches.push({ time:new Date().toLocaleTimeString("zh-TW",{hour12:false}), src:"資料檔 " + file.name,
-        count:d.flights.length, added:added, updated:d.flights.length-added, dates:"—" });
-      showMsg($("parseMsg"), "ok", "讀入 " + d.flights.length + " 筆，資料庫共 " + DB.flights.length + " 筆。");
-      refreshAll();
-    }catch(e){
-      showMsg($("parseMsg"), "err", "這個檔案讀不進來：" + esc(e.message) + "。請選用本工具匯出的資料檔。");
+    });
+
+    var dayList = Object.keys(dates).sort();
+    DB.batches.push({
+      time: new Date().toLocaleTimeString("zh-TW",{hour12:false}),
+      src: okFiles === 1 ? ("資料檔 " + results[0].name) : ("資料檔 ×" + okFiles),
+      count: totalRows, added: added, updated: updated,
+      dates: dayList.length ? (dayList[0] + " ～ " + dayList[dayList.length-1] + "（" + dayList.length + " 天）") : "—"
+    });
+
+    if(!okFiles){
+      showMsg($("parseMsg"), "err", "沒有讀進任何檔案。<br>" + esc(errs.join("；")));
+      return;
     }
-  };
-  r.readAsText(file);
+    showMsg($("parseMsg"), errs.length ? "info" : "ok",
+      "讀入 " + okFiles + " 個檔、共 " + totalRows + " 筆：新增 " + added + "、更新 " + updated + "。<br>" +
+      "資料庫共 " + DB.flights.length + " 筆" +
+      (dayList.length ? "，涵蓋 " + dayList[0] + " ～ " + dayList[dayList.length-1] + "（" + dayList.length + " 天）" : "") + "。" +
+      (errs.length ? '<br><span style="color:var(--bad)">略過：' + esc(errs.join("；")) + "</span>" : "") +
+      (keepDays && dayList.length > keepDays
+        ? '<br><span class="note">讀進來的天數超過本機保留天數，關掉分頁後只會留最近 ' + keepDays + " 天；原始檔案請留著。</span>"
+        : ""));
+    refreshAll();
+  });
 }
-
-
 
 /* =========================================================
    TDX 桃園機場 TPE 即時航班
@@ -3138,7 +3336,15 @@ function shift(hhmm, mins){
   });
   $("btnExport").addEventListener("click", exportFile);
   $("btnImportFile").addEventListener("click", function(){ $("fileIn").click(); });
-  $("fileIn").addEventListener("change", function(){ if(this.files[0]) importFile(this.files[0]); this.value = ""; });
+  $("fileIn").addEventListener("change", function(){ if(this.files && this.files.length) importFiles(this.files); this.value = ""; });
+  if($("keepDays")){
+    $("keepDays").value = String(keepDays);
+    $("keepDays").addEventListener("change", function(){
+      keepDays = parseInt(this.value, 10) || 0;
+      try{ localStorage.setItem(KEEP_KEY, String(keepDays)); }catch(e){}
+      refreshAll();
+    });
+  }
   $("btnClear").addEventListener("click", function(){
     if(!DB.flights.length){ showMsg($("parseMsg"), "info", "資料庫已經是空的。"); return; }
     if(confirm("清空全部 " + DB.flights.length + " 筆資料？此動作無法復原。")){
