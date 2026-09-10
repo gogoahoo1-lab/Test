@@ -456,7 +456,7 @@ ul.doc li{margin:5px 0}
 
   <div class="card">
     <h2>定期班表（未來 7 天）</h2>
-    <p>來源為 TDX 的<b>航空定期時刻表</b>，是航空公司公告的班表，不是從到離紀錄推估的。進入本頁會自動載入，每 6 小時重抓一次。</p>
+    <p>來源為 TDX 的<b>航空定期時刻表</b>，是航空公司公告的班表，不是從到離紀錄推估的。進入本頁會自動載入，每 6 小時重抓一次。選定單一場站後，出發／抵達都以該站為準，國內線兩端在台灣也分得出來。</p>
     <div class="row">
       <label class="f">航空公司
         <input type="text" id="gsAirline" value="JX" size="4" maxlength="3">
@@ -471,11 +471,20 @@ ul.doc li{margin:5px 0}
       <label class="f">起始日
         <input type="date" id="gsStart">
       </label>
+      <label class="f">場站視角
+        <select id="gsStation">
+          <option value="TW" selected>全台灣</option>
+          <option value="TPE">TPE 桃園</option>
+          <option value="RMQ">RMQ 台中</option>
+          <option value="KHH">KHH 高雄</option>
+          <option value="TSA">TSA 松山</option>
+        </select>
+      </label>
       <label class="f">方向
         <select id="gsDir">
           <option value="all">出發＋抵達</option>
-          <option value="D">只看自台灣出發</option>
-          <option value="A">只看抵達台灣</option>
+          <option value="D">只看出發</option>
+          <option value="A">只看抵達</option>
         </select>
       </label>
       <label class="f">彙整
@@ -579,6 +588,7 @@ ul.doc li{margin:5px 0}
       <li>準點門檻預設 15 分內；計算基準預設<b>只用實際時間</b>，還沒起降的航班自然不列入。若想把預估時間也算進去，改成「實際優先，缺則用預估」，數字會比較樂觀。</li>
       <li>時段是依<b>排定時間</b>分時，所以「18 時特別容易延誤」指的是表定 18:00–18:59 的航班，不是實際在那個時間起降的航班。</li>
       <li>每個時段至少要有 3 班可比對，才會納入最容易延誤時段的排名，避免單一班次左右結論。</li>
+      <li>場站篩選固定列出 TPE、RMQ、KHH、TSA 四站（後面數字是資料庫裡的筆數，0 代表還沒抓過），其餘場站依實際資料出現。</li>
       <li>各航班表的「可比對班次」門檻可調；準點率低於 60% 的航班會以紅底標示。</li>
     </ul>
   </div>
@@ -1429,11 +1439,13 @@ function pickerItems(kind){
   if(kind === "gspeer"){
     // 每個航點底下有幾個不同班號 —— 數字直接就是「這個航點有幾支航班號」
     var pm = {};
+    var stnSel = gsStation();
     GS.rows.forEach(function(r){
       var dep = String(r.DepartureAirportID || "").toUpperCase();
       var arr = String(r.ArrivalAirportID || "").toUpperCase();
-      var d = TW_APTS[dep] ? "D" : (TW_APTS[arr] ? "A" : "");
-      var peer = d === "D" ? arr : dep;
+      var side = gsSide(dep, arr, stnSel);
+      if(!side) return;
+      var peer = side.peer;
       if(!peer) return;
       if(!pm[peer]) pm[peer] = {};
       pm[peer][gsFlightNo(r.FlightNumber, GS.airline)] = 1;
@@ -1444,8 +1456,18 @@ function pickerItems(kind){
   }
   if(kind === "apt"){
     var m = {};
+    var MAIN = ["TPE","RMQ","KHH","TSA"];
+    MAIN.forEach(function(k){ m[k] = 0; });          // 主要場站固定列出，沒抓過也看得到
     DB.flights.forEach(function(f){ var k = f.station || ""; m[k] = (m[k] || 0) + 1; });
-    return Object.keys(m).sort().map(function(k){
+    return Object.keys(m).sort(function(a,b){
+      var ia = MAIN.indexOf(a), ib = MAIN.indexOf(b);
+      if(ia >= 0 || ib >= 0){
+        if(ia < 0) return 1;
+        if(ib < 0) return -1;
+        return ia - ib;
+      }
+      return a < b ? -1 : (a > b ? 1 : 0);
+    }).map(function(k){
       return { code:k, label:k || "—", name:(k ? (aptName(k) || "") : "未標示場站"), n:m[k] };
     });
   }
@@ -1454,7 +1476,9 @@ function pickerItems(kind){
   });
 }
 
-/* 共用的收納式複選面板：不選＝全部 */
+/* 共用的收納式複選面板：不選＝全部。
+   注意：搜尋時只重畫清單，不動輸入框本身 —— 在 input 事件裡把輸入框整個換掉，
+   瀏覽器會把該次輸入再補一次，畫面上就變成打一個字出現兩個字。 */
 function renderPicker(container, store, kind, title, cb){
   if(!container) return;
   var list = pickerItems(kind);
@@ -1466,64 +1490,67 @@ function renderPicker(container, store, kind, title, cb){
   for(var dead in store){ if(!live[dead]) delete store[dead]; }
 
   var q = String(container.getAttribute("data-q") || "");
-  var qU = q.trim().toUpperCase();
   var open = container.getAttribute("data-open") === "1";
-
-  var picked = [];
-  list.forEach(function(a){ if(store[a.code]) picked.push(a.label); });
-
-  var shown = list.filter(function(a){
-    if(!qU) return true;
-    return a.label.toUpperCase().indexOf(qU) >= 0 || a.name.toUpperCase().indexOf(qU) >= 0;
-  });
-
-  var label;
   var unit = kind === "apt" ? " 個場站" : (kind === "gspeer" ? " 個航點" : " 家");
-  if(!picked.length) label = "全部 " + list.length + unit;
-  else if(picked.length <= 5) label = "已選 " + picked.join("、");
-  else label = "已選 " + picked.length + unit;
-
-  var items = shown.map(function(a){
-    return '<label class="alrow' + (store[a.code] ? " on" : "") + '">' +
-      '<input type="checkbox" data-code="' + esc(a.code) + '"' + (store[a.code] ? " checked" : "") + ">" +
-      "<b>" + esc(a.label) + "</b><span>" + esc(a.name) + '</span><i>' + a.n + "</i></label>";
-  }).join("");
 
   container.innerHTML =
     '<details class="alpick"' + (open ? " open" : "") + ">" +
-      "<summary>" + esc(title) + "<span class=\"pill\">" + esc(label) + "</span></summary>" +
+      "<summary>" + esc(title) + '<span class="pill"></span></summary>' +
       '<div class="altools">' +
         '<input type="search" class="alq" placeholder="搜尋代碼或名稱" value="' + esc(q) + '">' +
         '<button type="button" class="btn ghost tiny" data-act="all">全選</button>' +
         '<button type="button" class="btn ghost tiny" data-act="none">清除（＝全部）</button>' +
       "</div>" +
-      '<div class="allist">' + (items || '<span class="note">沒有符合的項目。</span>') + "</div>" +
+      '<div class="allist"></div>' +
     "</details>";
 
-  function again(){ renderPicker(container, store, kind, title, cb); }
-
   var det = container.querySelector("details");
+  var pill = container.querySelector(".pill");
+  var listEl = container.querySelector(".allist");
+  var qi = container.querySelector(".alq");
+
+  function labelText(){
+    var picked = [];
+    list.forEach(function(a){ if(store[a.code]) picked.push(a.label); });
+    if(!picked.length) return "全部 " + list.length + unit;
+    if(picked.length <= 5) return "已選 " + picked.join("、");
+    return "已選 " + picked.length + unit;
+  }
+  function shownItems(){
+    var qU = String(container.getAttribute("data-q") || "").trim().toUpperCase();
+    if(!qU) return list;
+    return list.filter(function(a){
+      return a.label.toUpperCase().indexOf(qU) >= 0 || a.name.toUpperCase().indexOf(qU) >= 0;
+    });
+  }
+  function paint(){
+    var shown = shownItems();
+    listEl.innerHTML = shown.map(function(a){
+      return '<label class="alrow' + (store[a.code] ? " on" : "") + '">' +
+        '<input type="checkbox" data-code="' + esc(a.code) + '"' + (store[a.code] ? " checked" : "") + ">" +
+        "<b>" + esc(a.label) + "</b><span>" + esc(a.name) + "</span><i>" + a.n + "</i></label>";
+    }).join("") || '<span class="note">沒有符合的項目。</span>';
+    pill.textContent = labelText();
+
+    var boxes = listEl.querySelectorAll('input[type="checkbox"]');
+    for(var i=0;i<boxes.length;i++){
+      boxes[i].addEventListener("change", function(){
+        var c = this.getAttribute("data-code");
+        if(this.checked) store[c] = true; else delete store[c];
+        container.setAttribute("data-open", "1");
+        paint();
+        cb();
+      });
+    }
+  }
+
   det.addEventListener("toggle", function(){ container.setAttribute("data-open", det.open ? "1" : "0"); });
 
-  var qi = container.querySelector(".alq");
   if(qi){
     qi.addEventListener("input", function(){
       container.setAttribute("data-q", this.value);
       container.setAttribute("data-open", "1");
-      again();
-      var n = container.querySelector(".alq");
-      if(n){ n.focus(); n.setSelectionRange(n.value.length, n.value.length); }
-    });
-  }
-
-  var boxes = container.querySelectorAll('input[type="checkbox"]');
-  for(var i=0;i<boxes.length;i++){
-    boxes[i].addEventListener("change", function(){
-      var c = this.getAttribute("data-code");
-      if(this.checked) store[c] = true; else delete store[c];
-      container.setAttribute("data-open", "1");
-      again();
-      cb();
+      paint();
     });
   }
 
@@ -1532,12 +1559,14 @@ function renderPicker(container, store, kind, title, cb){
     acts[k].addEventListener("click", function(){
       var act = this.getAttribute("data-act");
       if(act === "none"){ for(var c in store) delete store[c]; }
-      else { shown.forEach(function(a){ store[a.code] = true; }); }
+      else { shownItems().forEach(function(a){ store[a.code] = true; }); }
       container.setAttribute("data-open", "1");
-      again();
+      paint();
       cb();
     });
   }
+
+  paint();
 }
 
 function renderBoardChips(){
@@ -1749,12 +1778,27 @@ var OTD_LEGEND = '<div class="legend"><span><i style="background:#2f5f7d"></i>�
   '<span><i style="background:var(--amber)"></i>準點率（左軸）</span>' +
   '<span><i style="background:var(--cyan)"></i>平均延誤分鐘（右軸）</span></div>';
 
+/* 月份下拉一定看得到「本月」與「上月」，即使那個月還沒有任何紀錄 —— 
+   沒資料本身也是資訊，選下去會告訴你要怎麼累積。 */
 function renderOtdMonths(){
-  var list = ymList();
+  var counts = {};
+  DB.flights.forEach(function(f){ if(f.date) counts[f.date.slice(0,7)] = (counts[f.date.slice(0,7)] || 0) + 1; });
+  var thisYm = twDate().slice(0,7);
+  var lastYm = prevYm(thisYm);
+  var set = {};
+  Object.keys(counts).forEach(function(m){ set[m] = 1; });
+  set[thisYm] = 1; set[lastYm] = 1;
+  var list = Object.keys(set).sort();
+
   var sel = $("oMonth"), cur = sel.value;
-  sel.innerHTML = list.map(function(m){ return '<option value="' + m + '">' + ymLabel(m) + "</option>"; }).join("");
+  sel.innerHTML = list.map(function(m){
+    var tag = m === thisYm ? "本月" : (m === lastYm ? "上月" : "");
+    var n = counts[m] || 0;
+    return '<option value="' + m + '">' + ymLabel(m) + (tag ? "（" + tag + "）" : "") +
+           " ・ " + (n ? n + " 筆" : "無資料") + "</option>";
+  }).join("");
   if(list.indexOf(cur) >= 0) sel.value = cur;
-  else if(list.length) sel.value = list[list.length-1];
+  else sel.value = counts[thisYm] ? thisYm : (list.indexOf(thisYm) >= 0 ? thisYm : list[list.length-1]);
   return list;
 }
 function renderOtdChips(){
@@ -1780,7 +1824,12 @@ function renderOtd(){
   var pst = hasPrev ? otdStats(otdRows(pym), thr, base) : null;
 
   if(!rows.length){
-    box.innerHTML = '<div class="empty">' + ymLabel(ym) + " 在目前條件下沒有航班。</div>";
+    var anyThatMonth = DB.flights.some(function(f){ return f.date && f.date.slice(0,7) === ym; });
+    box.innerHTML = anyThatMonth
+      ? '<div class="empty">' + ymLabel(ym) + " 有紀錄，但目前的場站／航空公司／方向條件篩不出任何航班。把上面的篩選清掉試試。</div>"
+      : '<div class="msg info">' + ymLabel(ym) + "：資料庫裡還沒有這個月的紀錄。<br>" +
+        "TDX 即時航班只回傳前日、當日、次日，過去的月份沒辦法回頭補抓——要有整月資料，就得讓「TDX 桃園機場」頁的自動更新每天開著跑，" +
+        "並定期用「資料匯入」的匯出資料檔備份。已經有備份的話，用讀入資料檔接回來就會出現在這裡。</div>";
     return;
   }
 
@@ -2447,10 +2496,25 @@ async function gsFetch(force){
 }
 
 /* 把定期班表展開成指定起始日之後 N 天的實際班次 */
+/* 以所選場站為視角判斷方向與對方站；選「全台灣」時退回原本的台灣端判斷。
+   國內線兩端都在台灣，選定場站後才分得出這班對該站是出發還是抵達。 */
+function gsStation(){ return ($("gsStation") && $("gsStation").value) || "TW"; }
+function gsSide(dep, arr, stnSel){
+  if(stnSel && stnSel !== "TW"){
+    if(dep === stnSel) return { dir:"D", peer:arr, station:stnSel };
+    if(arr === stnSel) return { dir:"A", peer:dep, station:stnSel };
+    return null;
+  }
+  if(TW_APTS[dep]) return { dir:"D", peer:arr, station:dep };
+  if(TW_APTS[arr]) return { dir:"A", peer:dep, station:arr };
+  return null;
+}
+
 function gsExpand(){
   var days = Number(($("gsDays") && $("gsDays").value) || 7) || 7;
   var start = ($("gsStart") && $("gsStart").value) || twDate();
   var dirSel = ($("gsDir") && $("gsDir").value) || "all";
+  var stnSel = gsStation();
   var selPeer = selectedCodes(gsPeers);
   var al = GS.airline;
 
@@ -2464,10 +2528,10 @@ function gsExpand(){
   GS.rows.forEach(function(r){
     var dep = String(r.DepartureAirportID || "").toUpperCase();
     var arr = String(r.ArrivalAirportID || "").toUpperCase();
-    var dir = TW_APTS[dep] ? "D" : (TW_APTS[arr] ? "A" : "");
+    var side = gsSide(dep, arr, stnSel);
+    if(!side) return;
+    var dir = side.dir, peer = side.peer;
     if(dirSel !== "all" && dir !== dirSel) return;
-
-    var peer = dir === "D" ? arr : dep;
     if(selPeer.length && selPeer.indexOf(peer) < 0) return;
 
     var sd = String(r.ScheduleStartDate || "").slice(0,10);
@@ -2584,7 +2648,9 @@ function gsRender(){
     return b.total - a.total;
   });
 
+  var stnNow = gsStation();
   $("gsKpis").innerHTML =
+    kpi("", "場站視角", stnNow === "TW" ? "全台灣" : (stnNow + (aptName(stnNow) ? " " + aptName(stnNow) : ""))) +
     kpi("", "航班號", rows.length) +
     kpi("c", dates.length + " 天總班次", totalLegs) +
     kpi("g", "每日平均", (totalLegs / dates.length).toFixed(1)) +
@@ -2974,7 +3040,7 @@ function shift(hhmm, mins){
   if($("gsStart") && !$("gsStart").value) $("gsStart").value = twDate();
   if($("gsAirline")) $("gsAirline").value = localStorage.getItem("gsAirline") || "JX";
   if($("btnGsLoad")) $("btnGsLoad").addEventListener("click", function(){ gsFetch(true); });
-  ["gsDays","gsDir","gsStart","gsGroup"].forEach(function(id){
+  ["gsDays","gsDir","gsStart","gsGroup","gsStation"].forEach(function(id){
     if($(id)) $(id).addEventListener("change", gsRender);
   });
   if($("gsAirline")) $("gsAirline").addEventListener("change", function(){
