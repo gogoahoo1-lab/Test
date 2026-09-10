@@ -132,6 +132,16 @@ input:focus-visible,button:focus-visible,select:focus-visible,[tabindex]:focus-v
 .d-no{background:rgba(240,102,92,.16);color:var(--no);border:1px solid rgba(240,102,92,.42)}
 .d-na{background:rgba(122,141,160,.14);color:var(--na);border:1px solid rgba(122,141,160,.32)}
 
+/* 現況快報 */
+.live{border:1px solid rgba(220,192,134,.35);border-top:0;background:rgba(220,192,134,.05);padding:13px 16px 14px;display:grid;gap:7px}
+.livehead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-bottom:2px}
+.livehead b{color:var(--gold);font-size:13px;letter-spacing:.02em}
+.livehead .lt{font-variant-numeric:tabular-nums;color:var(--text);font-weight:600}
+.livehead .rf{margin-left:auto;appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;text-decoration:underline}
+.livehead .rf:hover{color:var(--gold)}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(63,196,146,.6);animation:pl 2.2s infinite}
+@keyframes pl{0%{box-shadow:0 0 0 0 rgba(63,196,146,.5)}70%{box-shadow:0 0 0 7px rgba(63,196,146,0)}100%{box-shadow:0 0 0 0 rgba(63,196,146,0)}}
+.livenote{font-size:12.5px;color:#B9CADA;white-space:pre-line;padding:2px 2px 0;margin:0}
 .cards{margin-top:18px;display:grid;gap:11px}
 .card{
   background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
@@ -208,17 +218,21 @@ td.cell{cursor:pointer}
 .f label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:4px}
 .f input{
   width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);
-  font:inherit;font-size:14px;padding:8px 10px;border-radius:9px
+  font:inherit;font-size:16px;padding:7px 10px;border-radius:9px
 }
+/* iOS 在字級小於 16px 的欄位聚焦時會自動放大版面，故所有輸入框一律 16px */
+input,select,textarea{font-size:16px}
+button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
 .step{display:flex;align-items:stretch;background:var(--panel2);border:1px solid var(--line);border-radius:9px;overflow:hidden}
 .step input{
   flex:1;min-width:0;background:transparent;border:0;border-radius:0;text-align:center;
-  padding:8px 2px;font-variant-numeric:tabular-nums;letter-spacing:.02em
+  padding:8px 2px;font-size:16px;font-variant-numeric:tabular-nums;letter-spacing:.02em
 }
 .step input[readonly]{color:var(--gold)}
 .step button{
-  width:32px;flex:0 0 32px;border:0;background:transparent;color:var(--muted);
-  font:inherit;font-size:17px;line-height:1;cursor:pointer;transition:.12s;user-select:none
+  width:34px;flex:0 0 34px;border:0;background:transparent;color:var(--muted);
+  font:inherit;font-size:18px;line-height:1;cursor:pointer;transition:.12s;
+  touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent
 }
 .step button:hover{color:var(--gold);background:rgba(220,192,134,.09)}
 .step button:active{background:rgba(220,192,134,.18)}
@@ -251,6 +265,18 @@ td.cell{cursor:pointer}
 }
 .addleg:hover{color:var(--gold);border-color:rgba(220,192,134,.45)}
 
+.totop{
+  position:fixed;right:16px;top:50%;transform:translateY(-50%) scale(.85);
+  width:46px;height:46px;border-radius:50%;z-index:50;
+  background:rgba(20,36,50,.92);border:1px solid rgba(220,192,134,.42);color:var(--gold);
+  font-size:20px;line-height:1;cursor:pointer;backdrop-filter:blur(8px);
+  box-shadow:0 6px 20px rgba(0,0,0,.4);
+  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+}
+.totop.show{opacity:1;pointer-events:auto;transform:translateY(-50%) scale(1)}
+.totop:hover{background:var(--gold);color:#15202b}
+@supports (padding:max(0px)){ .totop{right:max(16px,env(safe-area-inset-right))} }
 .hint{color:var(--muted);font-size:12.5px;margin-top:26px;padding-top:14px;border-top:1px solid var(--line2)}
 .hidden{display:none !important}
 
@@ -263,7 +289,7 @@ td.cell{cursor:pointer}
 }
 @media print{
   body{background:#fff;color:#000}
-  nav.tabs,.controls,.actions,.addleg,.rm,.codes,.regionrow{display:none !important}
+  nav.tabs,.controls,.actions,.addleg,.rm,.codes,.regionrow,.totop{display:none !important}
   .card,.stationhead,.strip,.slot{background:#fff !important;color:#000 !important;border-color:#bbb !important}
   .bigcode,.timepill{color:#000 !important}
   .note{color:#222 !important}
@@ -341,6 +367,8 @@ td.cell{cursor:pointer}
 
 <p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。</p>
 </div>
+
+<button class="totop" id="toTop" aria-label="回到頂端" title="回到頂端">↑</button>
 
 <script>
 const DATA = {
@@ -2611,7 +2639,7 @@ function read(key, st){
 }
 
 const REGIONS = [...new Set(DATA.stations.map(s=>s.region))];
-let region = "全部", query = "", current = null, matrixKey = "divert";
+let region = "全部", query = "", current = null, matrixKey = "divert", liveOn = true;
 
 document.getElementById("statStations").textContent = DATA.stations.length;
 document.getElementById("statRegions").textContent = REGIONS.length;
@@ -2695,10 +2723,23 @@ function renderDetail(){
     <div class="stationhead">
       <div class="bigcode">${s.code}</div>
       <div class="meta">${s.region}${s.filled<9?" ・ 部分欄位待補":""}</div>
-      <div class="actions"><button class="btn" onclick="window.print()">列印本站</button></div>
+      <div class="actions">
+        <button class="btn" id="liveBtn">${liveOn?"收合快報":"現況快報"}</button>
+        <button class="btn" onclick="window.print()">列印本站</button>
+      </div>
     </div>
+    <div class="live${liveOn?"":" hidden"}" id="live"></div>
     <div class="strip">${slots}</div>
     <div class="cards">${cards}</div>`;
+
+  const lb = document.getElementById("liveBtn");
+  lb.onclick = ()=>{
+    liveOn = !liveOn;
+    lb.textContent = liveOn ? "收合快報" : "現況快報";
+    document.getElementById("live").classList.toggle("hidden", !liveOn);
+    if(liveOn) updateLive();
+  };
+  if(liveOn) updateLive();
 
   host.querySelectorAll(".slot").forEach(b=>{
     b.onclick=()=>{
@@ -2709,6 +2750,116 @@ function renderDetail(){
   host.scrollIntoView({behavior:"smooth",block:"start"});
 }
 function esc(t){return t.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+/* ---- 現況快報：當地時間 × 宵禁 × 上餐 ---- */
+const TZMAP = {
+  TPE:"Asia/Taipei", RMQ:"Asia/Taipei", KHH:"Asia/Taipei",
+  HKG:"Asia/Hong_Kong", MFM:"Asia/Macau",
+  NRT:"Asia/Tokyo", FUK:"Asia/Tokyo", CTS:"Asia/Tokyo", OKA:"Asia/Tokyo", SDJ:"Asia/Tokyo",
+  KIX:"Asia/Tokyo", KMJ:"Asia/Tokyo", NGO:"Asia/Tokyo", HKD:"Asia/Tokyo", TAK:"Asia/Tokyo",
+  UKB:"Asia/Tokyo", SHI:"Asia/Tokyo",
+  PUS:"Asia/Seoul",
+  MNL:"Asia/Manila", CRK:"Asia/Manila", CEB:"Asia/Manila",
+  HAN:"Asia/Ho_Chi_Minh", DAD:"Asia/Ho_Chi_Minh", SGN:"Asia/Ho_Chi_Minh", PQC:"Asia/Ho_Chi_Minh",
+  BKK:"Asia/Bangkok", CNX:"Asia/Bangkok",
+  KUL:"Asia/Kuala_Lumpur", SIN:"Asia/Singapore",
+  CGK:"Asia/Jakarta", DPS:"Asia/Makassar",
+  LAX:"America/Los_Angeles", SFO:"America/Los_Angeles", ONT:"America/Los_Angeles", SEA:"America/Los_Angeles",
+  PHX:"America/Phoenix", DFW:"America/Chicago", IAD:"America/New_York",
+  PRG:"Europe/Prague", SYD:"Australia/Sydney", AKL:"Pacific/Auckland"
+};
+const WD = ["週日","週一","週二","週三","週四","週五","週六"];
+function localParts(tz){
+  const now = new Date();
+  const f = new Intl.DateTimeFormat("en-GB",{timeZone:tz,hour12:false,
+    year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",weekday:"short"});
+  const p = {}; f.formatToParts(now).forEach(x=>p[x.type]=x.value);
+  const hh = (+p.hour)%24, mm = +p.minute;
+  const wdIdx = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].indexOf(p.weekday);
+  return {min: hh*60+mm, hh, mm, wd: wdIdx, date: `${p.month}/${p.day}`, label:`${p.hour}:${p.minute}`};
+}
+function tzOffset(tz, d){
+  const f = new Intl.DateTimeFormat("en-US",{timeZone:tz,hour12:false,
+    year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  const p={}; f.formatToParts(d).forEach(x=>p[x.type]=x.value);
+  return (Date.UTC(+p.year,+p.month-1,+p.day,(+p.hour)%24,+p.minute,+p.second) - Math.floor(d.getTime()/1000)*1000)/60000;
+}
+function isDST(tz){
+  const now=new Date(), y=now.getFullYear();
+  const a=tzOffset(tz,new Date(Date.UTC(y,0,1))), b=tzOffset(tz,new Date(Date.UTC(y,6,1)));
+  return tzOffset(tz,now) > Math.min(a,b);
+}
+/* 依標籤挑出此刻真正適用的宵禁時段 */
+function applicableRanges(ranges, tz, wd){
+  const dst = tz ? isDST(tz) : null;
+  const out=[];
+  ranges.forEach(r=>{
+    const L = r.label||"";
+    if(/夏季|夏令/.test(L) && dst===false) return;
+    if(/冬季|冬令/.test(L) && dst===true) return;
+    if(/[週周]([一二三四五六日天])/.test(L)){
+      const map={"日":0,"天":0,"一":1,"二":2,"三":3,"四":4,"五":5,"六":6};
+      const d = map[/[週周]([一二三四五六日天])/.exec(L)[1]];
+      if(wd!==null && wd!==d){ out.push({...r, skip:`僅${L.match(/[週周][一二三四五六日天]/)[0]}適用，今日不適用`}); return; }
+    }
+    out.push(r);
+  });
+  return out;
+}
+function updateLive(){
+  const box = document.getElementById("live");
+  if(!box || !current) return;
+  const s = current, code = s.code, tz = TZMAP[code];
+  const P = tz ? localParts(tz) : null;
+  const head = `<div class="livehead"><span class="pulse"></span><b>現況快報</b>
+    ${P ? `<span class="lt">${code} 當地 ${P.label}</span><span>${WD[P.wd]} ${P.date}</span>`
+        : `<span class="lt">${code}</span><span>查無時區資料，請以現場時間判斷</span>`}
+    <button class="rf" id="liveRf">更新</button></div>`;
+
+  /* 1. 當地上餐（優先提示） */
+  const cat = s.items.catering, cr = read("catering", cat.status);
+  const catText = cat.status==="V" ? "可當地上餐" : cat.status==="X" ? "不可當地上餐"
+                : cat.status ? "上餐需申請／有條件" : "上餐資料待補";
+  let rows = `<div class="cf cf-${cr.k}"><span class="who">當地上餐</span>
+    <span class="win">${code}</span><span class="verdict">${catText}</span></div>`;
+  if(cat.note) rows += `<p class="livenote">${esc(cat.note)}</p>`;
+
+  /* 2. 宵禁比對 */
+  const cf = s.items.curfew;
+  if(cf.status!=="V"){
+    rows += `<div class="cf cf-ok"><span class="who">宵禁</span><span class="win">${code} 無宵禁</span><span class="verdict">不受限</span></div>`;
+  } else {
+    const ranges = parseCurfew(cf.time);
+    if(!ranges.length){
+      rows += `<div class="cf cf-warn"><span class="who">宵禁</span><span class="win">有宵禁，時間未建檔</span><span class="verdict">請查備註</span></div>`;
+    } else if(!P){
+      rows += `<div class="cf cf-na"><span class="who">宵禁</span><span class="win">${ranges.map(r=>r.raw).join(" / ")}</span><span class="verdict">無當地時間</span></div>`;
+    } else {
+      applicableRanges(ranges, tz, P.wd).forEach(r=>{
+        const lb = r.label ? r.label+" " : "";
+        if(r.skip){
+          rows += `<div class="cf cf-ok"><span class="who">宵禁</span><span class="win">${lb}${r.raw}</span><span class="verdict">${r.skip}</span></div>`;
+          return;
+        }
+        if(inR(P.min, r)){
+          const left = (((r.e - P.min)%1440)+1440)%1440;
+          rows += `<div class="cf cf-no"><span class="who">宵禁中</span><span class="win">${lb}${r.raw}　現在 ${P.label}</span>
+            <span class="verdict">距解除 ${span(left)}</span></div>`;
+        } else {
+          const left = toStart(P.min, r);
+          rows += `<div class="cf cf-${left<=120?"warn":"ok"}"><span class="who">宵禁</span>
+            <span class="win">${lb}${r.raw}　現在 ${P.label}</span>
+            <span class="verdict">裕度 ${span(left)}</span></div>`;
+        }
+      });
+    }
+    if(cf.note) rows += `<p class="livenote">${esc(cf.note)}</p>`;
+  }
+  box.innerHTML = head + rows;
+  const rf = document.getElementById("liveRf");
+  if(rf) rf.onclick = updateLive;
+}
+setInterval(()=>{ if(liveOn) updateLive(); }, 30000);
 
 /* ---- 全站對照 ---- */
 const mc = document.getElementById("matrixChips");
@@ -2856,7 +3007,7 @@ function chain(){
   return {arr, dep};
 }
 
-function bump(i,k,d){
+function bump(i,k,d,keepFocus){
   const S = stops[i];
   if(k==="dep"){
     if(i===0){ let m=toMin(S.dep); if(m===null) m=0; S.dep = clock(m+d); }
@@ -2866,7 +3017,7 @@ function bump(i,k,d){
   } else {
     let m=toMin(S[k]); if(m===null) m=0; S[k] = dur(m+d);
   }
-  renderLegs(i+":"+k);
+  renderLegs(keepFocus ? i+":"+k : null);
 }
 
 function field(label,i,k,value,opts){
@@ -2958,12 +3109,12 @@ function renderLegs(focusKey){
       if(inp.dataset.k==="code") return;
       ev.preventDefault();
       const s = +(inp.dataset.step || STEP);
-      bump(+inp.dataset.i, inp.dataset.k, ev.key==="ArrowUp" ? s : -s);
+      bump(+inp.dataset.i, inp.dataset.k, ev.key==="ArrowUp" ? s : -s, true);
     };
   });
   host.querySelectorAll("[data-b]").forEach(b=>{
     const [i,k,d] = b.dataset.b.split("|");
-    b.onclick = ()=> bump(+i, k, +d);
+    b.onclick = ev=>{ ev.preventDefault(); bump(+i, k, +d, false); };
   });
   host.querySelectorAll("[data-reset]").forEach(b=>{
     b.onclick = ()=>{ stops[+b.dataset.reset].delta = 0; renderLegs(); };
@@ -2982,6 +3133,12 @@ document.getElementById("addLeg").onclick = ()=>{
   stops.push({code:"", tz:"0", aabi:"00:10", gt:"01:00", dep:"", delta:0, ft:"03:00"});
   renderLegs();
 };
+
+const toTop = document.getElementById("toTop");
+addEventListener("scroll", ()=>{
+  toTop.classList.toggle("show", (window.scrollY||document.documentElement.scrollTop) > 320);
+}, {passive:true});
+toTop.onclick = ()=> window.scrollTo({top:0, behavior:"smooth"});
 
 renderMatrix(); renderMatrixDetail(); renderLegs();
 current = DATA.stations.find(s=>s.code==="NRT") || DATA.stations[0];
