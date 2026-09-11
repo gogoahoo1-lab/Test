@@ -249,7 +249,7 @@ ul.doc li{margin:6px 0}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構</p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-11a</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -630,6 +630,7 @@ ul.doc li{margin:6px 0}
 <section id="tab-help" hidden>
   <div class="card">
     <h2>怎麼用</h2>
+    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-11a</b>（航點含 SHI 下地島、UKB 神戶，依國家快選涵蓋日本 32 個航點）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
     <ul class="doc">
       <li>桃園機場走「<b>TDX 桃園機場</b>」頁籤最省事：填 Client ID／Secret 後按立即抓取，到場與離場會一次抓齊。</li>
       <li>TDX 的 <code>$top</code> 預設值只有 <b>30 筆</b>，不分頁就只會拿到 30 班。本頁已改成自動帶 <code>$top</code>／<code>$skip</code> 分頁抓到底。</li>
@@ -717,6 +718,7 @@ var AIRPORTS = {
   TPE:"桃園", TSA:"松山", KHH:"高雄", RMQ:"台中", CYI:"嘉義", PIF:"屏東", MFK:"馬祖北竿", TNN:"台南", HUN:"花蓮", TTT:"台東", MZG:"澎湖", KNH:"金門", LZN:"馬祖南竿", KYD:"蘭嶼", GNI:"綠島", WOT:"望安", CMJ:"七美",
   NRT:"東京成田", HND:"東京羽田", KIX:"大阪關西", ITM:"大阪伊丹", NGO:"名古屋", FUK:"福岡", CTS:"札幌新千歲", OKA:"沖繩那霸",
   KOJ:"鹿兒島", HIJ:"廣島", KMJ:"熊本", TAK:"高松", OKJ:"岡山", KMQ:"小松", SDJ:"仙台", AXT:"秋田", AOJ:"青森", HKD:"函館",
+  SHI:"下地島", UKB:"神戶", ISG:"石垣", MMY:"宮古", FSZ:"靜岡", TOY:"富山", OIT:"大分", NGS:"長崎", KKJ:"北九州", MYJ:"松山", TKS:"德島", KCZ:"高知", SHM:"南紀白濱", IBR:"茨城",
   ICN:"首爾仁川", GMP:"首爾金浦", PUS:"釜山", CJU:"濟州", TAE:"大邱", KWJ:"光州", MWX:"務安",
   HKG:"香港", MFM:"澳門", PVG:"上海浦東", SHA:"上海虹橋", PEK:"北京首都", PKX:"北京大興", CAN:"廣州", SZX:"深圳",
   XMN:"廈門", FOC:"福州", NKG:"南京", HGH:"杭州", CTU:"成都天府", CKG:"重慶", WUH:"武漢", CSX:"長沙", TAO:"青島",
@@ -743,6 +745,7 @@ var AIRPORT_COUNTRY = {
   HUN:"台灣", TTT:"台灣", MZG:"台灣", KNH:"台灣", LZN:"台灣", KYD:"台灣", GNI:"台灣", WOT:"台灣", CMJ:"台灣",
   NRT:"日本", HND:"日本", KIX:"日本", ITM:"日本", NGO:"日本", FUK:"日本", CTS:"日本", OKA:"日本",
   KOJ:"日本", HIJ:"日本", KMJ:"日本", TAK:"日本", OKJ:"日本", KMQ:"日本", SDJ:"日本", AXT:"日本", AOJ:"日本", HKD:"日本",
+  SHI:"日本", UKB:"日本", ISG:"日本", MMY:"日本", FSZ:"日本", TOY:"日本", OIT:"日本", NGS:"日本", KKJ:"日本", MYJ:"日本", TKS:"日本", KCZ:"日本", SHM:"日本", IBR:"日本",
   ICN:"韓國", GMP:"韓國", PUS:"韓國", CJU:"韓國", TAE:"韓國", KWJ:"韓國", MWX:"韓國",
   HKG:"香港", MFM:"澳門",
   PVG:"中國", SHA:"中國", PEK:"中國", PKX:"中國", CAN:"中國", SZX:"中國", XMN:"中國", FOC:"中國", NKG:"中國",
