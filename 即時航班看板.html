@@ -126,6 +126,9 @@ textarea{
 .altools{display:flex;gap:8px;align-items:center;padding:10px 12px;border-top:1px solid var(--line);flex-wrap:wrap}
 .altools .alq{flex:1;min-width:130px}
 .btn.tiny{padding:5px 12px;font-size:12px}
+.cctools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:2px 12px 10px;border-top:1px solid var(--line)}
+.cctools .note{font-size:12px;margin-right:2px}
+.chip.tiny{padding:4px 11px;font-size:12px}
 .allist{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:2px;padding:8px 10px 12px;max-height:230px;overflow:auto;border-top:1px solid var(--line)}
 .alrow{display:flex;align-items:center;gap:8px;padding:5px 9px;border-radius:10px;font-size:13px;cursor:pointer;color:#555}
 .alrow:hover{background:rgba(0,0,0,.04)}
@@ -285,6 +288,14 @@ ul.doc li{margin:6px 0}
     <label class="f">TDX Client Secret
       <input type="password" id="tdxClientSecret" placeholder="輸入 TDX Client Secret">
     </label>
+    <label class="f" style="flex-direction:row;align-items:center;gap:8px;font-size:13.5px;color:var(--txt);align-self:flex-end;padding-bottom:9px">
+      <input type="checkbox" id="tdxRemember" checked> 記住金鑰
+    </label>
+    <button class="btn ghost" id="btnTdxForget" style="align-self:flex-end">清除已存金鑰</button>
+  </div>
+  <div class="note" style="margin-top:8px">
+    金鑰以明文存在這台裝置的瀏覽器（localStorage），只供本頁向 TDX 換發權杖用，不會傳到其他地方。
+    共用電腦請取消勾選「記住金鑰」，或用完按清除。
   </div>
 
   <div style="margin-top:14px">
@@ -657,6 +668,7 @@ ul.doc li{margin:6px 0}
       <li>存下來的 <code>航班資料_YYYY-MM-DD.json</code> 可隨時用「資料匯入」的讀入資料檔接回來，<b>可一次多選</b>整個月的檔案，重複讀同一天不會重複計算。</li>
       <li>瀏覽器本機儲存約 5MB，所以只保存「本機保留天數」內的資料（預設 21 天），且以精簡格式存放。要看更早的月份，把當時的每日檔案讀回來即可——讀進來的資料在關掉分頁前都能分析。</li>
       <li>場站篩選固定列出 TPE、RMQ、KHH、TSA 四站（後面數字是資料庫裡的筆數，0 代表還沒抓過），其餘場站依實際資料出現。</li>
+      <li>定期班表的「航點篩選」可依國家快速選取：展開面板後上方會列出目前航點涵蓋的國家／地區，點一下就勾選該國所有航點，再點一次取消；也可以在下方逐一勾選單一航點，兩種方式可以混用。</li>
       <li>各航班表的「可比對班次」門檻可調；準點率低於 60% 的航班會以紅底標示。</li>
     </ul>
   </div>
@@ -725,6 +737,36 @@ var AIRPORTS = {
   SVO:"莫斯科", LED:"聖彼得堡", CPH:"哥本哈根", ARN:"斯德哥爾摩", HEL:"赫爾辛基", WAW:"華沙", PRG:"布拉格",
   LLW:"里朗威", JNB:"約翰尼斯堡", CAI:"開羅", ADD:"阿迪斯阿貝巴", NBO:"奈洛比", TLV:"特拉維夫"
 };
+/* 航點所屬國家／地區，用於班表分析的航點篩選按國家快速勾選。未列入的代碼視為「其他」。 */
+var AIRPORT_COUNTRY = {
+  TPE:"台灣", TSA:"台灣", KHH:"台灣", RMQ:"台灣", CYI:"台灣", PIF:"台灣", MFK:"台灣", TNN:"台灣",
+  HUN:"台灣", TTT:"台灣", MZG:"台灣", KNH:"台灣", LZN:"台灣", KYD:"台灣", GNI:"台灣", WOT:"台灣", CMJ:"台灣",
+  NRT:"日本", HND:"日本", KIX:"日本", ITM:"日本", NGO:"日本", FUK:"日本", CTS:"日本", OKA:"日本",
+  KOJ:"日本", HIJ:"日本", KMJ:"日本", TAK:"日本", OKJ:"日本", KMQ:"日本", SDJ:"日本", AXT:"日本", AOJ:"日本", HKD:"日本",
+  ICN:"韓國", GMP:"韓國", PUS:"韓國", CJU:"韓國", TAE:"韓國", KWJ:"韓國", MWX:"韓國",
+  HKG:"香港", MFM:"澳門",
+  PVG:"中國", SHA:"中國", PEK:"中國", PKX:"中國", CAN:"中國", SZX:"中國", XMN:"中國", FOC:"中國", NKG:"中國",
+  HGH:"中國", CTU:"中國", CKG:"中國", WUH:"中國", CSX:"中國", TAO:"中國", TSN:"中國", SYX:"中國", HAK:"中國",
+  KMG:"中國", XIY:"中國", ZUH:"中國", NGB:"中國", HFE:"中國", WUX:"中國", TNA:"中國",
+  SIN:"新加坡", KUL:"馬來西亞", BKI:"馬來西亞", PEN:"馬來西亞",
+  BKK:"泰國", DMK:"泰國", HKT:"泰國", CNX:"泰國", CEI:"泰國",
+  SGN:"越南", HAN:"越南", DAD:"越南", CXR:"越南", PQC:"越南", HPH:"越南",
+  MNL:"菲律賓", CEB:"菲律賓", CRK:"菲律賓", KLO:"菲律賓", PPS:"菲律賓",
+  CGK:"印尼", DPS:"印尼", SUB:"印尼",
+  RGN:"緬甸", PNH:"柬埔寨", REP:"柬埔寨", VTE:"寮國",
+  DEL:"印度", BOM:"印度", MAA:"印度", CMB:"斯里蘭卡", DAC:"孟加拉", KTM:"尼泊爾", ULN:"蒙古",
+  LAX:"美國", SFO:"美國", ONT:"美國", SEA:"美國", PDX:"美國", LAS:"美國", PHX:"美國",
+  ORD:"美國", JFK:"美國", EWR:"美國", IAD:"美國", BOS:"美國", ATL:"美國",
+  DFW:"美國", IAH:"美國", ANC:"美國", HNL:"美國", GUM:"美國", SPN:"美國", ROR:"帛琉",
+  YVR:"加拿大", YYZ:"加拿大", MEX:"墨西哥", GDL:"墨西哥", GRU:"巴西",
+  SYD:"澳洲", MEL:"澳洲", BNE:"澳洲", PER:"澳洲", AKL:"紐西蘭", CHC:"紐西蘭", NAN:"斐濟",
+  LHR:"英國", LGW:"英國", MAN:"英國", CDG:"法國", FRA:"德國", MUC:"德國",
+  AMS:"荷蘭", VIE:"奧地利", ZRH:"瑞士", MXP:"義大利", FCO:"義大利", MAD:"西班牙", BCN:"西班牙",
+  IST:"土耳其", DXB:"阿聯", AUH:"阿聯", DOH:"卡達", RUH:"沙烏地阿拉伯", JED:"沙烏地阿拉伯",
+  SVO:"俄羅斯", LED:"俄羅斯", CPH:"丹麥", ARN:"瑞典", HEL:"芬蘭", WAW:"波蘭", PRG:"捷克",
+  LLW:"馬拉威", JNB:"南非", CAI:"埃及", ADD:"衣索比亞", NBO:"肯亞", TLV:"以色列"
+};
+function airportCountry(code){ return AIRPORT_COUNTRY[code] || "其他"; }
 var DOW = ["日","一","二","三","四","五","六"];
 
 /* =========================================================
@@ -1571,6 +1613,19 @@ function pickerItems(kind){
 /* 共用的收納式複選面板：不選＝全部。
    注意：搜尋時只重畫清單，不動輸入框本身 —— 在 input 事件裡把輸入框整個換掉，
    瀏覽器會把該次輸入再補一次，畫面上就變成打一個字出現兩個字。 */
+/* 航點依國家分組，只用在 gspeer（班表分析的航點篩選）；其餘 kind 不受影響。
+   一個國家可能有好幾個航點，計算某國「已選滿」用 every() 判斷，供快選鈕顯示按下狀態。 */
+function groupByCountry(list){
+  var byC = {}, order = [];
+  list.forEach(function(a){
+    var c = airportCountry(a.code);
+    if(!byC[c]){ byC[c] = []; order.push(c); }
+    byC[c].push(a.code);
+  });
+  order.sort(function(a,b){ return byC[b].length - byC[a].length || a.localeCompare(b, "zh-Hant"); });
+  return order.map(function(c){ return { country:c, codes:byC[c] }; });
+}
+
 function renderPicker(container, store, kind, title, cb){
   if(!container) return;
   var list = pickerItems(kind);
@@ -1584,6 +1639,16 @@ function renderPicker(container, store, kind, title, cb){
   var q = String(container.getAttribute("data-q") || "");
   var open = container.getAttribute("data-open") === "1";
   var unit = kind === "apt" ? " 個場站" : (kind === "gspeer" ? " 個航點" : " 家");
+  var byCountry = (kind === "gspeer") ? groupByCountry(list) : [];
+
+  var countryHtml = "";
+  if(byCountry.length > 1){
+    countryHtml = '<div class="cctools"><span class="note">依國家：</span>' +
+      byCountry.map(function(g){
+        return '<button type="button" class="chip tiny" data-country="' + esc(g.country) + '">' +
+          esc(g.country) + '<span class="n">' + g.codes.length + "</span></button>";
+      }).join("") + "</div>";
+  }
 
   container.innerHTML =
     '<details class="alpick"' + (open ? " open" : "") + ">" +
@@ -1593,6 +1658,7 @@ function renderPicker(container, store, kind, title, cb){
         '<button type="button" class="btn ghost tiny" data-act="all">全選</button>' +
         '<button type="button" class="btn ghost tiny" data-act="none">清除（＝全部）</button>' +
       "</div>" +
+      countryHtml +
       '<div class="allist"></div>' +
     "</details>";
 
@@ -1615,6 +1681,14 @@ function renderPicker(container, store, kind, title, cb){
       return a.label.toUpperCase().indexOf(qU) >= 0 || a.name.toUpperCase().indexOf(qU) >= 0;
     });
   }
+  function paintCountryBtns(){
+    byCountry.forEach(function(g){
+      var btn = container.querySelector('[data-country="' + g.country + '"]');
+      if(!btn) return;
+      var allOn = g.codes.length > 0 && g.codes.every(function(c){ return !!store[c]; });
+      btn.setAttribute("aria-pressed", allOn ? "true" : "false");
+    });
+  }
   function paint(){
     var shown = shownItems();
     listEl.innerHTML = shown.map(function(a){
@@ -1623,6 +1697,7 @@ function renderPicker(container, store, kind, title, cb){
         "<b>" + esc(a.label) + "</b><span>" + esc(a.name) + "</span><i>" + a.n + "</i></label>";
     }).join("") || '<span class="note">沒有符合的項目。</span>';
     pill.textContent = labelText();
+    paintCountryBtns();
 
     var boxes = listEl.querySelectorAll('input[type="checkbox"]');
     for(var i=0;i<boxes.length;i++){
@@ -1657,6 +1732,20 @@ function renderPicker(container, store, kind, title, cb){
       cb();
     });
   }
+
+  /* 國家快選：按下時若該國尚未全選就補齊到全選，已經全選就整組取消 —
+     用 every() 現算而非存布林旗標，這樣使用者手動勾／取消單一航點後，國家鈕的按下狀態仍然準確。 */
+  byCountry.forEach(function(g){
+    var btn = container.querySelector('[data-country="' + g.country + '"]');
+    if(!btn) return;
+    btn.addEventListener("click", function(){
+      var allOn = g.codes.length > 0 && g.codes.every(function(c){ return !!store[c]; });
+      g.codes.forEach(function(c){ if(allOn) delete store[c]; else store[c] = true; });
+      container.setAttribute("data-open", "1");
+      paint();
+      cb();
+    });
+  });
 
   paint();
 }
@@ -2503,6 +2592,7 @@ async function tdxFetch(url, opts, what){
 async function tdxToken(){
   var cid = $("tdxClientId").value.trim();
   var sec = $("tdxClientSecret").value.trim();
+  saveTdxCreds();
   if(!cid || !sec) throw new Error("請先輸入 TDX Client ID 與 Client Secret。");
 
   // Token 有效期約一天，快取起來，省掉每輪一次的認證請求。
@@ -2658,6 +2748,39 @@ function tdxImport(data, dir, label, apt){
 }
 
 var tdxRunning = false;
+
+/* TDX 金鑰記憶：預設記住，存在這台裝置的 localStorage。 */
+var TDX_REMEMBER_KEY = "tdxRemember";
+var tdxRemember = true;
+
+function saveTdxCreds(){
+  if(!tdxRemember) return;
+  try{
+    localStorage.setItem("tdxClientId", $("tdxClientId").value.trim());
+    localStorage.setItem("tdxClientSecret", $("tdxClientSecret").value.trim());
+  }catch(e){}
+  tdxCredNote();
+}
+function forgetTdxCreds(alsoClearFields){
+  try{
+    localStorage.removeItem("tdxClientId");
+    localStorage.removeItem("tdxClientSecret");
+  }catch(e){}
+  if(alsoClearFields){
+    $("tdxClientId").value = "";
+    $("tdxClientSecret").value = "";
+    tdxTokenCache = { token:null, exp:0, key:"" };
+  }
+  tdxCredNote("已清除這台裝置上存的金鑰");
+}
+function tdxCredNote(msg){
+  var st = $("tdxStatus");
+  if(!st) return;
+  if(msg){ st.textContent = msg; return; }
+  var has = false;
+  try{ has = !!localStorage.getItem("tdxClientSecret"); }catch(e){}
+  if(has && st.textContent === "尚未連線") st.textContent = "已載入存好的金鑰，可直接抓取";
+}
 
 async function updateTDX(){
   var st = $("tdxStatus");
@@ -3333,14 +3456,31 @@ function shift(hhmm, mins){
     $("btnTdxStop").addEventListener("click", stopTDXAuto);
     $("tdxDate").value = twDate();
     try{
-      $("tdxClientId").value = localStorage.getItem("tdxClientId") || "";
+      var remember = localStorage.getItem(TDX_REMEMBER_KEY);
+      tdxRemember = (remember == null) ? true : (remember === "1");
+      if($("tdxRemember")) $("tdxRemember").checked = tdxRemember;
+      if(tdxRemember){
+        $("tdxClientId").value = localStorage.getItem("tdxClientId") || "";
+        $("tdxClientSecret").value = localStorage.getItem("tdxClientSecret") || "";
+      }
       $("tdxInterval").value = localStorage.getItem("tdxInterval") || "300000";
-      $("tdxClientId").addEventListener("change", function(){
-        localStorage.setItem("tdxClientId",$("tdxClientId").value);
-      });
+      $("tdxClientId").addEventListener("input", saveTdxCreds);
+      $("tdxClientSecret").addEventListener("input", saveTdxCreds);
       $("tdxInterval").addEventListener("change", function(){
         localStorage.setItem("tdxInterval",$("tdxInterval").value);
       });
+      if($("tdxRemember")){
+        $("tdxRemember").addEventListener("change", function(){
+          tdxRemember = this.checked;
+          try{ localStorage.setItem(TDX_REMEMBER_KEY, tdxRemember ? "1" : "0"); }catch(e){}
+          if(tdxRemember) saveTdxCreds();
+          else forgetTdxCreds(false);
+        });
+      }
+      if($("btnTdxForget")){
+        $("btnTdxForget").addEventListener("click", function(){ forgetTdxCreds(true); });
+      }
+      tdxCredNote();
     }catch(e){}
   }
 
