@@ -2520,7 +2520,9 @@
     const cleanStatus = rateTargetStatus(avgCleanRate, 0.9, 1.0);
     const saipBreakdown = saipCategoryBreakdownRange(fromIdx, i);
     const saipTotal = saipBreakdown.reduce(function(s,it){return s+it.value;}, 0);
-    const topSaipCat = saipBreakdown.length ? saipBreakdown[0] : null;
+    // Most common SAIP category, listing all categories when several tie at the max count.
+    const saipMaxVal = saipBreakdown.reduce(function(mx,it){ return Math.max(mx, it.value); }, 0);
+    const topSaipCats = saipMaxVal > 0 ? saipBreakdown.filter(function(it){ return it.value === saipMaxVal; }) : [];
     const fineTotals = inadFineTotals(selectedMonth);
     const attentionRanking = stationAttentionRanking(fromIdx, i).slice(0, 5);
 
@@ -2534,7 +2536,7 @@
     html += '<h4>'+t('ins_h_key_metrics')+'</h4><ul>';
     html += '<li>'+t('label_inad')+'：'+fmt(inadVal)+' '+t('unit_case')+'，'+t('ins_avg_rate')+' <span class="ins-status '+statusClass(inadStatus.cls)+'">'+fmt(avgInadRate,2)+' '+t('unit_per100k')+(inadStatus.text?'（'+inadStatus.text+'）':'')+'</span></li>';
     html += '<li>'+t('label_cabin')+'：'+fmt(cleanVal)+' '+t('unit_case')+'，'+t('ins_avg_rate')+' <span class="ins-status '+statusClass(cleanStatus.cls)+'">'+(avgCleanRate!==null?fmt(avgCleanRate,2):'—')+' '+t('unit_per100k')+(cleanStatus.text?'（'+cleanStatus.text+'）':'')+'</span></li>';
-    html += '<li>'+t('label_saip_total')+'：'+fmt(saipTotal)+' '+t('unit_case')+(topSaipCat?'，'+t('ins_saip_top_cat')+' <b>'+topSaipCat.name+'</b>（'+topSaipCat.value+' '+t('unit_case')+'）':'')+'</li>';
+    html += '<li>'+t('label_saip_total')+'：'+fmt(saipTotal)+' '+t('unit_case')+(topSaipCats.length?'，'+t('ins_saip_top_cat')+' <b>'+topSaipCats.map(function(c){return c.name;}).join('、')+'</b>（'+saipMaxVal+' '+t('unit_case')+'）':'')+'</li>';
     if (fineTotals.length){
       html += '<li>'+t('label_fine_amount_ytd')+'：'+fineTotals.map(function(f){return f.currency+' '+fmt(f.amount);}).join('、')+'</li>';
     }
@@ -2599,7 +2601,10 @@
     const avgInadRate = avgUpTo(m.inadRate.values, i);
     const avgCleanRate = avgUpTo(m.cabinCleanRate.values, i);
     const attentionRanking = stationAttentionRanking(fromIdx, i);
-    const topAttention = attentionRanking.length ? attentionRanking[0] : null;
+    // Hotspot station(s): list all stations tied at the highest combined event count.
+    const attnMax = attentionRanking.length ? attentionRanking[0].total : 0;
+    const topAttentions = attnMax > 0 ? attentionRanking.filter(function(r){ return r.total === attnMax; }) : [];
+    const topAttention = topAttentions.length === 1 ? topAttentions[0] : null;
 
     const paxVal = sumRange(m.pax.values, fromIdx, i);
     const inadVal = sumRange(m.inad.values, fromIdx, i);
@@ -2627,8 +2632,8 @@
       {label:t('label_cabin_avg'), value: avgCleanRate!==null? fmt(avgCleanRate,2):'—', unit:t('unit_per100k'), sub: cleanAvgSub, subClass: cleanAvgStatus.cls},
       {label:t('label_tpe_dly')+'<div class="kpi-label-note">'+t('note_tpe_hotspot')+'</div>', value: fmt(dlyK+dlyP+dlyG), unit:t('unit_case'), breakdownHtml: chipsHtml([{name:t('leg_k'),value:dlyK},{name:t('leg_p'),value:dlyP},{name:t('leg_g'),value:dlyG}].filter(function(x){return x.value>0;}))},
       {label:t('label_saip_total'), value: fmt(saipTotal), unit:t('unit_case'), sub:t('saip_categories_note'), subClass:'flat', breakdownHtml: chipsHtml(saipBreakdown)},
-      {label:t('label_attention_station'), value: topAttention? topAttention.station : '—', unit:'',
-        sub: topAttention ? (t('label_attention_total')+' '+topAttention.total+' '+t('unit_case')) : '',
+      {label:t('label_attention_station'), value: topAttentions.length? topAttentions.map(function(r){return r.station;}).join('、') : '—', unit:'',
+        sub: topAttentions.length ? (t('label_attention_total')+' '+attnMax+' '+t('unit_case')) : '',
         subClass: 'warn',
         breakdownHtml: topAttention ? chipsHtml([
           {name:t('label_inad'), value:topAttention.inad},
@@ -2844,15 +2849,18 @@
 
     const saipBreakdown = saipCategoryBreakdownRange(fromIdx, i);
     const saipTotal = saipBreakdown.reduce(function(s,it){return s+it.value;}, 0);
-    const topCategory = saipBreakdown.length ? saipBreakdown[0] : null;
+    // Top category / station: list all entries tied at the max count instead of just one.
+    const catMax = saipBreakdown.reduce(function(mx,it){ return Math.max(mx, it.value); }, 0);
+    const topCats = catMax > 0 ? saipBreakdown.filter(function(it){ return it.value === catMax; }) : [];
 
     const stationRanking = saipStationRanking(selectedMonth);
-    const topStation = stationRanking.length ? stationRanking[0] : null;
+    const stMax = stationRanking.reduce(function(mx,s){ return Math.max(mx, s.total); }, 0);
+    const topStations = stMax > 0 ? stationRanking.filter(function(s){ return s.total === stMax; }) : [];
 
     const cards = [
       {label:t('label_saipzone_total'), value: fmt(saipTotal), unit:t('unit_case')},
-      {label:t('label_saipzone_top_category'), value: topCategory? topCategory.name : '—', unit:'', sub: topCategory? (topCategory.value+' '+t('unit_case')) : '', subClass:'flat'},
-      {label:t('label_saipzone_top_station'), value: topStation? topStation.station : '—', unit:'', sub: topStation? (topStation.total+' '+t('unit_case')) : '', subClass:'flat'},
+      {label:t('label_saipzone_top_category'), value: topCats.length? topCats.map(function(c){return c.name;}).join('、') : '—', unit:'', sub: topCats.length? (catMax+' '+t('unit_case')) : '', subClass:'flat'},
+      {label:t('label_saipzone_top_station'), value: topStations.length? topStations.map(function(s){return s.station;}).join('、') : '—', unit:'', sub: topStations.length? (stMax+' '+t('unit_case')) : '', subClass:'flat'},
       {label:t('label_saipzone_station_count'), value: fmt(stationRanking.length), unit:t('unit_region')}
     ];
     document.getElementById('kpiSaipZone').innerHTML = cards.map(function(c){
@@ -3433,6 +3441,16 @@
     const avgCleanRate = avgUpTo(om.cabinCleanRate.values, i0);
 
     let occCount, rate, topItem, label, rateLabel;
+    // Returns the display string for the most common item(s): when several items tie at the
+    // same maximum count, list them all (joined) instead of arbitrarily showing just one.
+    // Item names coming from cabinItemTotalsRange are already bilingual-resolved.
+    function topItemsDisplay(itemTotals){
+      if (!itemTotals.length) return '—';
+      const maxVal = itemTotals.reduce(function(mx,it){ return Math.max(mx, it.total); }, 0);
+      if (maxVal <= 0) return '—';
+      const top = itemTotals.filter(function(it){ return it.total === maxVal; }).map(function(it){ return it.name; });
+      return top.join('、');
+    }
     if (selectedMonth === 'all'){
       // regionRows no longer includes a 'TTL' aggregate row (each entry is one real region) -
       // sum the per-region totals directly, and get the most common item from itemByRegion
@@ -3440,20 +3458,15 @@
       occCount = cc.regionRows.reduce(function(s,r){ return s + (r.total||0); }, 0);
       rate = avgCleanRate;
       rateLabel = t('label_cabin_avg');
-      const ytdItemTotals = cabinItemTotalsRange(0, 11);
-      ytdItemTotals.sort(function(a,b){ return b.total-a.total; });
-      topItem = ytdItemTotals.length && ytdItemTotals[0].total>0 ? ytdItemTotals[0].name : '—';
+      topItem = topItemsDisplay(cabinItemTotalsRange(0, 11));
       label = t('label_cabin_ytd');
     } else {
       occCount = occ.overallCase[selectedMonth] || 0;
       rate = occ.per100k[selectedMonth];
       rateLabel = MONTHS_ZH[selectedMonth]+t('label_cabin_rate_month');
-      const itemTotals = cabinItemTotalsForMonth(selectedMonth);
-      itemTotals.sort(function(a,b){return b.total-a.total;});
-      topItem = itemTotals.length && itemTotals[0].total>0 ? itemTotals[0].name : '—';
+      topItem = topItemsDisplay(cabinItemTotalsForMonth(selectedMonth));
       label = MONTHS_ZH[selectedMonth]+t('label_cabin_month');
     }
-    if (topItem) topItem = bilingualLabel(topItem);
     const cards = [
       {label:label, value: fmt(occCount), unit:t('unit_case')},
       {label:rateLabel, value: rate!==null? fmt(rate,2):'—', unit:t('unit_per100k')},
@@ -3606,13 +3619,16 @@
     const byType = {K:0,P:0,G:0,其他:0};
     log.forEach(function(e){ const tp = normType(e.type); byType[['K','P','G'].indexOf(tp)>=0?tp:'其他']++; });
     const stationCounts = deriveStationCounts(log);
-    const topStation = stationCounts[0] || ['—',0];
+    // Top delay station: list all stations tied at the highest count instead of just one.
+    const dlyStMax = stationCounts.length ? stationCounts[0][1] : 0;
+    const topStations = dlyStMax > 0 ? stationCounts.filter(function(s){ return s[1] === dlyStMax; }) : [];
+    const topStationName = topStations.length ? topStations.map(function(s){ return s[0]; }).join('、') : '—';
     const cards = [
       {label: selectedMonth==='all'?t('label_dly_total_ytd'):MONTHS_ZH[selectedMonth]+t('label_dly_total_month'), value: fmt(log.length), unit:t('unit_case')},
       {label:t('leg_k'), value: fmt(byType.K), unit:t('unit_case')},
       {label:t('leg_p'), value: fmt(byType.P), unit:t('unit_case')},
       {label:t('leg_g'), value: fmt(byType.G), unit:t('unit_case')},
-      {label:t('label_top_station'), value: topStation[0], unit:'', sub: topStation[1]+' '+t('unit_case'), subClass:'flat'}
+      {label:t('label_top_station'), value: topStationName, unit:'', sub: topStations.length? (dlyStMax+' '+t('unit_case')) : '', subClass:'flat'}
     ];
     document.getElementById('kpiDly').innerHTML = cards.map(function(c){
       return '<div class="kpi-card"><div class="kpi-label">'+c.label+'</div>'+
