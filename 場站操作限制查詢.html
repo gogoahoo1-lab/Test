@@ -359,7 +359,7 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
 
 <!-- ===== 到離試算 ===== -->
 <section id="p-calc" role="tabpanel" aria-labelledby="t-calc" class="hidden">
-  <p class="calcnote">以場站為單位往下串接：每一格代表航路上的一個場站，每個場站只填一次。第一站填出發時間與飛時；之後每站填時差、抵達→靠檔與地停，系統自動推算抵達與可再起飛時間，並比對該站宵禁算出剩餘裕度。欄位可直接輸入，也可用 − ＋ 微調（飛時 20 分鐘一階、其餘時間 10 分鐘一階、時差 1 小時一階），或用鍵盤上下鍵。時差填「本站時間 − 上一站時間」，例如 TPE 飛 NRT 填 +1。</p>
+  <p class="calcnote">以場站為單位往下串接：每一格代表航路上的一個場站，每個場站只填一次。第一站填出發時間與飛時；之後每站（含最後一站）填時差、抵達→靠檔與地停，系統自動推算抵達與可再起飛時間，並比對該站宵禁算出剩餘裕度。每站的「起飛 ETD」都可用 − ＋ 微調作業裕度（可按「回自動」還原），飛時也可先設好，按「＋ 增加下一個場站」即直接串接下一段。欄位可直接輸入，也可用 − ＋ 微調（飛時 20 分鐘一階、其餘時間 10 分鐘一階、時差 1 小時一階），或用鍵盤上下鍵。時差填「本站時間 − 上一站時間」，例如 TPE 飛 NRT 填 +1。</p>
   <datalist id="codes"></datalist>
   <div id="legs"></div>
   <button class="addleg" id="addLeg">＋ 增加下一個場站</button>
@@ -3065,9 +3065,9 @@ function renderLegs(focusKey){
         + field("時差（小時）", i, "tz", S.tz, {step:TZSTEP, ph:"1"})
         + field("抵達→靠檔", i, "aabi", S.aabi, {ph:"00:10"})
         + field("地停", i, "gt", S.gt, {ph:"01:00"})
-        + (last ? "" :
-             field("起飛 ETD（自動串接）", i, "dep", p?p.t:"--:--", {readonly:true, sub:depSub})
-           + field("飛時", i, "ft", S.ft, {step:FTSTEP, ph:"03:00"}));
+        + field("起飛 ETD（自動串接）", i, "dep", p?p.t:"--:--", {readonly:true, sub:depSub})
+        + field("飛時", i, "ft", S.ft, {step:FTSTEP, ph:"03:00",
+             sub: last ? '<div class="sub2"><span style="color:var(--muted)">供續飛下一站</span></div>' : null});
     }
 
     const out = first
