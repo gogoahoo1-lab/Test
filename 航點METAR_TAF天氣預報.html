@@ -1137,16 +1137,27 @@ async function fetchQuakes(){
 }
 
 // 強震或海嘯警報一律嚴重
+// 地震警戒依規模遞減時效：M<6 → 6hr、M6–7 → 12hr、M7+ → 24hr
+// 海嘯警報不受時效限制（影響可能持續整個 24hr USGS 窗口）
+function quakeTTL(mag){
+  if(mag>=7) return 24;
+  if(mag>=6) return 12;
+  return 6;
+}
 function quakeNotes(s,quakes){
   const out=[];
   (quakes||[]).forEach(q=>{
     const d=haversine(s,q);
-    const hrs=q.time?Math.round((Date.now()-q.time)/3600000):null;
-    const when=hrs==null?"":(hrs<1?"　1 小時內":"　"+hrs+" 小時前");
-    if(q.tsunami&&d<=QUAKE.sea)
+    const hrs=q.time?(Date.now()-q.time)/3600000:null;
+    const hrsR=hrs==null?null:Math.round(hrs);
+    const when=hrsR==null?"":(hrsR<1?"　1 小時內":"　"+hrsR+" 小時前");
+    if(q.tsunami&&d<=QUAKE.sea){
       out.push("海嘯警報，M"+q.mag.toFixed(1)+" 震央距 "+Math.round(d)+" km"+when);
-    else if(q.mag>=QUAKE.mag&&d<=QUAKE.km)
-      out.push("強震 M"+q.mag.toFixed(1)+"，震央距 "+Math.round(d)+" km"+when);
+    } else if(q.mag>=QUAKE.mag&&d<=QUAKE.km){
+      if(hrs!=null&&hrs>quakeTTL(q.mag)) return;   // 超過時效，靜默
+      out.push("強震 M"+q.mag.toFixed(1)+"，震央距 "+Math.round(d)+" km"+when+
+        "（時效 "+quakeTTL(q.mag)+" 小時）");
+    }
   });
   return out;
 }
