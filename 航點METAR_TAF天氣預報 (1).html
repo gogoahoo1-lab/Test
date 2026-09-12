@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="航點天氣">
+<meta name="theme-color" content="#EFEFED">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>航點天氣警戒</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EFEFED;--ink:#141414;--ink-2:#4A4A48;--ink-3:#8C8C88;
+  --line:#E2E2DE;--card:#FFFFFF;--lime:#C7F034;
+  --shadow:0 2px 18px rgba(20,20,20,.07);--r:30px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);color:var(--ink);
+  font-family:"Inter","Noto Sans TC","PingFang TC",system-ui,sans-serif;
+  font-weight:400;font-feature-settings:"tnum" 1;-webkit-font-smoothing:antialiased;
+  min-height:100vh;padding:0 16px 130px;position:relative;overflow-x:hidden;
+}
+body::before,body::after{content:"";position:fixed;z-index:-1;pointer-events:none}
+body::before{
+  top:-260px;right:-200px;width:620px;height:620px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(199,240,52,.55) 0%, rgba(199,240,52,.22) 38%, rgba(199,240,52,0) 70%),
+    radial-gradient(circle at 30% 65%, rgba(214,239,92,.35) 0%, rgba(214,239,92,0) 60%);
+}
+body::after{
+  top:-200px;left:-220px;width:560px;height:560px;
+  background:
+    radial-gradient(circle at 55% 45%, rgba(240,206,208,.6) 0%, rgba(240,206,208,.24) 40%, rgba(240,206,208,0) 72%),
+    radial-gradient(circle at 25% 70%, rgba(232,214,222,.4) 0%, rgba(232,214,222,0) 62%);
+}
+header{padding:34px 6px 20px}
+h1{margin:0 0 6px;font-size:19px;font-weight:500;letter-spacing:-.01em}
+header p{margin:0;font-size:13px;line-height:1.65;color:var(--ink-3);max-width:34em}
+
+.hero{
+  position:relative;overflow:hidden;border-radius:var(--r);padding:26px 24px 24px;color:#1B2109;
+  background:
+    radial-gradient(115% 95% at 14% 16%, #D6EF5C 0%, rgba(214,239,92,0) 58%),
+    radial-gradient(95% 85% at 86% 6%, #C9E85A 0%, rgba(201,232,90,0) 55%),
+    radial-gradient(105% 100% at 74% 96%, #6F7F2E 0%, rgba(111,127,46,0) 62%),
+    radial-gradient(85% 75% at 26% 92%, #9BB144 0%, rgba(155,177,68,0) 60%),
+    linear-gradient(135deg,#7E8F35 0%,#A6BC45 55%,#8C9E3B 100%);
+  box-shadow:var(--shadow);
+}
+.hero::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(circle, rgba(255,255,255,.6) 1px, rgba(255,255,255,0) 1.4px);
+  background-size:15px 15px;
+  -webkit-mask-image:radial-gradient(62% 62% at 50% 48%, #000 0%, rgba(0,0,0,0) 100%);
+  mask-image:radial-gradient(62% 62% at 50% 48%, #000 0%, rgba(0,0,0,0) 100%);
+}
+.hero .lbl{position:relative;font-size:12.5px;color:rgba(27,33,9,.62);margin:0}
+.hero .big{position:relative;display:flex;align-items:baseline;gap:10px;margin:6px 0 2px}
+.hero .big b{font-weight:300;font-size:76px;line-height:.92;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.hero .big span{font-size:13.5px;color:rgba(27,33,9,.7)}
+.hero .who{position:relative;margin:12px 0 0;font-size:13.5px;line-height:1.6;color:rgba(27,33,9,.82);max-width:26em}
+.hero .who i{font-style:normal;font-weight:500}
+
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:18px 0 4px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  flex:0 0 auto;border:0;cursor:pointer;font-family:inherit;background:var(--card);color:var(--ink-3);
+  font-size:13px;font-weight:400;padding:9px 16px;border-radius:999px;box-shadow:var(--shadow);
+}
+.tab[aria-pressed="true"]{background:var(--ink);color:#fff;font-weight:500}
+.tab:focus-visible,.stn-row:focus-visible,.res button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:20px 22px;margin-top:12px}
+.card h2{margin:0 0 14px;font-size:14.5px;font-weight:500;letter-spacing:-.01em}
+.stamp{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 6px 2px;font-size:12px;color:var(--ink-3)}
+.stamp .ghost{padding:7px 14px;margin-left:auto}
+
+.alert{display:flex;gap:14px;align-items:flex-start}
+.key{
+  flex:0 0 auto;width:42px;height:42px;border-radius:50%;background:#fff;border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;color:var(--ink-2);
+}
+.alert.sev .key{background:var(--ink);border-color:var(--ink);color:#fff}
+.alert .body{min-width:0;flex:1}
+.alert h3{margin:0;font-size:14.5px;font-weight:500;letter-spacing:-.01em}
+.alert h3 small{font-weight:400;color:var(--ink-3);font-size:12.5px;margin-left:7px}
+.tag{margin-left:8px;font-size:12px;color:var(--ink-3);font-weight:400}
+.alert.sev .tag{color:var(--ink)}
+.alert p{margin:5px 0 0;font-size:13px;line-height:1.65;color:var(--ink-2)}
+.alert .when{margin-top:6px;font-size:12px;color:var(--ink-3)}
+.alert .when u{text-decoration:none;color:var(--ink)}
+.met{display:flex;gap:16px;align-items:flex-start;margin-top:14px}
+.met .l{flex:1;min-width:0}
+.met .r{flex:0 0 auto;text-align:right}
+.wind{display:flex;align-items:baseline;gap:7px}
+.wind .arw{
+  display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;
+  color:var(--ink);flex:0 0 auto;align-self:center;
+}
+.wind b{font-weight:300;font-size:21px;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.wind b.sp{margin-left:4px}
+.wind i{font-style:normal;font-size:11.5px;color:var(--ink-3)}
+.cond{margin:9px 0 0;font-size:12.5px;line-height:1.75;color:var(--ink-2)}
+.cond.quiet{color:var(--ink-3)}
+.temp{font-weight:300;font-size:26px;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1}
+.temp i{font-style:normal;font-size:13px;color:var(--ink-3);margin-left:2px}
+.sub2{font-size:12px;color:var(--ink-3);margin-top:5px;font-variant-numeric:tabular-nums}
+.badges{display:flex;gap:6px;justify-content:flex-end;margin-top:8px}
+.badge{font-size:11px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--ink-3);white-space:nowrap}
+.badge.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.age{font-size:11px;color:var(--ink-3);margin-top:7px}
+.raw{
+  margin:12px 0 0;padding:12px 14px;background:var(--bg);border-radius:18px;
+  font-size:11.5px;line-height:1.7;color:var(--ink-2);word-break:break-word;
+  font-variant-numeric:tabular-nums;letter-spacing:.01em;
+}
+.raw span{color:var(--ink-3);display:block;margin-bottom:4px}
+
+.stn h3{margin:0 0 2px;font-size:14.5px;font-weight:500;letter-spacing:-.01em}
+.stn h3 small{font-weight:400;color:var(--ink-3);font-size:12.5px;margin-left:7px}
+.days{display:flex;gap:8px;margin-top:14px;justify-content:space-between}
+.day{flex:1;text-align:center}
+.day .key{width:42px;height:42px;margin:0 auto 7px}
+.day.s .key{background:var(--ink);border-color:var(--ink);color:#fff}
+.day.w .key{border-color:#BEBEB8}
+.day .d{font-size:11px;color:var(--ink-3)}
+.day .t{font-size:15px;font-weight:300;letter-spacing:-.04em;font-variant-numeric:tabular-nums;margin-top:3px}
+.day .t i{font-style:normal;color:var(--ink-3);font-size:12px}
+.stn .note{margin:14px 0 0;font-size:12.5px;line-height:1.7;color:var(--ink-2)}
+.stn .note.quiet{color:var(--ink-3)}
+
+.field{display:flex;gap:8px;align-items:center}
+input[type=text],input[type=search]{
+  flex:1;min-width:0;width:100%;font-family:inherit;font-size:14px;color:var(--ink);
+  background:#fff;border:1px solid var(--line);border-radius:999px;padding:11px 16px;outline:none;
+}
+input::placeholder{color:var(--ink-3)}
+input:focus{border-color:#BEBEB8}
+.solid{
+  flex:0 0 auto;border:0;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500;
+  background:var(--ink);color:#fff;padding:11px 20px;border-radius:999px;
+}
+.ghost{
+  border:1px solid var(--line);background:#fff;color:var(--ink-2);font-family:inherit;
+  font-size:12.5px;cursor:pointer;padding:9px 16px;border-radius:999px;
+}
+.hint{margin:12px 2px 0;font-size:12.5px;line-height:1.7;color:var(--ink-3)}
+.res button,.stn-row{
+  display:flex;width:100%;gap:12px;align-items:center;text-align:left;
+  background:transparent;border:0;border-top:1px solid var(--line);
+  font-family:inherit;cursor:pointer;padding:13px 2px;color:var(--ink);
+}
+.res button:first-child,.list .item:first-child .stn-row{border-top:0}
+.nm{font-size:14px;font-weight:500;letter-spacing:-.01em}
+.sb{font-size:12.5px;color:var(--ink-3);margin-top:3px}
+.co{margin-left:auto;font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.edit{padding:4px 0 16px}
+.row{display:flex;gap:8px;margin-top:8px}
+.row label{flex:1;min-width:0}
+.row span{display:block;font-size:11.5px;color:var(--ink-3);margin:0 0 5px 14px}
+.acts{display:flex;gap:8px;margin-top:14px;align-items:center}
+.acts .solid{padding:10px 22px}
+.acts .del{margin-left:auto}
+footer{padding:18px 8px 4px;font-size:11.5px;line-height:1.8;color:var(--ink-3)}
+.thr{margin:0;font-size:13px;line-height:1.9;color:var(--ink-2)}
+.thr div{display:flex;gap:12px;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)}
+.thr div:last-child{border-bottom:0}
+.thr b{font-weight:300;font-size:16px;letter-spacing:-.04em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.facts{margin-top:14px;border-top:1px solid var(--line)}
+.facts div{padding:8px 0}
+.facts span{color:var(--ink-3)}
+.facts b{font-size:14px;font-weight:400;letter-spacing:0;white-space:normal;text-align:right}
+
+nav{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 16px);
+  display:flex;gap:2px;padding:6px;max-width:calc(100vw - 24px);
+  background:rgba(255,255,255,.68);
+  -webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);
+  border-radius:999px;box-shadow:var(--shadow);z-index:5;
+  overflow-x:auto;scrollbar-width:none;
+}
+nav::-webkit-scrollbar{display:none}
+nav button{
+  border:0;cursor:pointer;font-family:inherit;background:transparent;color:var(--ink-3);
+  font-size:12.5px;padding:10px 13px;border-radius:999px;white-space:nowrap;
+}
+nav button[aria-current="true"]{background:var(--ink);color:#fff;font-weight:500}
+nav button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+nav .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--lime);margin-left:7px;vertical-align:1px}
+.hidden{display:none}
+svg{display:block}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>航點天氣警戒</h1>
+  <p>每個航點的最新 TAF，解碼後依影響飛航的門檻標示警戒。中長期的模式預報放在另一頁。</p>
+</header>
+
+<div id="hero"></div>
+<div class="tabs" id="tabs"></div>
+<div class="stamp"><span id="stamp">載入中</span><button class="ghost" id="again">重新抓取</button></div>
+
+<main id="viewAlerts"></main>
+<main id="viewStations" class="hidden"></main>
+<main id="viewForecast" class="hidden"></main>
+
+<main id="viewManage" class="hidden">
+  <div class="card">
+    <h2>新增航點</h2>
+    <div class="field">
+      <input id="q" type="search" placeholder="城市或機場所在地，如 Helsinki" autocomplete="off">
+      <button class="solid" id="go">搜尋</button>
+    </div>
+    <div id="res"></div>
+    <p class="hint" id="hint">選一筆即用該座標抓模式預報，新增後記得補上 ICAO 代碼才會有 TAF。也可直接輸入「緯度, 經度」。</p>
+  </div>
+  <div class="card">
+    <h2>所有航點</h2>
+    <div class="list" id="list"></div>
+    <div class="acts"><button class="ghost" id="fixIcao">補上 ICAO 代碼</button><button class="ghost" id="reset">還原內建清單</button></div>
+  </div>
+  <div class="card">
+    <h2>推播通知</h2>
+    <div class="field"><input type="text" id="pushBase" placeholder="https://你的名稱.workers.dev"></div>
+    <p class="hint" id="pushHint">只有航點升到<b>嚴重</b>時才推播，狀況持續不會重複打擾。iPhone 必須先用 Safari 的分享選單「加入主畫面」，再從主畫面開啟這個 app 才能開啟通知，這是 iOS 的限制。</p>
+    <div class="acts"><button class="solid" id="pushOn">開啟通知</button><button class="ghost" id="pushOff">關閉</button><button class="ghost" id="pushTest">測試</button></div>
+    <div id="pushOut"></div>
+  </div>
+  <div class="card">
+    <h2>地震與海嘯</h2>
+    <div class="row">
+      <label><span>啟用</span><input type="text" id="qOn" placeholder="開 或 關"></label>
+      <label><span>規模門檻</span><input type="text" id="qMag" placeholder="6"></label>
+    </div>
+    <div class="row">
+      <label><span>地震半徑 km</span><input type="text" id="qKm" placeholder="300"></label>
+      <label><span>海嘯半徑 km</span><input type="text" id="qSea" placeholder="800"></label>
+    </div>
+    <p class="hint">資料取自 USGS 全球地震摘要，涵蓋過去 24 小時規模 4.5 以上事件。航點在半徑內且達到規模門檻，或該事件帶有海嘯警報旗標，該站一律列為<b>嚴重</b>。海嘯半徑通常設得比地震大，因為影響範圍沿海岸傳播。</p>
+    <div class="acts"><button class="solid" id="saveQuake">儲存並重抓</button><button class="ghost" id="testQuake">測試</button></div>
+    <div id="quakeOut"></div>
+  </div>
+  <div class="card">
+    <h2>AVWX 資料來源</h2>
+    <div class="field"><input type="text" id="avwxToken" placeholder="AVWX API token"></div>
+    <div class="field" style="margin-top:8px"><input type="text" id="avwxBase" placeholder="https://avwx.rest"></div>
+    <p class="hint">AVWX 直接回傳解析好的 TAF 與 METAR，比 AWC 原文可靠。到 account.avwx.rest 註冊即可取得 token。若你自己用 avwx-api 專案架站，把網址填在第二欄，且自架站台若未啟用帳號資料庫則不需 token。設定後這裡會成為第一順位來源，失敗才退回倉庫快取與中繼。填了 token 之後只會直連或走你自己的中繼，不會把 token 送給公開中繼。</p>
+    <div class="acts"><button class="solid" id="saveAvwx">儲存並重抓</button><button class="ghost" id="testAvwx">測試 AVWX</button></div>
+    <div id="avwxOut"></div>
+  </div>
+  <div class="card">
+    <h2>TAF 中繼</h2>
+    <div class="field"><input type="text" id="proxy" placeholder="留空即可，或填你自己的中繼網址"></div>
+    <p class="hint">美國 AWC 的 TAF 服務不開放跨網域存取，網頁必須經中繼取得。留空時會依序試內建的幾個公開中繼，填了就優先用你自己的。自架中繼最穩定，公開中繼常被限流。</p>
+    <div class="acts"><button class="solid" id="saveProxy">儲存並重抓</button><button class="ghost" id="testRelay">測試中繼</button></div>
+    <div id="relayOut"></div>
+  </div>
+</main>
+
+<main id="viewInfo" class="hidden">
+  <div class="card">
+    <h2>嚴重</h2>
+    <div class="thr">
+      <div><span>火山灰</span><b>一律嚴重</b></div>
+      <div><span>陣風</span><b>40 kt</b></div>
+      <div><span>持續風</span><b>35 kt</b></div>
+      <div><span>能見度，霧或低雲遮蔽</span><b>800 m</b></div>
+      <div><span>雲底，低於一類標準</span><b>200 ft</b></div>
+      <div><span>強降雨、強降雪</span><b>TAF 標 +</b></div>
+      <div><span>凍性降水、颮線</span><b>一律嚴重</b></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>觀察</h2>
+    <div class="thr">
+      <div><span>雷雨</span><b>一律觀察</b></div>
+      <div><span>風</span><b>28 kt</b></div>
+      <div><span>能見度</span><b>3000 m</b></div>
+      <div><span>雲底</span><b>500 ft</b></div>
+      <div><span>一般降雪、有霧</span><b>觀察</b></div>
+      <div><span>TEMPO 與 PROB 時段</span><b>標為短時</b></div>
+    </div>
+  </div>
+  <footer>警戒判讀只採用 NOAA 航空氣象中心提供的 TAF 原文，並附上同站 METAR 實況。「預報」頁的五日資料來自 Open-Meteo 整合的 ECMWF、GFS、JMA 等模式，僅供提前規劃，不參與警戒判讀。放行與轉降決策請以官方 TAF、METAR、SIGMET 及簽派為準。</footer>
+</main>
+
+<nav id="nav">
+  <button data-v="alerts" aria-current="true">警戒<span class="dot" id="navdot"></span></button>
+  <button data-v="stations" aria-current="false">航點</button>
+  <button data-v="forecast" aria-current="false">預報</button>
+  <button data-v="manage" aria-current="false">管理</button>
+  <button data-v="info" aria-current="false">門檻</button>
+</nav>
+
+<script>
+const BUILTIN=[
+ {i:"NRT",k:"RJAA",c:"東京 成田",r:"日韓",la:35.7647,lo:140.3864},
+ {i:"KIX",k:"RJBB",c:"大阪 關西",r:"日韓",la:34.4342,lo:135.2440},
+ {i:"UKB",k:"RJBE",c:"神戶",r:"日韓",la:34.6328,lo:135.2239},
+ {i:"NGO",k:"RJGG",c:"名古屋 中部",r:"日韓",la:34.8584,lo:136.8054},
+ {i:"FUK",k:"RJFF",c:"福岡",r:"日韓",la:33.5859,lo:130.4500},
+ {i:"KMJ",k:"RJFT",c:"熊本",r:"日韓",la:32.8373,lo:130.8551},
+ {i:"TAK",k:"RJOT",c:"高松",r:"日韓",la:34.2142,lo:134.0156},
+ {i:"CTS",k:"RJCC",c:"札幌 新千歲",r:"日韓",la:42.7752,lo:141.6923},
+ {i:"HKD",k:"RJCH",c:"函館",r:"日韓",la:41.7700,lo:140.8219},
+ {i:"SDJ",k:"RJSS",c:"仙台",r:"日韓",la:38.1397,lo:140.9170},
+ {i:"OKA",k:"ROAH",c:"沖繩 那霸",r:"日韓",la:26.1958,lo:127.6458},
+ {i:"MMY",k:"ROMY",c:"宮古島",r:"日韓",la:24.7828,lo:125.2950},
+ {i:"PUS",k:"RKPK",c:"釜山 金海",r:"日韓",la:35.1795,lo:128.9382},
+ {i:"SIN",k:"WSSS",c:"新加坡 樟宜",r:"東南亞",la:1.3644,lo:103.9915},
+ {i:"BKK",k:"VTBS",c:"曼谷 蘇汪那蓬",r:"東南亞",la:13.6900,lo:100.7501},
+ {i:"CNX",k:"VTCC",c:"清邁",r:"東南亞",la:18.7669,lo:98.9626},
+ {i:"DPS",k:"WADD",c:"峇里島 登巴薩",r:"東南亞",la:-8.7482,lo:115.1675},
+ {i:"CGK",k:"WIII",c:"雅加達",r:"東南亞",la:-6.1256,lo:106.6559},
+ {i:"HAN",k:"VVNB",c:"河內 內排",r:"東南亞",la:21.2212,lo:105.8072},
+ {i:"SGN",k:"VVTS",c:"胡志明市",r:"東南亞",la:10.8188,lo:106.6520},
+ {i:"DAD",k:"VVDN",c:"峴港",r:"東南亞",la:16.0439,lo:108.1994},
+ {i:"PQC",k:"VVPQ",c:"富國島",r:"東南亞",la:10.2270,lo:103.9670},
+ {i:"CRK",k:"RPLC",c:"克拉克",r:"東南亞",la:15.1860,lo:120.5600},
+ {i:"CEB",k:"RPVM",c:"宿霧",r:"東南亞",la:10.3075,lo:123.9790},
+ {i:"HKG",k:"VHHH",c:"香港",r:"港澳",la:22.3080,lo:113.9185},
+ {i:"MFM",k:"VMMC",c:"澳門",r:"港澳",la:22.1496,lo:113.5915},
+ {i:"LAX",k:"KLAX",c:"洛杉磯",r:"美洲",la:33.9416,lo:-118.4085},
+ {i:"SFO",k:"KSFO",c:"舊金山",r:"美洲",la:37.6213,lo:-122.3790},
+ {i:"SEA",k:"KSEA",c:"西雅圖",r:"美洲",la:47.4502,lo:-122.3088},
+ {i:"ONT",k:"KONT",c:"安大略",r:"美洲",la:34.0560,lo:-117.6012},
+ {i:"PDX",k:"KPDX",c:"波特蘭",r:"美洲",la:45.5898,lo:-122.5951},
+ {i:"PHX",k:"KPHX",c:"鳳凰城",r:"美洲",la:33.4342,lo:-112.0116},
+ {i:"LAS",k:"KLAS",c:"拉斯維加斯",r:"美洲",la:36.0840,lo:-115.1537},
+ {i:"DFW",k:"KDFW",c:"達拉斯",r:"美洲",la:32.8998,lo:-97.0403},
+ {i:"PRG",k:"LKPR",c:"布拉格",r:"歐洲",la:50.1008,lo:14.2600},
+ {i:"TPE",k:"RCTP",c:"台北 桃園",r:"基地",la:25.0777,lo:121.2328},
+ {i:"RMQ",k:"RCMQ",c:"台中 清泉崗",r:"基地",la:24.2647,lo:120.6213}
+];
+
+const KEY="jx-weather-stations", PKEY="jx-weather-proxy", AKEY="jx-avwx-token", BKEY="jx-avwx-base";
+const QKEY="jx-quake";
+let QUAKE={on:true,mag:6,km:300,sea:800};
+try{ const q=JSON.parse(localStorage.getItem(QKEY)||"null"); if(q) QUAKE=Object.assign(QUAKE,q); }catch(e){}
+// 內建中繼清單裡已經有 allorigins，預設留空避免對同一個服務連打兩次
+const OLD_DEFAULT_PROXY="https://api.allorigins.win/raw?url=";
+const DEFAULT_PROXY="";
+let STATIONS=[],PROXY=DEFAULT_PROXY,AVWX_TOKEN="",AVWX_BASE="https://avwx.rest";
+try{
+  const s=JSON.parse(localStorage.getItem(KEY)||"null");
+  STATIONS=Array.isArray(s)&&s.length?s:BUILTIN.map(x=>Object.assign({},x));
+  const p=localStorage.getItem(PKEY); if(p!==null) PROXY=p;
+  if(PROXY===OLD_DEFAULT_PROXY) PROXY="";
+  AVWX_TOKEN=localStorage.getItem(AKEY)||"";
+  AVWX_BASE=(localStorage.getItem(BKEY)||"https://avwx.rest").replace(/\/+$/,"");
+}catch(e){ STATIONS=BUILTIN.map(x=>Object.assign({},x)); }
+function save(){
+  try{
+    localStorage.setItem(KEY,JSON.stringify(STATIONS));
+    localStorage.setItem(PKEY,PROXY);
+    localStorage.setItem(AKEY,AVWX_TOKEN);
+    localStorage.setItem(BKEY,AVWX_BASE);
+    localStorage.setItem(QKEY,JSON.stringify(QUAKE));
+  }
+  catch(e){ const h=document.getElementById("hint");
+    if(h) h.textContent="這個瀏覽器不讓網頁存資料，改動只在本次開啟期間有效。下載後用 Safari 或 Chrome 開就會記住。"; }
+}
+
+// 內建清單以外的常見機場，供自訂航點自動補碼
+const IATA2ICAO={KHH:"RCKH",TSA:"RCSS",TNN:"RCNN",HUN:"RCYU",TTT:"RCFN",MZG:"RCQC",KNH:"RCBS",
+ HND:"RJTT",ITM:"RJOO",KOJ:"RJFK",OIT:"RJFO",HIJ:"RJOA",KKJ:"RJFR",AOJ:"RJSA",AXT:"RJSK",
+ ICN:"RKSI",GMP:"RKSS",CJU:"RKPC",TAE:"RKTN",MNL:"RPLL",KUL:"WMKK",PEN:"WMKP",BKI:"WBKK",
+ SGN:"VVTS",VCA:"VVCT",CXR:"VVCR",HPH:"VVCI",VII:"VVVD",UTP:"VTBU",HKT:"VTSP",USM:"VTSM",
+ SUB:"WARR",UPG:"WAAA",LOP:"WADL",SRG:"WAHS",PVG:"ZSPD",SHA:"ZSSS",PEK:"ZBAA",PKX:"ZBAD",
+ CAN:"ZGGG",SZX:"ZGSZ",XMN:"ZSAM",FOC:"ZSFZ",NRT:"RJAA",CDG:"LFPG",LHR:"EGLL",FRA:"EDDF",
+ AMS:"EHAM",VIE:"LOWW",MUC:"EDDM",ZRH:"LSZH",MXP:"LIMC",FCO:"LIRF",BCN:"LEBL",MAD:"LEMD",
+ HEL:"EFHK",ARN:"ESSA",CPH:"EKCH",OSL:"ENGM",WAW:"EPWA",BUD:"LHBP",IST:"LTFM",DXB:"OMDB",
+ DOH:"OTHH",SYD:"YSSY",MEL:"YMML",BNE:"YBBN",PER:"YPPH",AKL:"NZAA",YVR:"CYVR",YYZ:"CYYZ",
+ JFK:"KJFK",EWR:"KEWR",ORD:"KORD",ATL:"KATL",IAH:"KIAH",DEN:"KDEN",BOS:"KBOS",SAN:"KSAN",
+ HNL:"PHNL",GUM:"PGUM",ANC:"PANC"};
+
+function migrateICAO(){
+  let changed=0;
+  STATIONS.forEach(s=>{
+    if(s.k&&/^[A-Z]{4}$/.test(s.k.toUpperCase())) return;
+    const b=BUILTIN.find(x=>x.i===s.i)
+        ||BUILTIN.find(x=>Math.abs(x.la-s.la)<0.25&&Math.abs(x.lo-s.lo)<0.25);
+    if(b){ s.k=b.k; changed++; return; }
+    const alt=IATA2ICAO[(s.i||"").toUpperCase()];
+    if(alt){ s.k=alt; changed++; }
+  });
+  if(changed) save();
+  return changed;
+}
+migrateICAO();
+
+const WMO={0:["晴","sun"],1:["晴時多雲","sun"],2:["多雲","cloud"],3:["陰","cloud"],
+ 45:["霧","fog"],48:["凍霧","fog"],51:["毛毛雨","rain"],53:["毛毛雨","rain"],55:["強毛毛雨","rain"],
+ 56:["凍雨","snow"],57:["強凍雨","snow"],61:["小雨","rain"],63:["中雨","rain"],65:["大雨","rain"],
+ 66:["凍雨","snow"],67:["強凍雨","snow"],71:["小雪","snow"],73:["中雪","snow"],75:["大雪","snow"],
+ 77:["冰珠","snow"],80:["陣雨","rain"],81:["強陣雨","rain"],82:["劇烈陣雨","storm"],
+ 85:["陣雪","snow"],86:["強陣雪","snow"],95:["雷雨","storm"],96:["雷雨帶冰雹","storm"],99:["強雷雨帶冰雹","storm"]};
+const wx=c=>WMO[c]||["—","cloud"];
+const S='stroke="currentColor" fill="none" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"';
+const ICON={
+ sun:`<svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="4" ${S}/><path d="M10 1.6v1.8M10 16.6v1.8M18.4 10h-1.8M3.4 10H1.6M15.9 4.1l-1.3 1.3M5.4 14.6l-1.3 1.3M15.9 15.9l-1.3-1.3M5.4 5.4L4.1 4.1" ${S}/></svg>`,
+ cloud:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M6 15.2h8.1a3.2 3.2 0 0 0 .3-6.4 4.6 4.6 0 0 0-8.8-.6A3.5 3.5 0 0 0 6 15.2Z" ${S}/></svg>`,
+ rain:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M6 12.4h8a3 3 0 0 0 .3-6 4.4 4.4 0 0 0-8.4-.6A3.3 3.3 0 0 0 6 12.4Z" ${S}/><path d="M7.2 15.2l-.8 2.4M10.4 15.2l-.8 2.4M13.6 15.2l-.8 2.4" ${S}/></svg>`,
+ storm:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M6 12.1h8a3 3 0 0 0 .3-6 4.4 4.4 0 0 0-8.4-.6A3.3 3.3 0 0 0 6 12.1Z" ${S}/><path d="M10.8 14.1l-2.4 2.9h2.6l-1 2.4" ${S}/></svg>`,
+ snow:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M6 12.2h8a3 3 0 0 0 .3-6 4.4 4.4 0 0 0-8.4-.6A3.3 3.3 0 0 0 6 12.2Z" ${S}/><path d="M7.4 15.6v2.2M6.4 16.2l2 1M8.4 16.2l-2 1M13 15.6v2.2M12 16.2l2 1M14 16.2l-2 1" ${S}/></svg>`,
+ fog:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M6 11.4h8a3 3 0 0 0 .3-6 4.4 4.4 0 0 0-8.4-.6A3.3 3.3 0 0 0 6 11.4Z" ${S}/><path d="M4.4 14.2h11.2M6.4 17h7.6" ${S}/></svg>`,
+ wind:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M2.6 7h9.2a2.4 2.4 0 1 0-2.4-2.6M2.6 11.4h12.6a2.4 2.4 0 1 1-2.4 2.6M2.6 15.4h5.6" ${S}/></svg>`,
+ heat:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M8.6 11.6V4.2a1.7 1.7 0 0 1 3.4 0v7.4a3.4 3.4 0 1 1-3.4 0Z" ${S}/></svg>`,
+ quake:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M1.6 10.4h3l2-5.4 2.8 10.6 2.4-7.2 1.6 2h4.6" ${S}/></svg>`,
+ ash:`<svg width="20" height="20" viewBox="0 0 20 20"><path d="M2.6 17.4 7.4 8.2h5.2l4.8 9.2Z" ${S}/><path d="M7.4 8.2 8.6 5.4M12.6 8.2l1.3-2.8" ${S}/><circle cx="10" cy="2.6" r="1" ${S}/><circle cx="15.4" cy="3.4" r=".8" ${S}/><circle cx="5.2" cy="3.6" r=".8" ${S}/></svg>`
+};
+
+/* ── TAF 解析 ─────────────────── */
+const WXNAME={TS:"雷雨",TSRA:"雷雨",RA:"雨",SN:"雪",DZ:"毛毛雨",GR:"冰雹",GS:"霰",PL:"冰珠",
+ SG:"雪珠",FG:"霧",BR:"輕霧",HZ:"靄",FU:"煙",SA:"揚沙",DU:"塵",VA:"火山灰",SQ:"颮",FC:"漏斗雲",
+ SS:"沙暴",DS:"塵暴",IC:"冰針",UP:"未知降水"};
+const DESCNAME={TS:"雷",SH:"陣",FZ:"凍",BL:"吹",DR:"低吹",MI:"淺",BC:"散片",PR:"部分"};
+
+// TAF 把 2.5 法定哩寫成「2 1/2SM」，中間有空格。
+// 直接 split(" ") 只會讀到 1/2SM，2.5 哩會被當成 0.5 哩而誤報，先合併成單一 token。
+function tafTokens(g){
+  return String(g)
+    .replace(/(^|\s)(\d+)\s+(\d+)\/(\d+)SM\b/g,(m,pre,a,b,c)=>pre+(+a+(+b)/(+c))+"SM")
+    .split(" ").filter(Boolean);
+}
+
+function decodeGroup(g){
+  const o={wind:0,gust:0,vis:null,ceil:null,ts:false,heavy:false,light:false,
+           fz:false,sn:false,fg:false,sq:false,va:false,wx:[]};
+  tafTokens(g).forEach(t=>{
+    let m=t.match(/^(\d{3}|VRB)(\d{2,3})(?:G(\d{2,3}))?(KT|MPS)$/);
+    if(m){const f=m[4]==="MPS"?1.94384:1;o.wind=Math.max(o.wind,+m[2]*f);if(m[3])o.gust=Math.max(o.gust,+m[3]*f);return;}
+    if(/^\d{4}$/.test(t)){const v=+t;o.vis=o.vis===null?(v===9999?10000:v):Math.min(o.vis,v===9999?10000:v);return;}
+    // P 代表「以上」（P6SM 是 6 哩以上），M 代表「以下」
+    m=t.match(/^([PM]?)(\d+(?:\.\d+)?)(?:\/(\d+))?SM$/);
+    if(m){
+      let v=(m[3]?(+m[2]/+m[3]):+m[2])*1609;
+      if(m[1]==="P") v=Math.max(v,10000);
+      o.vis=o.vis===null?v:Math.min(o.vis,v);
+      return;
+    }
+    m=t.match(/^(BKN|OVC|VV)(\d{3})/);
+    if(m){const ft=+m[2]*100;o.ceil=o.ceil===null?ft:Math.min(o.ceil,ft);return;}
+    m=t.match(/^([+-]?)(VC)?((?:TS|SH|FZ|MI|BC|DR|BL|PR)?)((?:RA|SN|DZ|GR|GS|PL|SG|IC|FG|BR|HZ|FU|SA|DU|VA|SQ|FC|SS|DS|UP)+)$/);
+    if(m&&m[4]){
+      const sev=m[1]==="+",lgt=m[1]==="-",desc=m[3],ph=m[4];
+      if(desc==="TS")o.ts=true;
+      if(sev)o.heavy=true;
+      if(lgt)o.light=true;
+      if(desc==="FZ")o.fz=true;
+      if(/SN|SG|PL|GS/.test(ph))o.sn=true;
+      if(ph==="FG")o.fg=true;
+      if(ph==="SQ"||ph==="FC")o.sq=true;
+      if(/VA/.test(ph))o.va=true;
+      const nm=(sev?"強":lgt?"小":"")+(DESCNAME[desc]||"")+(WXNAME[ph]||ph);
+      if(!o.wx.includes(nm))o.wx.push(nm);
+      return;
+    }
+    if(/^[+-]?(VC)?TS$/.test(t)){o.ts=true;if(!o.wx.includes("雷雨"))o.wx.push("雷雨");return;}
+    if(/^[+-]?(VC)?VA$/.test(t))o.va=true;
+  });
+  return o;
+}
+
+// TAF 的時間是「日日時時」，換算成最接近現在的 UTC 時刻（跨月也成立）
+function ddhhToMs(dd,hh){
+  if(!(dd>=1&&dd<=31)||!(hh>=0&&hh<=24)) return null;
+  const now=Date.now(),n=new Date(now);
+  let best=null;
+  for(let k=-1;k<=1;k++){
+    const t=Date.UTC(n.getUTCFullYear(),n.getUTCMonth()+k,dd)+hh*3600000;
+    if(best===null||Math.abs(t-now)<Math.abs(best-now)) best=t;
+  }
+  return best;
+}
+function spanOf(p){
+  const m=p.match(/\b(\d{2})(\d{2})\/(\d{2})(\d{2})\b/);
+  return m?{from:ddhhToMs(+m[1],+m[2]),to:ddhhToMs(+m[3],+m[4])}:null;
+}
+
+function parseTAF(raw){
+  if(!raw) return null;
+  const txt=raw.replace(/\s+/g," ").replace(/=+$/,"").trim();
+  const head=txt.match(/\b(\d{2})(\d{2})\/(\d{2})(\d{2})\b/);
+  const vFrom=head?ddhhToMs(+head[1],+head[2]):null;
+  const vTo=head?ddhhToMs(+head[3],+head[4]):null;
+
+  // PROB30 TEMPO 會被切成「PROB30」和「TEMPO …」兩段，接回同一組才留得住機率
+  const parts=[];
+  txt.split(/ (?=FM\d{6}\b|TEMPO\b|BECMG\b|PROB\d{2}\b)/).forEach(p=>{
+    const prev=parts[parts.length-1];
+    if(prev!==undefined&&/^PROB\d{2}$/.test(prev.trim())) parts[parts.length-1]=prev+" "+p;
+    else parts.push(p);
+  });
+
+  const groups=parts.map(p=>{
+    const kind=/^FM/.test(p)?"FM":/^PROB/.test(p)?"PROB":/^TEMPO/.test(p)?"TEMPO":/^BECMG/.test(p)?"BECMG":"MAIN";
+    const pb=p.match(/^PROB(\d{2})/);
+    const fm=p.match(/^FM(\d{2})(\d{2})(\d{2})/);
+    let from=null,to=null;
+    if(fm){const f=ddhhToMs(+fm[1],+fm[2]);from=f==null?null:f+(+fm[3])*60000;to=vTo;}
+    else if(kind==="MAIN"){from=vFrom;to=vTo;}
+    else{const sp=spanOf(p);if(sp){from=sp.from;to=sp.to;}}
+    return Object.assign(decodeGroup(p),{
+      kind, prob:pb?+pb[1]:null, from, to,
+      fromTxt:fm?(fm[1]+"日 "+fm[2]+fm[3]+"Z"):null, txt:p
+    });
+  });
+  // MAIN 與 FM 的效力只到下一個 FM 開始為止
+  for(let i=0;i<groups.length;i++){
+    if(groups[i].kind!=="MAIN"&&groups[i].kind!=="FM") continue;
+    for(let j=i+1;j<groups.length;j++){
+      if(groups[j].kind==="FM"&&groups[j].from!=null){groups[i].to=groups[j].from;break;}
+    }
+  }
+  return {raw:txt, valid:head?head[1]+head[2]+"/"+head[3]+head[4]:null,
+          validFrom:vFrom, validTo:vTo, expired:vTo!=null&&vTo<=Date.now(), groups};
+}
+
+function assessTAF(t){
+  if(!t) return null;
+  if(t.expired) return {lvl:0,notes:[],icon:"cloud",expired:true};
+  const now=Date.now(),out=[];
+  t.groups.forEach(g=>{
+    if(g.to!=null&&g.to<=now) return;           // 這個時段已經過去，不再報警
+    const tmp=g.kind==="TEMPO"||g.kind==="PROB";
+    const tag=g.prob?"（短時 "+g.prob+"%）":(tmp?"（短時）":"");
+    const gout=[];
+    // 嚴重：火山灰，發動機熄火與機體損傷風險，最優先
+    if(g.va)gout.push([2,"火山灰"+tag,"ash"]);
+    // 嚴重：強風
+    if(g.gust>=50)gout.push([2,"陣風 "+Math.round(g.gust)+" kt，颱風或強烈低壓"+tag,"wind"]);
+    else if(g.gust>=40)gout.push([2,"陣風 "+Math.round(g.gust)+" kt，側風與亂流"+tag,"wind"]);
+    else if(g.wind>=35)gout.push([2,"持續風 "+Math.round(g.wind)+" kt"+tag,"wind"]);
+    else if(g.gust>=30||g.wind>=28)gout.push([1,"風 "+Math.round(Math.max(g.wind,g.gust))+" kt"+tag,"wind"]);
+    // 嚴重：霧與低能見度
+    if(g.vis!=null&&g.vis<800)gout.push([2,"能見度 "+Math.round(g.vis)+" m，低於一類標準"+tag,"fog"]);
+    else if(g.vis!=null&&g.vis<3000)gout.push([1,"能見度 "+Math.round(g.vis)+" m"+tag,"fog"]);
+    else if(g.fg)gout.push([1,"有霧"+tag,"fog"]);
+    if(g.ceil!=null&&g.ceil<=200)gout.push([2,"雲底 "+g.ceil+" ft，低於一類標準"+tag,"fog"]);
+    else if(g.ceil!=null&&g.ceil<500)gout.push([1,"雲底 "+g.ceil+" ft"+tag,"fog"]);
+    // 嚴重：強降水
+    if(g.heavy&&g.sn)gout.push([2,"強降雪，除冰與跑道摩擦係數"+tag,"snow"]);
+    else if(g.wx.some(w=>/冰雹|霰/.test(w)))gout.push([2,"冰雹"+tag,"storm"]);
+    else if(g.heavy)gout.push([2,"強降雨，跑道積水與水花"+tag,"rain"]);
+    else if(g.sn)gout.push([1,(g.light?"小雪":"降雪")+"，需除冰"+tag,"snow"]);
+    // 嚴重：凍性降水與颮
+    if(g.fz)gout.push([2,"凍性降水，積冰風險"+tag,"snow"]);
+    if(g.sq)gout.push([2,"颮線或漏斗雲"+tag,"storm"]);
+    // 觀察：雷雨本身
+    if(g.ts)gout.push([1,"雷雨"+tag,"storm"]);
+    // 機率 30% 以下的時段最高只到「觀察」，不讓它把整站拉上嚴重
+    const cap=g.prob!=null&&g.prob<=30;
+    gout.forEach(x=>out.push(cap?[Math.min(x[0],1),x[1],x[2]]:x));
+  });
+  out.sort((a,b)=>b[0]-a[0]);
+  const seen=new Set(),notes=[];let lvl=0,icon=null;
+  out.forEach(([l,n,ic])=>{lvl=Math.max(lvl,l);if(!seen.has(n)){seen.add(n);notes.push(n);icon=icon||ic;}});
+  return {lvl,notes:notes.slice(0,5),icon:icon||"cloud"};
+}
+
+function assess(d){
+  const o=[],g=d.gust||0,w=d.wind||0,p=d.precip||0,c=d.code,v=d.vis;
+  if(g>=50)o.push([2,"暴風等級陣風 "+Math.round(g)+" kt，颱風或強烈低壓","wind"]);
+  else if(g>=40)o.push([2,"強陣風 "+Math.round(g)+" kt，側風與亂流","wind"]);
+  else if(g>=30)o.push([1,"陣風 "+Math.round(g)+" kt，注意側風","wind"]);
+  else if(w>=28)o.push([1,"持續風 "+Math.round(w)+" kt","wind"]);
+  if([95,96,99].includes(c))o.push([2,"雷雨胞，可能繞飛或空中待命","storm"]);
+  else if(c===82)o.push([2,"劇烈陣雨","storm"]);
+  else if([80,81].includes(c))o.push([1,"對流陣雨","rain"]);
+  if(p>=80)o.push([2,"豪雨 "+Math.round(p)+" mm，跑道積水","rain"]);
+  else if(p>=40)o.push([1,"大雨 "+Math.round(p)+" mm","rain"]);
+  if([75,86,77].includes(c))o.push([2,"大雪或冰珠，除冰與跑道摩擦係數","snow"]);
+  else if([71,73,85].includes(c))o.push([1,"降雪，需除冰","snow"]);
+  if([56,57,66,67].includes(c))o.push([2,"凍雨，積冰風險","snow"]);
+  if(v!=null&&v<800)o.push([2,"能見度 "+Math.round(v)+" m，低於一類標準","fog"]);
+  else if(v!=null&&v<3000)o.push([1,"能見度 "+Math.round(v)+" m，霧或降水遮蔽","fog"]);
+  else if([45,48].includes(c))o.push([1,"有霧","fog"]);
+  if(d.tmax!=null&&d.tmax>=40)o.push([1,"高溫 "+Math.round(d.tmax)+" 度，起飛性能受限","heat"]);
+  if(d.tmin!=null&&d.tmin<=-12)o.push([1,"嚴寒 "+Math.round(d.tmin)+" 度，地面作業與除冰","snow"]);
+  const rank=o.slice().sort((a,b)=>b[0]-a[0]);
+  return {lvl:rank.reduce((m,x)=>Math.max(m,x[0]),0),notes:o.map(x=>x[1]),icon:(rank[0]||[,,null])[2]};
+}
+
+const dayName=s=>["日","一","二","三","四","五","六"][new Date(s+"T00:00:00").getDay()];
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+
+let DATA=[],quakeFail="",modelFail="",filter="all",view="alerts",editing=-1,fetchedAt=null,tafOK=0,tafFail="";
+
+function stampText(){
+  const el=document.getElementById("stamp"); if(!fetchedAt) return;
+  const mins=Math.floor((Date.now()-fetchedAt)/60000);
+  const t=fetchedAt.toLocaleString("zh-TW",{hour12:false,month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"});
+  const rel=mins<1?"剛剛":mins<60?mins+" 分鐘前":Math.floor(mins/60)+" 小時前";
+  el.textContent="更新於 "+t+"　"+rel+"　"+(tafOK?("TAF "+tafOK+" 站"+(relayUsed?"（"+relayUsed+"）":"")):("TAF 未取得"+(tafFail?"："+tafFail:"")));
+}
+setInterval(stampText,60000);
+
+/* ── AVWX：結構化 TAF 與 METAR ─────────────────── */
+function avwxVis(v,units){
+  if(!v) return null;
+  if(v.repr&&/^P/.test(v.repr)) return 10000;
+  if(v.value==null) return null;
+  const u=(units&&units.visibility)||"m";
+  if(u==="sm") return v.value*1609;
+  return v.value>=9999?10000:v.value;
+}
+function avwxCeil(clouds){
+  if(!Array.isArray(clouds)) return null;
+  let c=null;
+  clouds.forEach(x=>{
+    if(!/^(BKN|OVC|VV)$/.test(x.type||"")) return;
+    if(x.altitude==null) return;
+    const ft=x.altitude*100;
+    if(c===null||ft<c) c=ft;
+  });
+  return c;
+}
+function avwxFlags(codes){
+  const reprs=(codes||[]).map(c=>c.repr||c.value||"").filter(Boolean);
+  const j=reprs.join(" ");
+  return {
+    ts:/TS/.test(j), heavy:/(^|\s)\+/.test(j), fz:/FZ/.test(j),
+    sn:/SN|SG|PL|GS/.test(j), fg:/FG/.test(j), sq:/SQ|FC/.test(j), va:/VA/.test(j),
+    light:/(^|\s)-/.test(j),
+    wx:reprs.map(r=>wxText(r)).filter(Boolean)
+  };
+}
+function avwxSpeed(v,units){
+  if(!v||v.value==null) return 0;
+  const u=(units&&units.wind_speed)||"kt";
+  return u==="m/s"?v.value*1.94384:(u==="kmh"?v.value*0.539957:v.value);
+}
+const avwxMs=x=>{const d=(x&&x.dt)?Date.parse(x.dt):NaN;return isNaN(d)?null:d;};
+const avwxProb=p=>{
+  const v=p&&p.probability;
+  if(v==null) return null;
+  const n=(typeof v==="object")?v.value:v;
+  return (typeof n==="number"&&isFinite(n))?n:null;
+};
+function normAvwxTaf(j){
+  if(!j||!j.raw) return null;
+  const groups=(j.forecast||[]).map(p=>{
+    const f=avwxFlags(p.wx_codes);
+    const prob=avwxProb(p);
+    const kind=prob!=null?"PROB":({FROM:"FM",BECMG:"BECMG",TEMPO:"TEMPO",INTER:"TEMPO"}[p.type]||"MAIN");
+    return Object.assign(f,{
+      kind, prob,
+      from:avwxMs(p.start_time), to:avwxMs(p.end_time),
+      wind:avwxSpeed(p.wind_speed,j.units),
+      gust:avwxSpeed(p.wind_gust,j.units),
+      vis:avwxVis(p.visibility,j.units),
+      ceil:avwxCeil(p.clouds),
+      txt:p.raw||""
+    });
+  });
+  const st=j.start_time&&j.start_time.repr, en=j.end_time&&j.end_time.repr;
+  const vTo=avwxMs(j.end_time);
+  return {raw:j.raw, valid:(st&&en)?st+"/"+en:null, issue:j.time&&j.time.dt,
+          validFrom:avwxMs(j.start_time), validTo:vTo,
+          expired:vTo!=null&&vTo<=Date.now(), groups};
+}
+function normAvwxMetar(j){
+  if(!j||!j.raw) return null;
+  const u=j.units||{};
+  let alt=j.altimeter&&j.altimeter.value;
+  if(alt!=null&&(u.altimeter==="inHg"||alt<100)) alt=alt*33.8639;
+  const visM=avwxVis(j.visibility,u);
+  return {
+    icaoId:j.station, rawOb:j.raw,
+    wdir:(j.wind_direction&&(j.wind_direction.repr==="VRB"?"VRB":j.wind_direction.value)),
+    wspd:avwxSpeed(j.wind_speed,u), wgst:j.wind_gust?avwxSpeed(j.wind_gust,u):null,
+    visib:visM==null?null:(visM>=10000?"10+":String(visM/1609)),
+    temp:j.temperature&&j.temperature.value, dewp:j.dewpoint&&j.dewpoint.value,
+    altim:alt, wxString:(j.wx_codes||[]).map(c=>c.repr).join(" "),
+    clouds:(j.clouds||[]).map(c=>({cover:c.type,base:c.altitude==null?null:c.altitude*100})),
+    fltCat:j.flight_rules, reportTime:j.time&&j.time.dt
+  };
+}
+
+async function pool(items,n,fn){
+  const out=[]; let i=0;
+  await Promise.all(Array(Math.min(n,items.length)).fill(0).map(async()=>{
+    while(i<items.length){ const k=i++; try{ out[k]=await fn(items[k]); }catch(e){ out[k]={err:e.message}; } }
+  }));
+  return out;
+}
+
+// 帶狀態碼的請求，AVWX 用不同狀態碼表達不同意義，不能一律當失敗
+async function rawFetch(url,ms){
+  let r;
+  try{ r=await withTimeout(fetch(url),ms); }
+  catch(e){ throw new Error(netErr(e)); }
+  const text=r.status===204?"":await r.text();
+  return {status:r.status,text};
+}
+
+// AVWX 免費方案是每日額度，快取可大幅減少呼叫次數
+const ACACHE="jx-avwx-cache";
+const TTL={taf:20*60*1000, metar:8*60*1000};
+// 每抓一站就重寫整包快取會做幾十次序列化，改成先放記憶體，整輪結束再寫一次
+let CACHE=null, cacheDirty=false;
+function cacheAll(){
+  if(CACHE) return CACHE;
+  try{ CACHE=JSON.parse(localStorage.getItem(ACACHE)||"{}"); }catch(e){ CACHE={}; }
+  if(!CACHE||typeof CACHE!=="object") CACHE={};
+  return CACHE;
+}
+function cacheGet(kind,icao){
+  const c=cacheAll()[kind+":"+icao];
+  return (c&&Date.now()-c.t<TTL[kind])?c.d:null;
+}
+function cachePut(kind,icao,d){
+  cacheAll()[kind+":"+icao]={t:Date.now(),d};
+  cacheDirty=true;
+}
+function cacheFlush(keep){
+  const all=cacheAll(), now=Date.now();
+  let dropped=false;
+  Object.keys(all).forEach(k=>{
+    const icao=k.split(":")[1];
+    const stale=!all[k]||now-all[k].t>24*3600000;
+    if(stale||(keep&&!keep.has(icao))){ delete all[k]; dropped=true; }
+  });
+  if(!cacheDirty&&!dropped) return;
+  try{ localStorage.setItem(ACACHE,JSON.stringify(all)); }catch(e){}
+  cacheDirty=false;
+}
+
+let avwxWrap=null;   // null 直連，否則為中繼包裝函式
+function avwxURL(kind,icao){
+  return AVWX_BASE+"/api/"+kind+"/"+icao+(AVWX_TOKEN?"?token="+encodeURIComponent(AVWX_TOKEN):"");
+}
+async function avwxOne(kind,icao){
+  const hit=cacheGet(kind,icao);
+  if(hit) return {data:hit,cached:true};
+  const base=avwxURL(kind,icao);
+  const {status,text}=await rawFetch(avwxWrap?avwxWrap.u(base):base);
+  if(status===204) return {skip:"無報文"};
+  if(status===400) return {skip:"AVWX 不認得此代碼"};
+  if(status===401) throw new Error("HTTP 401，缺少 token");
+  if(status===403) throw new Error("HTTP 403，token 被拒或方案不符");
+  if(status===429) throw new Error("HTTP 429，已達每日額度");
+  if(status>=400) throw new Error("HTTP "+status);
+  let body=text;
+  if(avwxWrap&&avwxWrap.wrap){ const o=JSON.parse(text||"{}"); body=o.contents||""; }
+  if(!body.trim()) return {skip:"空回應"};
+  const j=JSON.parse(body);
+  if(j.error) return {skip:String(j.error)};
+  cachePut(kind,icao,j);
+  return {data:j};
+}
+
+// 先用單站探路：直連不通就改走中繼，避免 37 站各撞一次 CORS。
+// 「無報文」或「不認得此代碼」代表連得上，只是這一站沒東西，算探路成功。
+async function avwxProbe(icao){
+  const tries=[];
+  const fatal=e=>/HTTP (401|403|429)/.test(e.message);
+  avwxWrap=null;
+  try{
+    const r=await avwxOne("taf",icao);
+    if(r.data||r.skip) return;
+    tries.push("直連：空回應");
+  }catch(e){
+    if(fatal(e)) throw e;              // token 或額度問題，換中繼也沒用
+    tries.push("直連："+e.message);
+  }
+  for(const r of relayList()){
+    if(r.n==="直連") continue;
+    // token 會整串出現在網址裡，不送給公開中繼
+    if(AVWX_TOKEN&&r.n!=="自訂中繼"){ tries.push(r.n+"：已跳過，不把 token 送給公開中繼"); continue; }
+    avwxWrap=r;
+    try{
+      const t=await avwxOne("taf",icao);
+      if(t.data||t.skip) return;
+      tries.push(r.n+"：空回應");
+    }catch(e){
+      if(fatal(e)){ avwxWrap=null; throw e; }
+      tries.push(r.n+"："+e.message);
+    }
+  }
+  avwxWrap=null;
+  throw new Error(tries.join("　"));
+}
+
+// 使用者常直接貼整條 API 網址，這裡把 token 抽出來
+function cleanToken(v){
+  let t=String(v||"").trim().replace(/^["']|["']$/g,"");
+  const m=t.match(/[?&]token=([^&\s]+)/i);
+  if(m) t=decodeURIComponent(m[1]);
+  return t.replace(/^Bearer\s+/i,"").trim();
+}
+
+async function fetchAVWX(ids){
+  if(!AVWX_TOKEN&&AVWX_BASE==="https://avwx.rest") throw new Error("未設定 AVWX token");
+  avwxSkips=[];
+  await avwxProbe(ids[0]);
+  const taf={},metar={},skips=[];
+  let hard=null;
+
+  const tr=await pool(ids,3,async x=>avwxOne("taf",x));
+  tr.forEach((r,n)=>{
+    if(!r) return;
+    if(r.err){ if(/401|403|429/.test(r.err)) hard=hard||r.err; return; }
+    if(r.skip){ skips.push(ids[n]+" "+r.skip); return; }
+    const t=normAvwxTaf(r.data); if(t) taf[ids[n]]=t;
+  });
+  if(hard) throw new Error(hard);
+  if(!Object.keys(taf).length) throw new Error(skips.length?("無可用 TAF："+skips[0]):"AVWX 沒有回傳 TAF");
+
+  const mr=await pool(ids,3,async x=>avwxOne("metar",x));
+  mr.forEach((r,n)=>{
+    if(!r||r.err||r.skip) return;
+    const m=normAvwxMetar(r.data); if(m) metar[ids[n]]=m;
+  });
+  avwxSkips=skips;
+  return {taf,metar};
+}
+
+let avwxSkips=[];
+
+/* ── 取得 TAF / METAR：優先同網域快取，其次多重中繼 ─────────────────── */
+let relayUsed="", tafLog=[];
+
+function relayList(){
+  const out=[];
+  if(PROXY) out.push({n:"自訂中繼",u:u=>PROXY+encodeURIComponent(u)});
+  out.push({n:"codetabs",u:u=>"https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(u)});
+  out.push({n:"allorigins",u:u=>"https://api.allorigins.win/get?url="+encodeURIComponent(u),wrap:true});
+  // 這個中繼是把 ? 之後整串當成目標網址，encode 反而會壞掉，維持原樣接上
+  out.push({n:"cors.workers",u:u=>"https://test.cors.workers.dev/?"+u});
+  out.push({n:"直連",u:u=>u});
+  const seen=new Set();
+  return out.filter(r=>{const k=r.u("https://x/"); if(seen.has(k))return false; seen.add(k); return true;});
+}
+
+// 逾時用 Promise.race，不傳 AbortSignal 給 fetch
+// 有些沙箱環境會把 fetch 轉發給外層視窗，signal 物件無法被複製而導致請求失敗
+function withTimeout(p,ms){
+  let t;
+  return Promise.race([
+    Promise.resolve(p).finally(()=>clearTimeout(t)),
+    new Promise((_,rej)=>{ t=setTimeout(()=>rej(new Error("逾時")),ms||14000); })
+  ]);
+}
+function netErr(e){
+  const m=(e&&e.message)||"連線失敗";
+  if(m==="逾時") return m;
+  return /Failed to fetch|NetworkError|Load failed|denied|blocked/i.test(m)?"網路或 CORS 阻擋":m;
+}
+async function tryFetch(url,ms){
+  let r;
+  try{ r=await withTimeout(fetch(url),ms); }
+  catch(e){ throw new Error(netErr(e)); }
+  const txt=await r.text();
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  return txt;
+}
+
+function parseArray(txt,wrap){
+  let s=(txt||"").trim();
+  if(!s) return [];
+  if(wrap){
+    const o=JSON.parse(s);
+    s=(o&&typeof o.contents==="string")?o.contents.trim():"";
+    if(!s) return [];
+  }
+  if(s[0]!=="["&&s[0]!=="{") throw new Error("回傳不是 JSON，可能是中繼的錯誤頁");
+  const j=JSON.parse(s);
+  return Array.isArray(j)?j:(j.data&&Array.isArray(j.data)?j.data:[j]);
+}
+
+function batches(arr,n){const o=[];for(let i=0;i<arr.length;i+=n)o.push(arr.slice(i,i+n));return o;}
+
+async function awcFetch(kind,ids){
+  const urls=batches(ids,12).map(b=>"https://aviationweather.gov/api/data/"+kind+"?format=json&ids="+b.join(","));
+  for(const r of relayList()){
+    try{
+      const rows=[];
+      for(const u of urls) rows.push(...parseArray(await tryFetch(r.u(u)),r.wrap));
+      relayUsed=r.n;
+      return rows;
+    }catch(e){ tafLog.push(r.n+" 取 "+kind+"："+e.message); }
+  }
+  throw new Error(tafLog[tafLog.length-1]||"全部中繼都失敗");
+}
+
+// GitHub Actions 每 15 分鐘更新的同網域快取，沒有 CORS 問題
+async function localCache(){
+  const [t,m]=await Promise.all([
+    tryFetch("data/taf.json?t="+Date.now(),8000),
+    tryFetch("data/metar.json?t="+Date.now(),8000).catch(()=>"[]")
+  ]);
+  const taf=parseArray(t), metar=parseArray(m);
+  if(!taf.length) throw new Error("快取檔沒有資料");
+  return {taf,metar};
+}
+
+async function fetchAWC(){
+  tafLog=[]; relayUsed="";
+  const ids=[...new Set(STATIONS.map(s=>(s.k||"").toUpperCase()).filter(x=>/^[A-Z]{4}$/.test(x)))];
+  const out={taf:{},metar:{}};
+  if(!ids.length){tafOK=0;tafFail="沒有 ICAO 代碼";return out;}
+  try{ return await fetchAWCInner(ids,out); }
+  finally{ cacheFlush(new Set(ids)); }
+}
+
+async function fetchAWCInner(ids,out){
+
+  // 1. AVWX（結構化解析，需 token 或自架站台）
+  if(AVWX_TOKEN||AVWX_BASE!=="https://avwx.rest"){
+    try{
+      const a=await fetchAVWX(ids);
+      tafOK=Object.keys(a.taf).length;
+      if(tafOK){
+        relayUsed="AVWX"+(avwxWrap?"／"+avwxWrap.n:"")+(avwxSkips.length?"，"+avwxSkips.length+" 站無報文":"");
+        tafFail=""; return a;
+      }
+    }catch(e){ tafLog.push("AVWX："+e.message); }
+  }
+
+  // 2. 倉庫快取（GitHub Actions 產生的 AWC 原始資料）
+  try{
+    const c=await localCache();
+    c.taf.forEach(x=>{ if(x&&x.icaoId&&x.rawTAF){const t=parseTAF(x.rawTAF); if(t){t.issue=x.issueTime; out.taf[x.icaoId]=t;} } });
+    c.metar.forEach(x=>{ if(x&&x.icaoId&&x.rawOb) out.metar[x.icaoId]=x; });
+    tafOK=Object.keys(out.taf).length;
+    if(tafOK){ relayUsed="倉庫快取"; tafFail=""; return out; }
+  }catch(e){ tafLog.push("倉庫快取："+e.message); }
+
+  // 3. AWC 加中繼
+  try{
+    (await awcFetch("taf",ids)).forEach(x=>{
+      if(x&&x.icaoId&&x.rawTAF){const t=parseTAF(x.rawTAF); if(t){t.issue=x.issueTime; out.taf[x.icaoId]=t;}}
+    });
+    tafOK=Object.keys(out.taf).length;
+    tafFail=tafOK?"":(tafLog[0]||"中繼有回應但沒有 TAF 資料");
+  }catch(e){ tafOK=0; tafFail=e.message; }
+  try{
+    (await awcFetch("metar",ids)).forEach(x=>{ if(x&&x.icaoId&&x.rawOb) out.metar[x.icaoId]=x; });
+  }catch(e){ tafLog.push("METAR："+e.message); }
+  return out;
+}
+
+async function load(){
+  if(!STATIONS.length){DATA=[];render();return;}
+  const la=STATIONS.map(s=>s.la).join(","),lo=STATIONS.map(s=>s.lo).join(",");
+  const url="https://api.open-meteo.com/v1/forecast?latitude="+la+"&longitude="+lo+
+   "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max"+
+   "&hourly=visibility,weather_code&forecast_days=5&timezone=auto&wind_speed_unit=kn";
+
+  // 三個來源彼此獨立，任何一個掛掉不該讓另外兩個的結果一起消失
+  modelFail=""; quakeFail="";
+  const [j,awc,quakes]=await Promise.all([
+    withTimeout(fetch(url),20000)
+      .then(r=>r.ok?r.json():Promise.reject(new Error("HTTP "+r.status)))
+      .then(x=>Array.isArray(x)?x:[x])
+      .catch(e=>{ modelFail=netErr(e); return []; }),
+    fetchAWC().catch(e=>{ tafOK=0; tafFail=e.message; return {taf:{},metar:{}}; }),
+    fetchQuakes().catch(e=>{ quakeFail=e.message; return []; })
+  ]);
+
+  DATA=STATIONS.map((s,n)=>{
+    const b=j[n]||{},dd=b.daily||{},hh=b.hourly||{};
+    const num=(arr,k)=>Array.isArray(arr)?arr[k]:null;
+    const days=(Array.isArray(dd.time)?dd.time:[]).map((t,k)=>{
+      let vis=null,worst=num(dd.weather_code,k);
+      if(hh.time)for(let x=0;x<hh.time.length;x++){
+        if(hh.time[x].slice(0,10)!==t)continue;
+        const v=hh.visibility?hh.visibility[x]:null;
+        if(v!=null&&(vis===null||v<vis))vis=v;
+        const c=hh.weather_code?hh.weather_code[x]:null;
+        if(c!=null&&[95,96,99,82,75,86,66,67].includes(c))worst=c;
+      }
+      return{date:t,code:worst,tmax:num(dd.temperature_2m_max,k),tmin:num(dd.temperature_2m_min,k),
+        precip:num(dd.precipitation_sum,k),wind:num(dd.wind_speed_10m_max,k),
+        gust:num(dd.wind_gusts_10m_max,k),vis};
+    }).map(d=>Object.assign(d,{risk:assess(d)}));
+
+    const icao=(s.k||"").toUpperCase();
+    const taf=awc.taf[icao]||null, metar=awc.metar[icao]||null;
+    let tafRisk=taf?assessTAF(taf):null;
+    if(ashInMetar(metar)){
+      tafRisk=tafRisk||{lvl:0,notes:[],icon:"ash"};
+      if(!tafRisk.notes.some(n=>/火山灰/.test(n))) tafRisk.notes.unshift("METAR 觀測到火山灰");
+      tafRisk.lvl=2; tafRisk.icon="ash";
+    }
+    const qn=quakeNotes(s,quakes);
+    if(qn.length){
+      tafRisk=tafRisk||{lvl:0,notes:[],icon:"quake"};
+      tafRisk.notes=qn.concat(tafRisk.notes);
+      tafRisk.lvl=2;
+      if(!/火山灰/.test(tafRisk.notes[qn.length]||"")) tafRisk.icon="quake";
+    }
+    return Object.assign({},s,{
+      days, mlvl:days.reduce((m,d)=>Math.max(m,d.risk.lvl),0),
+      taf, tafRisk, metar, quakes:qn, lvl:tafRisk?tafRisk.lvl:0
+    });
+  });
+  fetchedAt=new Date();
+  stampText(); render();
+}
+
+function renderTabs(){
+  const regs=[...new Set(STATIONS.map(s=>s.r))];
+  if(!regs.includes(filter)&&filter!=="all") filter="all";
+  document.getElementById("tabs").innerHTML=
+    ['<button class="tab" data-reg="all" aria-pressed="'+(filter==="all")+'">全部</button>']
+    .concat(regs.map(r=>'<button class="tab" data-reg="'+esc(r)+'" aria-pressed="'+(filter===r)+'">'+esc(r)+'</button>')).join("");
+}
+
+function severity(s){
+  if(!s.tafRisk) return 0;
+  if(s.quakes&&s.quakes.length) return s.tafRisk.lvl*100+16;
+  if(!s.taf) return s.tafRisk.lvl*100+14;
+  let peak=0,hits=0;
+  if(s.tafRisk.icon==="ash") peak=1.40;
+  s.taf.groups.forEach(g=>{
+    let x=0;
+    if(g.va)x=Math.max(x,1.40);
+    if(g.gust)x=Math.max(x,g.gust/40);
+    if(g.wind)x=Math.max(x,g.wind/45);
+    if(g.ts)x=Math.max(x,1.15);
+    if(g.fz||g.sq)x=Math.max(x,1.20);
+    if(g.vis!=null&&g.vis<3000)x=Math.max(x,0.6+(3000-g.vis)/3000);
+    if(g.ceil!=null&&g.ceil<500)x=Math.max(x,0.6+(500-g.ceil)/500);
+    if(g.to!=null&&g.to<=Date.now()) x=0;              // 已過去的時段不影響排序
+    if(g.prob!=null&&g.prob<=30) x*=0.7;               // 低機率時段權重打折
+    if(x>0.55)hits++;
+    peak=Math.max(peak,x);
+  });
+  return s.tafRisk.lvl*100+peak*10+hits;
+}
+
+// 航點頁的 METAR 逐項欄位
+function metarFacts(s){
+  const m=s.metar;
+  if(!m) return '';
+  const row=(k,v)=>v?'<div><span>'+k+'</span><b>'+esc(v)+'</b></div>':'';
+  const spd=m.wspd==null?null:Math.round(m.wspd);
+  const dir=m.wdir==="VRB"?"不定向":(m.wdir==null?null:String(m.wdir).padStart(3,"0")+"°");
+  const wind=spd===0?"靜風":(spd==null?null:(dir?dir+"　":"")+spd+" kt"+(m.wgst?"　陣風 "+Math.round(m.wgst)+" kt":""));
+  const h=rh(m.temp,m.dewp);
+  let hpa=m.altim==null?null:(m.altim<100?m.altim*33.8639:m.altim);
+  const t=m.reportTime||m.obsTime;
+  let when=null;
+  if(t){
+    const d=new Date(String(t).replace(" ","T")+(/[Zz]|\+/.test(String(t))?"":"Z"));
+    if(!isNaN(d)) when=d.toLocaleString("zh-TW",{hour12:false,month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})+
+      "　"+String(d.getUTCHours()).padStart(2,"0")+String(d.getUTCMinutes()).padStart(2,"0")+"Z";
+  }
+  const cat={VFR:"VFR 目視",MVFR:"MVFR 邊際目視",IFR:"IFR 儀器",LIFR:"LIFR 低於儀器"}[(m.fltCat||"").toUpperCase()]||m.fltCat;
+  const body=[
+    row("風",wind),
+    row("能見度",visText(m.visib)),
+    row("天氣",wxText(m.wxString)),
+    row("雲層",cloudText(m.clouds)||(m.clouds&&!m.clouds.length?"無顯著雲":null)),
+    row("溫度",m.temp==null?null:Math.round(m.temp)+" °C"),
+    row("露點",m.dewp==null?null:Math.round(m.dewp)+" °C"),
+    row("相對濕度",h==null?null:h+" %"),
+    row("修正海平面氣壓",hpa==null?null:Math.round(hpa)+" hPa"),
+    row("飛行類別",cat),
+    row("觀測時間",when)
+  ].join("");
+  return body?'<div class="thr facts">'+body+'</div>':'';
+}
+
+/* ── 地震與海嘯 ─────────────────── */
+// 資料來源：USGS 全球地震摘要，支援跨網域直連
+function haversine(a,b){
+  const R=6371, r=Math.PI/180;
+  const dla=(b.la-a.la)*r, dlo=(b.lo-a.lo)*r;
+  const h=Math.sin(dla/2)**2+Math.cos(a.la*r)*Math.cos(b.la*r)*Math.sin(dlo/2)**2;
+  return 2*R*Math.asin(Math.min(1,Math.sqrt(h)));
+}
+
+async function fetchQuakes(){
+  if(!QUAKE.on) return [];
+  const url="https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson";
+  let txt=null;
+  try{ txt=await tryFetch(url,12000); }
+  catch(e){
+    for(const r of relayList()){
+      if(r.n==="直連") continue;
+      try{
+        const t=await tryFetch(r.u(url),12000);
+        txt=r.wrap?(JSON.parse(t||"{}").contents||""):t;
+        if(txt) break;
+      }catch(e2){}
+    }
+  }
+  if(!txt) throw new Error("取不到地震資料");
+  const j=JSON.parse(txt);
+  return (j.features||[]).filter(f=>f&&f.properties&&f.geometry).map(f=>({
+    mag:f.properties.mag, place:f.properties.place, tsunami:f.properties.tsunami===1,
+    time:f.properties.time, lo:f.geometry.coordinates[0], la:f.geometry.coordinates[1],
+    depth:f.geometry.coordinates[2]
+  })).filter(q=>q.mag!=null);
+}
+
+// 強震或海嘯警報一律嚴重
+function quakeNotes(s,quakes){
+  const out=[];
+  (quakes||[]).forEach(q=>{
+    const d=haversine(s,q);
+    const hrs=q.time?Math.round((Date.now()-q.time)/3600000):null;
+    const when=hrs==null?"":(hrs<1?"　1 小時內":"　"+hrs+" 小時前");
+    if(q.tsunami&&d<=QUAKE.sea)
+      out.push("海嘯警報，M"+q.mag.toFixed(1)+" 震央距 "+Math.round(d)+" km"+when);
+    else if(q.mag>=QUAKE.mag&&d<=QUAKE.km)
+      out.push("強震 M"+q.mag.toFixed(1)+"，震央距 "+Math.round(d)+" km"+when);
+  });
+  return out;
+}
+
+/* ── 地震與海嘯 END ─────────────────── */
+/* ── METAR 實況呈現 ─────────────────── */
+const COVER={CLR:"晴空",SKC:"晴空",CAVOK:"良好",NCD:"無雲",NSC:"無顯著雲",FEW:"少雲",SCT:"疏雲",BKN:"裂雲",OVC:"密雲",OVX:"垂直能見度"};
+const WXTOK={DZ:"毛毛雨",RA:"雨",SN:"雪",SG:"雪珠",PL:"冰珠",GR:"冰雹",GS:"霰",IC:"冰針",UP:"未知降水",
+ FG:"霧",BR:"輕霧",HZ:"靄",FU:"煙",SA:"揚沙",DU:"塵",VA:"火山灰",PY:"水沫",SQ:"颮",FC:"漏斗雲",SS:"沙暴",DS:"塵暴"};
+function wxText(str){
+  if(!str) return "";
+  return str.split(" ").map(t=>{
+    let s="";
+    if(t[0]==="+"){s="強";t=t.slice(1);} else if(t[0]==="-"){s="小";t=t.slice(1);}
+    if(t.startsWith("VC")){s="附近"+s;t=t.slice(2);}
+    let d="";
+    if(t.startsWith("TS")){d="雷";t=t.slice(2);}
+    else if(t.startsWith("SH")){d="陣";t=t.slice(2);}
+    else if(t.startsWith("FZ")){d="凍";t=t.slice(2);}
+    const body=t.replace(/(DZ|RA|SN|SG|PL|GR|GS|IC|UP|FG|BR|HZ|FU|SA|DU|VA|PY|SQ|FC|SS|DS)/g,m=>WXTOK[m]||m);
+    return s+d+(d&&!t?"雨":"")+body;
+  }).filter(Boolean).join("、");
+}
+function rh(t,d){
+  if(t==null||d==null) return null;
+  const e=x=>6.112*Math.exp(17.62*x/(243.12+x));
+  return Math.round(100*e(d)/e(t));
+}
+function visText(v){
+  if(v==null) return "";
+  const plus=String(v).includes("+");
+  const sm=parseFloat(String(v).replace("+",""));
+  if(!isFinite(sm)) return "";
+  const km=sm*1.609;
+  return (plus||km>=9.9)?"10 km 以上":(km>=1?km.toFixed(km<10?1:0)+" km":Math.round(km*1000)+" m");
+}
+function cloudText(cl){
+  if(!Array.isArray(cl)||!cl.length) return "";
+  return cl.slice(0,2).map(c=>{
+    const nm=COVER[c.cover]||c.cover;
+    return c.base!=null?nm+" "+c.base+" ft":nm;
+  }).join("　");
+}
+function windBlock(m){
+  const spd=m.wspd==null?null:Math.round(m.wspd);
+  if(spd===0) return '<div class="wind"><span class="arw"></span><b>靜風</b></div>';
+  const vrb=m.wdir==="VRB"||m.wdir==null;
+  const dir=vrb?null:+m.wdir;
+  const arrow=vrb?'<span class="arw"></span>'
+    :'<span class="arw" style="transform:rotate('+((dir+180)%360)+'deg)">'+
+     '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5 12 14 8 11.3 4 14Z" fill="currentColor"/></svg></span>';
+  return '<div class="wind">'+arrow+
+    '<b>'+(vrb?"var":dir.toString().padStart(3,"0")+"°")+'</b>'+
+    '<b class="sp">'+(spd==null?"—":spd)+'</b><i>kt'+(m.wgst?"　陣 "+Math.round(m.wgst):"")+'</i></div>';
+}
+function metarBlock(s){
+  const m=s.metar;
+  if(!m) return '<p class="cond quiet">未取得 METAR 實況</p>';
+  const cond=[wxText(m.wxString),visText(m.visib),cloudText(m.clouds)].filter(Boolean);
+  const isCavok=!cond.length||/CAVOK/.test(m.rawOb||"");
+  let hpa=m.altim==null?null:(m.altim<100?m.altim*33.8639:m.altim);
+  const h=rh(m.temp,m.dewp);
+  const t=m.reportTime||m.obsTime;
+  const age=t?Math.max(0,Math.round((Date.now()-new Date(String(t).replace(" ","T")+(/[Zz]|\+/.test(String(t))?"":"Z")))/60000)):null;
+  const cat=(m.fltCat||"").toUpperCase();
+  return '<div class="met"><div class="l">'+windBlock(m)+
+    '<p class="cond">'+(isCavok?"雲高與能見度良好":cond.map(esc).join("<br>"))+'</p></div>'+
+    '<div class="r">'+
+      '<div class="temp">'+(m.temp==null?"—":Math.round(m.temp))+'<i>°C</i></div>'+
+      '<div class="sub2">'+(m.dewp==null?"":Math.round(m.dewp)+"°C")+(h!=null?"　"+h+"%":"")+'</div>'+
+      (hpa!=null?'<div class="sub2">'+Math.round(hpa)+' hPa</div>':'')+
+      '<div class="badges">'+(cat?'<span class="badge'+(cat!=="VFR"?" on":"")+'">'+esc(cat)+'</span>':'')+
+        (s.taf?'<span class="badge">TAF</span>':'')+'</div>'+
+      (age!=null?'<div class="age">'+(age<60?age+" 分鐘前":Math.floor(age/60)+" 小時前")+'</div>':'')+
+    '</div></div>';
+}
+
+// METAR 實況若觀測到火山灰，即使 TAF 沒寫也一律列為嚴重
+function ashInMetar(m){
+  if(!m) return false;
+  const tok=t=>/^[+-]?(VC)?VA$/.test(t);
+  if((m.wxString||"").split(/\s+/).some(tok)) return true;
+  return (m.rawOb||"").split(" RMK")[0].split(/\s+/).some(tok);
+}
+
+function tafHead(s){
+  const bits=[];
+  if(s.taf.valid) bits.push("有效 "+s.taf.valid);
+  if(s.taf.issue) bits.push("發布 "+String(s.taf.issue).replace("T"," ").slice(5,16)+"Z");
+  if(s.taf.expired) bits.push("已過期");
+  else if(s.taf.validTo!=null){
+    const h=Math.round((s.taf.validTo-Date.now())/3600000);
+    if(h>=0) bits.push("剩 "+h+" 小時");
+  }
+  return bits.join("　");
+}
+
+function render(){
+  renderTabs();
+  const list=DATA.filter(s=>filter==="all"||s.r===filter);
+  const withTaf=list.filter(s=>s.taf||s.tafRisk);
+  const flagged=withTaf.filter(s=>s.lvl>0).map(s=>Object.assign({},s,{sc:severity(s)})).sort((a,b)=>b.sc-a.sc);
+  const sev=flagged.filter(s=>s.lvl>1);
+
+  document.getElementById("hero").innerHTML=
+   '<div class="hero"><p class="lbl">TAF 有效時段內需要留意的航點</p>'+
+   '<p class="big"><b>'+flagged.length+'</b><span>／ '+withTaf.length+' 個航點有 TAF</span></p>'+
+   '<p class="who">'+(withTaf.length===0
+      ?'目前沒有取得任何 TAF，到管理頁確認 ICAO 代碼與中繼設定。'
+      :flagged.length
+       ?(sev.length?'其中 <i>'+sev.length+'</i> 個達到嚴重門檻，'+sev.slice(0,4).map(s=>esc(s.c.split(" ")[0])).join("、")+(sev.length>4?" 等":"")+'。'
+                   :'皆為觀察等級，尚未達到嚴重門檻。')
+       :'各站 TAF 都在門檻以下。')+'</p></div>';
+  document.getElementById("navdot").style.display=sev.length?"inline-block":"none";
+
+  const probs=[];
+  if(tafFail) probs.push("TAF 與 METAR："+tafFail);
+  if(modelFail) probs.push("五日模式預報："+modelFail);
+  if(quakeFail) probs.push("地震與海嘯："+quakeFail);
+  const banner=probs.length
+    ? '<div class="card"><div class="alert"><span class="key">'+ICON.wind+'</span><div class="body">'+
+      '<h3>有資料沒有取得</h3><p>'+probs.map(esc).join('<br>')+'</p>'+
+      '<p class="when">其餘來源的判讀照常顯示。到管理頁測試中繼或 AVWX 設定。</p></div></div></div>'
+    : '';
+
+  document.getElementById("viewAlerts").innerHTML= banner+(flagged.length? flagged.map(s=>
+    '<div class="card"><div class="alert'+(s.lvl>1?' sev':'')+'">'+
+      '<span class="key">'+(ICON[s.tafRisk.icon]||ICON.cloud)+'</span><div class="body">'+
+      '<h3>'+esc(s.c)+'<small>'+esc(s.i)+(s.k?' '+esc(s.k):'')+'</small>'+
+      '<span class="tag">'+(s.lvl>1?'嚴重':'觀察')+'</span></h3>'+
+      '<p>'+esc(s.tafRisk.notes.join('，'))+'</p>'+
+      '<p class="when">'+esc(s.taf?tafHead(s):"依 METAR 實況判讀，此站無 TAF")+'</p>'+
+      '</div></div>'+
+      metarBlock(s)+
+      (s.taf?'<p class="raw"><span>TAF 原文</span>'+esc(s.taf.raw)+'</p>':'')+
+      (s.metar&&s.metar.rawOb?'<p class="raw"><span>METAR 原文</span>'+esc(s.metar.rawOb)+'</p>':'')+
+      '</div>').join("")
+    : '<div class="card"><p class="thr">'+(withTaf.length?'這個範圍內，各站 TAF 都沒有達到門檻。':'尚未取得 TAF。')+'</p></div>');
+
+  document.getElementById("viewStations").innerHTML=list.map(s=>{
+    if(!s.taf&&!s.metar) return '<div class="card stn"><h3>'+esc(s.c)+'<small>'+esc(s.i)+(s.k?' '+esc(s.k):'')+'</small></h3>'+
+      '<p class="note quiet">'+(s.k?'未取得這一站的資料，可能是該站不發布或中繼暫時取不到。':'沒有 ICAO 代碼，到管理頁補上才會有 TAF 與 METAR。')+'</p></div>';
+    const r=s.tafRisk;
+    return '<div class="card stn"><h3>'+esc(s.c)+'<small>'+esc(s.i)+(s.k?' '+esc(s.k):'')+'</small>'+
+      (r&&r.lvl?'<span class="tag">'+(r.lvl>1?'嚴重':'觀察')+'</span>':'')+'</h3>'+
+      metarBlock(s)+
+      metarFacts(s)+
+      (r?'<p class="note'+(r.lvl?'':' quiet')+'">'+
+        (r.lvl?esc(r.notes.join('　')):(r.expired?'TAF 有效時段已過，等待新的一份':'TAF 內無達標的惡劣天氣'))+'</p>':'')+
+      (s.taf?'<p class="raw"><span>'+esc(tafHead(s))+'</span>'+esc(s.taf.raw)+'</p>':'')+
+      (s.metar&&s.metar.rawOb?'<p class="raw"><span>METAR 原文</span>'+esc(s.metar.rawOb)+'</p>':'')+'</div>';
+  }).join("");
+
+  document.getElementById("viewForecast").innerHTML=
+    '<div class="card"><p class="thr">以下是數值模式的五日預報，供排班與提前規劃參考。它不是機場正式預報，警戒判讀不採用這裡的資料。'+
+      (modelFail?'<br>這次沒有取得模式資料（'+esc(modelFail)+'）。':'')+'</p></div>'+
+    list.map(s=>{
+      const days=s.days.map(d=>{
+        const k=d.risk.lvl>1?"s":d.risk.lvl>0?"w":"";
+        return '<div class="day '+k+'"><span class="key">'+(ICON[wx(d.code)[1]]||ICON.cloud)+'</span>'+
+          '<div class="d">'+dayName(d.date)+'</div><div class="t">'+(d.tmax==null?'—':Math.round(d.tmax))+
+          '<i> '+(d.tmin==null?'—':Math.round(d.tmin))+'</i></div></div>';
+      }).join("");
+      const notes=[...new Set(s.days.flatMap(d=>d.risk.notes))];
+      return '<div class="card stn"><h3>'+esc(s.c)+'<small>'+esc(s.i)+'</small></h3><div class="days">'+days+'</div>'+
+        '<p class="note'+(notes.length?'':' quiet')+'">'+(notes.length?esc(notes.join('　')):'五日內無明顯惡劣天氣')+'</p></div>';
+    }).join("");
+  renderList();
+}
+
+/* ── 管理 ─────────────────── */
+function renderList(){
+  document.getElementById("list").innerHTML=STATIONS.map((s,n)=>{
+    const head='<button class="stn-row" data-edit="'+n+'"><span><span class="nm">'+esc(s.c)+'</span>'+
+      '<span class="sb">'+esc(s.i)+'　'+esc(s.k||"無 ICAO")+'　'+esc(s.r)+'</span></span>'+
+      '<span class="co">'+s.la.toFixed(2)+', '+s.lo.toFixed(2)+'</span></button>';
+    if(n!==editing) return '<div class="item">'+head+'</div>';
+    return '<div class="item">'+head+'<div class="edit">'+
+      '<div class="row"><label><span>名稱</span><input type="text" id="f-c" value="'+esc(s.c)+'"></label></div>'+
+      '<div class="row"><label><span>IATA</span><input type="text" id="f-i" value="'+esc(s.i)+'"></label>'+
+      '<label><span>ICAO</span><input type="text" id="f-k" value="'+esc(s.k||"")+'"></label>'+
+      '<label><span>分區</span><input type="text" id="f-r" value="'+esc(s.r)+'"></label></div>'+
+      '<div class="row"><label><span>緯度</span><input type="text" id="f-la" value="'+s.la+'"></label>'+
+      '<label><span>經度</span><input type="text" id="f-lo" value="'+s.lo+'"></label></div>'+
+      '<div class="acts"><button class="solid" data-save="'+n+'">儲存</button>'+
+      '<button class="ghost" data-cancel="1">取消</button>'+
+      '<button class="ghost del" data-del="'+n+'">刪除</button></div></div></div>';
+  }).join("") || '<p class="hint" style="margin:6px 2px">清單是空的。用上面的搜尋新增，或按「還原內建清單」。</p>';
+}
+
+function refresh(){
+  save();
+  // 刪掉或改過的航點，舊的判讀結果要先清掉，不然重抓完成前還會留在警戒頁
+  DATA=DATA.filter(d=>STATIONS.some(x=>x.la===d.la&&x.lo===d.lo&&x.c===d.c));
+  render();
+  document.getElementById("stamp").textContent="重新抓取中";
+  load().catch(()=>{document.getElementById("stamp").textContent="連線失敗";});
+}
+
+document.getElementById("list").addEventListener("click",e=>{
+  const row=e.target.closest("[data-edit]"),sv=e.target.closest("[data-save]"),
+        dl=e.target.closest("[data-del]"),cx=e.target.closest("[data-cancel]");
+  if(sv){
+    const n=+sv.dataset.save,la=parseFloat(document.getElementById("f-la").value),
+          lo=parseFloat(document.getElementById("f-lo").value);
+    if(!isFinite(la)||la<-90||la>90||!isFinite(lo)||lo<-180||lo>180){alert("緯度需在 -90 到 90、經度需在 -180 到 180 之間。");return;}
+    STATIONS[n]={i:document.getElementById("f-i").value.trim()||"—",
+                 k:document.getElementById("f-k").value.trim().toUpperCase(),
+                 c:document.getElementById("f-c").value.trim()||"未命名",
+                 r:document.getElementById("f-r").value.trim()||"自訂",la,lo};
+    editing=-1; refresh(); return;
+  }
+  if(dl){ STATIONS.splice(+dl.dataset.del,1); editing=-1; refresh(); return; }
+  if(cx){ editing=-1; renderList(); return; }
+  if(row){ editing=editing===+row.dataset.edit?-1:+row.dataset.edit; renderList(); }
+});
+
+document.getElementById("fixIcao").addEventListener("click",()=>{
+  const n=migrateICAO();
+  document.getElementById("hint").textContent=n?("已依內建清單補上 "+n+" 個 ICAO 代碼，正在重抓 TAF。"):"沒有可自動補上的站，請手動填入 ICAO。";
+  if(n) refresh(); else renderList();
+});
+
+document.getElementById("reset").addEventListener("click",()=>{
+  if(!confirm("還原成內建 37 個航點？自訂與編輯的內容會被覆蓋。"))return;
+  STATIONS=BUILTIN.map(x=>Object.assign({},x)); editing=-1; refresh();
+});
+
+document.getElementById("proxy").value=PROXY;
+document.getElementById("qOn").value=QUAKE.on?"開":"關";
+document.getElementById("qMag").value=QUAKE.mag;
+document.getElementById("qKm").value=QUAKE.km;
+document.getElementById("qSea").value=QUAKE.sea;
+function readQuake(){
+  const v=document.getElementById("qOn").value.trim();
+  if(v==="") { /* 留白視為不變更 */ }
+  else QUAKE.on=!/^(關|off|0|no|false|停|否)$/i.test(v);
+  document.getElementById("qOn").value=QUAKE.on?"開":"關";
+  const num=(id,def)=>{const n=parseFloat(document.getElementById(id).value);return isFinite(n)&&n>0?n:def;};
+  QUAKE.mag=num("qMag",6); QUAKE.km=num("qKm",300); QUAKE.sea=num("qSea",800);
+  document.getElementById("qMag").value=QUAKE.mag;
+  document.getElementById("qKm").value=QUAKE.km;
+  document.getElementById("qSea").value=QUAKE.sea;
+}
+document.getElementById("saveQuake").addEventListener("click",()=>{ readQuake(); refresh(); });
+document.getElementById("testQuake").addEventListener("click",async()=>{
+  readQuake();
+  const box=document.getElementById("quakeOut");
+  box.innerHTML='<p class="hint">查詢中</p>';
+  const lines=[];
+  try{
+    const qs=await fetchQuakes();
+    lines.push("過去 24 小時規模 4.5 以上　"+qs.length+" 起");
+    const big=qs.filter(q=>q.mag>=QUAKE.mag);
+    lines.push("達規模門檻　"+big.length+" 起"+(qs.some(q=>q.tsunami)?"，其中有海嘯警報":""));
+    const hits=[];
+    STATIONS.forEach(st=>{ quakeNotes(st,qs).forEach(n=>hits.push(st.c+"　"+n)); });
+    if(hits.length) hits.slice(0,6).forEach(x=>lines.push(x));
+    else lines.push("目前沒有航點落在影響範圍內");
+    const near=qs.map(q=>({q,d:Math.min(...STATIONS.map(st=>haversine(st,q)))})).sort((a,b)=>a.d-b.d)[0];
+    if(near) lines.push("最近的一起　M"+near.q.mag.toFixed(1)+"　距最近航點 "+Math.round(near.d)+" km");
+  }catch(e){ lines.push("失敗："+e.message); }
+  box.innerHTML='<p class="hint">'+lines.map(esc).join("<br>")+'</p>';
+});
+
+document.getElementById("avwxToken").value=AVWX_TOKEN;
+document.getElementById("avwxBase").value=AVWX_BASE;
+document.getElementById("saveAvwx").addEventListener("click",()=>{
+  AVWX_TOKEN=cleanToken(document.getElementById("avwxToken").value);
+  document.getElementById("avwxToken").value=AVWX_TOKEN;
+  AVWX_BASE=(document.getElementById("avwxBase").value.trim()||"https://avwx.rest").replace(/\/+$/,"");
+  document.getElementById("avwxBase").value=AVWX_BASE;
+  refresh();
+});
+document.getElementById("testAvwx").addEventListener("click",async()=>{
+  const box=document.getElementById("avwxOut");
+  AVWX_TOKEN=cleanToken(document.getElementById("avwxToken").value);
+  document.getElementById("avwxToken").value=AVWX_TOKEN;
+  AVWX_BASE=(document.getElementById("avwxBase").value.trim()||"https://avwx.rest").replace(/\/+$/,"");
+  box.innerHTML='<p class="hint">測試中</p>';
+  const lines=[];
+
+  // 先確認這個環境到底能不能對外連線
+  lines.push("執行位置　"+location.protocol+"//"+(location.host||"本機檔案")+(window.top!==window.self?"　在 iframe 內":""));
+  let netOK=false;
+  try{
+    await rawFetch("https://api.open-meteo.com/v1/forecast?latitude=25&longitude=121&current=temperature_2m",8000);
+    netOK=true; lines.push("對外連線　正常");
+  }catch(e){
+    lines.push("對外連線　"+e.message);
+    lines.push("這個環境擋掉了所有跨網域請求，不是 AVWX 的問題。請在部署後的網站測試，或把檔案下載後用 Safari、Chrome 開啟。");
+  }
+  box.innerHTML='<p class="hint">'+lines.map(esc).join("<br>")+'</p>';
+  if(!netOK) return;
+
+  const t0=Date.now();
+  try{
+    await avwxProbe("RCTP");
+    lines.push("連線方式　"+(avwxWrap?avwxWrap.n:"直連")+"　"+(Date.now()-t0)+" ms");
+    for(const id of ["RCTP","RJAA","RCMQ"]){
+      try{
+        const r=await avwxOne("taf",id);
+        lines.push(id+"　"+(r.data?("成功，"+((r.data.forecast||[]).length)+" 個時段"+(r.cached?"（快取）":"")):r.skip));
+      }catch(e){ lines.push(id+"　"+e.message); }
+    }
+  }catch(e){
+    lines.push("失敗，各路徑結果如下");
+    String(e.message).split("　").forEach(x=>lines.push("　"+x));
+  }
+  box.innerHTML='<p class="hint">'+lines.map(esc).join("<br>")+'</p>';
+});
+
+document.getElementById("testRelay").addEventListener("click",async()=>{
+  const box=document.getElementById("relayOut");
+  PROXY=document.getElementById("proxy").value.trim();
+  const url="https://aviationweather.gov/api/data/taf?format=json&ids=RCTP";
+  const list=relayList();
+  box.innerHTML='<p class="hint">測試中，每項最多等 14 秒</p>';
+  const lines=[];
+  try{ const c=await localCache(); lines.push("倉庫快取　成功　"+c.taf.length+" 筆 TAF"); }
+  catch(e){ lines.push("倉庫快取　"+e.message); }
+  box.innerHTML='<p class="hint">'+lines.map(esc).join("<br>")+'</p>';
+  for(const r of list){
+    let msg;
+    const t0=Date.now();
+    try{
+      const rows=parseArray(await tryFetch(r.u(url)),r.wrap);
+      const ok=rows.length&&rows[0].rawTAF;
+      msg=ok?("成功　"+(Date.now()-t0)+" ms"):"連得上，但沒有 TAF 資料";
+    }catch(e){ msg=e.message; }
+    lines.push(r.n+"　"+msg);
+    box.innerHTML='<p class="hint">'+lines.map(esc).join("<br>")+'</p>';
+  }
+});
+
+document.getElementById("saveProxy").addEventListener("click",()=>{
+  PROXY=document.getElementById("proxy").value.trim(); refresh();
+});
+
+function addStation(name,la,lo){
+  STATIONS.push({i:"—",k:"",c:name,r:"自訂",la:+la,lo:+lo});
+  editing=STATIONS.length-1;
+  document.getElementById("res").innerHTML=""; document.getElementById("q").value="";
+  refresh();
+  setTimeout(()=>{const f=document.getElementById("f-k"); if(f){f.focus();}},60);
+}
+
+async function search(){
+  const q=document.getElementById("q").value.trim(),res=document.getElementById("res");
+  if(!q){res.innerHTML="";return;}
+  const ll=q.match(/^(-?\d+(?:\.\d+)?)\s*[,，]\s*(-?\d+(?:\.\d+)?)$/);
+  if(ll){ addStation("新航點",ll[1],ll[2]); return; }
+  res.innerHTML='<p class="hint">搜尋中</p>';
+  try{
+    const r=await fetch("https://geocoding-api.open-meteo.com/v1/search?count=6&language=zh&format=json&name="+encodeURIComponent(q));
+    const j=await r.json();
+    if(!j.results||!j.results.length){res.innerHTML='<p class="hint">找不到這個地名。換個拼法，或直接輸入「緯度, 經度」。</p>';return;}
+    res.innerHTML='<div class="res">'+j.results.map(x=>
+      '<button data-la="'+x.latitude+'" data-lo="'+x.longitude+'" data-nm="'+esc(x.name)+'">'+
+      '<span><span class="nm">'+esc(x.name)+'</span><span class="sb">'+esc([x.admin1,x.country].filter(Boolean).join("，"))+'</span></span>'+
+      '<span class="co">'+x.latitude.toFixed(2)+', '+x.longitude.toFixed(2)+'</span></button>').join("")+'</div>';
+  }catch(err){ res.innerHTML='<p class="hint">地名查詢連不上（'+esc(err.message)+'）。可直接輸入「緯度, 經度」新增。</p>'; }
+}
+document.getElementById("go").addEventListener("click",search);
+document.getElementById("q").addEventListener("keydown",e=>{if(e.key==="Enter")search();});
+document.getElementById("res").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-la]"); if(!b)return;
+  addStation(b.dataset.nm,b.dataset.la,b.dataset.lo);
+});
+
+document.getElementById("again").addEventListener("click",()=>{
+  document.getElementById("stamp").textContent="重新抓取中";
+  load().catch(()=>{document.getElementById("stamp").textContent="連線失敗，稍後再試";});
+});
+document.getElementById("tabs").addEventListener("click",e=>{
+  const b=e.target.closest(".tab"); if(!b)return;
+  filter=b.dataset.reg; render();
+});
+document.getElementById("nav").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b)return;
+  view=b.dataset.v;
+  document.querySelectorAll("#nav button").forEach(x=>x.setAttribute("aria-current",x===b));
+  viewAlerts.classList.toggle("hidden",view!=="alerts");
+  viewStations.classList.toggle("hidden",view!=="stations");
+  viewForecast.classList.toggle("hidden",view!=="forecast");
+  viewManage.classList.toggle("hidden",view!=="manage");
+  viewInfo.classList.toggle("hidden",view!=="info");
+  document.getElementById("tabs").classList.toggle("hidden",view==="info"||view==="manage");
+  document.querySelector(".stamp").classList.toggle("hidden",view==="info"||view==="manage");
+  window.scrollTo({top:0,behavior:"smooth"});
+});
+/* ── 推播通知 ─────────────────── */
+const PBKEY="jx-push-base";
+let PUSH_BASE="";
+try{ PUSH_BASE=localStorage.getItem(PBKEY)||""; }catch(e){}
+
+const pushMsg=t=>{ document.getElementById("pushOut").innerHTML='<p class="hint">'+esc(t).replace(/\n/g,"<br>")+'</p>'; };
+const b64ToU8=s=>{
+  const p="=".repeat((4-s.length%4)%4);
+  const b=atob((s+p).replace(/-/g,"+").replace(/_/g,"/"));
+  return Uint8Array.from(b,c=>c.charCodeAt(0));
+};
+const standalone=()=>window.matchMedia("(display-mode: standalone)").matches||window.navigator.standalone===true;
+
+async function swReady(){
+  if(!("serviceWorker" in navigator)) throw new Error("這個瀏覽器不支援 Service Worker");
+  const reg=await navigator.serviceWorker.register("sw.js",{scope:"./"});
+  await navigator.serviceWorker.ready;
+  if(reg.active&&PUSH_BASE) reg.active.postMessage({type:"config",api:PUSH_BASE});
+  return reg;
+}
+
+async function pushEnable(){
+  PUSH_BASE=document.getElementById("pushBase").value.trim().replace(/\/+$/,"");
+  if(!PUSH_BASE) return pushMsg("請先填入推播伺服器網址");
+  try{ localStorage.setItem(PBKEY,PUSH_BASE); }catch(e){}
+
+  if(!("Notification" in window)||!("PushManager" in window))
+    return pushMsg("這個瀏覽器不支援推播。iPhone 需 iOS 16.4 以上，且必須從主畫面的 app 開啟。");
+  if(/iPhone|iPad/.test(navigator.userAgent)&&!standalone())
+    return pushMsg("請先用分享選單「加入主畫面」，再從主畫面開啟這個 app，然後回到這裡開啟通知。");
+
+  try{
+    pushMsg("設定中");
+    const reg=await swReady();
+    const perm=await Notification.requestPermission();
+    if(perm!=="granted") return pushMsg("你拒絕了通知權限。可到 iOS 設定裡這個 app 的通知項目重新開啟。");
+
+    const kr=await fetch(PUSH_BASE+"/key");
+    const kj=await kr.json();
+    if(!kj.key) throw new Error("伺服器沒有回傳 VAPID 公鑰");
+
+    let sub=await reg.pushManager.getSubscription();
+    if(sub) await sub.unsubscribe();
+    sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToU8(kj.key)});
+
+    const r=await fetch(PUSH_BASE+"/subscribe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(sub)});
+    if(!r.ok) throw new Error("訂閱登記失敗 HTTP "+r.status);
+    pushMsg("已開啟。有航點升到嚴重時就會通知你。");
+  }catch(e){ pushMsg("失敗："+e.message); }
+}
+
+async function pushDisable(){
+  try{
+    const reg=await navigator.serviceWorker.getRegistration();
+    const sub=reg&&await reg.pushManager.getSubscription();
+    if(sub){
+      if(PUSH_BASE) await fetch(PUSH_BASE+"/unsubscribe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({endpoint:sub.endpoint})}).catch(()=>{});
+      await sub.unsubscribe();
+    }
+    pushMsg("已關閉推播。");
+  }catch(e){ pushMsg("失敗："+e.message); }
+}
+
+async function pushSelfTest(){
+  PUSH_BASE=document.getElementById("pushBase").value.trim().replace(/\/+$/,"");
+  const lines=[];
+  lines.push("主畫面模式　"+(standalone()?"是":"否，iPhone 需從主畫面開啟才能推播"));
+  lines.push("通知權限　"+(("Notification" in window)?Notification.permission:"不支援"));
+  try{
+    const reg=await navigator.serviceWorker.getRegistration();
+    const sub=reg&&await reg.pushManager.getSubscription();
+    lines.push("訂閱狀態　"+(sub?"已訂閱":"未訂閱"));
+  }catch(e){ lines.push("訂閱狀態　"+e.message); }
+  if(PUSH_BASE){
+    try{
+      const r=await fetch(PUSH_BASE+"/alerts",{cache:"no-store"});
+      const j=await r.json();
+      const n=(j.items||[]).length;
+      lines.push("伺服器目前嚴重航點　"+n+" 站"+(n?"："+j.items.map(x=>x.name).join("、"):""));
+    }catch(e){ lines.push("伺服器連線　"+e.message); }
+  }
+  pushMsg(lines.join("\n"));
+}
+
+document.getElementById("pushBase").value=PUSH_BASE;
+document.getElementById("pushOn").addEventListener("click",pushEnable);
+document.getElementById("pushOff").addEventListener("click",pushDisable);
+document.getElementById("pushTest").addEventListener("click",pushSelfTest);
+if(PUSH_BASE&&"serviceWorker" in navigator) swReady().catch(()=>{});
+
+renderList();
+load().catch(err=>{
+  document.getElementById("stamp").textContent="連線失敗";
+  document.getElementById("viewAlerts").innerHTML='<div class="card"><p class="thr">抓不到氣象資料（'+esc(err.message)+'）。'+
+   '這通常是預覽視窗擋掉了對外連線。把檔案下載後用 Safari 或 Chrome 開啟即可，iPhone 可再加入主畫面。</p></div>';
+});
+</script>
+</body>
+</html>
