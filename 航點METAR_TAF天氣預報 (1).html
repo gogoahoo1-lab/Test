@@ -68,6 +68,34 @@ header p{margin:0;font-size:13px;line-height:1.65;color:var(--ink-3);max-width:3
 .hero .who{position:relative;margin:12px 0 0;font-size:13.5px;line-height:1.6;color:rgba(27,33,9,.82);max-width:26em}
 .hero .who i{font-style:normal;font-weight:500}
 
+/* hero 內的嚴重航點獨立區塊 */
+.sevbox{position:relative;z-index:1;margin-top:18px;background:rgba(16,20,7,.9);border-radius:22px;padding:13px 14px}
+.sevbox .cap{display:flex;align-items:center;gap:8px;margin:0;padding:0 2px 9px;
+  font-size:11.5px;letter-spacing:.04em;color:rgba(255,255,255,.55)}
+.sevbox .cap b{font-weight:500;font-size:11.5px;color:var(--lime);
+  border:1px solid rgba(199,240,52,.45);border-radius:999px;padding:2px 9px}
+.sevrow{display:flex;width:100%;gap:11px;align-items:center;text-align:left;padding:9px 2px;
+  background:transparent;border:0;border-top:1px solid rgba(255,255,255,.1);
+  font-family:inherit;color:#fff;cursor:pointer}
+.sevrow:first-of-type{border-top:0}
+.sevrow .ic{flex:0 0 auto;width:32px;height:32px;border-radius:50%;color:var(--lime);
+  background:rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center}
+.sevrow .tx{flex:1;min-width:0}
+.sevrow .n1,.sevrow .n2{display:block}
+.sevrow .n1{font-size:13.5px;font-weight:500;letter-spacing:-.01em}
+.sevrow .n1 small{font-weight:400;font-size:11.5px;color:rgba(255,255,255,.45);margin-left:6px}
+.sevrow .n2{font-size:12px;line-height:1.55;color:rgba(255,255,255,.7);margin-top:2px;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.sevrow .ar{flex:0 0 auto;color:rgba(255,255,255,.38);font-size:16px;line-height:1}
+.sevrow:focus-visible{outline:2px solid var(--lime);outline-offset:2px;border-radius:14px}
+.sevbox .more{margin:0;padding:9px 2px 0;font-size:12px;color:rgba(255,255,255,.5);
+  border-top:1px solid rgba(255,255,255,.1)}
+@media(min-width:720px){
+  .sevbox{display:grid;grid-template-columns:1fr 1fr;column-gap:18px;padding:14px 18px}
+  .sevbox .cap{grid-column:1/-1}
+  .sevrow:nth-of-type(2){border-top:0}
+}
+
 .tabs{display:flex;gap:8px;overflow-x:auto;padding:18px 0 4px;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
 .tab{
@@ -1215,12 +1243,44 @@ function tafHead(s){
   return bits.join("　");
 }
 
+// 警戒頁的時間列：TAF 時段與地震事件分開標示
+function alertWhen(s){
+  const rows=[];
+  if(s.quakes&&s.quakes.length){
+    // 地震：只取時間資訊，理由已在 notes 裡了
+    const times=[...new Set(s.quakes.map(n=>{ const m=n.match(/\d+ 小時前$|\d+ 小時內$/); return m?m[0]:null; }).filter(Boolean))];
+    rows.push("地震／海嘯"+(times.length?"　"+times.join("、"):""));
+  }
+  if(s.taf){
+    const h=tafHead(s);
+    if(h) rows.push("TAF　"+h);
+  } else if(!s.quakes||!s.quakes.length){
+    rows.push("依 METAR 實況判讀，此站無 TAF");
+  }
+  return rows.join("<br>");
+}
+
 function render(){
   renderTabs();
   const list=DATA.filter(s=>filter==="all"||s.r===filter);
   const withTaf=list.filter(s=>s.taf||s.tafRisk);
   const flagged=withTaf.filter(s=>s.lvl>0).map(s=>Object.assign({},s,{sc:severity(s)})).sort((a,b)=>b.sc-a.sc);
-  const sev=flagged.filter(s=>s.lvl>1);
+  const sevIdx=[]; flagged.forEach((s,n)=>{ if(s.lvl>1) sevIdx.push(n); });
+  const sev=sevIdx.map(n=>flagged[n]);
+
+  // 嚴重的航點另外拉出來一塊，點一下跳到下面對應的卡片
+  const SEVMAX=6;
+  const sevBox=sev.length
+    ? '<div class="sevbox"><p class="cap"><b>嚴重</b>'+sev.length+' 個航點需要處置</p>'+
+      sev.slice(0,SEVMAX).map((s,k)=>'<button class="sevrow" data-go="alert-'+sevIdx[k]+'">'+
+        '<span class="ic">'+(ICON[s.tafRisk.icon]||ICON.cloud)+'</span>'+
+        '<span class="tx"><span class="n1">'+esc(s.c)+
+          '<small>'+esc(s.i)+(s.k?' '+esc(s.k):'')+'</small></span>'+
+        '<span class="n2">'+esc(s.tafRisk.notes.slice(0,2).join("，")||"達到嚴重門檻")+'</span></span>'+
+        '<span class="ar">›</span></button>').join("")+
+      (sev.length>SEVMAX?'<p class="more">另有 '+(sev.length-SEVMAX)+' 個嚴重航點，往下看完整清單</p>':'')+
+      '</div>'
+    : '';
 
   document.getElementById("hero").innerHTML=
    '<div class="hero"><p class="lbl">TAF 有效時段內需要留意的航點</p>'+
@@ -1228,9 +1288,9 @@ function render(){
    '<p class="who">'+(withTaf.length===0
       ?'目前沒有取得任何 TAF，到管理頁確認 ICAO 代碼與中繼設定。'
       :flagged.length
-       ?(sev.length?'其中 <i>'+sev.length+'</i> 個達到嚴重門檻，'+sev.slice(0,4).map(s=>esc(s.c.split(" ")[0])).join("、")+(sev.length>4?" 等":"")+'。'
+       ?(sev.length?'其中 <i>'+sev.length+'</i> 個已達嚴重門檻，其餘為觀察等級。'
                    :'皆為觀察等級，尚未達到嚴重門檻。')
-       :'各站 TAF 都在門檻以下。')+'</p></div>';
+       :'各站 TAF 都在門檻以下。')+'</p>'+sevBox+'</div>';
   document.getElementById("navdot").style.display=sev.length?"inline-block":"none";
 
   const probs=[];
@@ -1243,13 +1303,13 @@ function render(){
       '<p class="when">其餘來源的判讀照常顯示。到管理頁測試中繼或 AVWX 設定。</p></div></div></div>'
     : '';
 
-  document.getElementById("viewAlerts").innerHTML= banner+(flagged.length? flagged.map(s=>
-    '<div class="card"><div class="alert'+(s.lvl>1?' sev':'')+'">'+
+  document.getElementById("viewAlerts").innerHTML= banner+(flagged.length? flagged.map((s,n)=>
+    '<div class="card" id="alert-'+n+'"><div class="alert'+(s.lvl>1?' sev':'')+'">'+
       '<span class="key">'+(ICON[s.tafRisk.icon]||ICON.cloud)+'</span><div class="body">'+
       '<h3>'+esc(s.c)+'<small>'+esc(s.i)+(s.k?' '+esc(s.k):'')+'</small>'+
       '<span class="tag">'+(s.lvl>1?'嚴重':'觀察')+'</span></h3>'+
       '<p>'+esc(s.tafRisk.notes.join('，'))+'</p>'+
-      '<p class="when">'+esc(s.taf?tafHead(s):"依 METAR 實況判讀，此站無 TAF")+'</p>'+
+      '<p class="when">'+alertWhen(s)+'</p>'+
       '</div></div>'+
       metarBlock(s)+
       (s.taf?'<p class="raw"><span>TAF 原文</span>'+esc(s.taf.raw)+'</p>':'')+
@@ -1496,18 +1556,29 @@ document.getElementById("tabs").addEventListener("click",e=>{
   const b=e.target.closest(".tab"); if(!b)return;
   filter=b.dataset.reg; render();
 });
+function setView(v,toTop){
+  view=v;
+  document.querySelectorAll("#nav button").forEach(x=>x.setAttribute("aria-current",x.dataset.v===v));
+  document.getElementById("viewAlerts").classList.toggle("hidden",v!=="alerts");
+  document.getElementById("viewStations").classList.toggle("hidden",v!=="stations");
+  document.getElementById("viewForecast").classList.toggle("hidden",v!=="forecast");
+  document.getElementById("viewManage").classList.toggle("hidden",v!=="manage");
+  document.getElementById("viewInfo").classList.toggle("hidden",v!=="info");
+  document.getElementById("tabs").classList.toggle("hidden",v==="info"||v==="manage");
+  document.querySelector(".stamp").classList.toggle("hidden",v==="info"||v==="manage");
+  if(toTop!==false) window.scrollTo({top:0,behavior:"smooth"});
+}
 document.getElementById("nav").addEventListener("click",e=>{
   const b=e.target.closest("button"); if(!b)return;
-  view=b.dataset.v;
-  document.querySelectorAll("#nav button").forEach(x=>x.setAttribute("aria-current",x===b));
-  viewAlerts.classList.toggle("hidden",view!=="alerts");
-  viewStations.classList.toggle("hidden",view!=="stations");
-  viewForecast.classList.toggle("hidden",view!=="forecast");
-  viewManage.classList.toggle("hidden",view!=="manage");
-  viewInfo.classList.toggle("hidden",view!=="info");
-  document.getElementById("tabs").classList.toggle("hidden",view==="info"||view==="manage");
-  document.querySelector(".stamp").classList.toggle("hidden",view==="info"||view==="manage");
-  window.scrollTo({top:0,behavior:"smooth"});
+  setView(b.dataset.v);
+});
+
+// hero 裡的嚴重航點，點一下切回警戒頁並捲到那張卡片
+document.getElementById("hero").addEventListener("click",e=>{
+  const b=e.target.closest("[data-go]"); if(!b)return;
+  if(view!=="alerts") setView("alerts",false);
+  const card=document.getElementById(b.dataset.go);
+  if(card) card.scrollIntoView({behavior:"smooth",block:"center"});
 });
 /* ── 推播通知 ─────────────────── */
 const PBKEY="jx-push-base";
