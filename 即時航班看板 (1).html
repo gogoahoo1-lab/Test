@@ -466,9 +466,9 @@ ul.doc li{margin:5px 0}
       <label class="f">航班號
         <input type="text" id="qFlight" placeholder="如 JX2" size="7" maxlength="8">
       </label>
-      <label class="f">狀態
-        <select id="qStatus">
-          <option value="">全部狀態</option>
+      <label class="f">API 狀態篩選
+        <select id="qStatus" title="傳給 API 的參數，選完後需重新抓取">
+          <option value="">全部狀態（不帶參數）</option>
           <option value="active">飛行中 active</option>
           <option value="scheduled">已排定 scheduled</option>
           <option value="landed">已落地 landed</option>
@@ -509,6 +509,18 @@ ul.doc li{margin:5px 0}
           <option value="all" selected>到場＋離場</option>
           <option value="arr">只看到場</option>
           <option value="dep">只看離場</option>
+        </select>
+      </label>
+      <label class="f">畫面狀態篩選
+        <select id="liveStatusFilter">
+          <option value="all" selected>全部狀態</option>
+          <option value="active">飛行中</option>
+          <option value="scheduled">已排定</option>
+          <option value="landed">已落地</option>
+          <option value="cancelled">已取消</option>
+          <option value="diverted">已轉降</option>
+          <option value="boarding">登機中</option>
+          <option value="departed">已起飛</option>
         </select>
       </label>
       <label class="f">顯示
@@ -3074,8 +3086,9 @@ function renderLive(){
   var thr  = Number($("liveDelay").value || 15) || 15;
   var only = $("liveOnly").value || "bad";
 
-  var dirSel  = ($("liveDir") && $("liveDir").value) || "all";
-  var dateSel = ($("liveDate") && $("liveDate").value) || "all";
+  var dirSel    = ($("liveDir") && $("liveDir").value) || "all";
+  var dateSel   = ($("liveDate") && $("liveDate").value) || "all";
+  var statusFil = ($("liveStatusFilter") && $("liveStatusFilter").value) || "all";
 
   // 建立日期選單（依實際資料）
   var dateOpts = { all:1 };
@@ -3091,11 +3104,25 @@ function renderLive(){
     dateSel = liveD.value;
   }
 
+  var LIVE_STATUS_MAP = {
+    active: function(f){ return /active|en.?route|airborne|in.?flight/i.test(f.status); },
+    scheduled: function(f){ return /schedul/i.test(f.status) || !f.status; },
+    landed: function(f){ return /land|arriv/i.test(f.status); },
+    cancelled: function(f){ return /cancel/i.test(f.status) || f.cancelled; },
+    diverted: function(f){ return /divert/i.test(f.status); },
+    boarding: function(f){ return /board/i.test(f.status); },
+    departed: function(f){ return /^depart/i.test(f.status); }
+  };
+
   var all = LIVE.rows
     .filter(function(f){
       if(dateSel !== "all" && f.date !== dateSel) return false;
       if(dirSel === "arr") return !!f.arrApt;
       if(dirSel === "dep") return !!f.depApt && !f.arrAct;
+      if(statusFil !== "all"){
+        var fn = LIVE_STATUS_MAP[statusFil];
+        if(fn && !fn(f)) return false;
+      }
       return true;
     })
     .map(function(f){ return { f:f, flags:liveFlags(f, thr) }; });
@@ -3701,7 +3728,7 @@ function shift(hhmm, mins){
   });
   if($("btnLiveFetch")) $("btnLiveFetch").addEventListener("click", liveFetch);
   if($("liveInterval")) $("liveInterval").addEventListener("change", startLiveAuto);
-  ["liveOnly","liveDelay","liveDir","liveDate","liveHoldMode","liveHoldThr"].forEach(function(id){
+  ["liveOnly","liveDelay","liveDir","liveDate","liveStatusFilter","liveHoldMode","liveHoldThr"].forEach(function(id){
     if($(id)) $(id).addEventListener("change", renderLive);
   });
   if($("qDate")) $("qDate").value = twDate();   // 預設今天，避免多天混在一起
