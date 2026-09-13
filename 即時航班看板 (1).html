@@ -3234,7 +3234,9 @@ async function lsrcTest(s){
   if(!lsrcConfigured(s)){ lsrcShow(s.name + " 還沒填端點網址或金鑰。", "err"); return; }
   lsrcShow(s.name + " 測試中…", "info");
   try{
-    var recs = await lsrcFetchFrom(s, { limit:"1", offset:"0" });
+    // AirLabs /schedules 必須帶出發或抵達機場；其他供應商空查詢通常也可以，
+    // 所以統一帶 dep=TPE 做最小可行請求，不依賴空參數。
+    var recs = await lsrcFetchFrom(s, { dep:"TPE", limit:"1", offset:"0" });
     s.lastError = ""; s.coolUntil = 0;
     lsrcShow(s.name + " 連線正常，回傳 " + recs.length + " 筆。" +
       (recs.length ? "偵測到的欄位：<code>" + esc(Object.keys(flatten(recs[0])).slice(0,14).join(", ")) + "</code>" : ""), "ok");
