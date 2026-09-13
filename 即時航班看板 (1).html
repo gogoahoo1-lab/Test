@@ -143,6 +143,7 @@ td.num{text-align:right}
 .stcell .lead.wait{color:var(--cyan)}
 .stcell .lead.late{color:var(--warn)}
 .stcell .lead.cx{color:var(--bad)}
+.stcell .lead.dim{color:var(--dim)}
 /* ---------- 即時動態 ---------- */
 .bdg{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:700;margin-right:5px;border:1px solid transparent}
 .bdg.cx{color:var(--bad);border-color:rgba(255,122,122,.45);background:rgba(255,122,122,.12)}
@@ -483,6 +484,9 @@ ul.doc li{margin:5px 0}
           <option value="200">200</option>
         </select>
       </label>
+      <label class="f">日期
+        <input type="date" id="qDate" title="留空＝不帶 flight_date 參數（API 回幾天就顯示幾天）">
+      </label>
     </div>
 
     <div class="row" style="margin-top:10px">
@@ -493,6 +497,11 @@ ul.doc li{margin:5px 0}
           <option value="120000">2 分鐘</option>
           <option value="300000">5 分鐘</option>
           <option value="900000">15 分鐘</option>
+        </select>
+      </label>
+      <label class="f">顯示日期
+        <select id="liveDate">
+          <option value="all">全部日期</option>
         </select>
       </label>
       <label class="f">方向
@@ -2800,6 +2809,50 @@ var LIVE = { rows:[], fetchedAt:0, srcName:"", hist:{} };
 var liveTimer = null;
 var liveRunning = false;
 
+/* 即時動態狀態欄：仿照到離看板的 stcell 風格 */
+function liveStatusCell(f, flags){
+  var lead, cls, parts = [];
+  var isCx   = flags.some(function(g){ return g.k === "cx"; });
+  var isDv   = flags.some(function(g){ return g.k === "dv" || g.k === "rt" || g.k === "inc"; });
+  var isHold = flags.some(function(g){ return g.k === "hold"; });
+  var raw    = String(f.status || "").trim();
+
+  if(isCx || /cancel/i.test(raw)){
+    lead = "已取消"; cls = "cx";
+  }else if(isDv || /divert/i.test(raw)){
+    var dg = flags.find(function(g){ return g.k === "dv" || g.k === "rt" || g.k === "inc"; });
+    lead = dg ? dg.t : (/return/i.test(raw) ? "已返航" : "已轉降"); cls = "late";
+  }else if(isHold){
+    lead = "疑似盤旋"; cls = "wait";
+  }else if(/land|arriv/i.test(raw)){
+    lead = "已落地"; cls = "done";
+  }else if(/active|en.?route|airborne|in.?flight|飛行中/i.test(raw)){
+    lead = "飛行中"; cls = "wait";
+  }else if(/board/i.test(raw)){
+    lead = "登機中"; cls = "wait";
+  }else if(/depart/i.test(raw)){
+    lead = "已起飛"; cls = "done";
+  }else if(/schedul/i.test(raw) || !raw){
+    lead = "已排定"; cls = "dim";
+  }else{
+    lead = liveStatusZh(raw) || raw; cls = "dim";
+  }
+
+  var d = Math.max(f.depDelay == null ? -1 : f.depDelay, f.arrDelay == null ? -1 : f.arrDelay);
+  if(d > 15) parts.push('<b style="color:var(--warn);font-weight:600">延誤 ' + d + " 分</b>");
+  else if(d < -10) parts.push("早 " + Math.abs(d) + " 分");
+  else if(d >= 0 && (cls === "done" || cls === "wait"))
+    parts.push('<b style="color:var(--good);font-weight:600">準點</b>');
+
+  if(isHold){
+    var hn = flags.find(function(g){ return g.k === "hold"; });
+    if(hn && hn.note) parts.push(esc(hn.note));
+  }
+
+  return '<div class="stcell"><span class="lead ' + cls + '">' + esc(lead) + "</span>" +
+    (parts.length ? '<span class="sub">' + parts.join("・") + "</span>" : "") + "</div>";
+}
+
 var LIVE_RULES = [
   { k:"cx",   t:"取消",       re:/取消|cancel/i },
   { k:"dv",   t:"轉降",       re:/轉降|改降|備降|divert/i },
@@ -2807,6 +2860,24 @@ var LIVE_RULES = [
   { k:"inc",  t:"異常事件",   re:/incident|emergenc|事故|緊急/i },
   { k:"hold", t:"空中盤旋",   re:/盤旋|hold(ing)?\b/i }
 ];
+
+var LIVE_STATUS_ZH = {
+  scheduled:"已排定", active:"飛行中", "en-route":"飛行中", airborne:"飛行中",
+  landed:"已落地", cancelled:"已取消", diverted:"已轉降", incident:"異常事件",
+  redirected:"已轉降", boarding:"登機中", departed:"已起飛", "on-time":"準點",
+  delayed:"延誤", unknown:""
+};
+function liveStatusZh(raw){
+  var k = String(raw || "").trim().toLowerCase();
+  if(LIVE_STATUS_ZH[k] != null) return LIVE_STATUS_ZH[k] || raw;
+  if(/active|en.?route|airborne|in.?flight/i.test(k)) return "飛行中";
+  if(/land|arriv/i.test(k)) return "已落地";
+  if(/cancel/i.test(k)) return "已取消";
+  if(/divert/i.test(k)) return "已轉降";
+  if(/board/i.test(k)) return "登機中";
+  if(/depart|departed/i.test(k)) return "已起飛";
+  return raw;
+}
 
 function hhmm(iso){
   var t = String(iso == null ? "" : iso);
@@ -2954,6 +3025,7 @@ async function liveFetch(){
     airline: ($("qAirline").value || "").trim().toUpperCase(),
     flight: ($("qFlight").value || "").trim().toUpperCase(),
     status: $("qStatus").value || "",
+    date:   ($("qDate") && $("qDate").value) || "",
     limit: $("qLimit").value || "100",
     offset: "0"
   };
@@ -3002,9 +3074,26 @@ function renderLive(){
   var thr  = Number($("liveDelay").value || 15) || 15;
   var only = $("liveOnly").value || "bad";
 
-  var dirSel = ($("liveDir") && $("liveDir").value) || "all";
+  var dirSel  = ($("liveDir") && $("liveDir").value) || "all";
+  var dateSel = ($("liveDate") && $("liveDate").value) || "all";
+
+  // 建立日期選單（依實際資料）
+  var dateOpts = { all:1 };
+  LIVE.rows.forEach(function(f){ if(f.date) dateOpts[f.date] = 1; });
+  var liveD = $("liveDate");
+  if(liveD){
+    var cur = liveD.value;
+    liveD.innerHTML = "<option value='all'>全部日期</option>" +
+      Object.keys(dateOpts).filter(function(k){ return k !== "all"; }).sort().map(function(d){
+        return "<option value='" + esc(d) + "'" + (cur === d ? " selected" : "") + ">" + esc(d) + "</option>";
+      }).join("");
+    liveD.value = dateOpts[cur] ? cur : "all";
+    dateSel = liveD.value;
+  }
+
   var all = LIVE.rows
     .filter(function(f){
+      if(dateSel !== "all" && f.date !== dateSel) return false;
       if(dirSel === "arr") return !!f.arrApt;
       if(dirSel === "dep") return !!f.depApt && !f.arrAct;
       return true;
@@ -3041,14 +3130,13 @@ function renderLive(){
     return;
   }
 
-  var head = "<thead><tr><th>異常</th><th>航班</th><th>航空公司</th><th>航線</th>" +
-    "<th>出發（表定／實際）</th><th>抵達（表定／預估）</th><th>狀態</th><th>高度</th><th>日期</th></tr></thead>";
+  var head = "<thead><tr><th>狀態</th><th>航班</th><th>航空公司</th><th>航線</th>" +
+    "<th>出發（表定／實際）</th><th>抵達（表定／預估）</th><th>異常標記</th><th>高度</th><th>日期</th></tr></thead>";
 
   var tb = rows.map(function(r){
     var f = r.f;
-    var badges = r.flags.length
-      ? r.flags.map(function(g){ return '<span class="bdg ' + g.k + '">' + esc(g.t) + "</span>"; }).join("")
-      : '<span class="note">正常</span>';
+    var badges = r.flags.filter(function(g){ return g.k !== "late"; })
+      .map(function(g){ return '<span class="bdg ' + g.k + '">' + esc(g.t) + "</span>"; }).join("");
     var note = r.flags.filter(function(g){ return g.note; }).map(function(g){ return g.note; }).join("・");
     var h = LIVE.hist[f.key] || [];
     var trail = h.length > 1
@@ -3058,18 +3146,16 @@ function renderLive(){
         }).join(" → ") + "</div>"
       : "";
     return '<tr class="' + (r.flags.length ? "bad" : "") + '">' +
-      "<td>" + badges + (note ? '<div class="esttrail">' + esc(note) + "</div>" : "") + "</td>" +
+      "<td>" + liveStatusCell(f, r.flags) + "</td>" +
       '<td class="mono" style="color:var(--amber);font-weight:600">' + esc(f.flightNo) + "</td>" +
       '<td class="al">' + esc(f.airline || "—") +
         (f.airlineName ? ' <span class="note">' + esc(f.airlineName) + "</span>" : "") + "</td>" +
       '<td class="mono">' + esc(f.depApt || "?") + " → " + esc(f.arrApt || "?") + "</td>" +
       '<td class="mono">' + esc(f.depSched || "—") + (f.depAct ? " ／ " + esc(f.depAct)
-        : (f.depEst ? " ／ " + esc(f.depEst) + "(E)" : "")) +
-        (f.depDelay ? ' <span class="note">+' + f.depDelay + "</span>" : "") + "</td>" +
+        : (f.depEst ? " ／ " + esc(f.depEst) + "(E)" : "")) + "</td>" +
       '<td class="mono">' + esc(f.arrSched || "—") + (f.arrAct ? " ／ " + esc(f.arrAct)
-        : (f.arrEst ? " ／ " + esc(f.arrEst) + "(E)" : "")) +
-        (f.arrDelay ? ' <span class="note">+' + f.arrDelay + "</span>" : "") + trail + "</td>" +
-      "<td>" + esc(f.status || "—") + "</td>" +
+        : (f.arrEst ? " ／ " + esc(f.arrEst) + "(E)" : "")) + trail + "</td>" +
+      "<td>" + (badges || (note ? '<div class="esttrail">' + esc(note) + "</div>" : "—")) + "</td>" +
       '<td class="mono">' + (f.alt != null ? esc(String(Math.round(f.alt))) : "—") +
         (f.onGround === true ? ' <span class="note">地面</span>' : "") + "</td>" +
       '<td class="mono note">' + esc(f.date || "—") + "</td></tr>";
@@ -3615,9 +3701,10 @@ function shift(hhmm, mins){
   });
   if($("btnLiveFetch")) $("btnLiveFetch").addEventListener("click", liveFetch);
   if($("liveInterval")) $("liveInterval").addEventListener("change", startLiveAuto);
-  ["liveOnly","liveDelay","liveDir","liveHoldMode","liveHoldThr"].forEach(function(id){
+  ["liveOnly","liveDelay","liveDir","liveDate","liveHoldMode","liveHoldThr"].forEach(function(id){
     if($(id)) $(id).addEventListener("change", renderLive);
   });
+  if($("qDate")) $("qDate").value = twDate();   // 預設今天，避免多天混在一起
 
   gsLoadCache();
   if($("gsStart") && !$("gsStart").value) $("gsStart").value = twDate();
