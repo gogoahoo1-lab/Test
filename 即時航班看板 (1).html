@@ -466,15 +466,15 @@ ul.doc li{margin:5px 0}
       <label class="f">航班號
         <input type="text" id="qFlight" placeholder="如 JX2" size="7" maxlength="8">
       </label>
-      <label class="f">API 狀態篩選
-        <select id="qStatus" title="傳給 API 的參數，選完後需重新抓取">
-          <option value="">全部狀態（不帶參數）</option>
-          <option value="active">飛行中 active</option>
-          <option value="scheduled">已排定 scheduled</option>
-          <option value="landed">已落地 landed</option>
-          <option value="cancelled">取消 cancelled</option>
-          <option value="incident">異常 incident</option>
-          <option value="diverted">轉降 diverted</option>
+      <label class="f">API 狀態
+        <select id="qStatus" title="送給 API 的篩選參數，變更後需重新抓取">
+          <option value="">不限（全部）</option>
+          <option value="active">active 飛行中</option>
+          <option value="scheduled">scheduled 已排定</option>
+          <option value="landed">landed 已落地</option>
+          <option value="cancelled">cancelled 取消</option>
+          <option value="incident">incident 異常</option>
+          <option value="diverted">diverted 轉降</option>
         </select>
       </label>
       <label class="f">筆數
@@ -491,6 +491,18 @@ ul.doc li{margin:5px 0}
 
     <div class="row" style="margin-top:10px">
       <button class="btn primary" id="btnLiveFetch">抓取即時動態</button>
+      <label class="f" title="即時在已抓取的資料中篩選，不需重新抓取">狀態篩選（本地）
+        <select id="liveStatusFilter">
+          <option value="all" selected>全部狀態</option>
+          <option value="active">飛行中</option>
+          <option value="scheduled">已排定</option>
+          <option value="landed">已落地</option>
+          <option value="cancelled">已取消</option>
+          <option value="diverted">已轉降</option>
+          <option value="boarding">登機中</option>
+          <option value="departed">已起飛</option>
+        </select>
+      </label>
       <label class="f">自動更新
         <select id="liveInterval">
           <option value="0" selected>關閉</option>
@@ -509,18 +521,6 @@ ul.doc li{margin:5px 0}
           <option value="all" selected>到場＋離場</option>
           <option value="arr">只看到場</option>
           <option value="dep">只看離場</option>
-        </select>
-      </label>
-      <label class="f">畫面狀態篩選
-        <select id="liveStatusFilter">
-          <option value="all" selected>全部狀態</option>
-          <option value="active">飛行中</option>
-          <option value="scheduled">已排定</option>
-          <option value="landed">已落地</option>
-          <option value="cancelled">已取消</option>
-          <option value="diverted">已轉降</option>
-          <option value="boarding">登機中</option>
-          <option value="departed">已起飛</option>
         </select>
       </label>
       <label class="f">顯示
