@@ -469,9 +469,9 @@ ul.doc li{margin:5px 0}
       <label class="f">API 狀態
         <select id="qStatus" title="送給 API 的篩選參數，變更後需重新抓取">
           <option value="">不限（全部）</option>
-          <option value="active">active 飛行中</option>
+          <option value="active">active（已起飛中）</option>
           <option value="scheduled">scheduled 已排定</option>
-          <option value="landed">landed 已落地</option>
+          <option value="landed">landed 已抵達</option>
           <option value="cancelled">cancelled 取消</option>
           <option value="incident">incident 異常</option>
           <option value="diverted">diverted 轉降</option>
@@ -494,12 +494,10 @@ ul.doc li{margin:5px 0}
       <label class="f" title="即時在已抓取的資料中篩選，不需重新抓取">狀態篩選（本地）
         <select id="liveStatusFilter">
           <option value="all" selected>全部狀態</option>
-          <option value="active">飛行中</option>
           <option value="scheduled">已排定</option>
-          <option value="landed">已落地</option>
-          <option value="cancelled">已取消</option>
-          <option value="diverted">已轉降</option>
-          <option value="boarding">登機中</option>
+          <option value="landed">已抵達</option>
+          <option value="cancelled">取消</option>
+          <option value="diverted">轉降</option>
           <option value="departed">已起飛</option>
         </select>
       </label>
@@ -2830,19 +2828,17 @@ function liveStatusCell(f, flags){
   var raw    = String(f.status || "").trim();
 
   if(isCx || /cancel/i.test(raw)){
-    lead = "已取消"; cls = "cx";
+    lead = "取消"; cls = "cx";
   }else if(isDv || /divert/i.test(raw)){
     var dg = flags.find(function(g){ return g.k === "dv" || g.k === "rt" || g.k === "inc"; });
-    lead = dg ? dg.t : (/return/i.test(raw) ? "已返航" : "已轉降"); cls = "late";
+    lead = dg ? dg.t : (/return/i.test(raw) ? "已返航" : "轉降"); cls = "late";
   }else if(isHold){
     lead = "疑似盤旋"; cls = "wait";
   }else if(/land|arriv/i.test(raw)){
-    lead = "已落地"; cls = "done";
-  }else if(/active|en.?route|airborne|in.?flight|飛行中/i.test(raw)){
-    lead = "飛行中"; cls = "wait";
+    lead = "已抵達"; cls = "done";
   }else if(/board/i.test(raw)){
     lead = "登機中"; cls = "wait";
-  }else if(/depart/i.test(raw)){
+  }else if(/active|en.?route|airborne|in.?flight|飛行中/i.test(raw) || /depart/i.test(raw)){
     lead = "已起飛"; cls = "done";
   }else if(/schedul/i.test(raw) || !raw){
     lead = "已排定"; cls = "dim";
@@ -2874,18 +2870,18 @@ var LIVE_RULES = [
 ];
 
 var LIVE_STATUS_ZH = {
-  scheduled:"已排定", active:"飛行中", "en-route":"飛行中", airborne:"飛行中",
-  landed:"已落地", cancelled:"已取消", diverted:"已轉降", incident:"異常事件",
-  redirected:"已轉降", boarding:"登機中", departed:"已起飛", "on-time":"準點",
+  scheduled:"已排定", active:"已起飛", "en-route":"已起飛", airborne:"已起飛",
+  landed:"已抵達", cancelled:"取消", diverted:"轉降", incident:"異常事件",
+  redirected:"轉降", boarding:"登機中", departed:"已起飛", "on-time":"準點",
   delayed:"延誤", unknown:""
 };
 function liveStatusZh(raw){
   var k = String(raw || "").trim().toLowerCase();
   if(LIVE_STATUS_ZH[k] != null) return LIVE_STATUS_ZH[k] || raw;
-  if(/active|en.?route|airborne|in.?flight/i.test(k)) return "飛行中";
-  if(/land|arriv/i.test(k)) return "已落地";
-  if(/cancel/i.test(k)) return "已取消";
-  if(/divert/i.test(k)) return "已轉降";
+  if(/active|en.?route|airborne|in.?flight/i.test(k)) return "已起飛";
+  if(/land|arriv/i.test(k)) return "已抵達";
+  if(/cancel/i.test(k)) return "取消";
+  if(/divert/i.test(k)) return "轉降";
   if(/board/i.test(k)) return "登機中";
   if(/depart|departed/i.test(k)) return "已起飛";
   return raw;
@@ -2996,7 +2992,7 @@ function liveFlags(f, thr){
   var pushes = 0;
   for(var i=1;i<h.length;i++) if(h[i].est && h[i-1].est && h[i].est > h[i-1].est) pushes++;
 
-  var airborne = !f.arrAct && /active|en[- ]?route|airborne|in ?flight|飛行中/i.test(txt);
+  var airborne = !f.arrAct && /active|en[- ]?route|airborne|in ?flight|飛行中|已起飛/i.test(txt);
 
   if(!seen.hold && airborne && mode !== "none"){
     var estHit = (mode === "est" || mode === "both") && pushes >= hthr;
@@ -3105,13 +3101,13 @@ function renderLive(){
   }
 
   var LIVE_STATUS_MAP = {
-    active: function(f){ return /active|en.?route|airborne|in.?flight/i.test(f.status); },
+    active: function(f){ return false; },   // "飛行中"已合併至已起飛
     scheduled: function(f){ return /schedul/i.test(f.status) || !f.status; },
     landed: function(f){ return /land|arriv/i.test(f.status); },
     cancelled: function(f){ return /cancel/i.test(f.status) || f.cancelled; },
     diverted: function(f){ return /divert/i.test(f.status); },
     boarding: function(f){ return /board/i.test(f.status); },
-    departed: function(f){ return /^depart/i.test(f.status); }
+    departed: function(f){ return /active|en.?route|airborne|in.?flight|depart/i.test(f.status); }
   };
 
   var all = LIVE.rows
