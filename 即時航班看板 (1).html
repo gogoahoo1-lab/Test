@@ -604,6 +604,10 @@ input[type=checkbox]{accent-color:var(--accent)}
           <option value="none">關閉推論</option>
         </select>
       </label>
+      <label class="nchk" style="align-self:flex-end;padding-bottom:9px"
+             title="4 碼班號多半是共掛航班；勾起來會隱藏航線落在歐洲、美洲或中東的那些">
+        <input type="checkbox" id="liveHide4" checked> 隱藏歐美中東 4 碼共掛
+      </label>
       <label class="f">嚴格度
         <select id="liveHoldThr">
           <option value="2" selected>2 次（寬鬆）</option>
@@ -2896,6 +2900,70 @@ async function lsrcFetch(q){
 /* =========================================================
    即時動態：解析、異常判定與呈現
    ========================================================= */
+/* =========================================================
+   機場所在區域（用來濾掉歐美中東的共掛班號）
+   只收錄這三區的主要機場；查不到的代碼一律視為「其他」並保留。
+   ========================================================= */
+var REGION_EU = ("LHR LGW LTN STN LCY MAN BHX EDI GLA BRS NCL LPL BFS ABZ SOU EMA LBA CWL " +
+  "CDG ORY NCE LYS MRS TLS BOD NTE LIL SXB MPL BIQ AJA " +
+  "FRA MUC BER TXL SXF DUS HAM CGN STR HAJ NUE LEJ BRE DTM FMO FKB " +
+  "AMS RTM EIN MST GRQ BRU CRL ANR LUX " +
+  "MAD BCN AGP PMI ALC VLC SVQ BIO LPA TFS TFN ACE FUE IBZ MAH SCQ OVD " +
+  "LIS OPO FAO FNC PDL " +
+  "FCO MXP LIN BGY VCE NAP BLQ FLR PSA TRN CTA PMO BRI CAG VRN TSF SUF " +
+  "ZRH GVA BSL BRN LUG VIE SZG INN GRZ LNZ " +
+  "CPH BLL AAL AAR ARN GOT BMA NYO MMX OSL BGO TRD SVG BOO TOS HEL TKU OUL RVN " +
+  "KEF DUB ORK SNN WAW KRK GDN WRO POZ KTW PRG BRQ OSR BUD OTP CLJ TSR IAS " +
+  "SOF VAR BOJ ATH SKG HER RHO CFU JTR JMK CHQ KGS ZTH " +
+  "LCA PFO MLA TIA SKP PRN TGD LJU ZAG SPU DBV ZAD PUY SJJ BEG INI " +
+  "IST SAW ADB AYT ESB ADA TZX BJV DLM GZP " +
+  "SVO DME VKO LED KZN AER OVB KUF ROV KGD MSQ KBP IEV LWO ODS RIX VNO TLL KUN").split(/\s+/);
+
+var REGION_ME = ("DXB AUH SHJ RKT FJR DWC AAN " +
+  "DOH BAH KWI RUH JED DMM MED AHB TIF ELQ HOF GIZ TUU YNB " +
+  "MCT SLL KHS DQM " +
+  "AMM AQJ BEY DAM ALP BGW BSR EBL ISU NJF " +
+  "TLV SDV VDA ETH " +
+  "IKA THR MHD SYZ AWZ IFN TBZ KIH BND").split(/\s+/);
+
+var REGION_AM = ("JFK LGA EWR BOS PHL BWI DCA IAD RIC ORF CHO PIT BUF ROC SYR ALB PVD BDL MHT PWM BGR " +
+  "ATL CLT RDU GSO CHS SAV JAX MCO TPA MIA FLL PBI RSW SRQ TLH PNS " +
+  "ORD MDW DTW CLE CMH CVG IND MKE MSP DSM OMA STL MCI MSN GRR DAY SDF BNA MEM " +
+  "DFW DAL IAH HOU AUS SAT ELP OKC TUL LIT MSY BHM JAN SHV ABQ " +
+  "DEN SLC PHX TUS LAS RNO BOI GEG COS MSO BIL JAC SUN " +
+  "LAX SFO SAN SJC OAK SMF SNA ONT BUR LGB PSP FAT SBA MRY " +
+  "SEA PDX ANC FAI JNU KTN SIT BET OTZ " +
+  "HNL OGG KOA LIH ITO " +
+  "YYZ YUL YVR YYC YEG YOW YWG YHZ YQB YXE YQR YYJ YLW YXX YTZ " +
+  "MEX CUN GDL MTY TIJ SJD PVR MZT BJX QRO MID CZM " +
+  "GRU GIG CGH BSB CNF SSA REC FOR POA CWB VCP MAO BEL " +
+  "EZE AEP COR MDZ SCL LIM BOG MDE CTG CLO UIO GYE PTY SJO SAL GUA TGU MGA " +
+  "CCS MVD ASU VVI LPB CUZ AQP " +
+  "SJU STT STX HAV MBJ KIN NAS PLS AUA CUR BGI POS SXM SDQ PUJ").split(/\s+/);
+
+var AIRPORT_REGION = {};
+(function(){
+  REGION_EU.forEach(function(c){ if(c) AIRPORT_REGION[c] = "EU"; });
+  REGION_ME.forEach(function(c){ if(c) AIRPORT_REGION[c] = "ME"; });
+  REGION_AM.forEach(function(c){ if(c) AIRPORT_REGION[c] = "AM"; });
+})();
+
+var REGION_ZH = { EU:"歐洲", ME:"中東", AM:"美洲" };
+function aptRegion(code){ return AIRPORT_REGION[String(code || "").toUpperCase()] || ""; }
+
+/* 班號的數字部分是不是 4 碼（共掛航班常見） */
+function isFourDigit(flightNo){
+  var m = /([0-9]+)\s*$/.exec(String(flightNo || ""));
+  return !!m && m[1].length === 4;
+}
+
+/* 4 碼班號 + 航線任一端落在歐洲／中東／美洲 → 視為要隱藏的共掛 */
+function isFarCodeshare(f){
+  if(!isFourDigit(f.flightNo)) return false;
+  var a = aptRegion(f.depApt), b = aptRegion(f.arrApt);
+  return !!(a || b);
+}
+
 var LIVE = { rows:[], fetchedAt:0, srcName:"", hist:{} };
 
 /* =========================================================
@@ -2995,8 +3063,10 @@ function ntPush(title, body, tag){
 function ntCheck(rows){
   if(!ntOn()) return;
   var thr = ntThr(), hits = 0;
+  var hide4 = !!($("liveHide4") && $("liveHide4").checked);
 
   rows.forEach(function(f){
+    if(hide4 && isFarCodeshare(f)) return;   // 畫面上不顯示的共掛，也不該發通知
     var name = (f.flightNo || "?") + "　" + (f.depApt || "?") + " → " + (f.arrApt || "?");
     var raw = String(f.status || "");
 
@@ -3357,8 +3427,12 @@ function renderLive(){
     departed: function(f){ return /active|en.?route|airborne|in.?flight|depart/i.test(f.status); }
   };
 
+  var hide4 = !!($("liveHide4") && $("liveHide4").checked);
+  var hidden4 = 0;
+
   var all = LIVE.rows
     .filter(function(f){
+      if(hide4 && isFarCodeshare(f)){ hidden4++; return false; }
       if(dateSel !== "all" && f.date !== dateSel) return false;
       if(dirSel === "arr" && !f.arrApt) return false;
       if(dirSel === "dep" && (!f.depApt || !!f.arrAct)) return false;
@@ -3431,11 +3505,14 @@ function renderLive(){
       '<td class="mono note">' + esc(f.date || "—") + "</td></tr>";
   }).join("");
 
+  var hideNote = hidden4
+    ? "　已隱藏 " + hidden4 + " 筆歐美中東的 4 碼共掛航班。"
+    : "";
   var ml = { est:"預估落地時間被連續後推", alt:"高度穩定不變（需位置資料）", both:"兩者任一成立", none:"推論已關閉" };
   var holdNote = "盤旋推論：" + esc(ml[holdMode()] || holdMode()) + "，嚴格度 " + holdThr() + " 次；" +
     "取消、轉降、返航、異常事件來自來源回傳的狀態字樣，確認盤旋需要 ADS-B 航跡，這裡只能當提示。";
   body.innerHTML = '<div class="tbox" style="margin-top:12px"><table>' + head + "<tbody>" + tb + "</tbody></table></div>" +
-    '<p class="note" style="margin-top:8px">顯示 ' + rows.length + " ／ " + all.length + " 筆，來源：" + esc(LIVE.srcName || "—") + "。" +
+    '<p class="note" style="margin-top:8px">顯示 ' + rows.length + " ／ " + all.length + " 筆，來源：" + esc(LIVE.srcName || "—") + "。" + hideNote +
     holdNote + "</p>";
 }
 
@@ -3994,7 +4071,7 @@ function shift(hhmm, mins){
 
   if($("btnLiveFetch")) $("btnLiveFetch").addEventListener("click", liveFetch);
   if($("liveInterval")) $("liveInterval").addEventListener("change", startLiveAuto);
-  ["liveOnly","liveDelay","liveDir","liveDate","liveStatusFilter","liveHoldMode","liveHoldThr"].forEach(function(id){
+  ["liveOnly","liveDelay","liveDir","liveDate","liveStatusFilter","liveHide4","liveHoldMode","liveHoldThr"].forEach(function(id){
     if($(id)) $(id).addEventListener("change", renderLive);
   });
   if($("qDate")) $("qDate").value = twDate();   // 預設今天，避免多天混在一起
