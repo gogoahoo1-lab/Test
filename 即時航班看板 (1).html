@@ -179,6 +179,25 @@ td.num{text-align:right}
 .stcell .lead.late{color:var(--warn)}
 .stcell .lead.cx{color:var(--bad)}
 .stcell .lead.dim{color:var(--dim)}
+/* ---------- 延誤通知 ---------- */
+.notifybar{
+  display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:14px;
+  padding:12px 16px;border:1px solid var(--line2);border-radius:var(--radius-sm);
+  background:rgba(201,169,97,.07);
+}
+.nchk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--txt);cursor:pointer;font-weight:500}
+.nchk input{margin:0;accent-color:var(--accent)}
+.nchk b{font-weight:600;color:var(--accent)}
+.ntlog{margin-top:12px;border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;background:rgba(255,255,255,.5)}
+.ntlog .hd{padding:9px 14px;font-size:12.5px;color:var(--dim);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;background:rgba(247,245,240,.7)}
+.ntlog .hd .btn{margin-left:auto}
+.ntitem{display:flex;gap:12px;align-items:baseline;padding:9px 14px;font-size:13px;border-bottom:1px solid var(--line)}
+.ntitem:last-child{border-bottom:none}
+.ntitem .t{color:var(--dim);font-size:11.5px;font-family:"SF Mono",Menlo,monospace;flex:none;width:52px}
+.ntitem .fn{color:var(--accent);font-weight:600;font-family:"SF Mono",Menlo,monospace;flex:none;width:70px}
+.ntitem .msg2{flex:1}
+@keyframes ntflash{0%,100%{background:transparent}50%{background:rgba(200,68,63,.14)}}
+.ntitem.fresh{animation:ntflash 1.1s ease 2}
 /* ---------- 即時動態 ---------- */
 .bdg{display:inline-block;padding:3px 11px;border-radius:999px;font-size:11.5px;font-weight:600;margin-right:5px;border:1px solid transparent}
 .bdg.cx{color:var(--bad);border-color:rgba(200,68,63,.3);background:rgba(200,68,63,.08)}
@@ -595,6 +614,25 @@ input[type=checkbox]{accent-color:var(--accent)}
       <span class="note" id="liveStatus"></span>
     </div>
 
+    <div class="notifybar">
+      <label class="nchk"><input type="checkbox" id="ntEnable"> <b>延誤通知</b></label>
+      <label class="f">起飛延誤門檻
+        <select id="ntThr">
+          <option value="15">15 分</option>
+          <option value="30" selected>30 分</option>
+          <option value="45">45 分</option>
+          <option value="60">60 分</option>
+        </select>
+      </label>
+      <label class="nchk"><input type="checkbox" id="ntLate" checked> 延誤起飛</label>
+      <label class="nchk"><input type="checkbox" id="ntCx" checked> 取消</label>
+      <label class="nchk"><input type="checkbox" id="ntDv" checked> 轉降／返航</label>
+      <label class="nchk"><input type="checkbox" id="ntSound" checked> 提示音</label>
+      <button class="btn ghost tiny" id="btnNtTest">測試通知</button>
+      <span class="note" id="ntStatus"></span>
+    </div>
+
+    <div id="ntLog"></div>
     <div id="liveMsg" style="margin-top:10px"></div>
     <div class="kpis" id="liveKpis"></div>
     <div id="liveBody"></div>
@@ -2859,6 +2897,170 @@ async function lsrcFetch(q){
    即時動態：解析、異常判定與呈現
    ========================================================= */
 var LIVE = { rows:[], fetchedAt:0, srcName:"", hist:{} };
+
+/* =========================================================
+   延誤通知
+   起飛延誤超過門檻、取消、轉降時發桌面通知與提示音。
+   同一班機同一級距只通知一次，延誤加重（跨過下一個門檻倍數）才會再通知。
+   ========================================================= */
+var NT = { fired:{}, log:[] };
+var ntAudio = null;
+
+function ntOn(){ return !!($("ntEnable") && $("ntEnable").checked); }
+function ntThr(){ return Number(($("ntThr") && $("ntThr").value) || 30) || 30; }
+function ntWant(k){
+  var el = $(k === "late" ? "ntLate" : k === "cx" ? "ntCx" : "ntDv");
+  return !!(el && el.checked);
+}
+function ntSave(){
+  try{
+    localStorage.setItem("ntCfg", JSON.stringify({
+      enabled: ntOn(), thr: ntThr(),
+      late: ntWant("late"), cx: ntWant("cx"), dv: ntWant("dv"),
+      sound: !!($("ntSound") && $("ntSound").checked),
+      log: NT.log.slice(0, 40), fired: NT.fired
+    }));
+  }catch(e){}
+}
+function ntLoad(){
+  var v = null;
+  try{ v = JSON.parse(localStorage.getItem("ntCfg") || "null"); }catch(e){}
+  if(!v) return;
+  if($("ntEnable")) $("ntEnable").checked = !!v.enabled;
+  if($("ntThr") && v.thr) $("ntThr").value = String(v.thr);
+  if($("ntLate")) $("ntLate").checked = v.late !== false;
+  if($("ntCx")) $("ntCx").checked = v.cx !== false;
+  if($("ntDv")) $("ntDv").checked = v.dv !== false;
+  if($("ntSound")) $("ntSound").checked = v.sound !== false;
+  NT.log = v.log || [];
+  NT.fired = v.fired || {};
+}
+
+function ntStatus(msg, cls){
+  var el = $("ntStatus");
+  if(!el) return;
+  el.textContent = msg || "";
+  el.style.color = cls === "err" ? "var(--bad)" : (cls === "ok" ? "var(--good)" : "");
+}
+
+/* 桌面通知要使用者授權；勾選啟用時順便要權限 */
+async function ntEnsurePermission(){
+  if(!("Notification" in window)){
+    ntStatus("這個瀏覽器不支援桌面通知，仍會在下方列出通知紀錄。", "err");
+    return false;
+  }
+  if(Notification.permission === "granted") return true;
+  if(Notification.permission === "denied"){
+    ntStatus("瀏覽器已封鎖通知權限，請到網站設定開啟；紀錄仍會顯示在下方。", "err");
+    return false;
+  }
+  try{
+    var p = await Notification.requestPermission();
+    if(p === "granted"){ ntStatus("桌面通知已開啟。", "ok"); return true; }
+    ntStatus("未授權桌面通知，僅顯示頁內紀錄。", "err");
+    return false;
+  }catch(e){ return false; }
+}
+
+function ntBeep(){
+  if(!($("ntSound") && $("ntSound").checked)) return;
+  try{
+    if(!ntAudio) ntAudio = new (window.AudioContext || window.webkitAudioContext)();
+    if(ntAudio.state === "suspended") ntAudio.resume();
+    [0, 0.18].forEach(function(off){
+      var o = ntAudio.createOscillator(), g = ntAudio.createGain();
+      o.type = "sine";
+      o.frequency.value = off ? 660 : 880;
+      g.gain.setValueAtTime(0.0001, ntAudio.currentTime + off);
+      g.gain.exponentialRampToValueAtTime(0.18, ntAudio.currentTime + off + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ntAudio.currentTime + off + 0.16);
+      o.connect(g); g.connect(ntAudio.destination);
+      o.start(ntAudio.currentTime + off);
+      o.stop(ntAudio.currentTime + off + 0.18);
+    });
+  }catch(e){}
+}
+
+function ntPush(title, body, tag){
+  NT.log.unshift({ t: nowHM(), title: title, body: body, fresh: true });
+  NT.log = NT.log.slice(0, 60);
+  try{
+    if("Notification" in window && Notification.permission === "granted"){
+      new Notification(title, { body: body, tag: tag, renotify: false });
+    }
+  }catch(e){}
+}
+
+/* 檢查目前這批資料有沒有要通知的事 */
+function ntCheck(rows){
+  if(!ntOn()) return;
+  var thr = ntThr(), hits = 0;
+
+  rows.forEach(function(f){
+    var name = (f.flightNo || "?") + "　" + (f.depApt || "?") + " → " + (f.arrApt || "?");
+    var raw = String(f.status || "");
+
+    // 取消
+    if(ntWant("cx") && /cancel/i.test(raw)){
+      var kc = f.key + "|cx";
+      if(!NT.fired[kc]){
+        NT.fired[kc] = 1; hits++;
+        ntPush("航班取消　" + (f.flightNo || ""), name + "\n表定起飛 " + (f.depSched || "—"), kc);
+      }
+      return;   // 取消就不用再報延誤
+    }
+
+    // 轉降／返航
+    if(ntWant("dv") && /divert|轉降|返航|air ?return/i.test(raw)){
+      var kd = f.key + "|dv";
+      if(!NT.fired[kd]){
+        NT.fired[kd] = 1; hits++;
+        ntPush("航班轉降／返航　" + (f.flightNo || ""), name + "\n狀態 " + liveStatusZh(raw), kd);
+      }
+    }
+
+    // 起飛延誤：以出發延誤分鐘為準
+    if(ntWant("late") && f.depDelay != null && f.depDelay >= thr){
+      var level = Math.floor(f.depDelay / thr);      // 30/60/90 各報一次
+      var kl = f.key + "|late";
+      if((NT.fired[kl] || 0) < level){
+        NT.fired[kl] = level; hits++;
+        ntPush("起飛延誤 " + f.depDelay + " 分　" + (f.flightNo || ""),
+          name + "\n表定 " + (f.depSched || "—") +
+          (f.depEst ? "　預估 " + f.depEst : "") +
+          (f.depAct ? "　實際 " + f.depAct : ""), kl);
+      }
+    }
+  });
+
+  if(hits){
+    ntBeep();
+    ntRenderLog();
+    ntStatus("剛剛發出 " + hits + " 則通知。", "ok");
+  }
+  ntSave();
+}
+
+function ntRenderLog(){
+  var box = $("ntLog");
+  if(!box) return;
+  if(!NT.log.length){ box.innerHTML = ""; return; }
+  box.innerHTML = '<div class="ntlog"><div class="hd">通知紀錄（最近 ' + NT.log.length + ' 則）' +
+      '<button class="btn ghost tiny" id="btnNtClear">清除紀錄</button></div>' +
+    NT.log.map(function(x){
+      var parts = String(x.body || "").split("\n");
+      return '<div class="ntitem' + (x.fresh ? " fresh" : "") + '">' +
+        '<span class="t">' + esc(x.t) + "</span>" +
+        '<span class="msg2"><b>' + esc(x.title) + "</b>" +
+          (parts.length ? '<div class="note">' + esc(parts.join("　")) + "</div>" : "") +
+        "</span></div>";
+    }).join("") + "</div>";
+  NT.log.forEach(function(x){ x.fresh = false; });
+  var cb = $("btnNtClear");
+  if(cb) cb.addEventListener("click", function(){
+    NT.log = []; NT.fired = {}; ntSave(); ntRenderLog(); ntStatus("紀錄已清除。", "ok");
+  });
+}
 var liveTimer = null;
 var liveRunning = false;
 
@@ -3089,6 +3291,8 @@ async function liveFetch(){
     LIVE.fetchedAt = Date.now();
     LIVE.srcName = res.src.name;
     try{ localStorage.setItem("liveCache", JSON.stringify({ rows:rows, fetchedAt:LIVE.fetchedAt, srcName:LIVE.srcName, hist:LIVE.hist })); }catch(e){}
+
+    ntCheck(rows);
 
     if(st) st.textContent = res.src.name + " 已更新｜" + new Date().toLocaleTimeString("zh-TW",{hour12:false});
     liveShow(rows.length ? "" : "來源有回應，但沒有符合條件的班次。放寬查詢條件再試。", "info");
@@ -3765,6 +3969,29 @@ function shift(hhmm, mins){
     lsrcShow("已清除所有冷卻狀態。", "ok");
     renderLiveSources();
   });
+  ntLoad();
+  ntRenderLog();
+  if($("ntEnable")) $("ntEnable").addEventListener("change", async function(){
+    if(this.checked){
+      await ntEnsurePermission();
+      ntBeep();   // 同時解鎖 AudioContext，之後自動更新才出得了聲
+      if(!Number($("liveInterval").value)){
+        ntStatus("通知已開啟。記得把「自動更新」設成 2 或 5 分鐘，否則不會主動抓新資料。", "err");
+      }
+    }else{
+      ntStatus("通知已關閉。");
+    }
+    ntSave();
+  });
+  ["ntThr","ntLate","ntCx","ntDv","ntSound"].forEach(function(id){
+    if($(id)) $(id).addEventListener("change", ntSave);
+  });
+  if($("btnNtTest")) $("btnNtTest").addEventListener("click", async function(){
+    await ntEnsurePermission();
+    ntPush("測試通知　JX000", "TPE → NRT　表定 08:00　預估 08:45");
+    ntBeep(); ntRenderLog();
+  });
+
   if($("btnLiveFetch")) $("btnLiveFetch").addEventListener("click", liveFetch);
   if($("liveInterval")) $("liveInterval").addEventListener("change", startLiveAuto);
   ["liveOnly","liveDelay","liveDir","liveDate","liveStatusFilter","liveHoldMode","liveHoldThr"].forEach(function(id){
