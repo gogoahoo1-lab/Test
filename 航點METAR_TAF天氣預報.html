@@ -281,8 +281,8 @@ svg{display:block}
     <h2>AVWX 資料來源</h2>
     <div class="field"><input type="text" id="avwxToken" placeholder="AVWX API token"></div>
     <div class="field" style="margin-top:8px"><input type="text" id="avwxBase" placeholder="https://avwx.rest"></div>
-    <p class="hint">AVWX 直接回傳解析好的 TAF 與 METAR，比 AWC 原文可靠。到 account.avwx.rest 註冊即可取得 token。若你自己用 avwx-api 專案架站，把網址填在第二欄，且自架站台若未啟用帳號資料庫則不需 token。設定後這裡會成為第一順位來源，失敗才退回倉庫快取與中繼。填了 token 之後只會直連或走你自己的中繼，不會把 token 送給公開中繼。</p>
-    <div class="acts"><button class="solid" id="saveAvwx">儲存並重抓</button><button class="ghost" id="testAvwx">測試 AVWX</button></div>
+    <p class="hint">AVWX 直接回傳解析好的 TAF 與 METAR，比 AWC 原文可靠。到 account.avwx.rest 註冊即可取得 token。若你自己用 avwx-api 專案架站，把網址填在第二欄，且自架站台若未啟用帳號資料庫則不需 token。設定後這裡會成為第一順位來源，失敗才退回倉庫快取與中繼。填了 token 之後只會直連或走你自己的中繼，不會把 token 送給公開中繼。要把 Token 內建進檔案再轉發給同事，按下方「下載已內嵌 Token 的 HTML」，對方開啟即可直接使用。</p>
+    <div class="acts"><button class="solid" id="saveAvwx">儲存並重抓</button><button class="ghost" id="testAvwx">測試 AVWX</button><button class="ghost" id="downloadHtml">下載已內嵌 Token 的 HTML</button></div>
     <div id="avwxOut"></div>
   </div>
   <div class="card">
@@ -378,14 +378,17 @@ try{ const q=JSON.parse(localStorage.getItem(QKEY)||"null"); if(q) QUAKE=Object.
 // 內建中繼清單裡已經有 allorigins，預設留空避免對同一個服務連打兩次
 const OLD_DEFAULT_PROXY="https://api.allorigins.win/raw?url=";
 const DEFAULT_PROXY="";
-let STATIONS=[],PROXY=DEFAULT_PROXY,AVWX_TOKEN="",AVWX_BASE="https://avwx.rest";
+// 這兩行會被「下載已內嵌 Token 的 HTML」功能改寫，請勿手動編輯格式
+const DEFAULT_AVWX_TOKEN = "";
+const DEFAULT_AVWX_BASE = "https://avwx.rest";
+let STATIONS=[],PROXY=DEFAULT_PROXY,AVWX_TOKEN=DEFAULT_AVWX_TOKEN,AVWX_BASE=DEFAULT_AVWX_BASE;
 try{
   const s=JSON.parse(localStorage.getItem(KEY)||"null");
   STATIONS=Array.isArray(s)&&s.length?s:BUILTIN.map(x=>Object.assign({},x));
   const p=localStorage.getItem(PKEY); if(p!==null) PROXY=p;
   if(PROXY===OLD_DEFAULT_PROXY) PROXY="";
-  AVWX_TOKEN=localStorage.getItem(AKEY)||"";
-  AVWX_BASE=(localStorage.getItem(BKEY)||"https://avwx.rest").replace(/\/+$/,"");
+  AVWX_TOKEN=localStorage.getItem(AKEY)||DEFAULT_AVWX_TOKEN;
+  AVWX_BASE=(localStorage.getItem(BKEY)||DEFAULT_AVWX_BASE).replace(/\/+$/,"");
 }catch(e){ STATIONS=BUILTIN.map(x=>Object.assign({},x)); }
 function save(){
   try{
@@ -1500,6 +1503,39 @@ document.getElementById("testAvwx").addEventListener("click",async()=>{
     String(e.message).split("　").forEach(x=>lines.push("　"+x));
   }
   box.innerHTML='<p class="hint">'+lines.map(esc).join("<br>")+'</p>';
+});
+
+document.getElementById("downloadHtml").addEventListener("click",async()=>{
+  const box=document.getElementById("avwxOut");
+  const token=cleanToken(document.getElementById("avwxToken").value);
+  const base=(document.getElementById("avwxBase").value.trim()||"https://avwx.rest").replace(/\/+$/,"");
+  if(!token){ box.innerHTML='<p class="hint">請先在上方欄位貼入 Token，再按下載。</p>'; return; }
+  box.innerHTML='<p class="hint">讀取原始檔案中</p>';
+  let source;
+  try{
+    const r=await fetch(location.href,{cache:"no-store"});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    source=await r.text();
+  }catch(e){
+    box.innerHTML='<p class="hint">讀取原始檔案失敗：'+esc(e.message)+'。多數瀏覽器不允許用 file:// 開啟時抓自己的原始碼。請把檔案放到任何一個網頁伺服器或雲端硬碟預覽環境下再試，或改用 Firefox 直接開啟本機檔案。</p>';
+    return;
+  }
+  const q=s=>String(s).replace(/[\\"]/g,"\\$&");
+  const before=source;
+  source=source.replace(/const DEFAULT_AVWX_TOKEN\s*=\s*"[^"]*";/,'const DEFAULT_AVWX_TOKEN = "'+q(token)+'";');
+  source=source.replace(/const DEFAULT_AVWX_BASE\s*=\s*"[^"]*";/, 'const DEFAULT_AVWX_BASE = "'+q(base)+'";');
+  if(source===before){
+    box.innerHTML='<p class="hint">在原始檔案裡找不到 DEFAULT_AVWX_TOKEN 這一行，可能檔案被改過或壓縮過。請用未壓縮的版本再試。</p>';
+    return;
+  }
+  const blob=new Blob([source],{type:"text/html;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download="航點METAR_TAF天氣預報.html";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  const mask=token.length>8?token.slice(0,4)+"…"+token.slice(-4):"（已內嵌）";
+  box.innerHTML='<p class="hint">已下載內嵌 Token（'+esc(mask)+'）的檔案。轉發時對方開啟即可直接使用，不需再輸入。內嵌的 Token 只在對方沒設定自己的 Token 時生效，本機儲存的仍為第一順位。</p>';
 });
 
 document.getElementById("testRelay").addEventListener("click",async()=>{
