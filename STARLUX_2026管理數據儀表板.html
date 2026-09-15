@@ -448,13 +448,13 @@
 
     <!-- ===== 更新資料 Modal ===== -->
     <div id="updateModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:9999; align-items:center; justify-content:center;">
-      <div style="background:var(--surface); border-radius:14px; padding:28px 32px; width:min(520px,92vw); box-shadow:0 8px 40px rgba(0,0,0,.4); position:relative;">
+      <div style="background:var(--paper); color:var(--ink); border-radius:14px; padding:28px 32px; width:min(520px,92vw); box-shadow:0 8px 40px rgba(0,0,0,.4); position:relative;">
         <button id="closeUpdateModal" style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;">×</button>
         <h2 style="margin:0 0 6px; font-size:18px; font-weight:700;">更新資料 &amp; 下載 HTML</h2>
         <p style="color:var(--muted); font-size:13px; margin:0 0 22px;">上傳最新 Excel 後點「下載最新 HTML」，下載的檔案已內嵌最新資料，寄給相關人員直接開啟即可。</p>
 
         <!-- 月報 Excel -->
-        <div style="background:var(--bg); border-radius:10px; padding:16px 18px; margin-bottom:14px;">
+        <div style="background:var(--cream); border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:14px;">
           <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
             <div>
               <div style="font-weight:600; font-size:14px;">📊 月報 Excel</div>
@@ -469,7 +469,7 @@
         </div>
 
         <!-- OHT Excel -->
-        <div style="background:var(--bg); border-radius:10px; padding:16px 18px; margin-bottom:22px;">
+        <div style="background:var(--cream); border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:22px;">
           <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
             <div>
               <div style="font-weight:600; font-size:14px;">✈️ OHT Raw Data Excel</div>
@@ -4821,11 +4821,11 @@
       // Reflect current data status
       if (STATE && STATE.meta && STATE.meta.sourceFile) {
         monthlyStatus.textContent = '✅ 現有資料：' + STATE.meta.sourceFile;
-        monthlyStatus.style.color = 'var(--gold)';
+        monthlyStatus.style.color = 'var(--earth-gold)';
       }
       if (OPS && OPS.meta && OPS.meta.totalFlights) {
         ohtStatus.textContent = '✅ 現有資料：共 ' + OPS.meta.totalFlights + ' 班（' + OPS.meta.dateFrom + ' ～ ' + OPS.meta.dateTo + '）';
-        ohtStatus.style.color = 'var(--gold)';
+        ohtStatus.style.color = 'var(--earth-gold)';
       }
     }
     function closeModal(){ modal.style.display = 'none'; }
@@ -4857,7 +4857,7 @@
           renderMonthBar();
           renderAll();
           monthlyStatus.textContent = '✅ 已更新：' + file.name;
-          monthlyStatus.style.color = 'var(--gold)';
+          monthlyStatus.style.color = 'var(--earth-gold)';
           showBanner('月報資料已更新：' + file.name, false);
         } catch(err) {
           monthlyStatus.textContent = '❌ 讀取失敗：' + (err.message || '格式錯誤');
@@ -4898,7 +4898,7 @@
           opsMonthFilter = 'all';
           renderOps();
           ohtStatus.textContent = '✅ 已更新：' + file.name + '（共 ' + parsed.flights.length + ' 班）';
-          ohtStatus.style.color = 'var(--gold)';
+          ohtStatus.style.color = 'var(--earth-gold)';
           showBanner('OPS 資料已更新：' + file.name, false);
         } catch(err) {
           ohtStatus.textContent = '❌ 讀取失敗：' + (err.message || '格式錯誤');
