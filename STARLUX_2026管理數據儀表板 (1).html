@@ -869,10 +869,12 @@
           <section class="block" style="margin-bottom:0;">
             <div class="ops-toolbar">
               <div class="ops-meta" id="opsMeta"></div>
-              <button class="btn btn-outline" id="opsReuploadBtn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M12 4L7 9M12 4l5 5"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3"/></svg>
-                <span data-i18n="ops_reupload_btn">重新上傳更新</span>
-              </button>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-outline" id="opsReuploadBtn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M12 4L7 9M12 4l5 5"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3"/></svg>
+                  <span data-i18n="ops_reupload_btn">重新上傳更新</span>
+                </button>
+              </div>
             </div>
           </section>
 
@@ -890,10 +892,18 @@
             <!-- 機型 KPI 卡片 -->
             <div class="bid-type-grid" id="bidTypeGrid"></div>
 
-            <!-- 子頁籤 -->
-            <div class="bid-sub-tabs" id="bidSubTabs">
-              <button class="bid-sub-tab active" data-bidsub="station">各航點（DEP）</button>
-              <button class="bid-sub-tab" data-bidsub="flight">各班次</button>
+            <!-- 子頁籤 + 出發站 同一排 -->
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+              <div class="bid-sub-tabs" id="bidSubTabs" style="margin-bottom:0;">
+                <button class="bid-sub-tab active" data-bidsub="station">各航點（DEP）</button>
+                <button class="bid-sub-tab" data-bidsub="flight">各班次</button>
+              </div>
+            </div>
+
+            <!-- 出發站篩選（從下方移上來） -->
+            <div class="ops-filter-row" style="margin-bottom:8px;">
+              <span class="month-bar-label" data-i18n="ops_filter_dep">出發站</span>
+              <div class="pill-row" id="opsDepPills"></div>
             </div>
 
             <!-- 機型篩選 -->
@@ -914,10 +924,6 @@
           <!-- ======= /Block In → 關門 專區 ======= -->
 
           <section class="block">
-            <div class="ops-filter-row">
-              <span class="month-bar-label" data-i18n="ops_filter_dep">出發站</span>
-              <div class="pill-row" id="opsDepPills"></div>
-            </div>
             <div class="ops-filter-row">
               <span class="month-bar-label" data-i18n="ops_filter_metric">分析階段</span>
               <div class="pill-row" id="opsMetricPills"></div>
