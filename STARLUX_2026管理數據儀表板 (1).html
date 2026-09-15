@@ -198,6 +198,58 @@
   #opsTopTable td.rank, #opsAllTable td.num{ font-variant-numeric:tabular-nums; }
   .ops-heat{ display:inline-block; min-width:38px; text-align:center; padding:2px 6px; border-radius:5px; font-variant-numeric:tabular-nums; font-weight:600; }
 
+  /* Block In → Door Close analysis */
+  .bid-section-head{ display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:6px; }
+  .bid-section-head h3{ font-size:17px; font-family:'Noto Serif TC',serif; font-weight:600; color:var(--obsidian); display:flex; align-items:center; gap:8px; }
+  .bid-section-head h3 .mini-star{ color:var(--earth-gold); font-size:14px; }
+  .bid-type-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; margin-bottom:22px; }
+  .bid-type-card{
+    background:var(--paper); border:1px solid var(--line); border-radius:12px;
+    padding:16px 18px 14px; box-shadow:var(--shadow); position:relative; overflow:hidden;
+  }
+  .bid-type-card::before{
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+  }
+  .bid-type-card.t32Q::before{ background:linear-gradient(90deg,#3b7dd8,#6aa3f0); }
+  .bid-type-card.t339::before{ background:linear-gradient(90deg,#2db38a,#5ecfaf); }
+  .bid-type-card.t351::before{ background:linear-gradient(90deg,#e07b2a,#f0a665); }
+  .bid-type-card.t359::before{ background:linear-gradient(90deg,#c0395a,#e06888); }
+  .bid-type-badge{
+    display:inline-block; font-size:13px; font-weight:800; padding:2px 9px; border-radius:5px; margin-bottom:7px;
+  }
+  .bid-type-card.t32Q .bid-type-badge{ background:rgba(59,125,216,0.14); color:#2a5da8; }
+  .bid-type-card.t339 .bid-type-badge{ background:rgba(45,179,138,0.14); color:#1a8a66; }
+  .bid-type-card.t351 .bid-type-badge{ background:rgba(224,123,42,0.14); color:#b05a12; }
+  .bid-type-card.t359 .bid-type-badge{ background:rgba(192,57,90,0.14); color:#8f1a38; }
+  .bid-type-avg{ font-size:28px; font-weight:800; font-variant-numeric:tabular-nums; line-height:1; margin-bottom:3px; }
+  .bid-type-card.t32Q .bid-type-avg{ color:#3b7dd8; }
+  .bid-type-card.t339 .bid-type-avg{ color:#2db38a; }
+  .bid-type-card.t351 .bid-type-avg{ color:#e07b2a; }
+  .bid-type-card.t359 .bid-type-avg{ color:#c0395a; }
+  .bid-type-meta{ font-size:12.5px; color:var(--muted); margin-top:2px; line-height:1.6; }
+  .bid-type-bar{ height:5px; border-radius:3px; margin-top:10px; background:var(--cream-2); overflow:hidden; }
+  .bid-type-bar-fill{ height:100%; border-radius:3px; }
+  .bid-type-card.t32Q .bid-type-bar-fill{ background:#3b7dd8; }
+  .bid-type-card.t339 .bid-type-bar-fill{ background:#2db38a; }
+  .bid-type-card.t351 .bid-type-bar-fill{ background:#e07b2a; }
+  .bid-type-card.t359 .bid-type-bar-fill{ background:#c0395a; }
+  .bid-sub-tabs{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+  .bid-sub-tab{
+    padding:6px 14px; border-radius:20px; font-size:13.5px; font-weight:600;
+    background:var(--cream-2); color:var(--ink-soft); cursor:pointer; border:1px solid transparent;
+    transition:all .15s;
+  }
+  .bid-sub-tab.active{ background:var(--obsidian); color:var(--cream); }
+  .bid-heat-cell{ display:inline-block; min-width:36px; text-align:center; padding:2px 6px; border-radius:5px; font-variant-numeric:tabular-nums; font-weight:600; font-size:13px; }
+  .bid-type-filter-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; font-size:13px; color:var(--muted); font-weight:600; }
+  .bid-type-pill{ padding:4px 11px; border-radius:14px; font-size:12.5px; font-weight:700; background:var(--cream-2); color:var(--ink-soft); cursor:pointer; border:1px solid transparent; transition:all .15s; white-space:nowrap; }
+  .bid-type-pill.active{ color:#fff; }
+  .bid-type-pill.p32Q.active{ background:#3b7dd8; }
+  .bid-type-pill.p339.active{ background:#2db38a; }
+  .bid-type-pill.p351.active{ background:#e07b2a; }
+  .bid-type-pill.p359.active{ background:#c0395a; }
+  .bid-type-pill.pALL.active{ background:var(--obsidian); }
+
   /* Back-to-top floating button */
   .back-to-top{
     position:fixed; right:22px; bottom:22px; z-index:150;
@@ -823,6 +875,40 @@
               </button>
             </div>
           </section>
+
+          <!-- ======= Block In → 關門 專區 ======= -->
+          <section class="block" id="bidSection">
+            <div class="bid-section-head">
+              <h3><span class="mini-star">✦</span>Block In → 關門作業時間分析</h3>
+              <span class="section-note" id="bidMeta"></span>
+            </div>
+            <div class="divider"></div>
+
+            <!-- 機型 KPI 卡片 -->
+            <div class="bid-type-grid" id="bidTypeGrid"></div>
+
+            <!-- 子頁籤 -->
+            <div class="bid-sub-tabs" id="bidSubTabs">
+              <button class="bid-sub-tab active" data-bidsub="station">各航點（DEP）</button>
+              <button class="bid-sub-tab" data-bidsub="flight">各班次</button>
+            </div>
+
+            <!-- 機型篩選 -->
+            <div class="bid-type-filter-row" id="bidTypeFilterRow">
+              篩選機型：
+              <button class="bid-type-pill pALL active" data-bidtype="ALL">全部</button>
+              <button class="bid-type-pill p32Q" data-bidtype="32Q">32Q</button>
+              <button class="bid-type-pill p339" data-bidtype="339">339</button>
+              <button class="bid-type-pill p351" data-bidtype="351">351</button>
+              <button class="bid-type-pill p359" data-bidtype="359">359</button>
+            </div>
+
+            <!-- 各航點 / 各班次 表格 -->
+            <div class="card" style="padding:0; overflow:hidden;">
+              <div id="bidTableWrap" class="table-scroll"><table id="bidTable"></table></div>
+            </div>
+          </section>
+          <!-- ======= /Block In → 關門 專區 ======= -->
 
           <section class="block">
             <div class="ops-filter-row">
@@ -3937,7 +4023,16 @@
     bar.innerHTML = html;
     const btns = bar.querySelectorAll('.pill');
     for (let i=0;i<btns.length;i++){
-      btns[i].addEventListener('click', function(){ opsDepFilter = this.getAttribute('data-opsdep'); renderOps(); });
+      btns[i].addEventListener('click', function(){
+        opsDepFilter = this.getAttribute('data-opsdep');
+        renderOpsDepPills();
+        renderBid();       // keep BID section in sync with dep filter
+        renderOpsKpi();
+        renderOpsLongestCard();
+        renderOpsPhaseChart();
+        renderOpsTopTable();
+        renderOpsAllTable();
+      });
     }
   }
   function renderOpsMetricPills(){
@@ -4100,6 +4195,225 @@
     meta.innerHTML = parts.join(' · ');
   }
 
+  // ================= Block In → Door Close Analysis =================
+  let bidSubTab = 'station';   // 'station' | 'flight'
+  let bidTypeFilter = 'ALL';   // 'ALL' | '32Q' | '339' | '351' | '359'
+
+  function bidValidFlights(){
+    if (!OPS || !OPS.flights) return [];
+    return OPS.flights.filter(function(f){
+      // Respect the same dep filter used by the rest of the OPS tab
+      if (opsDepFilter !== 'ALL' && f.dep !== opsDepFilter) return false;
+      const v = f.blockInToDoor;
+      return v !== null && v !== undefined && v > 0 && !(f.outliers && f.outliers['blockInToDoor']);
+    });
+  }
+
+  function bidTypeStats(){
+    const types = ['32Q','339','351','359'];
+    const result = {};
+    const allValid = bidValidFlights();
+    types.forEach(function(tp){
+      const vals = allValid.filter(function(f){ return f.acType === tp; }).map(function(f){ return f.blockInToDoor; }).sort(function(a,b){return a-b;});
+      if (!vals.length){ result[tp] = {n:0,avg:null,median:null,min:null,max:null}; return; }
+      const sum = vals.reduce(function(s,v){return s+v;},0);
+      const mid = Math.floor(vals.length/2);
+      const median = vals.length%2 ? vals[mid] : (vals[mid-1]+vals[mid])/2;
+      result[tp] = {n:vals.length, avg:Math.round(sum/vals.length*10)/10, median:Math.round(median*10)/10, min:vals[0], max:vals[vals.length-1]};
+    });
+    return result;
+  }
+
+  function bidStationStats(typeFilter){
+    const flights = bidValidFlights().filter(function(f){ return typeFilter==='ALL' || f.acType===typeFilter; });
+    const map = {};
+    flights.forEach(function(f){
+      const dep = f.dep || '?';
+      if (!map[dep]) map[dep] = [];
+      map[dep].push(f.blockInToDoor);
+    });
+    return Object.keys(map).map(function(dep){
+      const vals = map[dep].slice().sort(function(a,b){return a-b;});
+      const sum = vals.reduce(function(s,v){return s+v;},0);
+      const mid = Math.floor(vals.length/2);
+      const median = vals.length%2 ? vals[mid] : (vals[mid-1]+vals[mid])/2;
+      const std = (function(){
+        const avg = sum/vals.length;
+        const sq = vals.reduce(function(s,v){return s+(v-avg)*(v-avg);},0);
+        return Math.round(Math.sqrt(sq/vals.length)*10)/10;
+      })();
+      return {dep:dep, n:vals.length, avg:Math.round(sum/vals.length*10)/10, median:Math.round(median*10)/10, min:vals[0], max:vals[vals.length-1], std:std};
+    }).sort(function(a,b){return a.avg-b.avg;});
+  }
+
+  function bidFlightStats(typeFilter){
+    const flights = bidValidFlights().filter(function(f){ return typeFilter==='ALL' || f.acType===typeFilter; });
+    // Group by flt + acType + dep
+    const map = {};
+    flights.forEach(function(f){
+      const key = f.flt+'|'+f.acType+'|'+(f.dep||'?');
+      if (!map[key]) map[key] = {flt:f.flt, acType:f.acType, dep:f.dep||'?', arr:f.arr||'?', vals:[]};
+      map[key].vals.push(f.blockInToDoor);
+    });
+    return Object.keys(map).map(function(k){
+      const g = map[k];
+      const vals = g.vals.slice().sort(function(a,b){return a-b;});
+      const sum = vals.reduce(function(s,v){return s+v;},0);
+      const mid = Math.floor(vals.length/2);
+      const median = vals.length%2 ? vals[mid] : (vals[mid-1]+vals[mid])/2;
+      const avg = sum/vals.length;
+      const std = (function(){
+        const sq = vals.reduce(function(s,v){return s+(v-avg)*(v-avg);},0);
+        return Math.round(Math.sqrt(sq/vals.length)*10)/10;
+      })();
+      return {flt:g.flt, acType:g.acType, dep:g.dep, arr:g.arr, n:vals.length, avg:Math.round(avg*10)/10, median:Math.round(median*10)/10, min:vals[0], max:vals[vals.length-1], std:std};
+    }).sort(function(a,b){return a.avg-b.avg;});
+  }
+
+  function bidHeatColor(val, max){
+    if (!val || !max) return 'rgba(184,135,79,0.1)';
+    const ratio = Math.min(val/max, 1);
+    if (ratio < 0.33) return 'rgba(111,143,106,'+(0.15+ratio*0.35).toFixed(2)+')';
+    if (ratio < 0.66) return 'rgba(184,135,79,'+(0.2+ratio*0.3).toFixed(2)+')';
+    return 'rgba(192,57,90,'+(0.18+ratio*0.35).toFixed(2)+')';
+  }
+
+  function renderBidTypeGrid(){
+    const grid = document.getElementById('bidTypeGrid');
+    if (!grid) return;
+    const stats = bidTypeStats();
+    const types = ['32Q','339','351','359'];
+    const allAvgs = types.map(function(tp){ return stats[tp].avg||0; });
+    const maxAvg = Math.max.apply(null, allAvgs) || 1;
+    grid.innerHTML = types.map(function(tp){
+      const s = stats[tp];
+      if (!s.n) return '<div class="bid-type-card t'+tp+'"><div class="bid-type-badge">'+tp+'</div><div class="bid-type-avg" style="font-size:18px;color:var(--muted);">無資料</div></div>';
+      const pct = ((s.avg||0)/maxAvg*100).toFixed(1);
+      return '<div class="bid-type-card t'+tp+'">'+
+        '<div class="bid-type-badge">'+tp+'</div>'+
+        '<div class="bid-type-avg">'+s.avg+'<span style="font-size:14px;font-weight:600;color:var(--muted);margin-left:3px;">分</span></div>'+
+        '<div class="bid-type-meta">'+
+          '中位數 <b>'+s.median+'</b> 分　N='+s.n+'<br>'+
+          'Min '+s.min+' / Max '+s.max+
+        '</div>'+
+        '<div class="bid-type-bar"><div class="bid-type-bar-fill" style="width:'+pct+'%"></div></div>'+
+      '</div>';
+    }).join('');
+
+    // Total meta
+    const allFlights = bidValidFlights();
+    const metaEl = document.getElementById('bidMeta');
+    if (metaEl){
+      const depLabel = opsDepFilter === 'ALL' ? '全出發站' : ('出發站：' + opsDepFilter);
+      metaEl.textContent = depLabel + '　有效樣本 ' + allFlights.length + ' 班（已排除負值及異常值）';
+    }
+  }
+
+  function renderBidTable(){
+    const wrap = document.getElementById('bidTable');
+    if (!wrap) return;
+    if (bidSubTab === 'station'){
+      const rows = bidStationStats(bidTypeFilter);
+      const maxAvg = rows.length ? Math.max.apply(null, rows.map(function(r){return r.avg;})) : 1;
+      let html = '<thead><tr>'+
+        '<th>出發地 (DEP)</th>'+
+        '<th style="text-align:right;">N</th>'+
+        '<th style="text-align:right;">平均 (分)</th>'+
+        '<th style="text-align:right;">中位數</th>'+
+        '<th style="text-align:right;">最短</th>'+
+        '<th style="text-align:right;">最長</th>'+
+        '<th style="text-align:right;">標準差</th>'+
+      '</tr></thead><tbody>';
+      if (!rows.length){
+        html += '<tr><td colspan="7" class="empty-note">無資料</td></tr>';
+      } else {
+        rows.forEach(function(r){
+          const bg = bidHeatColor(r.avg, maxAvg);
+          html += '<tr>'+
+            '<td><b>'+r.dep+'</b></td>'+
+            '<td class="num">'+r.n+'</td>'+
+            '<td class="num"><span class="bid-heat-cell" style="background:'+bg+'">'+r.avg+'</span></td>'+
+            '<td class="num">'+r.median+'</td>'+
+            '<td class="num">'+r.min+'</td>'+
+            '<td class="num">'+r.max+'</td>'+
+            '<td class="num">'+r.std+'</td>'+
+          '</tr>';
+        });
+      }
+      wrap.innerHTML = html + '</tbody>';
+    } else {
+      // flight view
+      const rows = bidFlightStats(bidTypeFilter);
+      const maxAvg = rows.length ? Math.max.apply(null, rows.map(function(r){return r.avg;})) : 1;
+      const typeColors = {'32Q':'#3b7dd8','339':'#2db38a','351':'#e07b2a','359':'#c0395a'};
+      let html = '<thead><tr>'+
+        '<th>航班號</th>'+
+        '<th>機型</th>'+
+        '<th>DEP → ARR</th>'+
+        '<th style="text-align:right;">N</th>'+
+        '<th style="text-align:right;">平均 (分)</th>'+
+        '<th style="text-align:right;">中位數</th>'+
+        '<th style="text-align:right;">最短</th>'+
+        '<th style="text-align:right;">最長</th>'+
+        '<th style="text-align:right;">標準差</th>'+
+      '</tr></thead><tbody>';
+      if (!rows.length){
+        html += '<tr><td colspan="9" class="empty-note">無資料</td></tr>';
+      } else {
+        rows.forEach(function(r){
+          const bg = bidHeatColor(r.avg, maxAvg);
+          const tc = typeColors[r.acType]||'#888';
+          html += '<tr>'+
+            '<td><b>'+r.flt+'</b></td>'+
+            '<td><span style="display:inline-block;padding:1px 7px;border-radius:4px;font-size:12px;font-weight:700;background:'+tc+'22;color:'+tc+'">'+r.acType+'</span></td>'+
+            '<td>'+r.dep+' → '+r.arr+'</td>'+
+            '<td class="num">'+r.n+'</td>'+
+            '<td class="num"><span class="bid-heat-cell" style="background:'+bg+'">'+r.avg+'</span></td>'+
+            '<td class="num">'+r.median+'</td>'+
+            '<td class="num">'+r.min+'</td>'+
+            '<td class="num">'+r.max+'</td>'+
+            '<td class="num">'+r.std+'</td>'+
+          '</tr>';
+        });
+      }
+      wrap.innerHTML = html + '</tbody>';
+    }
+  }
+
+  function renderBid(){
+    if (!OPS || !OPS.flights || !OPS.flights.length) return;
+    renderBidTypeGrid();
+    renderBidTable();
+
+    // Sub tab events (bind once guard)
+    const subTabBar = document.getElementById('bidSubTabs');
+    if (subTabBar && !subTabBar._bound){
+      subTabBar._bound = true;
+      subTabBar.querySelectorAll('.bid-sub-tab').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          bidSubTab = this.getAttribute('data-bidsub');
+          subTabBar.querySelectorAll('.bid-sub-tab').forEach(function(b){ b.classList.remove('active'); });
+          this.classList.add('active');
+          renderBidTable();
+        });
+      });
+    }
+
+    // Type filter pills (bind once guard)
+    const filterRow = document.getElementById('bidTypeFilterRow');
+    if (filterRow && !filterRow._bound){
+      filterRow._bound = true;
+      filterRow.querySelectorAll('.bid-type-pill').forEach(function(pill){
+        pill.addEventListener('click', function(){
+          bidTypeFilter = this.getAttribute('data-bidtype');
+          filterRow.querySelectorAll('.bid-type-pill').forEach(function(p){ p.classList.remove('active'); });
+          this.classList.add('active');
+          renderBidTable();
+        });
+      });
+    }
+  }
+
   function renderOps(){
     if (!OPS || !OPS.flights || !OPS.flights.length){
       document.getElementById('opsEmpty').style.display = '';
@@ -4109,6 +4423,7 @@
     document.getElementById('opsEmpty').style.display = 'none';
     document.getElementById('opsContent').style.display = '';
     safeRun(function(){ renderOpsMeta(); }, 'ops-meta');
+    safeRun(function(){ renderBid(); }, 'ops-bid');
     safeRun(function(){ renderOpsDepPills(); }, 'ops-dep-pills');
     safeRun(function(){ renderOpsMetricPills(); }, 'ops-metric-pills');
     safeRun(function(){ renderOpsKpi(); }, 'ops-kpi');
@@ -4159,7 +4474,7 @@
         date: dateStr, day: day, monthIdx: monthIdx,
         week: cell(rows,r,4)!=null?String(cell(rows,r,4)):'',
         flt: String(flt).trim(),
-        acType: cell(rows,r,7)!=null?String(cell(rows,r,7)):'',
+        acType: cell(rows,r,7)!=null?String(cell(rows,r,7)).trim():'',
         reg: cell(rows,r,8)!=null?String(cell(rows,r,8)):'',
         dep: cell(rows,r,9)!=null?String(cell(rows,r,9)):'',
         arr: cell(rows,r,10)!=null?String(cell(rows,r,10)):'',
@@ -4171,14 +4486,18 @@
         crewPrep: dnum(cell(rows,r,54)),
         fueling: dnum(cell(rows,r,63)),
         paxEmbark: dnum(cell(rows,r,72)),
-        doorToBlock: minutesBetween(cell(rows,r,86), cell(rows,r,88))
+        doorToBlock: minutesBetween(cell(rows,r,86), cell(rows,r,88)),
+        blockInToDoor: minutesBetween(cell(rows,r,23), cell(rows,r,86))
       };
       const OUTLIER_CAP = 240;
+      const OUTLIER_CAP_BID = 600; // Block-in to door: allow up to 600 min (long-haul turnarounds)
       const outliers = {};
       ['paxDisembark','cabinClean','crewPrep','fueling','paxEmbark','doorToBlock'].forEach(function(k){
         const v = rec[k];
         if (v !== null && (v < 0 || v > OUTLIER_CAP)) outliers[k] = true;
       });
+      // blockInToDoor: only flag negatives (positive large values are real for US/EU routes)
+      if (rec.blockInToDoor !== null && rec.blockInToDoor !== undefined && (rec.blockInToDoor <= 0 || rec.blockInToDoor > OUTLIER_CAP_BID)) outliers['blockInToDoor'] = true;
       rec.outliers = outliers;
       flights.push(rec);
     }
