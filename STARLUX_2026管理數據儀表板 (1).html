@@ -876,6 +876,9 @@
             </div>
           </section>
 
+          <!-- OPS 月份篩選列 -->
+          <div class="month-bar" id="opsMonthBar" style="margin-bottom:0;"></div>
+
           <!-- ======= Block In → 關門 專區 ======= -->
           <section class="block" id="bidSection">
             <div class="bid-section-head">
@@ -3962,6 +3965,7 @@
   let OPS = null;                 // {flights:[...], meta:{...}}
   let opsDepFilter = 'ALL';       // 'ALL' or a station code
   let opsMetricFilter = 'cabinClean';
+  let opsMonthFilter = 'all';     // 'all' or 0-11 (month index)
 
   function loadOpsData(){
     try {
@@ -3975,10 +3979,54 @@
     if (v === null || v === undefined) return '—';
     return fmt(v) + ' ' + (currentLang==='en' ? 'min' : (currentLang==='ja' ? '分' : '分'));
   }
+
+  // Which months have at least one flight in the OPS data?
+  function opsMonthsWithData(){
+    if (!OPS || !OPS.flights) return [];
+    const set = {};
+    OPS.flights.forEach(function(f){ if (f.monthIdx !== null && f.monthIdx !== undefined) set[f.monthIdx] = true; });
+    return set;
+  }
+
+  function renderOpsMonthBar(){
+    const bar = document.getElementById('opsMonthBar');
+    if (!bar) return;
+    const hasData = opsMonthsWithData();
+    let html = '<span class="month-bar-label">檢視月份</span>';
+    html += '<button class="month-pill ytd '+(opsMonthFilter==='all'?'active':'')+'" data-opsm="all">'+t('ytd')+'</button>';
+    for (let i=0;i<12;i++){
+      const has = !!hasData[i];
+      html += '<button class="month-pill '+(opsMonthFilter===i?'active':'')+(has?'':' disabled')+'" data-opsm="'+i+'">'+MONTHS_ZH[i]+'</button>';
+    }
+    bar.innerHTML = html;
+    bar.querySelectorAll('.month-pill').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        const v = this.getAttribute('data-opsm');
+        opsMonthFilter = v==='all' ? 'all' : parseInt(v, 10);
+        renderOpsMonthBar();
+        renderOpsAfterFilter();
+      });
+    });
+  }
+
+  // Centralise "re-render everything in OPS after any filter change"
+  function renderOpsAfterFilter(){
+    safeRun(function(){ renderBid(); }, 'ops-bid');
+    safeRun(function(){ renderOpsDepPills(); }, 'ops-dep-pills');
+    safeRun(function(){ renderOpsKpi(); }, 'ops-kpi');
+    safeRun(function(){ renderOpsLongestCard(); }, 'ops-longest');
+    safeRun(function(){ renderOpsPhaseChart(); }, 'ops-phase-chart');
+    safeRun(function(){ renderOpsTopTable(); }, 'ops-top-table');
+    safeRun(function(){ renderOpsAllTable(); }, 'ops-all-table');
+  }
+
   function opsFilteredFlights(){
     if (!OPS || !OPS.flights) return [];
-    if (opsDepFilter === 'ALL') return OPS.flights;
-    return OPS.flights.filter(function(f){ return f.dep === opsDepFilter; });
+    return OPS.flights.filter(function(f){
+      if (opsDepFilter !== 'ALL' && f.dep !== opsDepFilter) return false;
+      if (opsMonthFilter !== 'all' && f.monthIdx !== opsMonthFilter) return false;
+      return true;
+    });
   }
   // Valid = present, positive, and not flagged as a data-entry outlier for that metric.
   function opsValidVals(flights, key){
@@ -4025,13 +4073,7 @@
     for (let i=0;i<btns.length;i++){
       btns[i].addEventListener('click', function(){
         opsDepFilter = this.getAttribute('data-opsdep');
-        renderOpsDepPills();
-        renderBid();       // keep BID section in sync with dep filter
-        renderOpsKpi();
-        renderOpsLongestCard();
-        renderOpsPhaseChart();
-        renderOpsTopTable();
-        renderOpsAllTable();
+        renderOpsAfterFilter();
       });
     }
   }
@@ -4045,7 +4087,12 @@
     bar.innerHTML = html;
     const btns = bar.querySelectorAll('.pill');
     for (let i=0;i<btns.length;i++){
-      btns[i].addEventListener('click', function(){ opsMetricFilter = this.getAttribute('data-opsmetric'); renderOps(); });
+      btns[i].addEventListener('click', function(){
+        opsMetricFilter = this.getAttribute('data-opsmetric');
+        renderOpsMetricPills();
+        renderOpsLongestCard();
+        renderOpsTopTable();
+      });
     }
   }
 
@@ -4053,6 +4100,13 @@
     const flights = opsFilteredFlights();
     const grid = document.getElementById('opsKpi');
     if (!grid) return;
+    // Update summary note with current filters
+    const noteEl = document.getElementById('opsSummaryNote');
+    if (noteEl){
+      const depLabel = opsDepFilter === 'ALL' ? '' : opsDepFilter;
+      const mLabel = opsMonthFilter === 'all' ? '全年' : MONTHS_ZH[opsMonthFilter];
+      noteEl.textContent = [mLabel, depLabel].filter(Boolean).join('　') + '　共 ' + flights.length + ' 班';
+    }
     const cards = OPS_METRICS.map(function(m){
       const s = opsStats(flights, m.key);
       const longest = opsLongestFlight(flights, m.key);
@@ -4202,8 +4256,8 @@
   function bidValidFlights(){
     if (!OPS || !OPS.flights) return [];
     return OPS.flights.filter(function(f){
-      // Respect the same dep filter used by the rest of the OPS tab
       if (opsDepFilter !== 'ALL' && f.dep !== opsDepFilter) return false;
+      if (opsMonthFilter !== 'all' && f.monthIdx !== opsMonthFilter) return false;
       const v = f.blockInToDoor;
       return v !== null && v !== undefined && v > 0 && !(f.outliers && f.outliers['blockInToDoor']);
     });
@@ -4282,7 +4336,7 @@
     const grid = document.getElementById('bidTypeGrid');
     if (!grid) return;
     const stats = bidTypeStats();
-    const types = ['32Q','339','351','359'];
+    const types = ['32Q','339','359','351'];
     const allAvgs = types.map(function(tp){ return stats[tp].avg||0; });
     const maxAvg = Math.max.apply(null, allAvgs) || 1;
     grid.innerHTML = types.map(function(tp){
@@ -4423,14 +4477,8 @@
     document.getElementById('opsEmpty').style.display = 'none';
     document.getElementById('opsContent').style.display = '';
     safeRun(function(){ renderOpsMeta(); }, 'ops-meta');
-    safeRun(function(){ renderBid(); }, 'ops-bid');
-    safeRun(function(){ renderOpsDepPills(); }, 'ops-dep-pills');
-    safeRun(function(){ renderOpsMetricPills(); }, 'ops-metric-pills');
-    safeRun(function(){ renderOpsKpi(); }, 'ops-kpi');
-    safeRun(function(){ renderOpsLongestCard(); }, 'ops-longest');
-    safeRun(function(){ renderOpsPhaseChart(); }, 'ops-phase-chart');
-    safeRun(function(){ renderOpsTopTable(); }, 'ops-top-table');
-    safeRun(function(){ renderOpsAllTable(); }, 'ops-all-table');
+    safeRun(function(){ renderOpsMonthBar(); }, 'ops-month-bar');
+    renderOpsAfterFilter();
     // OPS charts can be created while the tab is hidden - resize once visible.
     setTimeout(function(){
       Object.keys(charts).forEach(function(id){
@@ -4522,6 +4570,7 @@
         }
         OPS = parsed;
         opsDepFilter = 'ALL';
+        opsMonthFilter = 'all';
         renderOps();
         showBanner('航機作業資料已更新：'+file.name+'（共 '+parsed.flights.length+' 班）', false);
       } catch(err){
