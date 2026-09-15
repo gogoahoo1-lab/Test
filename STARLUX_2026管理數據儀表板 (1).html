@@ -4612,11 +4612,9 @@
       const tab = this.getAttribute('data-tab');
       document.getElementById('tab-'+tab).classList.add('active');
       document.getElementById('pageTitle').textContent = t('nav_'+tab);
-      // On mobile, the sidebar is an off-canvas drawer - close it after picking a tab so the
-      // person sees the content they just navigated to instead of the menu staying open.
+      // Hide the global month bar on the OPS tab (it has its own month bar)
+      document.getElementById('monthBar').style.display = tab === 'ops' ? 'none' : '';
       closeSidebar();
-      // Charts created while their tab was hidden (display:none) can be sized 0x0 by Chart.js.
-      // Resizing right after the tab becomes visible fixes charts that silently failed to render.
       setTimeout(function(){
         Object.keys(charts).forEach(function(id){
           try { if (charts[id] && typeof charts[id].resize === 'function') charts[id].resize(); } catch(e){ /* ignore */ }
