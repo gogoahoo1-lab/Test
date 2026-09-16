@@ -242,6 +242,52 @@
   .bid-sub-tab.active{ background:var(--obsidian); color:var(--cream); }
   .bid-heat-cell{ display:inline-block; min-width:36px; text-align:center; padding:2px 6px; border-radius:5px; font-variant-numeric:tabular-nums; font-weight:600; font-size:13px; }
   .bid-type-filter-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; font-size:13px; color:var(--muted); font-weight:600; }
+  .ops-region-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; }
+  .ops-region-card{ background:var(--paper); border-radius:10px; padding:18px 20px; border:1px solid var(--line); position:relative; overflow:hidden; }
+  .ops-region-card::before{ content:''; position:absolute; top:0; left:0; width:4px; height:100%; background:var(--region-color,var(--earth-gold)); border-radius:4px 0 0 4px; }
+  .ops-region-name{ font-size:13px; font-weight:700; color:var(--muted); letter-spacing:.3px; margin-bottom:4px; }
+  .ops-region-stations{ font-size:11px; color:var(--muted); opacity:.7; margin-bottom:12px; }
+  .ops-region-ot{ font-size:36px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--obsidian); line-height:1; }
+  .ops-region-ot .unit{ font-size:16px; font-weight:600; color:var(--muted); margin-left:2px; }
+  .ops-region-meta{ display:flex; gap:18px; margin-top:10px; }
+  .ops-region-meta-item{ display:flex; flex-direction:column; }
+  .ops-region-meta-label{ font-size:11px; color:var(--muted); font-weight:600; }
+  .ops-region-meta-value{ font-size:15px; font-weight:700; color:var(--obsidian); margin-top:1px; }
+  .ops-region-bar{ height:4px; background:var(--cream-2); border-radius:2px; margin-top:12px; overflow:hidden; }
+  .ops-region-bar-fill{ height:100%; border-radius:2px; background:var(--region-color,var(--earth-gold)); transition:width .4s; }
+  /* --- 目的地查詢 --- */
+  .dest-lookup-row{ display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap; }
+  .dest-input-wrap{ position:relative; flex:1; min-width:200px; }
+  .dest-input{ width:100%; padding:10px 14px; border:1.5px solid var(--line); border-radius:8px; font-size:15px; font-family:'Noto Sans TC',sans-serif; background:var(--cream); color:var(--obsidian); outline:none; transition:border-color .2s; }
+  .dest-input:focus{ border-color:var(--earth-gold); }
+  .dest-suggest-box{ position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--paper); border:1.5px solid var(--line); border-radius:8px; box-shadow:0 6px 18px rgba(40,36,31,.1); z-index:200; max-height:220px; overflow-y:auto; }
+  .dest-suggest-item{ padding:9px 14px; cursor:pointer; font-size:14px; display:flex; justify-content:space-between; align-items:center; }
+  .dest-suggest-item:hover, .dest-suggest-item.active{ background:var(--cream); }
+  .dest-suggest-code{ font-weight:700; color:var(--obsidian); }
+  .dest-suggest-count{ font-size:12px; color:var(--muted); }
+  .dest-btn{ padding:10px 18px; border-radius:8px; border:none; cursor:pointer; font-size:14px; font-weight:700; font-family:'Noto Sans TC',sans-serif; background:var(--earth-gold); color:#fff; transition:opacity .2s; }
+  .dest-btn:hover{ opacity:.85; }
+  .dest-btn-ghost{ background:transparent; border:1.5px solid var(--line); color:var(--muted); }
+  .dest-btn-ghost:hover{ border-color:var(--earth-gold); color:var(--earth-gold); opacity:1; }
+  /* result */
+  .dest-result-header{ display:flex; align-items:baseline; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+  .dest-result-title{ font-size:18px; font-weight:800; color:var(--obsidian); }
+  .dest-result-tag{ font-size:12px; padding:3px 9px; border-radius:20px; background:var(--cream-2); color:var(--muted); font-weight:600; }
+  .dest-result-kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-bottom:18px; }
+  .dest-kpi{ background:var(--cream); border-radius:8px; padding:12px 14px; }
+  .dest-kpi-label{ font-size:11px; color:var(--muted); font-weight:600; }
+  .dest-kpi-value{ font-size:22px; font-weight:800; color:var(--obsidian); margin-top:3px; }
+  .dest-kpi-value .unit{ font-size:12px; font-weight:600; color:var(--muted); }
+  .dest-flt-table{ width:100%; border-collapse:collapse; font-size:13px; }
+  .dest-flt-table th{ text-align:left; color:var(--muted); font-weight:600; font-size:12px; padding:6px 10px; border-bottom:1.5px solid var(--line); }
+  .dest-flt-table th.num, .dest-flt-table td.num{ text-align:right; }
+  .dest-flt-table td{ padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  .dest-flt-table tr:last-child td{ border-bottom:none; }
+  .delay-badge{ display:inline-block; padding:2px 8px; border-radius:12px; font-weight:700; font-size:12px; }
+  .delay-badge.early{ background:rgba(111,143,106,.15); color:var(--good); }
+  .delay-badge.ontime{ background:rgba(111,143,106,.1); color:var(--good); }
+  .delay-badge.minor{ background:rgba(184,135,79,.15); color:var(--earth-gold); }
+  .delay-badge.delayed{ background:rgba(192,57,90,.13); color:var(--warn); }
 
   .bid-type-pill{ padding:4px 11px; border-radius:14px; font-size:12.5px; font-weight:700; background:var(--cream-2); color:var(--ink-soft); cursor:pointer; border:1px solid transparent; transition:all .15s; white-space:nowrap; }
   .bid-type-pill.active{ color:#fff; }
@@ -997,6 +1043,32 @@
             </div>
             <div class="divider"></div>
             <div class="kpi-grid" id="opsDelayKpi"></div>
+          </section>
+
+          <section class="block">
+            <div class="section-head">
+              <h2><span class="mini-star">✦</span>各地區準點概況 <span style="font-size:13px;font-weight:400;color:var(--muted);">（依連接航點地區分類）</span></h2>
+              <span class="section-note" id="opsRegionNote"></span>
+            </div>
+            <div class="divider"></div>
+            <div id="opsRegionGrid" class="ops-region-grid"></div>
+          </section>
+
+          <section class="block">
+            <div class="card">
+              <div class="section-head" style="margin-bottom:14px;">
+                <h2 style="margin:0;"><span class="mini-star">✦</span>目的地延誤查詢</h2>
+              </div>
+              <div class="dest-lookup-row">
+                <div class="dest-input-wrap">
+                  <input id="destLookupInput" class="dest-input" type="text" placeholder="輸入目的地代碼，例如 NRT、PRG…" autocomplete="off" spellcheck="false" />
+                  <div id="destSuggestBox" class="dest-suggest-box" style="display:none;"></div>
+                </div>
+                <button id="destLookupBtn" class="dest-btn">查詢</button>
+                <button id="destLookupClear" class="dest-btn dest-btn-ghost" style="display:none;">清除</button>
+              </div>
+              <div id="destLookupResult" style="margin-top:18px;"></div>
+            </div>
           </section>
 
           <section class="block">
@@ -4149,6 +4221,207 @@
       '<tbody>'+(rowsHtml || '<tr><td colspan="6" class="empty-note">'+t('empty_no_records')+'</td></tr>')+'</tbody>';
   }
 
+
+  // ==================== 目的地延誤查詢 ====================
+  (function(){
+    var currentDest = null;
+
+    function allFlightsPool(){
+      if (!OPS || !OPS.flights) return [];
+      return OPS.flights.filter(function(f){
+        if (opsMonthFilter !== 'all' && f.monthIdx !== opsMonthFilter) return false;
+        return true;
+      });
+    }
+
+    // All unique ARR stations (excluding TPE/RMQ)
+    function getArrStations(){
+      var pool = allFlightsPool();
+      var map = {};
+      pool.forEach(function(f){
+        if (f.arr && f.arr !== 'TPE' && f.arr !== 'RMQ') map[f.arr] = (map[f.arr]||0)+1;
+      });
+      return map; // {station: count}
+    }
+
+    function delayMin(f){
+      return opsDepDelay(f);
+    }
+
+    function badgeHtml(d){
+      if (d === null) return '<span class="delay-badge ontime">—</span>';
+      if (d <= 0) return '<span class="delay-badge early">提早 '+Math.abs(d)+' 分</span>';
+      if (d <= 15) return '<span class="delay-badge ontime">準點 (+'+d+')</span>';
+      if (d <= 30) return '<span class="delay-badge minor">延誤 '+d+' 分</span>';
+      return '<span class="delay-badge delayed">延誤 '+d+' 分</span>';
+    }
+
+    function renderResult(arr){
+      var resultEl = document.getElementById('destLookupResult');
+      if (!resultEl) return;
+
+      var pool = allFlightsPool();
+      var flights = pool.filter(function(f){ return f.arr === arr; });
+
+      if (!flights.length){
+        resultEl.innerHTML = '<p style="color:var(--muted);font-size:14px;">找不到飛往 <b>'+arr+'</b> 的航班資料。</p>';
+        return;
+      }
+
+      // Group by flt number
+      var fltGroups = {};
+      flights.forEach(function(f){
+        if (!fltGroups[f.flt]) fltGroups[f.flt] = [];
+        fltGroups[f.flt].push(f);
+      });
+
+      // Stats
+      var allDelays = [];
+      flights.forEach(function(f){
+        var d = delayMin(f);
+        if (d !== null) allDelays.push(d);
+      });
+      var delayedFlights = allDelays.filter(function(d){ return d > 15; });
+      var otRate = allDelays.length ? (((allDelays.length - delayedFlights.length)/allDelays.length)*100).toFixed(1) : '—';
+      var avgDelay = delayedFlights.length ? Math.round(delayedFlights.reduce(function(s,v){return s+v;},0)/delayedFlights.length) : 0;
+      var maxDelay = delayedFlights.length ? Math.max.apply(null, delayedFlights) : 0;
+
+      // Region label
+      var regionLabel = '';
+      for (var i=0; i<OPS_REGIONS.length; i++){
+        if (OPS_REGIONS[i].stations.indexOf(arr)>=0){ regionLabel = OPS_REGIONS[i].name; break; }
+      }
+
+      var html = '<div class="dest-result-header">';
+      html += '<span class="dest-result-title">飛往 '+arr+' 的航班延誤概況</span>';
+      if (regionLabel) html += '<span class="dest-result-tag">'+regionLabel+'</span>';
+      html += '<span class="dest-result-tag">共 '+flights.length+' 班次</span>';
+      html += '</div>';
+
+      // KPI strip
+      html += '<div class="dest-result-kpis">';
+      html += '<div class="dest-kpi"><div class="dest-kpi-label">準點率（≤+15分）</div><div class="dest-kpi-value" style="color:'+(parseFloat(otRate)>=90?'var(--good)':(parseFloat(otRate)>=80?'var(--earth-gold)':'var(--warn'))+'">'+otRate+'<span class="unit"> %</span></div></div>';
+      html += '<div class="dest-kpi"><div class="dest-kpi-label">延誤班次（>15分）</div><div class="dest-kpi-value" style="color:'+(delayedFlights.length?'var(--warn)':'var(--good)')+'">'+delayedFlights.length+'<span class="unit"> 班</span></div></div>';
+      html += '<div class="dest-kpi"><div class="dest-kpi-label">平均延誤</div><div class="dest-kpi-value">'+(avgDelay||'—')+'<span class="unit">'+(avgDelay?' 分':'')+'</span></div></div>';
+      html += '<div class="dest-kpi"><div class="dest-kpi-label">最長延誤</div><div class="dest-kpi-value" style="color:'+(maxDelay>30?'var(--warn)':'var(--obsidian)')+'">'+( maxDelay||'—')+'<span class="unit">'+(maxDelay?' 分':'')+'</span></div></div>';
+      html += '</div>';
+
+      // Per-flight-number blocks
+      var fltNums = Object.keys(fltGroups).sort();
+      fltNums.forEach(function(fltNum){
+        var rows = fltGroups[fltNum].slice().sort(function(a,b){ return a.date < b.date ? -1:1; });
+        var fltDelays = [];
+        rows.forEach(function(f){ var d=delayMin(f); if(d!==null) fltDelays.push(d); });
+        var fltDelayed = fltDelays.filter(function(d){return d>15;});
+        var fltOt = fltDelays.length ? (((fltDelays.length-fltDelayed.length)/fltDelays.length)*100).toFixed(0) : '—';
+        var fltAvg = fltDelayed.length ? Math.round(fltDelayed.reduce(function(s,v){return s+v;},0)/fltDelayed.length) : 0;
+
+        html += '<div style="margin-bottom:22px;">';
+        html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">';
+        html += '<span style="font-size:15px;font-weight:800;color:var(--obsidian);">'+fltNum+'</span>';
+        html += '<span style="font-size:12px;color:var(--muted);">'+rows[0].dep+' → '+arr+'</span>';
+        var acTypes = [...new Set(rows.map(function(f){return f.acType;}))];
+        html += '<span class="dest-result-tag">'+acTypes.join(' / ')+'</span>';
+        html += '<span class="dest-result-tag" style="color:'+(parseFloat(fltOt)>=80?'var(--good)':'var(--warn)')+'">準點率 '+fltOt+' %</span>';
+        if (fltAvg) html += '<span class="dest-result-tag">平均延誤 '+fltAvg+' 分</span>';
+        html += '</div>';
+
+        html += '<div class="table-scroll"><table class="dest-flt-table"><thead><tr>'+
+          '<th>日期</th><th>STD</th><th>ATD</th><th class="num">延誤</th><th>狀態</th><th>機型</th><th>航機</th>'+
+          '</tr></thead><tbody>';
+        rows.forEach(function(f){
+          var d = delayMin(f);
+          var dStr = d === null ? '—' : (d > 0 ? '+'+d : String(d));
+          var rowColor = (d !== null && d > 30) ? 'background:rgba(192,57,90,.04);' : '';
+          html += '<tr style="'+rowColor+'">'+
+            '<td>'+f.date+'</td>'+
+            '<td>'+( f.std||'—')+'</td>'+
+            '<td>'+( f.atd||'—')+'</td>'+
+            '<td class="num" style="font-weight:700;color:'+(d!==null&&d>15?'var(--warn)':(d!==null&&d<=0?'var(--good)':'var(--obsidian)'))+'">'+dStr+'</td>'+
+            '<td>'+badgeHtml(d)+'</td>'+
+            '<td>'+( f.acType||'—')+'</td>'+
+            '<td style="color:var(--muted);font-size:12px;">'+( f.reg||'—')+'</td>'+
+            '</tr>';
+        });
+        html += '</tbody></table></div>';
+        html += '</div>';
+      });
+
+      resultEl.innerHTML = html;
+    }
+
+    function initDestLookup(){
+      var input = document.getElementById('destLookupInput');
+      var btn = document.getElementById('destLookupBtn');
+      var clearBtn = document.getElementById('destLookupClear');
+      var suggestBox = document.getElementById('destSuggestBox');
+      if (!input || !btn) return;
+
+      function doQuery(){
+        var val = input.value.trim().toUpperCase();
+        if (!val) return;
+        currentDest = val;
+        suggestBox.style.display = 'none';
+        clearBtn.style.display = '';
+        renderResult(val);
+      }
+
+      function updateSuggest(){
+        var val = input.value.trim().toUpperCase();
+        if (!val){ suggestBox.style.display = 'none'; return; }
+        var stations = getArrStations();
+        var matches = Object.keys(stations).filter(function(s){ return s.indexOf(val)===0 || s === val; })
+          .sort(function(a,b){ return stations[b]-stations[a]; });
+        if (!matches.length){ suggestBox.style.display = 'none'; return; }
+        suggestBox.innerHTML = matches.map(function(s){
+          var regionLabel = '';
+          for (var i=0; i<OPS_REGIONS.length; i++){
+            if (OPS_REGIONS[i].stations.indexOf(s)>=0){ regionLabel = OPS_REGIONS[i].name; break; }
+          }
+          return '<div class="dest-suggest-item" data-code="'+s+'">'+
+            '<span class="dest-suggest-code">'+s+(regionLabel?' <span style="font-weight:400;font-size:11px;color:var(--muted);">'+regionLabel+'</span>':'')+'</span>'+
+            '<span class="dest-suggest-count">'+stations[s]+' 班</span>'+
+            '</div>';
+        }).join('');
+        suggestBox.style.display = '';
+        suggestBox.querySelectorAll('.dest-suggest-item').forEach(function(item){
+          item.addEventListener('click', function(){
+            input.value = this.getAttribute('data-code');
+            suggestBox.style.display = 'none';
+            doQuery();
+          });
+        });
+      }
+
+      input.addEventListener('input', updateSuggest);
+      input.addEventListener('keydown', function(e){
+        if (e.key === 'Enter') doQuery();
+        if (e.key === 'Escape') suggestBox.style.display = 'none';
+      });
+      btn.addEventListener('click', doQuery);
+      clearBtn.addEventListener('click', function(){
+        input.value = '';
+        currentDest = null;
+        clearBtn.style.display = 'none';
+        document.getElementById('destLookupResult').innerHTML = '';
+        suggestBox.style.display = 'none';
+      });
+      document.addEventListener('click', function(e){
+        if (!input.contains(e.target) && !suggestBox.contains(e.target)) suggestBox.style.display = 'none';
+      });
+    }
+
+    // Re-render result when month filter changes
+    var _origRenderOpsAfterFilter = typeof renderOpsAfterFilter === 'function' ? renderOpsAfterFilter : null;
+    function refreshDestIfActive(){
+      if (currentDest) renderResult(currentDest);
+    }
+
+    // Expose init
+    window._initDestLookup = initDestLookup;
+    window._refreshDestLookup = refreshDestIfActive;
+  })();
+
   // ================= RENDER ALL =================
   function safeRun(fn, label){
     try { fn(); } catch (e) { console.error('render error in '+label+':', e); }
@@ -4235,6 +4508,8 @@
     safeRun(function(){ renderOpsDepPills(); }, 'ops-dep-pills');
     safeRun(function(){ renderOpsKpi(); }, 'ops-kpi');
     safeRun(function(){ renderOpsDelayKpi(); }, 'ops-delay-kpi');
+    safeRun(function(){ renderOpsRegionGrid(); }, 'ops-region-grid');
+    safeRun(function(){ if (window._refreshDestLookup) window._refreshDestLookup(); }, 'dest-lookup-refresh');
     safeRun(function(){ renderOpsLongestCard(); }, 'ops-longest');
     safeRun(function(){ renderOpsPhaseChart(); }, 'ops-phase-chart');
     safeRun(function(){ renderOpsTopTable(); }, 'ops-top-table');
@@ -4348,6 +4623,93 @@
     }).join('');
   }
 
+
+
+  // ---- 各地區準點概況 ----
+  var OPS_REGIONS = [
+    {name:'美國',   color:'#3b7dd8', stations:['LAX','SFO','SEA','ONT','PHX']},
+    {name:'歐洲',   color:'#6a5acd', stations:['PRG']},
+    {name:'日本',   color:'#c0395a', stations:['NRT','KIX','FUK','OKA','NGO','SDJ','CTS','UKB','KMJ','HKD','SHI']},
+    {name:'韓國',   color:'#2db38a', stations:['PUS']},
+    {name:'東南亞', color:'#e07b2a', stations:['BKK','SGN','SIN','MNL','HAN','CEB','CGK','DAD','KUL','CNX','CRK','PQC']},
+    {name:'港澳',   color:'#b8874f', stations:['HKG','MFM']}
+  ];
+
+  function renderOpsRegionGrid(){
+    const grid = document.getElementById('opsRegionGrid');
+    const noteEl = document.getElementById('opsRegionNote');
+    if (!grid) return;
+
+    const allFlights = opsFilteredFlights();
+    const flights = bidTypeFilter === 'ALL' ? allFlights : allFlights.filter(function(f){ return f.acType === bidTypeFilter; });
+
+    // Tag each flight with its region (match by non-TPE/RMQ station)
+    function getRegion(f){
+      var partner = (f.dep !== 'TPE' && f.dep !== 'RMQ') ? f.dep : f.arr;
+      for (var i=0; i<OPS_REGIONS.length; i++){
+        if (OPS_REGIONS[i].stations.indexOf(partner) >= 0) return OPS_REGIONS[i];
+      }
+      return null;
+    }
+
+    // Build per-region stats
+    var regionData = {};
+    OPS_REGIONS.forEach(function(r){ regionData[r.name] = {region:r, total:0, delayed:[], partner_stations:{}}; });
+
+    flights.forEach(function(f){
+      if (!f.std || !f.atd) return;
+      var r = getRegion(f);
+      if (!r) return;
+      var d = opsDepDelay(f);
+      if (d === null) return;
+      var rd = regionData[r.name];
+      rd.total++;
+      var partner = (f.dep !== 'TPE' && f.dep !== 'RMQ') ? f.dep : f.arr;
+      rd.partner_stations[partner] = true;
+      if (d > 15) rd.delayed.push({delay:d, flt:f.flt, dep:f.dep, arr:f.arr, date:f.date});
+    });
+
+    if (noteEl){
+      var depLabel = opsDepFilter === 'ALL' ? '' : opsDepFilter;
+      var mLabel = opsMonthFilter === 'all' ? '全年' : MONTHS_ZH[opsMonthFilter];
+      var typeLabel = bidTypeFilter === 'ALL' ? '' : bidTypeFilter;
+      noteEl.textContent = [mLabel, depLabel, typeLabel].filter(Boolean).join('\u3000');
+    }
+
+    grid.innerHTML = OPS_REGIONS.map(function(r){
+      var rd = regionData[r.name];
+      if (!rd.total){
+        return '<div class="ops-region-card" style="--region-color:'+r.color+';">'+
+          '<div class="ops-region-name">'+r.name+'</div>'+
+          '<div class="ops-region-stations">'+r.region.stations.join(' / ')+'</div>'+
+          '<div style="color:var(--muted);font-size:13px;">此篩選條件下無資料</div>'+
+          '</div>';
+      }
+      var delayed = rd.delayed;
+      var onTimeCnt = rd.total - delayed.length;
+      var otRate = (onTimeCnt / rd.total * 100).toFixed(1);
+      var avgDelay = delayed.length ? Math.round(delayed.reduce(function(s,d){return s+d.delay;},0)/delayed.length) : 0;
+      var maxDelay = delayed.length ? Math.max.apply(null, delayed.map(function(d){return d.delay;})) : 0;
+      var stationList = Object.keys(rd.partner_stations).sort().join(' / ');
+      var otNum = parseFloat(otRate);
+      var barColor = otNum >= 90 ? 'var(--good)' : (otNum >= 80 ? 'var(--earth-gold)' : 'var(--warn)');
+      var otClass = otNum >= 90 ? 'good' : (otNum >= 80 ? 'caution' : 'warn');
+
+      return '<div class="ops-region-card" style="--region-color:'+r.color+';">'+
+        '<div class="ops-region-name">'+r.name+'</div>'+
+        '<div class="ops-region-stations">'+stationList+'</div>'+
+        '<div class="ops-region-ot" style="color:var(--'+(otNum>=90?'good':(otNum>=80?'earth-gold':'warn'))+')">'+otRate+'<span class="unit">%</span></div>'+
+        '<div style="font-size:11px;color:var(--muted);margin-top:3px;font-weight:600;">準點率（≤ STD+15 分）</div>'+
+        '<div class="ops-region-bar"><div class="ops-region-bar-fill" style="width:'+Math.min(otRate,100)+'%;background:'+barColor+';"></div></div>'+
+        '<div class="ops-region-meta">'+
+          '<div class="ops-region-meta-item"><div class="ops-region-meta-label">總航班</div><div class="ops-region-meta-value">'+rd.total+'</div></div>'+
+          '<div class="ops-region-meta-item"><div class="ops-region-meta-label">延誤班數</div><div class="ops-region-meta-value kpi-sub '+(delayed.length?'warn':'good')+'">'+delayed.length+'</div></div>'+
+          (delayed.length ? '<div class="ops-region-meta-item"><div class="ops-region-meta-label">平均延誤</div><div class="ops-region-meta-value">'+avgDelay+' 分</div></div>' : '')+
+          (delayed.length ? '<div class="ops-region-meta-item"><div class="ops-region-meta-label">最長延誤</div><div class="ops-region-meta-value warn">'+maxDelay+' 分</div></div>' : '')+
+        '</div>'+
+        '</div>';
+    }).join('');
+  }
 
   // ---- 出發延誤統計 ----
   // 計算 ATD - STD（分鐘），處理跨日：若差值 < -180 則加 1440
@@ -4753,6 +5115,7 @@
           renderBidTable();
           renderOpsKpi();
           renderOpsDelayKpi();
+          renderOpsRegionGrid();
         });
       });
     }
@@ -4769,6 +5132,8 @@
     safeRun(function(){ renderOpsMeta(); }, 'ops-meta');
     safeRun(function(){ renderOpsMonthBar(); }, 'ops-month-bar');
     renderOpsAfterFilter();
+    // Init destination lookup (once)
+    safeRun(function(){ if (window._initDestLookup) window._initDestLookup(); }, 'dest-lookup-init');
     // OPS charts can be created while the tab is hidden - resize once visible.
     setTimeout(function(){
       Object.keys(charts).forEach(function(id){
