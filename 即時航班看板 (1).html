@@ -250,7 +250,7 @@ ul.doc li{margin:6px 0}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-11i</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-11j</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -259,8 +259,7 @@ ul.doc li{margin:6px 0}
     </div>
   </div>
   <nav id="nav">
-    <button data-tab="tdx" aria-selected="true">TDX 桃園機場</button>
-    <button data-tab="import" aria-selected="false">資料匯入</button>
+    <button data-tab="tdx" aria-selected="true">資料匯入</button>
     <button data-tab="board" aria-selected="false">到離看板</button>
     <button data-tab="airline" aria-selected="false">航空公司</button>
     <button data-tab="sched" aria-selected="false">班表分析</button>
@@ -371,11 +370,10 @@ ul.doc li{margin:6px 0}
     抓取時會自動帶 <code>$top</code> 與 <code>$skip</code> 分頁（每頁 1000 筆），直到取完全部資料為止。
     遇到 <code>429</code>（呼叫頻率超限）會自動退避重試；若仍失敗，把「請求間隔」調長或減少場站數。Client Secret 不會顯示在畫面上，僅存在此瀏覽器。
   </div>
-</section>
 
-<!-- ============ IMPORT ============ -->
-<section id="tab-import" hidden>
-  <div class="card">
+  <div style="margin-top:28px;border-top:2px solid var(--line);padding-top:6px"></div>
+
+<div class="card">
     <h2>貼上航班資料</h2>
     <p>支援 JSON 陣列、含巢狀陣列的 JSON 物件、CSV／TSV。TDX 航班 FIDS、桃園機場開放資料、自建報表都可直接貼。</p>
     <textarea id="raw" placeholder='貼在這裡，例如：
@@ -488,11 +486,9 @@ ul.doc li{margin:6px 0}
 
 </details>
 </div>
-
 </section>
 
-
-<!-- ============ BOARD ============ -->
+<!-- ============ BOARD ============ --><!-- ============ BOARD ============ -->
 <section id="tab-board" hidden>
   <div class="card">
     <h2>航班追蹤與推播</h2>
@@ -688,7 +684,7 @@ ul.doc li{margin:6px 0}
 <section id="tab-help" hidden>
   <div class="card">
     <h2>怎麼用</h2>
-    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-11i</b>（航點含 SHI 下地島、UKB 神戶，依國家快選涵蓋日本 32 個航點）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
+    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-11j</b>（航點含 SHI 下地島、UKB 神戶，依國家快選涵蓋日本 32 個航點）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
     <ul class="doc">
       <li>桃園機場走「<b>TDX 桃園機場</b>」頁籤最省事：填 Client ID／Secret 後按立即抓取，到場與離場會一次抓齊。</li>
       <li>TDX 的 <code>$top</code> 預設值只有 <b>30 筆</b>，不分頁就只會拿到 30 班。本頁已改成自動帶 <code>$top</code>／<code>$skip</code> 分頁抓到底。</li>
@@ -2647,7 +2643,7 @@ function switchTab(name){
     var on = btns[i].getAttribute("data-tab") === name;
     btns[i].setAttribute("aria-selected", on ? "true" : "false");
   }
-  ["tdx","import","board","airline","sched","otd","help"].forEach(function(t){
+  ["tdx","board","airline","sched","otd","help"].forEach(function(t){
     $("tab-" + t).hidden = (t !== name);
   });
   activeTab = name;
