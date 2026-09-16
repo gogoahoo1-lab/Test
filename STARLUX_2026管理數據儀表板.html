@@ -4654,7 +4654,7 @@
 
     // Build per-region stats
     var regionData = {};
-    OPS_REGIONS.forEach(function(r){ regionData[r.name] = {region:r, total:0, delayed:[], partner_stations:{}}; });
+    OPS_REGIONS.forEach(function(r){ regionData[r.name] = {region:r, total:0, delayed:[], partner_stations:{}, stationStats:{}}; });
 
     flights.forEach(function(f){
       if (!f.std || !f.atd) return;
@@ -4666,7 +4666,13 @@
       rd.total++;
       var partner = (f.dep !== 'TPE' && f.dep !== 'RMQ') ? f.dep : f.arr;
       rd.partner_stations[partner] = true;
-      if (d > 15) rd.delayed.push({delay:d, flt:f.flt, dep:f.dep, arr:f.arr, date:f.date});
+      // per-station tracking
+      if (!rd.stationStats[partner]) rd.stationStats[partner] = {total:0, delayed:0};
+      rd.stationStats[partner].total++;
+      if (d > 15){
+        rd.delayed.push({delay:d, flt:f.flt, dep:f.dep, arr:f.arr, date:f.date});
+        rd.stationStats[partner].delayed++;
+      }
     });
 
     if (noteEl){
@@ -4695,6 +4701,34 @@
       var barColor = otNum >= 90 ? 'var(--good)' : (otNum >= 80 ? 'var(--earth-gold)' : 'var(--warn)');
       var otClass = otNum >= 90 ? 'good' : (otNum >= 80 ? 'caution' : 'warn');
 
+      var stationRanking = Object.keys(rd.stationStats).map(function(sta){
+        var s = rd.stationStats[sta];
+        return {sta:sta, total:s.total, delayed:s.delayed, otRate: s.total ? ((s.total-s.delayed)/s.total*100) : 100};
+      }).filter(function(s){ return s.total >= 1; })
+        .sort(function(a,b){ return a.otRate - b.otRate; })
+        .slice(0,3);
+
+      var worstHtml = '';
+      if (stationRanking.length){
+        worstHtml = '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);">'+
+          '<div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.3px;margin-bottom:8px;">準點率最差場站</div>'+
+          stationRanking.map(function(s, idx){
+            var ot = s.otRate.toFixed(0);
+            var barW = Math.max(0, Math.min(100, s.otRate));
+            var dotColor = s.otRate >= 90 ? 'var(--good)' : (s.otRate >= 80 ? 'var(--earth-gold)' : 'var(--warn)');
+            return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'+
+              '<span style="font-size:11px;font-weight:700;color:var(--muted);width:14px;text-align:center;">'+(idx+1)+'</span>'+
+              '<span style="font-size:13px;font-weight:800;color:var(--obsidian);width:34px;">'+s.sta+'</span>'+
+              '<div style="flex:1;height:5px;background:var(--cream-2);border-radius:3px;overflow:hidden;">'+
+                '<div style="width:'+barW+'%;height:100%;background:'+dotColor+';border-radius:3px;"></div>'+
+              '</div>'+
+              '<span style="font-size:12px;font-weight:700;color:'+dotColor+';width:38px;text-align:right;">'+ot+'%</span>'+
+              '<span style="font-size:11px;color:var(--muted);width:42px;text-align:right;">'+s.delayed+'/'+s.total+'班</span>'+
+            '</div>';
+          }).join('')+
+          '</div>';
+      }
+
       return '<div class="ops-region-card" style="--region-color:'+r.color+';">'+
         '<div class="ops-region-name">'+r.name+'</div>'+
         '<div class="ops-region-stations">'+stationList+'</div>'+
@@ -4707,6 +4741,7 @@
           (delayed.length ? '<div class="ops-region-meta-item"><div class="ops-region-meta-label">平均延誤</div><div class="ops-region-meta-value">'+avgDelay+' 分</div></div>' : '')+
           (delayed.length ? '<div class="ops-region-meta-item"><div class="ops-region-meta-label">最長延誤</div><div class="ops-region-meta-value warn">'+maxDelay+' 分</div></div>' : '')+
         '</div>'+
+        worstHtml+
         '</div>';
     }).join('');
   }
