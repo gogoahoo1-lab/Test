@@ -260,6 +260,13 @@ ul.doc li{margin:6px 0}
 .cam-note{margin:10px 2px 2px;font-size:12px;color:var(--dim)}
 .cam-note a{color:var(--cyan);text-decoration:none}
 .cam-note a:hover{text-decoration:underline}
+/* ── 航班地圖（嵌入開源 ADS-B 地圖）── */
+.fmap-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px}
+.fmap-frame{position:relative;width:100%;height:620px;border-radius:16px;overflow:hidden;border:1px solid var(--glass-border);background:#0a1520}
+.fmap-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.fmap-fallback{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:30px;text-align:center;color:var(--dim);background:var(--panel2)}
+.fmap-fallback h3{margin:0;font-size:17px;font-weight:500;color:var(--txt)}
+.fmap-fallback p{margin:0;max-width:440px;font-size:13.5px;line-height:1.7}
 </style>
 </head>
 <body>
@@ -283,6 +290,7 @@ ul.doc li{margin:6px 0}
     <button data-tab="sched" aria-selected="false">班表分析</button>
     <button data-tab="otd" aria-selected="false">準點分析</button>
     <button data-tab="cam" aria-selected="false">即時影像</button>
+    <button data-tab="map" aria-selected="false">航班地圖</button>
     <button data-tab="help" aria-selected="false">格式說明</button>
   </nav>
 </header>
@@ -705,6 +713,38 @@ ul.doc li{margin:6px 0}
     <h2>各站即時影像</h2>
     <p>桃園與高雄兩站的機場即時影像（24 小時 YouTube 直播）。畫面來自航空愛好者長期經營的公開直播，非機場官方頁面（官方頁面設有防嵌入限制，無法直接內嵌）。需要連線才能播放。</p>
     <div class="cam-stations" id="camGrid"></div>
+  </div>
+</section>
+
+<!-- ============ MAP ============ -->
+<section id="tab-map" hidden>
+  <div class="card">
+    <h2>航班即時地圖</h2>
+    <p>嵌入開源 ADS-B 即時航班地圖（globe.airplanes.live），可對準各站空域檢視即時航機位置與軌跡。此為社群營運的公開服務，非商業追蹤軟體。</p>
+    <div class="fmap-toolbar">
+      <label class="f">對準機場
+        <select id="fmapAirport">
+          <option value="RCTP" selected>桃園 TPE（RCTP）</option>
+          <option value="RCKH">高雄 KHH（RCKH）</option>
+          <option value="RCSS">松山 TSA（RCSS）</option>
+          <option value="RCMQ">台中 RMQ（RCMQ）</option>
+          <option value="">全部（台灣周邊）</option>
+        </select>
+      </label>
+      <label class="f">來源
+        <select id="fmapSrc">
+          <option value="airplanes" selected>airplanes.live</option>
+          <option value="adsbfi">adsb.fi</option>
+        </select>
+      </label>
+      <button class="btn primary" id="btnFmapLoad">載入地圖</button>
+      <button class="btn ghost" id="btnFmapOpen">在新分頁開啟</button>
+      <span class="note" id="fmapStatus" style="align-self:flex-end;padding-bottom:9px"></span>
+    </div>
+    <div class="fmap-frame" id="fmapFrame"></div>
+    <div class="note" style="margin-top:8px">
+      若地圖區塊一片空白，代表該來源目前封鎖了跨站嵌入。可按「在新分頁開啟」直接使用，或改用「航班軌跡」的自建版本（若已安裝）。地圖資料為社群 ADS-B 網路提供，涵蓋範圍與更新率視收訊站分布而定。
+    </div>
   </div>
 </section>
 
@@ -2215,7 +2255,7 @@ function keepNote(){
 
 /* 資料量大時，全部分頁一起重繪會明顯卡頓；只畫目前看得到的那一頁，
    其他頁標記為待重繪，切過去時才畫。 */
-var tabDirty = { board:true, airline:true, sched:true, otd:true, cam:true };
+var tabDirty = { board:true, airline:true, sched:true, otd:true, cam:true, map:true };
 var activeTab = "tdx";
 
 function renderActiveTab(){
@@ -2229,6 +2269,8 @@ function renderActiveTab(){
     tabDirty.otd = false; renderOtdChips(); renderOtd();
   }else if(activeTab === "cam" && tabDirty.cam){
     tabDirty.cam = false; renderCams();
+  }else if(activeTab === "map" && tabDirty.map){
+    tabDirty.map = false; loadFmap();
   }
   if(activeTab === "sched") gsFetch(false);   // 進頁自動載入，6 小時內用快取
 }
@@ -2725,6 +2767,70 @@ function renderCams(){
 }
 
 /* =========================================================
+   航班地圖（嵌入開源 ADS-B 地圖）
+   ─ globe.airplanes.live / globe.adsb.fi，皆為 tar1090 引擎
+   ─ 用 URL 參數對準機場；若對方封鎖嵌入則畫面空白，
+     提供「新分頁開啟」備援。
+   ========================================================= */
+/* 各機場的地圖置中座標（lat, lon, zoom），用於 tar1090 URL */
+var FMAP_APT = {
+  RCTP: { lat:25.077, lon:121.233, z:10 },   /* 桃園 */
+  RCKH: { lat:22.577, lon:120.350, z:10 },   /* 高雄 */
+  RCSS: { lat:25.069, lon:121.552, z:11 },   /* 松山 */
+  RCMQ: { lat:24.264, lon:120.621, z:10 },   /* 台中 */
+  "":   { lat:23.7,   lon:121.0,   z:7  }     /* 台灣周邊 */
+};
+
+function fmapUrl(){
+  var apt = $("fmapAirport") ? $("fmapAirport").value : "RCTP";
+  var src = $("fmapSrc") ? $("fmapSrc").value : "airplanes";
+  var base = src === "adsbfi" ? "https://globe.adsb.fi/" : "https://globe.airplanes.live/";
+  var p = FMAP_APT[apt] || FMAP_APT.RCTP;
+  /* tar1090 支援 lat/lon/zoom 參數置中；airport 參數也可但座標較穩 */
+  var q = "?lat=" + p.lat + "&lon=" + p.lon + "&zoom=" + p.z + "&enableLabels";
+  return base + q;
+}
+
+function loadFmap(){
+  var frame = $("fmapFrame");
+  if(!frame) return;
+  var url = fmapUrl();
+  if($("fmapStatus")) $("fmapStatus").textContent = "載入中…";
+
+  /* 建立 iframe；onload 後清掉「載入中」，若被封鎖則畫面空白由備援文案提示 */
+  frame.innerHTML =
+    '<iframe src="' + url + '" title="航班即時地圖" ' +
+      'allow="fullscreen" referrerpolicy="no-referrer-when-downgrade" loading="eager"></iframe>' +
+    '<div class="fmap-fallback" id="fmapFallback" style="display:none">' +
+      '<h3>此來源可能封鎖了嵌入</h3>' +
+      '<p>若上方為空白，代表該站設有跨站嵌入限制。可按下方按鈕在新分頁直接使用，或切換到另一個來源試試。</p>' +
+      '<button class="btn primary" id="btnFmapFallback">在新分頁開啟地圖</button>' +
+    '</div>';
+
+  var fbBtn = $("btnFmapFallback");
+  if(fbBtn) fbBtn.addEventListener("click", openFmapNewTab);
+
+  var iframe = frame.querySelector("iframe");
+  var settled = false;
+  iframe.addEventListener("load", function(){
+    settled = true;
+    if($("fmapStatus")) $("fmapStatus").textContent = "已載入";
+  });
+  /* 6 秒仍未觸發 load，多半是被 X-Frame-Options 擋掉，顯示備援 */
+  setTimeout(function(){
+    if(!settled){
+      var fb = $("fmapFallback");
+      if(fb) fb.style.display = "flex";
+      if($("fmapStatus")) $("fmapStatus").textContent = "可能被封鎖";
+    }
+  }, 6000);
+}
+
+function openFmapNewTab(){
+  window.open(fmapUrl(), "_blank", "noopener");
+}
+
+/* =========================================================
    分頁
    ========================================================= */
 function switchTab(name){
@@ -2733,7 +2839,7 @@ function switchTab(name){
     var on = btns[i].getAttribute("data-tab") === name;
     btns[i].setAttribute("aria-selected", on ? "true" : "false");
   }
-  ["tdx","board","airline","sched","otd","cam","help"].forEach(function(t){
+  ["tdx","board","airline","sched","otd","cam","map","help"].forEach(function(t){
     $("tab-" + t).hidden = (t !== name);
   });
   activeTab = name;
@@ -4020,6 +4126,11 @@ function shift(hhmm, mins){
     try{ localStorage.setItem("gsAirline", this.value.trim().toUpperCase()); }catch(e){}
     gsFetch(true);
   });
+
+  /* ── 航班地圖 ── */
+  if($("btnFmapLoad")) $("btnFmapLoad").addEventListener("click", loadFmap);
+  if($("btnFmapOpen")) $("btnFmapOpen").addEventListener("click", openFmapNewTab);
+
   switchTab("tdx");
   refreshAll();
 })();
