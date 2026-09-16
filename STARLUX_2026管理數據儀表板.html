@@ -2769,7 +2769,6 @@
     const cleanStatus = rateTargetStatus(avgCleanRate, 0.9, 1.0);
     const saipBreakdown = saipCategoryBreakdownRange(fromIdx, i);
     const saipTotal = saipBreakdown.reduce(function(s,it){return s+it.value;}, 0);
-    // Most common SAIP category, listing all categories when several tie at the max count.
     const saipMaxVal = saipBreakdown.reduce(function(mx,it){ return Math.max(mx, it.value); }, 0);
     const topSaipCats = saipMaxVal > 0 ? saipBreakdown.filter(function(it){ return it.value === saipMaxVal; }) : [];
     const fineTotals = inadFineTotals(selectedMonth);
@@ -2777,15 +2776,120 @@
 
     function statusClass(cls){ return cls==='warn' ? 'ins-warn' : (cls==='good' ? 'ins-good' : ''); }
 
+    // ── 旅客人數月增減 ──────────────────────────────
+    // 若為單月模式，顯示當月 vs 上月；若為 YTD，比對最後有資料月 vs 前一月
+    let paxMomHtml = '';
+    const paxArr = m.pax.values;
+    const prevIdx = i > 0 ? i - 1 : null;
+    if (!isYtd && prevIdx !== null && paxArr[prevIdx] != null && paxArr[i] != null) {
+      const curPax = paxArr[i];
+      const prevPax = paxArr[prevIdx];
+      const diff = curPax - prevPax;
+      const pct = prevPax > 0 ? (diff / prevPax * 100) : 0;
+      const sign = diff >= 0 ? '+' : '';
+      const cls = diff >= 0 ? 'ins-good' : 'ins-warn';
+      paxMomHtml = '，較上月 <span class="ins-status '+cls+'">'+sign+fmt(diff)+' 人次（'+sign+fmt(pct,1)+'%）</span>';
+    } else if (isYtd && prevIdx !== null && paxArr[prevIdx] != null && paxArr[i] != null) {
+      const curPax = paxArr[i];
+      const prevPax = paxArr[prevIdx];
+      const diff = curPax - prevPax;
+      const pct = prevPax > 0 ? (diff / prevPax * 100) : 0;
+      const sign = diff >= 0 ? '+' : '';
+      const cls = diff >= 0 ? 'ins-good' : 'ins-warn';
+      paxMomHtml = '；'+MONTHS_ZH[i]+'較'+MONTHS_ZH[prevIdx]+' <span class="ins-status '+cls+'">'+sign+fmt(diff)+' 人次（'+sign+fmt(pct,1)+'%）</span>';
+    }
+
+    // ── INAD 發生場站 ──────────────────────────────
+    // 彙整 fine + withoutFine items，找出當期各站件數
+    function inadStationsForRange(from, to){
+      const stMap = {};
+      function addItems(items){
+        (items || []).forEach(function(it){
+          const v = sumRange(it.values, from, to);
+          if (v > 0){
+            stMap[it.name] = (stMap[it.name] || 0) + v;
+          }
+        });
+      }
+      if (STATE.inad && STATE.inad.fine) addItems(STATE.inad.fine.items);
+      if (STATE.inad && STATE.inad.withoutFine) addItems(STATE.inad.withoutFine.items);
+      return Object.keys(stMap).map(function(k){ return {name:k, value:stMap[k]}; })
+        .filter(function(x){ return x.value > 0; })
+        .sort(function(a,b){ return b.value - a.value; });
+    }
+    const inadStations = inadStationsForRange(fromIdx, i);
+    let inadStationsStr = '';
+    if (inadStations.length){
+      inadStationsStr = '（場站：' + inadStations.map(function(s){ return s.name+(s.value>1?' ×'+s.value:''); }).join('、') + '）';
+    }
+
+    // ── 客艙清潔 發生場站 ──────────────────────────────
+    const cabinStationsAll = cabinStationBreakdownRange(fromIdx, i);
+    let cabinStationsStr = '';
+    if (cabinStationsAll.length){
+      cabinStationsStr = '（場站：' + cabinStationsAll.slice(0,6).map(function(s){ return s.name+(s.value>1?' ×'+s.value:''); }).join('、') + '）';
+    }
+
+    // ── DLY K/P/G 場站及原因摘要 ──────────────────────────────
+    function dlyTypeBreakdown(type, from, to){
+      const typeNorm = type.trim().toUpperCase();
+      const entries = (STATE.dlyLog || []).filter(function(e){
+        const mi = logMonthIndex(e.date);
+        if (mi < from || mi > to) return false;
+        // type 欄可能是 'K', 'P', 'G', 'K/G', 'P/K', 'Ｇ'(全形), etc.
+        const t = (e.type || '').replace(/[Ａ-Ｚ]/g, function(c){ return String.fromCharCode(c.charCodeAt(0)-0xFEE0); }).toUpperCase();
+        return t.split('/').map(function(x){ return x.trim(); }).indexOf(typeNorm) >= 0;
+      });
+      // 場站統計
+      const stMap = {};
+      entries.forEach(function(e){ stMap[e.dep] = (stMap[e.dep]||0) + 1; });
+      const stations = Object.keys(stMap).map(function(k){ return {name:k,value:stMap[k]}; }).sort(function(a,b){return b.value-a.value;});
+      // 原因摘要（取前 3 件，每件截取前 20 字）
+      const reasonSamples = entries.slice(0, 3).map(function(e){
+        const r = (e.reason||'').replace(/\n/g,' ').trim();
+        return r.length > 22 ? r.slice(0,22)+'…' : r;
+      }).filter(Boolean);
+      return { count: entries.length, stations: stations, reasons: reasonSamples };
+    }
+    const dlyK = dlyTypeBreakdown('K', fromIdx, i);
+    const dlyP = dlyTypeBreakdown('P', fromIdx, i);
+    const dlyG = dlyTypeBreakdown('G', fromIdx, i);
+    function dlyStStr(info, maxSt){
+      if (!info.count) return '';
+      const sts = info.stations.slice(0, maxSt||4).map(function(s){ return s.name+(s.value>1?' ×'+s.value:''); }).join('、');
+      return '共 <b>'+info.count+'</b> 件，場站：'+sts;
+    }
+
     let html = '';
     html += '<h4>'+t('ins_h_period')+'</h4><ul>';
-    html += '<li>'+t('ins_period_label')+'：<b>'+periodLabel+'</b>（'+t('unit_pax_total')+' '+fmt(paxVal)+' '+t('unit_pax')+'）</li>';
+    html += '<li>'+t('ins_period_label')+'：<b>'+periodLabel+'</b>（'+t('unit_pax_total')+' '+fmt(paxVal)+' '+t('unit_pax')+paxMomHtml+'）</li>';
     html += '</ul>';
 
     html += '<h4>'+t('ins_h_key_metrics')+'</h4><ul>';
-    html += '<li>'+t('label_inad')+'：'+fmt(inadVal)+' '+t('unit_case')+'，'+t('ins_avg_rate')+' <span class="ins-status '+statusClass(inadStatus.cls)+'">'+fmt(avgInadRate,2)+' '+t('unit_per100k')+(inadStatus.text?'（'+inadStatus.text+'）':'')+'</span></li>';
-    html += '<li>'+t('label_cabin')+'：'+fmt(cleanVal)+' '+t('unit_case')+'，'+t('ins_avg_rate')+' <span class="ins-status '+statusClass(cleanStatus.cls)+'">'+(avgCleanRate!==null?fmt(avgCleanRate,2):'—')+' '+t('unit_per100k')+(cleanStatus.text?'（'+cleanStatus.text+'）':'')+'</span></li>';
+    html += '<li>'+t('label_inad')+'：'+fmt(inadVal)+' '+t('unit_case')+inadStationsStr+'，'+t('ins_avg_rate')+' <span class="ins-status '+statusClass(inadStatus.cls)+'">'+fmt(avgInadRate,2)+' '+t('unit_per100k')+(inadStatus.text?'（'+inadStatus.text+'）':'')+'</span></li>';
+    html += '<li>'+t('label_cabin')+'：'+fmt(cleanVal)+' '+t('unit_case')+cabinStationsStr+'，'+t('ins_avg_rate')+' <span class="ins-status '+statusClass(cleanStatus.cls)+'">'+(avgCleanRate!==null?fmt(avgCleanRate,2):'—')+' '+t('unit_per100k')+(cleanStatus.text?'（'+cleanStatus.text+'）':'')+'</span></li>';
     html += '<li>'+t('label_saip_total')+'：'+fmt(saipTotal)+' '+t('unit_case')+(topSaipCats.length?'，'+t('ins_saip_top_cat')+' <b>'+topSaipCats.map(function(c){return c.name;}).join('、')+'</b>（'+saipMaxVal+' '+t('unit_case')+'）':'')+'</li>';
+    // DLY K/P/G 詳細
+    if (dlyK.count || dlyP.count || dlyG.count){
+      html += '<li style="margin-top:4px">航班延誤 DLY（K/P/G Code）：';
+      html += '<ul style="margin:4px 0 0 0;padding-left:16px">';
+      if (dlyK.count){
+        html += '<li><b>K Code</b>（未登機旅客行李卸載）：'+dlyStStr(dlyK);
+        if (dlyK.reasons.length) html += '<br><span style="color:var(--muted);font-size:12px">例：'+dlyK.reasons[0]+'</span>';
+        html += '</li>';
+      }
+      if (dlyP.count){
+        html += '<li><b>P Code</b>（旅客/客艙因素）：'+dlyStStr(dlyP);
+        if (dlyP.reasons.length) html += '<br><span style="color:var(--muted);font-size:12px">例：'+dlyP.reasons[0]+'</span>';
+        html += '</li>';
+      }
+      if (dlyG.count){
+        html += '<li><b>G Code</b>（地面作業因素）：'+dlyStStr(dlyG);
+        if (dlyG.reasons.length) html += '<br><span style="color:var(--muted);font-size:12px">例：'+dlyG.reasons[0]+'</span>';
+        html += '</li>';
+      }
+      html += '</ul></li>';
+    }
     if (fineTotals.length){
       html += '<li>'+t('label_fine_amount_ytd')+'：'+fineTotals.map(function(f){return f.currency+' '+fmt(f.amount);}).join('、')+'</li>';
     }
