@@ -242,6 +242,21 @@ ul.doc li{margin:6px 0}
   .card{padding:16px;border-radius:16px}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* ── 即時影像 ── */
+.cam-grid{display:grid;grid-template-columns:1fr;gap:20px;margin-top:4px}
+@media(min-width:900px){.cam-grid{grid-template-columns:1fr 1fr}}
+.cam-item{background:rgba(255,255,255,.55);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  border:1px solid var(--glass-border);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
+.cam-hd{display:flex;align-items:baseline;gap:10px;margin:2px 2px 12px;flex-wrap:wrap}
+.cam-hd h3{margin:0;font-size:17px;font-weight:500;letter-spacing:-.3px}
+.cam-hd .code{font-size:12px;color:var(--dim);background:rgba(208,220,229,.4);border-radius:7px;padding:2px 9px;font-variant-numeric:tabular-nums}
+.cam-hd .live{font-size:11px;color:#fff;background:var(--bad);border-radius:6px;padding:2px 8px;font-weight:500;display:inline-flex;align-items:center;gap:5px}
+.cam-hd .live::before{content:"";width:6px;height:6px;border-radius:50%;background:#fff;display:inline-block;animation:pulse 1.8s ease-in-out infinite}
+.cam-frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#0a1520}
+.cam-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.cam-note{margin:10px 2px 2px;font-size:12px;color:var(--dim)}
+.cam-note a{color:var(--cyan);text-decoration:none}
+.cam-note a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
@@ -264,6 +279,7 @@ ul.doc li{margin:6px 0}
     <button data-tab="airline" aria-selected="false">航空公司</button>
     <button data-tab="sched" aria-selected="false">班表分析</button>
     <button data-tab="otd" aria-selected="false">準點分析</button>
+    <button data-tab="cam" aria-selected="false">即時影像</button>
     <button data-tab="help" aria-selected="false">格式說明</button>
   </nav>
 </header>
@@ -677,6 +693,15 @@ ul.doc li{margin:6px 0}
       </label>
     </div>
     <div id="oBody"></div>
+  </div>
+</section>
+
+<!-- ============ CAM ============ -->
+<section id="tab-cam" hidden>
+  <div class="card">
+    <h2>各站即時影像</h2>
+    <p>桃園與高雄兩站的機場即時影像（24 小時 YouTube 直播）。畫面來自航空愛好者長期經營的公開直播，非機場官方頁面（官方頁面設有防嵌入限制，無法直接內嵌）。需要連線才能播放。</p>
+    <div class="cam-grid" id="camGrid"></div>
   </div>
 </section>
 
@@ -2187,7 +2212,7 @@ function keepNote(){
 
 /* 資料量大時，全部分頁一起重繪會明顯卡頓；只畫目前看得到的那一頁，
    其他頁標記為待重繪，切過去時才畫。 */
-var tabDirty = { board:true, airline:true, sched:true, otd:true };
+var tabDirty = { board:true, airline:true, sched:true, otd:true, cam:true };
 var activeTab = "tdx";
 
 function renderActiveTab(){
@@ -2199,6 +2224,8 @@ function renderActiveTab(){
     tabDirty.sched = false; renderSchedChips(); renderSched();
   }else if(activeTab === "otd" && tabDirty.otd){
     tabDirty.otd = false; renderOtdChips(); renderOtd();
+  }else if(activeTab === "cam" && tabDirty.cam){
+    tabDirty.cam = false; renderCams();
   }
   if(activeTab === "sched") gsFetch(false);   // 進頁自動載入，6 小時內用快取
 }
@@ -2635,6 +2662,52 @@ function onOtdSort(){
 }
 
 /* =========================================================
+   即時影像
+   ─ 桃園 / 高雄兩站，嵌入 YouTube 24 小時直播
+   ─ 官方即時影像頁面設有 X-Frame-Options 無法內嵌，
+     故採用航空愛好者長期經營的公開 YouTube 直播源。
+   ─ 只在切到本頁時才建立 iframe，切走即清空停止播放。
+   ========================================================= */
+var CAMS = [
+  {
+    code: "TPE",
+    name: "桃園國際機場",
+    desc: "北跑道觀景台 4K 即時影像（第二航廈北觀景台，05L／23R）",
+    yt:   "wWEnxWA7nnY"
+  },
+  {
+    code: "KHH",
+    name: "高雄國際機場",
+    desc: "高雄國際機場即時影像 & 塔台通訊（RCKH／KHH）",
+    yt:   "_hx5akJfzso"
+  }
+];
+
+function renderCams(){
+  var box = $("camGrid");
+  if(!box) return;
+  box.innerHTML = CAMS.map(function(c){
+    var src = "https://www.youtube.com/embed/" + c.yt +
+      "?rel=0&modestbranding=1&playsinline=1";
+    var watch = "https://www.youtube.com/watch?v=" + c.yt;
+    return '<div class="cam-item">' +
+      '<div class="cam-hd">' +
+        '<h3>' + esc(c.name) + '</h3>' +
+        '<span class="code">' + esc(c.code) + '</span>' +
+        '<span class="live">LIVE</span>' +
+      '</div>' +
+      '<div class="cam-frame">' +
+        '<iframe src="' + src + '" title="' + esc(c.name) + ' 即時影像" ' +
+          'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
+          'allowfullscreen loading="lazy"></iframe>' +
+      '</div>' +
+      '<p class="cam-note">' + esc(c.desc) +
+        ' ｜ <a href="' + watch + '" target="_blank" rel="noopener">在 YouTube 開啟</a></p>' +
+      '</div>';
+  }).join("");
+}
+
+/* =========================================================
    分頁
    ========================================================= */
 function switchTab(name){
@@ -2643,9 +2716,10 @@ function switchTab(name){
     var on = btns[i].getAttribute("data-tab") === name;
     btns[i].setAttribute("aria-selected", on ? "true" : "false");
   }
-  ["tdx","board","airline","sched","otd","help"].forEach(function(t){
+  ["tdx","board","airline","sched","otd","cam","help"].forEach(function(t){
     $("tab-" + t).hidden = (t !== name);
   });
+  if(name !== "cam"){ var cg = $("camGrid"); if(cg) cg.innerHTML = ""; tabDirty.cam = true; }
   activeTab = name;
   renderActiveTab();
   window.scrollTo(0,0);
