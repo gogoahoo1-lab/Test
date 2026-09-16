@@ -991,6 +991,15 @@
           </section>
 
           <section class="block">
+            <div class="section-head">
+              <h2><span class="mini-star">✦</span>出發延誤分析 <span style="font-size:13px;font-weight:400;color:var(--muted);">（超過 STD 15 分鐘）</span></h2>
+              <span class="section-note" id="opsDelayNote"></span>
+            </div>
+            <div class="divider"></div>
+            <div class="kpi-grid" id="opsDelayKpi"></div>
+          </section>
+
+          <section class="block">
             <div class="card ops-longest-card" id="opsLongestCard"></div>
           </section>
 
@@ -4225,6 +4234,7 @@
     safeRun(function(){ renderBid(); }, 'ops-bid');
     safeRun(function(){ renderOpsDepPills(); }, 'ops-dep-pills');
     safeRun(function(){ renderOpsKpi(); }, 'ops-kpi');
+    safeRun(function(){ renderOpsDelayKpi(); }, 'ops-delay-kpi');
     safeRun(function(){ renderOpsLongestCard(); }, 'ops-longest');
     safeRun(function(){ renderOpsPhaseChart(); }, 'ops-phase-chart');
     safeRun(function(){ renderOpsTopTable(); }, 'ops-top-table');
@@ -4335,6 +4345,71 @@
       return '<div class="kpi-card"><div class="kpi-label">'+c.label+'</div>'+
         '<div class="kpi-value">'+c.value+'<span class="unit">'+(c.unit||'')+'</span></div>'+
         (c.sub? '<div class="kpi-sub '+(c.subClass||'flat')+'">'+c.sub+'</div>':'')+'</div>';
+    }).join('');
+  }
+
+
+  // ---- 出發延誤統計 ----
+  // 計算 ATD - STD（分鐘），處理跨日：若差值 < -180 則加 1440
+  function opsDepDelay(f){
+    if (!f.std || !f.atd) return null;
+    function toMin(s){ var p=s.split(':'); return parseInt(p[0],10)*60+parseInt(p[1],10); }
+    var diff = toMin(f.atd) - toMin(f.std);
+    if (diff < -180) diff += 1440;
+    if (diff > 720) diff -= 1440;
+    return diff;
+  }
+
+  function renderOpsDelayKpi(){
+    const allFlights = opsFilteredFlights();
+    const flights = bidTypeFilter === 'ALL' ? allFlights : allFlights.filter(function(f){ return f.acType === bidTypeFilter; });
+    const grid = document.getElementById('opsDelayKpi');
+    const noteEl = document.getElementById('opsDelayNote');
+    if (!grid) return;
+
+    const delays = [];
+    flights.forEach(function(f){
+      var d = opsDepDelay(f);
+      if (d !== null) delays.push({flt:f.flt, date:f.date, dep:f.dep, arr:f.arr, acType:f.acType, delay:d});
+    });
+
+    const totalValid = delays.length;
+    const delayed = delays.filter(function(d){ return d.delay > 15; });
+    const delayedCount = delayed.length;
+    const delayRate = totalValid > 0 ? (delayedCount / totalValid * 100).toFixed(1) : null;
+
+    if (noteEl){
+      const depLabel = opsDepFilter === 'ALL' ? '' : opsDepFilter;
+      const mLabel = opsMonthFilter === 'all' ? '全年' : MONTHS_ZH[opsMonthFilter];
+      const typeLabel = bidTypeFilter === 'ALL' ? '' : bidTypeFilter;
+      noteEl.textContent = [mLabel, depLabel, typeLabel].filter(Boolean).join('\u3000') + '\u3000有效樣本 ' + totalValid + ' 班';
+    }
+
+    if (!delayedCount){
+      grid.innerHTML = '<div class="kpi-card" style="grid-column:1/-1;color:var(--muted);font-size:14px;">此篩選條件下無延誤超過 15 分鐘的航班</div>';
+      return;
+    }
+
+    const delayMins = delayed.map(function(d){ return d.delay; }).sort(function(a,b){return a-b;});
+    const sum = delayMins.reduce(function(s,v){return s+v;},0);
+    const avg = Math.round(sum / delayMins.length);
+    const mid = Math.floor(delayMins.length/2);
+    const median = delayMins.length%2 ? delayMins[mid] : Math.round((delayMins[mid-1]+delayMins[mid])/2);
+    const maxDelay = delayMins[delayMins.length-1];
+    const minDelay = delayMins[0];
+    const worstFlt = delayed.reduce(function(best,d){ return d.delay > best.delay ? d : best; }, delayed[0]);
+
+    const cards = [
+      {label:'延誤航班數',  value: fmt(delayedCount), unit:'班', sub: '延誤率 '+delayRate+' %', subClass:'warn'},
+      {label:'平均延誤',    value: fmt(avg),    unit:'分', sub:'中位數 '+median+' 分', subClass:'flat'},
+      {label:'最長延誤',    value: fmt(maxDelay), unit:'分', sub: worstFlt.flt+' '+worstFlt.dep+'→'+worstFlt.arr+'  '+worstFlt.date, subClass:'warn'},
+      {label:'最短延誤',    value: fmt(minDelay),  unit:'分', sub:'（恰好超過 15 分門檻）', subClass:'flat'}
+    ];
+
+    grid.innerHTML = cards.map(function(c){
+      return '<div class="kpi-card"><div class="kpi-label">'+c.label+'</div>'+
+        '<div class="kpi-value">'+c.value+'<span class="unit"> '+c.unit+'</span></div>'+
+        '<div class="kpi-sub '+(c.subClass||'flat')+'">'+c.sub+'</div></div>';
     }).join('');
   }
 
@@ -4677,6 +4752,7 @@
           this.classList.add('active');
           renderBidTable();
           renderOpsKpi();
+          renderOpsDelayKpi();
         });
       });
     }
