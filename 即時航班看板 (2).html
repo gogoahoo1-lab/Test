@@ -243,14 +243,17 @@ ul.doc li{margin:6px 0}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 /* ── 即時影像 ── */
-.cam-grid{display:grid;grid-template-columns:1fr;gap:20px;margin-top:4px}
+.cam-stations{display:flex;flex-direction:column;gap:28px;margin-top:4px}
+.cam-station-hd{display:flex;align-items:baseline;gap:10px;margin:0 2px 12px}
+.cam-station-hd h3{margin:0;font-size:19px;font-weight:500;letter-spacing:-.3px}
+.cam-station-hd .code{font-size:12px;color:var(--dim);background:rgba(208,220,229,.4);border-radius:7px;padding:2px 9px;font-variant-numeric:tabular-nums}
+.cam-grid{display:grid;grid-template-columns:1fr;gap:20px}
 @media(min-width:900px){.cam-grid{grid-template-columns:1fr 1fr}}
 .cam-item{background:rgba(255,255,255,.55);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
   border:1px solid var(--glass-border);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
 .cam-hd{display:flex;align-items:baseline;gap:10px;margin:2px 2px 12px;flex-wrap:wrap}
-.cam-hd h3{margin:0;font-size:17px;font-weight:500;letter-spacing:-.3px}
-.cam-hd .code{font-size:12px;color:var(--dim);background:rgba(208,220,229,.4);border-radius:7px;padding:2px 9px;font-variant-numeric:tabular-nums}
-.cam-hd .live{font-size:11px;color:#fff;background:var(--bad);border-radius:6px;padding:2px 8px;font-weight:500;display:inline-flex;align-items:center;gap:5px}
+.cam-hd h3{margin:0;font-size:16px;font-weight:500;letter-spacing:-.3px}
+.cam-hd .live{font-size:11px;color:#fff;background:var(--bad);border-radius:6px;padding:2px 8px;font-weight:500;display:inline-flex;align-items:center;gap:5px;margin-left:auto}
 .cam-hd .live::before{content:"";width:6px;height:6px;border-radius:50%;background:#fff;display:inline-block;animation:pulse 1.8s ease-in-out infinite}
 .cam-frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#0a1520}
 .cam-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
@@ -701,7 +704,7 @@ ul.doc li{margin:6px 0}
   <div class="card">
     <h2>各站即時影像</h2>
     <p>桃園與高雄兩站的機場即時影像（24 小時 YouTube 直播）。畫面來自航空愛好者長期經營的公開直播，非機場官方頁面（官方頁面設有防嵌入限制，無法直接內嵌）。需要連線才能播放。</p>
-    <div class="cam-grid" id="camGrid"></div>
+    <div class="cam-stations" id="camGrid"></div>
   </div>
 </section>
 
@@ -2672,38 +2675,52 @@ var CAMS = [
   {
     code: "TPE",
     name: "桃園國際機場",
-    desc: "北跑道觀景台 4K 即時影像（第二航廈北觀景台，05L／23R）",
-    yt:   "wWEnxWA7nnY"
+    feeds: [
+      { label: "北跑道", desc: "北跑道即時影像 & 塔台通訊（05L／23R）", yt: "My-tDEttvXg" },
+      { label: "南跑道", desc: "南跑道 4K 即時影像（06/24）",           yt: "91PfFoqvuUk" }
+    ]
   },
   {
     code: "KHH",
     name: "高雄國際機場",
-    desc: "高雄國際機場即時影像 & 塔台通訊（RCKH／KHH）",
-    yt:   "_hx5akJfzso"
+    feeds: [
+      { label: "", desc: "高雄國際機場即時影像 & 塔台通訊（RCKH／KHH）", yt: "_hx5akJfzso" }
+    ]
   }
 ];
+
+function camFeedHtml(f, stnName){
+  var src   = "https://www.youtube.com/embed/" + f.yt + "?rel=0&modestbranding=1&playsinline=1";
+  var watch = "https://www.youtube.com/watch?v=" + f.yt;
+  var title = stnName + (f.label ? " " + f.label : "") + " 即時影像";
+  return '<div class="cam-item">' +
+    '<div class="cam-hd">' +
+      (f.label ? '<h3>' + esc(f.label) + '</h3>' : '<h3>即時影像</h3>') +
+      '<span class="live">LIVE</span>' +
+    '</div>' +
+    '<div class="cam-frame">' +
+      '<iframe src="' + src + '" title="' + esc(title) + '" ' +
+        'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
+        'allowfullscreen loading="lazy"></iframe>' +
+    '</div>' +
+    '<p class="cam-note">' + esc(f.desc) +
+      ' ｜ <a href="' + watch + '" target="_blank" rel="noopener">在 YouTube 開啟</a></p>' +
+    '</div>';
+}
 
 function renderCams(){
   var box = $("camGrid");
   if(!box) return;
   box.innerHTML = CAMS.map(function(c){
-    var src = "https://www.youtube.com/embed/" + c.yt +
-      "?rel=0&modestbranding=1&playsinline=1";
-    var watch = "https://www.youtube.com/watch?v=" + c.yt;
-    return '<div class="cam-item">' +
-      '<div class="cam-hd">' +
+    return '<div class="cam-station">' +
+      '<div class="cam-station-hd">' +
         '<h3>' + esc(c.name) + '</h3>' +
         '<span class="code">' + esc(c.code) + '</span>' +
-        '<span class="live">LIVE</span>' +
       '</div>' +
-      '<div class="cam-frame">' +
-        '<iframe src="' + src + '" title="' + esc(c.name) + ' 即時影像" ' +
-          'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
-          'allowfullscreen loading="lazy"></iframe>' +
+      '<div class="cam-grid">' +
+        c.feeds.map(function(f){ return camFeedHtml(f, c.name); }).join("") +
       '</div>' +
-      '<p class="cam-note">' + esc(c.desc) +
-        ' ｜ <a href="' + watch + '" target="_blank" rel="noopener">在 YouTube 開啟</a></p>' +
-      '</div>';
+    '</div>';
   }).join("");
 }
 
@@ -2719,7 +2736,6 @@ function switchTab(name){
   ["tdx","board","airline","sched","otd","cam","help"].forEach(function(t){
     $("tab-" + t).hidden = (t !== name);
   });
-  if(name !== "cam"){ var cg = $("camGrid"); if(cg) cg.innerHTML = ""; tabDirty.cam = true; }
   activeTab = name;
   renderActiveTab();
   window.scrollTo(0,0);
