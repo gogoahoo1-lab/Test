@@ -242,7 +242,7 @@
   .bid-sub-tab.active{ background:var(--obsidian); color:var(--cream); }
   .bid-heat-cell{ display:inline-block; min-width:36px; text-align:center; padding:2px 6px; border-radius:5px; font-variant-numeric:tabular-nums; font-weight:600; font-size:13px; }
   .bid-type-filter-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; font-size:13px; color:var(--muted); font-weight:600; }
-  .ops-kpi-type-filter-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px; font-size:13px; color:var(--muted); font-weight:600; }
+
   .bid-type-pill{ padding:4px 11px; border-radius:14px; font-size:12.5px; font-weight:700; background:var(--cream-2); color:var(--ink-soft); cursor:pointer; border:1px solid transparent; transition:all .15s; white-space:nowrap; }
   .bid-type-pill.active{ color:#fff; }
   .bid-type-pill.p32Q.active{ background:#3b7dd8; }
@@ -985,14 +985,6 @@
             <div class="section-head">
               <h2><span class="mini-star">✦</span><span data-i18n="ops_h_summary">各作業階段耗時概況</span></h2>
               <span class="section-note" id="opsSummaryNote"></span>
-            </div>
-            <div class="ops-kpi-type-filter-row" id="opsKpiTypeFilterRow">
-              篩選機型：
-              <button class="bid-type-pill pALL active" data-opskpitype="ALL">全部</button>
-              <button class="bid-type-pill p32Q" data-opskpitype="32Q">32Q</button>
-              <button class="bid-type-pill p339" data-opskpitype="339">339</button>
-              <button class="bid-type-pill p351" data-opskpitype="351">351</button>
-              <button class="bid-type-pill p359" data-opskpitype="359">359</button>
             </div>
             <div class="divider"></div>
             <div class="kpi-grid" id="opsKpi"></div>
@@ -4184,7 +4176,7 @@
   let opsDepFilter = 'ALL';       // 'ALL' or a station code
   let opsMetricFilter = 'cabinClean';
   let opsMonthFilter = 'all';     // 'all' or 0-11 (month index)
-  let opsKpiTypeFilter = 'ALL';   // 'ALL' | '32Q' | '339' | '351' | '359'
+
 
   function loadOpsData(){
     try {
@@ -4317,7 +4309,7 @@
 
   function renderOpsKpi(){
     const allFlights = opsFilteredFlights();
-    const flights = opsKpiTypeFilter === 'ALL' ? allFlights : allFlights.filter(function(f){ return f.acType === opsKpiTypeFilter; });
+    const flights = bidTypeFilter === 'ALL' ? allFlights : allFlights.filter(function(f){ return f.acType === bidTypeFilter; });
     const grid = document.getElementById('opsKpi');
     if (!grid) return;
     // Update summary note with current filters
@@ -4325,7 +4317,7 @@
     if (noteEl){
       const depLabel = opsDepFilter === 'ALL' ? '' : opsDepFilter;
       const mLabel = opsMonthFilter === 'all' ? '全年' : MONTHS_ZH[opsMonthFilter];
-      const typeLabel = opsKpiTypeFilter === 'ALL' ? '' : opsKpiTypeFilter;
+      const typeLabel = bidTypeFilter === 'ALL' ? '' : bidTypeFilter;
       noteEl.textContent = [mLabel, depLabel, typeLabel].filter(Boolean).join('　') + '　共 ' + flights.length + ' 班';
     }
     const cards = OPS_METRICS.map(function(m){
@@ -4684,19 +4676,6 @@
           filterRow.querySelectorAll('.bid-type-pill').forEach(function(p){ p.classList.remove('active'); });
           this.classList.add('active');
           renderBidTable();
-        });
-      });
-    }
-
-    // OPS KPI type filter pills (bind once guard)
-    const kpiFilterRow = document.getElementById('opsKpiTypeFilterRow');
-    if (kpiFilterRow && !kpiFilterRow._bound){
-      kpiFilterRow._bound = true;
-      kpiFilterRow.querySelectorAll('.bid-type-pill').forEach(function(pill){
-        pill.addEventListener('click', function(){
-          opsKpiTypeFilter = this.getAttribute('data-opskpitype');
-          kpiFilterRow.querySelectorAll('.bid-type-pill').forEach(function(p){ p.classList.remove('active'); });
-          this.classList.add('active');
           renderOpsKpi();
         });
       });
