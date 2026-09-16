@@ -265,7 +265,7 @@ ul.doc li{margin:6px 0}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-11d</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-11e</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -566,7 +566,7 @@ ul.doc li{margin:6px 0}
         <select id="fDate"><option value="all">全部日期</option></select>
       </label>
       <label class="f">狀態
-        <select id="fStatus"><option value="all">全部狀態</option><option value="ontime">準點（±15 分內）</option><option value="late">延誤逾 15 分</option><option value="cancel">取消</option></select>
+        <select id="fStatus"><option value="all">全部狀態</option><option value="boarding">登機中／最後登機</option><option value="ontime">準點（±15 分內）</option><option value="late">延誤逾 15 分</option><option value="cancel">取消</option></select>
       </label>
       <label class="f">搜尋航班／航點
         <input type="search" id="fSearch" placeholder="JX820 或 NRT" size="16">
@@ -693,7 +693,7 @@ ul.doc li{margin:6px 0}
 <section id="tab-help" hidden>
   <div class="card">
     <h2>怎麼用</h2>
-    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-11d</b>（航點含 SHI 下地島、UKB 神戶，依國家快選涵蓋日本 32 個航點）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
+    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-11e</b>（航點含 SHI 下地島、UKB 神戶，依國家快選涵蓋日本 32 個航點）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
     <ul class="doc">
       <li>桃園機場走「<b>TDX 桃園機場</b>」頁籤最省事：填 Client ID／Secret 後按立即抓取，到場與離場會一次抓齊。</li>
       <li>TDX 的 <code>$top</code> 預設值只有 <b>30 筆</b>，不分頁就只會拿到 30 班。本頁已改成自動帶 <code>$top</code>／<code>$skip</code> 分頁抓到底。</li>
@@ -732,6 +732,8 @@ ul.doc li{margin:6px 0}
       <li>存下來的 <code>航班資料_YYYY-MM-DD.json</code> 可隨時用「資料匯入」的讀入資料檔接回來，<b>可一次多選</b>整個月的檔案，重複讀同一天不會重複計算。</li>
       <li>瀏覽器本機儲存約 5MB，所以只保存「本機保留天數」內的資料（預設 21 天），且以精簡格式存放。要看更早的月份，把當時的每日檔案讀回來即可——讀進來的資料在關掉分頁前都能分析。</li>
       <li>場站篩選固定列出 TPE、RMQ、KHH、TSA 四站（後面數字是資料庫裡的筆數，0 代表還沒抓過），其餘場站依實際資料出現。</li>
+      <li>到離看板的狀態欄會即時顯示「登機中」「最後登機」「Gate Closing」等登機階段。正在登機的航班會自動浮到看板最上方的綠框置頂區，航班離開登機狀態（已起飛）後自動消失。可用「狀態」下拉選「登機中／最後登機」只看正在作業的航班。KPI 區也會出現登機中班數。</li>
+      <li>追蹤中的航班進入登機或最後登機時，也會推播到你的 Teams 中繼 URL。</li>
       <li>定期班表的「航點篩選」可依國家快速選取：展開面板後上方會列出目前航點涵蓋的國家／地區，點一下就勾選該國所有航點，再點一次取消；也可以在下方逐一勾選單一航點，兩種方式可以混用。</li>
       <li>各航班表的「可比對班次」門檻可調；準點率低於 60% 的航班會以紅底標示。</li>
     </ul>
@@ -1228,6 +1230,7 @@ function filterBoard(){
     if(sel.length && sel.indexOf(f.airline) < 0) return false;
     if(q && (f.flightNo.indexOf(q) < 0 && String(f.peer).indexOf(q) < 0 && String(aptName(f.peer)).indexOf(q) < 0)) return false;
     if(st === "cancel" && !f.cancelled) return false;
+    if(st === "boarding" && !(boardingLevel(f) > 0 && !f.cancelled && !f.act)) return false;
     if(st === "late" && !(f.delay != null && f.delay > 15 && !f.cancelled)) return false;
     if(st === "ontime" && !(f.delay != null && Math.abs(f.delay) <= 15 && !f.cancelled)) return false;
     return true;
@@ -1242,8 +1245,8 @@ function filterBoard(){
    boarding 分三級：2=最後登機，1=登機中，0=其他。 */
 function boardingLevel(f){
   var st = String(f.status || "").trim().toUpperCase();
-  if(/最後登機|FINAL.?CALL|LAST.?CALL|GATE.?CLOSING/.test(st)) return 2;
-  if(/登機中|BOARDING|NOW.?BOARDING|OPEN/.test(st)) return 1;
+  if(/最後登機|FINAL.?CALL|LAST.?CALL|GATE.?CLOS/.test(st)) return 2;
+  if(/登機中|BOARDING|NOW.?BOARDING|GATE.?OPEN/.test(st)) return 1;
   return 0;
 }
 function statusCell(f){
@@ -1272,7 +1275,7 @@ function statusCell(f){
 
   // 來源備註若跟上面已經講過的意思重複（已到達 vs 已抵達、取消 vs 取消），就不再重複一次
   var remark = String(f.status || "").trim();
-  var dup = /^(已?(到達|抵達|降落|起飛|離站|出發)|取消|延誤|準點|登機中?|最後登機|報到中|on ?time|arrived|landed|departed|delayed|cancell?ed|boarding|final.?call|last.?call|gate.?clos(ing|ed)|now.?boarding|open)$/i;
+  var dup = /^(已?(到達|抵達|降落|起飛|離站|出發)|取消|延誤|準點|登機中?|最後登機|報到中|on ?time|arrived|landed|departed|delayed|cancell?ed|boarding|final.?call|last.?call|gate.?clos(ing|ed)|now.?boarding|gate.?open|open)$/i;
   if(remark && !dup.test(remark)) parts.push(esc(remark));
 
   return '<div class="stcell"><span class="lead ' + cls + '">' + esc(lead) + "</span>" +
@@ -1297,9 +1300,11 @@ function renderBoard(){
   var late = withDelay.filter(function(f){ return f.delay > 15; }).length;
   var cx = rows.filter(function(f){ return f.cancelled; }).length;
   var peers = {}; rows.forEach(function(f){ if(f.peer) peers[f.peer] = 1; });
+  var nBoarding = rows.filter(function(f){ return boardingLevel(f) > 0 && !f.cancelled && !f.act; }).length;
   $("boardKpis").innerHTML =
     kpi("", "篩選後班次", rows.length) +
     kpi("c", "到場／離場", rows.filter(function(f){return f.dir==="A";}).length + " ／ " + rows.filter(function(f){return f.dir==="D";}).length) +
+    (nBoarding ? kpiRaw("g", "登機中", '<span style="color:var(--cyan);font-weight:700">' + nBoarding + " 班</span>") : "") +
     kpi("g", "準點率", withDelay.length ? Math.round(ontime/withDelay.length*100) + "%" : "—") +
     kpi("r", "延誤／取消", late + " ／ " + cx) +
     kpi("", "航點數", Object.keys(peers).length);
@@ -1363,7 +1368,7 @@ function renderBoard(){
   var boardingHtml = "";
   if(boarding.length){
     boardingHtml = '<div class="bhead" style="margin-top:8px"><span class="tag boarding-tag">正在作業</span>' +
-      '<h3>登機中航班</h3><span class="cnt">' + boarding.length + ' 班</span></div>' +
+      '<h3>登機中航班</h3><span class="cnt">' + boarding.length + ' 班　（航班離開登機狀態後自動消失）</span></div>' +
       '<div class="tbox boarding-box"><table>' + thead + "<tbody>" +
       boarding.map(rowHtml).join("") + "</tbody></table></div>";
   }
@@ -1500,6 +1505,8 @@ function watchMsg(f, kind){
     : (f.station || "?") + " → " + (f.peer || "?") + (aptName(f.peer) ? "（" + aptName(f.peer) + "）" : "");
   var head = "✈️ " + f.flightNo + "　" + route + "　" + (f.date || "");
   if(kind === "cx") return head + "\n狀態：已取消（表定 " + (f.sched || "—") + "）";
+  if(kind === "boarding") return head + "\n狀態：🟢 登機中（表定 " + (f.sched || "—") + "　登機門 " + (f.gate || "—") + "）";
+  if(kind === "finalcall") return head + "\n狀態：🟠 最後登機（表定 " + (f.sched || "—") + "　登機門 " + (f.gate || "—") + "）";
   if(kind === "delay") return head + "\n狀態：預估延誤 " + f.delay + " 分（表定 " + (f.sched || "—") +
     "，預估 " + (f.est || "—") + "）";
   var d = f.delay;
@@ -1538,6 +1545,9 @@ function checkWatchNotify(manual){
     if(evDelay && !f.cancelled && !f.act && f.delay != null && f.delay > thr && !notified[f.id + "|delay"]){
       queue.push({ f:f, kind:"delay" });
     }
+    var bl = boardingLevel(f);
+    if(bl === 1 && !notified[f.id + "|boarding"]) queue.push({ f:f, kind:"boarding" });
+    if(bl === 2 && !notified[f.id + "|finalcall"]) queue.push({ f:f, kind:"finalcall" });
   });
   if(!queue.length){ if(manual) hookStatus("目前沒有需要推播的異動"); return; }
   hookStatus("推播中…（" + queue.length + " 則）");
@@ -3676,7 +3686,7 @@ function demoJSON(){
         Terminal: (p[0] === "CI" || p[0] === "JX") ? "1" : "2",
         Gate: "A" + (1 + Math.floor(Math.random()*9)),
         CheckCounter: String.fromCharCode(65 + Math.floor(Math.random()*10)),
-        AircraftType: p[5], FlightStatus: jitterD > 15 ? "延誤" : "已起飛"
+        AircraftType: p[5], FlightStatus: jitterD > 15 ? "延誤" : (d===0 && parseInt(p[3],10) >= 7 && parseInt(p[3],10) <= 9 ? (parseInt(p[3],10) === 7 ? "登機中" : (parseInt(p[3],10) === 8 ? "最後登機" : "Gate Closing")) : "已起飛")
       });
       out.push({
         AirlineID: p[0], FlightNumber: p[0] + (201 + (p[1].charCodeAt(0)+p[1].charCodeAt(2)) % 700),
