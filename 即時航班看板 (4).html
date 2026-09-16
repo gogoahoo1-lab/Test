@@ -2682,6 +2682,30 @@ function mrtShouldShow(){
   return !sel.length || sel.indexOf("TPE") >= 0;
 }
 
+/* 從 StationID 或 StationUID 中取出純站碼（去掉 "TYMC-" 前綴） */
+function mrtStnCode(x){
+  var sid  = String(x.StationID  || "").toUpperCase().replace(/^TYMC-/,"");
+  var suid = String(x.StationUID || "").toUpperCase().replace(/^TYMC-/,"");
+  return sid || suid;
+}
+/* 判斷是否為往台北方向：
+   優先看 DestinationStaionID（注意 TDX 拼法 Staion），
+   A21 = 台北，A23/A24 = 環北一帶（往機場另一端）；
+   若缺欄位則看 Direction === 1（TYMC 去程為往機場，回程為往台北）。*/
+function mrtIsTaipei(x){
+  var dstID = String(x.DestinationStaionID || x.DestinationStationID || "").toUpperCase().replace(/^TYMC-/,"");
+  if(dstID){
+    /* A21 = 台北，A22 = 環北（均可能為終點） */
+    return dstID === "A21" || dstID === "A22";
+  }
+  var dstName = "";
+  if(x.DestinationStationName)
+    dstName = (x.DestinationStationName.Zh_tw || x.DestinationStationName.Zh_TW || "");
+  if(dstName) return dstName.indexOf("台北") >= 0;
+  /* 最後備案：Direction 1 = 往台北（TYMC 回程） */
+  return Number(x.Direction) === 1;
+}
+
 function renderMrtCard(data, errMsg){
   var el = $("mrtCard");
   if(!el) return;
@@ -2695,24 +2719,52 @@ function renderMrtCard(data, errMsg){
     body = '<span class="note" style="color:var(--bad)">⚠ ' + esc(errMsg) + '</span>';
   } else {
     var arr = Array.isArray(data) ? data : (findRecords(data) || []);
-    /* 篩 A1/A2，方向 0 = 往台北，依剩餘分鐘排序 */
-    var trains = arr.filter(function(x){
-      var stn = String(x.StationID || "").toUpperCase();
-      return (stn === "A1" || stn === "A2") && Number(x.Direction) === 0;
-    }).sort(function(a,b){
-      return (Number(a.EstimatedArrivalTime)||999) - (Number(b.EstimatedArrivalTime)||999);
-    }).slice(0, 6);
+
+    /* 除錯用：把收到的站碼印出來，方便確認格式 */
+    if(arr.length){
+      var stnSample = arr.slice(0,5).map(function(x){
+        return (x.StationUID||x.StationID||"?") + " dir=" + x.Direction + " dst=" + (x.DestinationStaionID||x.DestinationStationID||"?");
+      });
+      console.log("[機捷] 收到", arr.length, "筆，樣本：", stnSample.join(" | "));
+    }
+
+    /* 篩出 A1/A2（兼容 "A1" 與 "TYMC-A1" 格式）往台北方向 */
+    var aptStns = arr.filter(function(x){
+      var code = mrtStnCode(x);
+      return code === "A1" || code === "A2";
+    });
+
+    var trains = aptStns.filter(mrtIsTaipei)
+      .sort(function(a,b){
+        return (Number(a.EstimatedArrivalTime)||999) - (Number(b.EstimatedArrivalTime)||999);
+      }).slice(0, 6);
+
+    /* 若往台北方向還是 0 筆，把全部 A1/A2 班次都列出來（讓使用者看到原始方向） */
+    var fallback = false;
+    if(!trains.length && aptStns.length){
+      fallback = true;
+      trains = aptStns.sort(function(a,b){
+        return (Number(a.EstimatedArrivalTime)||999) - (Number(b.EstimatedArrivalTime)||999);
+      }).slice(0, 6);
+    }
 
     if(!trains.length){
-      body = '<span class="note">目前 A1/A2 往台北無即時班次資訊。</span>';
+      var hint = arr.length ? "（API 回傳 " + arr.length + " 筆，但無 A1/A2 資料）" : "（API 回傳空陣列）";
+      body = '<span class="note">目前無機捷即時班次 ' + hint + '</span>';
     } else {
-      body = '<div class="mrt-trains">' + trains.map(function(x){
-        var min    = Number(x.EstimatedArrivalTime) || 0;
-        var stn    = String(x.StationID || "").toUpperCase();
-        var stnLbl = stn === "A1" ? "第一航廈" : "第二航廈";
-        var dest   = "";
+      if(fallback)
+        body += '<span class="note" style="display:block;margin-bottom:6px;font-size:11.5px;color:var(--warn)">⚠ 無法判斷方向，顯示 A1/A2 全部班次</span>';
+      body += '<div class="mrt-trains">' + trains.map(function(x){
+        var min     = Number(x.EstimatedArrivalTime) || 0;
+        var code    = mrtStnCode(x);
+        var stnLbl  = code === "A1" ? "第一航廈" : "第二航廈";
+        var destZh  = "";
         if(x.DestinationStationName)
-          dest = x.DestinationStationName.Zh_tw || x.DestinationStationName.Zh_TW || "";
+          destZh = x.DestinationStationName.Zh_tw || x.DestinationStationName.Zh_TW || "";
+        if(!destZh){
+          var dstID = String(x.DestinationStaionID || x.DestinationStationID || "").replace(/^TYMC-/,"");
+          destZh = dstID || "";
+        }
         var minCls  = min <= 3 ? "now" : min <= 8 ? "close" : "ok";
         var minLbl  = min === 0 ? "即刻" : min + " 分";
         var express = mrtIsExpress(x);
@@ -2721,7 +2773,7 @@ function renderMrtCard(data, errMsg){
           '<span class="mrt-badge ' + (express ? "express" : "local") + '">' +
             (express ? "直達車" : "普通車") + '</span>' +
           '<span class="mrt-stn">' + esc(stnLbl) + '</span>' +
-          (dest ? '<span class="mrt-dest">→ ' + esc(dest) + '</span>' : '') +
+          (destZh ? '<span class="mrt-dest">→ ' + esc(destZh) + '</span>' : '') +
           '</div>';
       }).join("") + '</div>';
     }
@@ -2738,7 +2790,6 @@ function renderMrtCard(data, errMsg){
       body +
     '</div>';
 
-  /* 手動更新按鈕：清快取並重抓 */
   var btn = $("btnMrtRefresh");
   if(btn) btn.addEventListener("click", function(){
     mrtCache = { data:null, ts:0 };
