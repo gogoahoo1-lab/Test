@@ -839,7 +839,11 @@ async function fetchAVWX(ids){
   const taf={},metar={},skips=[];
   let hard=null;
 
-  const tr=await pool(ids,3,async x=>avwxOne("taf",x));
+  // TAF 與 METAR 併發抓取。免費 AVWX 是日額度非速率限，8 併發不會被擋
+  const [tr, mr] = await Promise.all([
+    pool(ids, 8, async x => avwxOne("taf", x)),
+    pool(ids, 8, async x => avwxOne("metar", x))
+  ]);
   tr.forEach((r,n)=>{
     if(!r) return;
     if(r.err){ if(/401|403|429/.test(r.err)) hard=hard||r.err; return; }
@@ -849,7 +853,6 @@ async function fetchAVWX(ids){
   if(hard) throw new Error(hard);
   if(!Object.keys(taf).length) throw new Error(skips.length?("無可用 TAF："+skips[0]):"AVWX 沒有回傳 TAF");
 
-  const mr=await pool(ids,3,async x=>avwxOne("metar",x));
   mr.forEach((r,n)=>{
     if(!r||r.err||r.skip) return;
     const m=normAvwxMetar(r.data); if(m) metar[ids[n]]=m;
@@ -990,19 +993,25 @@ async function load(){
    "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max"+
    "&hourly=visibility,weather_code&forecast_days=5&timezone=auto&wind_speed_unit=kn";
 
-  // 三個來源彼此獨立，任何一個掛掉不該讓另外兩個的結果一起消失
   modelFail=""; quakeFail="";
-  const [j,awc,quakes]=await Promise.all([
-    withTimeout(fetch(url),20000)
-      .then(r=>r.ok?r.json():Promise.reject(new Error("HTTP "+r.status)))
-      .then(x=>Array.isArray(x)?x:[x])
-      .catch(e=>{ modelFail=netErr(e); return []; }),
-    fetchAWC().catch(e=>{ tafOK=0; tafFail=e.message; return {taf:{},metar:{}}; }),
-    fetchQuakes().catch(e=>{ quakeFail=e.message; return []; })
-  ]);
 
-  DATA=STATIONS.map((s,n)=>{
-    const b=j[n]||{},dd=b.daily||{},hh=b.hourly||{};
+  // 三個來源各自累積，任何一個回來就重畫一次
+  let modelData=[], quakeData=[];
+  let awcData={taf:{}, metar:{}};
+
+  // 先從 AVWX 快取撈已有的 TAF/METAR，讓 render() 有東西可以先畫
+  const cache=cacheAll();
+  STATIONS.forEach(s=>{
+    const icao=(s.k||"").toUpperCase();
+    if(!/^[A-Z]{4}$/.test(icao)) return;
+    const tHit=cache["taf:"+icao], mHit=cache["metar:"+icao];
+    if(tHit&&tHit.d){ const t=normAvwxTaf(tHit.d); if(t) awcData.taf[icao]=t; }
+    if(mHit&&mHit.d){ const m=normAvwxMetar(mHit.d); if(m) awcData.metar[icao]=m; }
+  });
+  const hadCache=Object.keys(awcData.taf).length>0;
+
+  function buildRow(s,n){
+    const b=modelData[n]||{},dd=b.daily||{},hh=b.hourly||{};
     const num=(arr,k)=>Array.isArray(arr)?arr[k]:null;
     const days=(Array.isArray(dd.time)?dd.time:[]).map((t,k)=>{
       let vis=null,worst=num(dd.weather_code,k);
@@ -1019,14 +1028,14 @@ async function load(){
     }).map(d=>Object.assign(d,{risk:assess(d)}));
 
     const icao=(s.k||"").toUpperCase();
-    const taf=awc.taf[icao]||null, metar=awc.metar[icao]||null;
+    const taf=awcData.taf[icao]||null, metar=awcData.metar[icao]||null;
     let tafRisk=taf?assessTAF(taf):null;
     if(ashInMetar(metar)){
       tafRisk=tafRisk||{lvl:0,notes:[],icon:"ash"};
       if(!tafRisk.notes.some(n=>/火山灰/.test(n))) tafRisk.notes.unshift("METAR 觀測到火山灰");
       tafRisk.lvl=2; tafRisk.icon="ash";
     }
-    const qn=quakeNotes(s,quakes);
+    const qn=quakeNotes(s,quakeData);
     if(qn.length){
       tafRisk=tafRisk||{lvl:0,notes:[],icon:"quake"};
       tafRisk.notes=qn.concat(tafRisk.notes);
@@ -1037,9 +1046,40 @@ async function load(){
       days, mlvl:days.reduce((m,d)=>Math.max(m,d.risk.lvl),0),
       taf, tafRisk, metar, quakes:qn, lvl:tafRisk?tafRisk.lvl:0
     });
-  });
+  }
+
+  function rebuild(){
+    DATA=STATIONS.map(buildRow);
+    render();
+  }
+
+  // 有快取就先畫一次
+  if(hadCache){
+    rebuild();
+    document.getElementById("stamp").textContent="顯示上次快取，更新中";
+  }
+
+  // 三個來源獨立進行，各自回來就重畫，不必等最慢的
+  const modelP=withTimeout(fetch(url),20000)
+    .then(r=>r.ok?r.json():Promise.reject(new Error("HTTP "+r.status)))
+    .then(x=>{ modelData=Array.isArray(x)?x:[x]; rebuild(); })
+    .catch(e=>{ modelFail=netErr(e); rebuild(); });
+
+  const awcP=fetchAWC()
+    .then(a=>{
+      // 拿到新資料才覆蓋，避免整批失敗時把快取顯示的內容清掉
+      if(Object.keys(a.taf).length||Object.keys(a.metar).length) awcData=a;
+      rebuild();
+    })
+    .catch(e=>{ tafOK=0; tafFail=e.message; rebuild(); });
+
+  const quakeP=fetchQuakes()
+    .then(q=>{ quakeData=q; rebuild(); })
+    .catch(e=>{ quakeFail=e.message; rebuild(); });
+
+  await Promise.all([modelP,awcP,quakeP]);
   fetchedAt=new Date();
-  stampText(); render();
+  stampText();
 }
 
 function renderTabs(){
