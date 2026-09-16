@@ -265,7 +265,7 @@ ul.doc li{margin:6px 0}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-11f</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-11h</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -510,8 +510,8 @@ ul.doc li{margin:6px 0}
 <!-- ============ BOARD ============ -->
 <section id="tab-board" hidden>
   <div class="card">
-    <h2>航班追蹤與 Teams 推播</h2>
-    <p>貼上你的中繼 URL，勾選要追蹤的航班，抵達或起飛時自動推播。檢查時機是每一輪 TDX 抓取完成後，所以自動更新要開著。</p>
+    <h2>航班追蹤與推播</h2>
+    <p>貼上你的中繼 URL，勾選要追蹤的航班與事件，狀態變化時自動推播。檢查時機是每一輪 TDX 抓取完成後，所以自動更新要開著。</p>
     <div class="row">
       <label class="f" style="flex:1 1 420px">中繼 URL
         <input type="text" id="hookUrl" placeholder="https://...（Teams webhook 或你的中繼端點）">
@@ -520,6 +520,16 @@ ul.doc li{margin:6px 0}
       <button class="btn ghost" id="btnWatchCheck" style="align-self:flex-end">立即檢查並推播</button>
     </div>
     <div class="row" style="margin-top:10px">
+      <label class="f" style="flex-direction:row;align-items:center;gap:7px;color:var(--txt);font-size:13.5px">
+        <input type="checkbox" id="nEvAll"> 全部事件
+      </label>
+      <span style="color:var(--line2);font-size:14px">│</span>
+      <label class="f" style="flex-direction:row;align-items:center;gap:7px;color:var(--txt);font-size:13.5px">
+        <input type="checkbox" id="nEvBoard" checked> 登機中
+      </label>
+      <label class="f" style="flex-direction:row;align-items:center;gap:7px;color:var(--txt);font-size:13.5px">
+        <input type="checkbox" id="nEvFinal" checked> 最後登機
+      </label>
       <label class="f" style="flex-direction:row;align-items:center;gap:7px;color:var(--txt);font-size:13.5px">
         <input type="checkbox" id="nEvAct" checked> 起飛／抵達
       </label>
@@ -693,7 +703,7 @@ ul.doc li{margin:6px 0}
 <section id="tab-help" hidden>
   <div class="card">
     <h2>怎麼用</h2>
-    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-11f</b>（航點含 SHI 下地島、UKB 神戶，依國家快選涵蓋日本 32 個航點）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
+    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-11h</b>（航點含 SHI 下地島、UKB 神戶，依國家快選涵蓋日本 32 個航點）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
     <ul class="doc">
       <li>桃園機場走「<b>TDX 桃園機場</b>」頁籤最省事：填 Client ID／Secret 後按立即抓取，到場與離場會一次抓齊。</li>
       <li>TDX 的 <code>$top</code> 預設值只有 <b>30 筆</b>，不分頁就只會拿到 30 班。本頁已改成自動帶 <code>$top</code>／<code>$skip</code> 分頁抓到底。</li>
@@ -1390,7 +1400,8 @@ function renderBoard(){
     boardingHtml = '<div class="bhead" style="margin-top:8px"><span class="tag boarding-tag">正在作業</span>' +
       '<h3>登機中航班</h3><span class="cnt">' + boarding.length + ' 班　（航班離開登機狀態後自動消失）</span></div>' +
       '<div class="tbox boarding-box"><table>' + thead + "<tbody>" +
-      boarding.map(rowHtml).join("") + "</tbody></table></div>";
+      boarding.map(rowHtml).join("") + "</tbody></table></div>" +
+      '<p class="note" style="margin-top:8px;color:var(--dim)">因無法取得「登機中」及「最後登機」之即時狀態，本資訊係依據 STD 前作業時程推估之狀態。</p>';
   }
 
   var shown = rows.slice(0, 4000);
@@ -1460,10 +1471,13 @@ function loadWatch(){
     if($("hookUrl")) $("hookUrl").value = hookUrl;
     var ev = JSON.parse(localStorage.getItem(NEV_KEY) || "null");
     if(ev){
-      if($("nEvAct")) $("nEvAct").checked = !!ev.act;
-      if($("nEvCx")) $("nEvCx").checked = !!ev.cx;
+      if($("nEvBoard")) $("nEvBoard").checked = ev.board !== false;
+      if($("nEvFinal")) $("nEvFinal").checked = ev.final !== false;
+      if($("nEvAct")) $("nEvAct").checked = ev.act !== false;
+      if($("nEvCx")) $("nEvCx").checked = ev.cx !== false;
       if($("nEvDelay")) $("nEvDelay").checked = !!ev.delay;
       if($("nDelayThr") && ev.thr) $("nDelayThr").value = String(ev.thr);
+      syncAllCheckbox();
     }
   }catch(e){}
   pruneNotified();
@@ -1471,6 +1485,7 @@ function loadWatch(){
 function saveEvents(){
   try{
     localStorage.setItem(NEV_KEY, JSON.stringify({
+      board: $("nEvBoard").checked, final: $("nEvFinal").checked,
       act: $("nEvAct").checked, cx: $("nEvCx").checked,
       delay: $("nEvDelay").checked, thr: parseInt($("nDelayThr").value, 10)
     }));
@@ -1552,22 +1567,28 @@ function sendHook(text){
     return fetch(hookUrl, { method: "POST", mode: "no-cors", body: body }).then(function(){ return "blind"; });
   });
 }
+function syncAllCheckbox(){
+  var ids = ["nEvBoard","nEvFinal","nEvAct","nEvCx","nEvDelay"];
+  var allOn = ids.every(function(id){ return $(id) && $(id).checked; });
+  if($("nEvAll")) $("nEvAll").checked = allOn;
+}
 function checkWatchNotify(manual){
   if(!hookUrl){ if(manual) hookStatus("還沒填中繼 URL"); return; }
   if(!Object.keys(watches).length){ if(manual) hookStatus("追蹤清單是空的"); return; }
+  var evBoard = $("nEvBoard").checked, evFinal = $("nEvFinal").checked;
   var evAct = $("nEvAct").checked, evCx = $("nEvCx").checked, evDelay = $("nEvDelay").checked;
   var thr = parseInt($("nDelayThr").value, 10);
   var queue = [];
   DB.flights.forEach(function(f){
     if(!matchWatch(f)) return;
+    var bl = boardingLevel(f);
+    if(evBoard && bl === 1 && !notified[f.id + "|boarding"]) queue.push({ f:f, kind:"boarding" });
+    if(evFinal && bl === 2 && !notified[f.id + "|finalcall"]) queue.push({ f:f, kind:"finalcall" });
     if(evCx && f.cancelled && !notified[f.id + "|cx"]) queue.push({ f:f, kind:"cx" });
     if(evAct && f.act && !notified[f.id + "|act"]) queue.push({ f:f, kind:"act" });
     if(evDelay && !f.cancelled && !f.act && f.delay != null && f.delay > thr && !notified[f.id + "|delay"]){
       queue.push({ f:f, kind:"delay" });
     }
-    var bl = boardingLevel(f);
-    if(bl === 1 && !notified[f.id + "|boarding"]) queue.push({ f:f, kind:"boarding" });
-    if(bl === 2 && !notified[f.id + "|finalcall"]) queue.push({ f:f, kind:"finalcall" });
   });
   if(!queue.length){ if(manual) hookStatus("目前沒有需要推播的異動"); return; }
   hookStatus("推播中…（" + queue.length + " 則）");
@@ -3854,9 +3875,21 @@ function shift(hhmm, mins){
       try{ localStorage.setItem(HOOK_KEY, hookUrl); }catch(e){}
     });
   }
-  ["nEvAct","nEvCx","nEvDelay","nDelayThr"].forEach(function(id){
-    if($(id)) $(id).addEventListener("change", saveEvents);
+  ["nEvBoard","nEvFinal","nEvAct","nEvCx","nEvDelay","nDelayThr"].forEach(function(id){
+    if($(id)) $(id).addEventListener("change", function(){
+      if(id !== "nDelayThr") syncAllCheckbox();
+      saveEvents();
+    });
   });
+  if($("nEvAll")){
+    $("nEvAll").addEventListener("change", function(){
+      var on = this.checked;
+      ["nEvBoard","nEvFinal","nEvAct","nEvCx","nEvDelay"].forEach(function(id){
+        if($(id)) $(id).checked = on;
+      });
+      saveEvents();
+    });
+  }
   if($("btnHookTest")){
     $("btnHookTest").addEventListener("click", function(){
       hookStatus("送出測試訊息中…");
