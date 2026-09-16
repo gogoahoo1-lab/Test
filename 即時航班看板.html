@@ -12,44 +12,45 @@
 <title>即時航班看板</title>
 <style>
 :root{
-  color-scheme:light only;        /* 關掉行動瀏覽器的強制深色，否則整頁會被自動反轉成黑底 */
-  --bg:#ededed;
-  --bg2:#f5f5f5;
+  color-scheme:light only;
+  --bg:#dce8f0;
+  --bg2:#e8f0f5;
   --panel:#ffffff;
-  --panel2:#fafafa;
-  --line:#e6e6e6;
-  --line2:#dcdcdc;
-  --txt:#000000;
-  --dim:#8a8a8a;
-  --amber:#1f1f1f;          /* 主要強調＝墨灰文字 */
-  --cyan:#2fb35f;           /* 次要強調＝深綠 */
-  --green:#76fb91;          /* 填色用薄荷綠 */
-  --good:#2fb35f;
-  --warn:#b57600;
-  --bad:#e0483c;
-  --radius:20px;
-  --shadow:0 1px 2px rgba(0,0,0,.04),0 10px 30px rgba(0,0,0,.05);
+  --panel2:#f4f8fb;
+  --line:#d0dce5;
+  --line2:#c3d4e0;
+  --txt:#1a2e3d;
+  --dim:#7a919e;
+  --amber:#1a2e3d;
+  --cyan:#3a8fa7;
+  --green:#5bc4a0;
+  --good:#3aab7a;
+  --warn:#c08a30;
+  --bad:#d45050;
+  --radius:22px;
+  --glass:rgba(255,255,255,.55);
+  --glass-border:rgba(255,255,255,.7);
+  --glass-blur:saturate(180%) blur(14px);
+  --shadow:0 1px 3px rgba(0,40,80,.04),0 8px 30px rgba(0,40,80,.07);
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-html{background:#ededed;color-scheme:light only}
+html{background:var(--bg);color-scheme:light only}
 body{
-  background:var(--bg);
+  background:
+    radial-gradient(ellipse 1100px 600px at 10% -5%, rgba(91,196,160,.18), transparent 60%),
+    radial-gradient(ellipse 900px 500px at 90% 20%, rgba(58,143,167,.12), transparent 55%),
+    var(--bg);
   color:var(--txt);
   font-family:"Outfit","Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,-apple-system,sans-serif;
-  font-size:15px;
-  font-weight:400;
-  line-height:1.55;
-  -webkit-text-size-adjust:100%;
-  -webkit-font-smoothing:antialiased;
+  font-size:15px;font-weight:400;line-height:1.55;
+  -webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;
 }
 .mono{font-family:"Outfit",ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;letter-spacing:.2px}
 .wrap{max-width:1280px;margin:0 auto;padding:0 20px 80px}
-
-/* ---------- header ---------- */
 header{background:transparent}
 .hbar{max-width:1280px;margin:0 auto;padding:30px 20px 0;display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;justify-content:space-between}
-h1{font-size:40px;font-weight:400;margin:0;letter-spacing:-1px;line-height:1.05}
+h1{font-size:38px;font-weight:400;margin:0;letter-spacing:-1px;line-height:1.05}
 h1 span{color:var(--cyan)}
 .sub{color:var(--dim);font-size:13px;margin:8px 0 0}
 .stamp{display:flex;gap:26px;flex-wrap:wrap;align-items:baseline}
@@ -57,72 +58,85 @@ h1 span{color:var(--cyan)}
 .stamp i{font-style:normal;color:var(--dim);font-size:12px;display:block;margin-top:2px}
 nav{max-width:1280px;margin:0 auto;padding:22px 20px 0;display:flex;gap:6px;flex-wrap:wrap}
 nav button{
-  background:transparent;border:none;color:var(--dim);
+  background:var(--glass);border:1px solid var(--glass-border);color:var(--dim);
   padding:9px 18px;border-radius:999px;cursor:pointer;
   font-size:14px;font-family:inherit;font-weight:500;
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  transition:background .15s,color .15s,box-shadow .15s;
 }
-nav button:hover{color:var(--txt);background:rgba(0,0,0,.045)}
-nav button[aria-selected="true"]{background:var(--green);color:#0d2f19;font-weight:600}
+nav button:hover{color:var(--txt);background:rgba(255,255,255,.75);box-shadow:0 2px 12px rgba(0,40,80,.08)}
+nav button[aria-selected="true"]{background:rgba(255,255,255,.85);color:var(--cyan);font-weight:600;box-shadow:0 2px 16px rgba(58,143,167,.15);border-color:rgba(58,143,167,.25)}
 nav button:focus-visible,.btn:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,.chip:focus-visible,th[data-sort]:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
-
-/* ---------- generic ---------- */
 section[hidden]{display:none}
-.card{background:var(--panel);border:none;border-radius:var(--radius);padding:22px;margin-top:16px;box-shadow:var(--shadow)}
+.card{
+  background:rgba(255,255,255,.7);
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  border:1px solid var(--glass-border);border-radius:var(--radius);
+  padding:22px;margin-top:16px;box-shadow:var(--shadow);
+}
 .card > h2{margin:0 0 4px;font-size:19px;font-weight:500;letter-spacing:-.3px}
 .card > h2 + p{margin:0 0 16px;color:var(--dim);font-size:13px}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--dim)}
 select,input[type=text],input[type=search],input[type=password]{
-  background:#fff;color:var(--txt);border:1px solid var(--line2);border-radius:999px;
+  background:var(--glass);color:var(--txt);
+  border:1px solid var(--glass-border);border-radius:999px;
   padding:9px 15px;font-family:inherit;font-size:14px;
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  transition:border-color .15s,box-shadow .15s;
+}
+select:focus,input[type=text]:focus,input[type=search]:focus,input[type=password]:focus{
+  border-color:rgba(58,143,167,.4);box-shadow:0 0 0 3px rgba(58,143,167,.1);
 }
 textarea{
-  background:var(--bg2);color:var(--txt);border:1px solid var(--line);border-radius:16px;
+  background:var(--glass);color:var(--txt);border:1px solid var(--glass-border);border-radius:16px;
   padding:14px 16px;font-family:inherit;font-size:13px;
   width:100%;min-height:190px;resize:vertical;line-height:1.5;
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
 }
 .btn{
-  background:#fff;color:var(--txt);border:1px solid var(--line2);border-radius:999px;
+  background:var(--glass);color:var(--txt);
+  border:1px solid var(--glass-border);border-radius:999px;
   padding:9px 18px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:500;
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  transition:background .15s,box-shadow .15s,transform .1s;
 }
-.btn:hover{background:var(--bg2);border-color:#cfcfcf}
-.btn.primary{background:var(--green);border-color:var(--green);color:#0d2f19;font-weight:600}
-.btn.primary:hover{background:#8ffca6;border-color:#8ffca6}
-.btn.ghost{background:transparent}
-.btn.danger{color:var(--bad);border-color:#f0cfcc}
+.btn:hover{background:rgba(255,255,255,.8);box-shadow:0 2px 14px rgba(0,40,80,.09)}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--cyan);border-color:var(--cyan);color:#fff}
+.btn.primary:hover{background:#4aa3b8;box-shadow:0 2px 18px rgba(58,143,167,.25)}
+.btn.ghost{background:transparent;backdrop-filter:none}
+.btn.danger{color:var(--bad);border-color:rgba(212,80,80,.3)}
 .note{color:var(--dim);font-size:12.5px}
-.msg{margin-top:12px;padding:13px 16px;border-radius:16px;font-size:13.5px;border:1px solid;line-height:1.65}
-.msg.ok{background:rgba(118,251,145,.18);border-color:rgba(47,179,95,.35);color:#14502c}
-.msg.err{background:rgba(224,72,60,.07);border-color:rgba(224,72,60,.25);color:#8c2a22}
-.msg.info{background:var(--bg2);border-color:var(--line);color:#4a4a4a}
-
-/* ---------- kpi ---------- */
+.msg{margin-top:12px;padding:13px 16px;border-radius:16px;font-size:13.5px;border:1px solid;line-height:1.65;
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur)}
+.msg.ok{background:rgba(91,196,160,.15);border-color:rgba(58,171,122,.3);color:#14503a}
+.msg.err{background:rgba(212,80,80,.08);border-color:rgba(212,80,80,.25);color:#8c2a22}
+.msg.info{background:rgba(255,255,255,.5);border-color:var(--line);color:#3a5568}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:18px}
-.kpi{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.kpi{background:rgba(255,255,255,.55);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  border:1px solid var(--glass-border);border-radius:16px;padding:14px 16px}
 .kpi u{text-decoration:none;display:flex;align-items:center;gap:6px;color:var(--dim);font-size:12px}
-.kpi u::before{content:"";width:7px;height:7px;border-radius:2px;background:#c9c9c9;display:inline-block}
+.kpi u::before{content:"";width:7px;height:7px;border-radius:2px;background:var(--line2);display:inline-block}
 .kpi b{font-size:26px;font-weight:400;letter-spacing:-.5px;display:block;margin-top:4px}
-.kpi.c u::before{background:var(--green)}
-.kpi.g u::before{background:var(--good)}
-.kpi.r u::before{background:var(--bad)}
-
-/* ---------- chips ---------- */
+.kpi.c u::before{background:var(--cyan)} .kpi.g u::before{background:var(--good)} .kpi.r u::before{background:var(--bad)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{
-  background:#fff;border:1px solid var(--line2);color:#555;
+  background:var(--glass);border:1px solid var(--glass-border);color:var(--dim);
   padding:6px 14px;border-radius:999px;font-size:13px;cursor:pointer;font-family:inherit;
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  transition:background .15s,color .15s,box-shadow .15s;
 }
-.chip:hover{color:var(--txt);border-color:#c9c9c9}
-.chip[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:#0d2f19;font-weight:600}
+.chip:hover{color:var(--txt);box-shadow:0 2px 10px rgba(0,40,80,.06)}
+.chip[aria-pressed="true"]{background:var(--cyan);border-color:var(--cyan);color:#fff;font-weight:500;box-shadow:0 2px 14px rgba(58,143,167,.2)}
 .chip .n{opacity:.55;margin-left:6px;font-size:11.5px}
-
-/* ---------- 收納式複選面板 ---------- */
-.alpick{border:1px solid var(--line);border-radius:16px;background:var(--panel2);overflow:hidden}
+.alpick{border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.5);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);overflow:hidden}
 .alpick>summary{cursor:pointer;list-style:none;padding:11px 16px;display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--txt)}
 .alpick>summary::-webkit-details-marker{display:none}
+
 .alpick>summary::before{content:"\25B8";color:var(--dim);font-size:11px;transition:transform .15s}
 .alpick[open]>summary::before{transform:rotate(90deg)}
-.alpick>summary .pill{margin-left:auto;font-size:12px;color:#555;background:#fff;border:1px solid var(--line2);border-radius:999px;padding:2px 11px}
+.alpick>summary .pill{margin-left:auto;font-size:12px;color:var(--dim);background:var(--glass);border:1px solid var(--glass-border);border-radius:999px;padding:2px 11px}
 .altools{display:flex;gap:8px;align-items:center;padding:10px 12px;border-top:1px solid var(--line);flex-wrap:wrap}
 .altools .alq{flex:1;min-width:130px}
 .btn.tiny{padding:5px 12px;font-size:12px}
@@ -130,117 +144,129 @@ textarea{
 .cctools .note{font-size:12px;margin-right:2px}
 .chip.tiny{padding:4px 11px;font-size:12px}
 .allist{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:2px;padding:8px 10px 12px;max-height:230px;overflow:auto;border-top:1px solid var(--line)}
-.alrow{display:flex;align-items:center;gap:8px;padding:5px 9px;border-radius:10px;font-size:13px;cursor:pointer;color:#555}
-.alrow:hover{background:rgba(0,0,0,.04)}
-.alrow.on{background:var(--green);color:#0d2f19}
-.alrow input{margin:0;accent-color:#2fb35f}
+.alrow{display:flex;align-items:center;gap:8px;padding:5px 9px;border-radius:10px;font-size:13px;cursor:pointer;color:var(--dim)}
+.alrow:hover{background:rgba(58,143,167,.08)}
+.alrow.on{background:rgba(91,196,160,.2);color:#14503a}
+.alrow input{margin:0;accent-color:var(--cyan)}
 .alrow b{font-family:inherit;font-weight:600;font-size:12.5px;min-width:28px}
 .alrow span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .alrow i{font-style:normal;font-size:11.5px;opacity:.6}
-
-/* ---------- table ---------- */
-.tbox{overflow:auto;margin-top:14px;border:1px solid var(--line);border-radius:16px;max-height:640px;background:#fff}
+.tbox{overflow:auto;margin-top:14px;border:1px solid var(--line);border-radius:16px;max-height:640px;background:rgba(255,255,255,.65);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur)}
 table{border-collapse:collapse;width:100%;font-size:13.5px}
-th,td{padding:10px 14px;text-align:left;white-space:nowrap;border-bottom:1px solid #f1f1f1}
-thead th{position:sticky;top:0;background:#fafafa;color:var(--dim);font-weight:500;font-size:12px;z-index:2;border-bottom:1px solid var(--line)}
+th,td{padding:10px 14px;text-align:left;white-space:nowrap;border-bottom:1px solid rgba(208,220,229,.5)}
+thead th{position:sticky;top:0;background:rgba(244,248,251,.92);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);color:var(--dim);font-weight:500;font-size:12px;z-index:2;border-bottom:1px solid var(--line)}
 th[data-sort]{cursor:pointer;user-select:none}
 th[data-sort]:hover{color:var(--txt)}
-th.sorted{color:var(--txt);font-weight:600}
-tbody tr:hover{background:#fafafa}
+th.sorted{color:var(--cyan);font-weight:600}
+tbody tr:hover{background:rgba(58,143,167,.04)}
 tbody tr:last-child td{border-bottom:none}
 td.num{text-align:right}
 .tag{padding:3px 10px;border-radius:999px;font-size:11.5px;border:1px solid;font-weight:500}
-.tag.A{color:#14502c;border-color:transparent;background:var(--green)}
-.tag.D{color:#4a4a4a;border-color:var(--line2);background:#fff}
+.tag.A{color:#14503a;border-color:transparent;background:rgba(91,196,160,.3)}
+.tag.D{color:var(--dim);border-color:var(--line2);background:rgba(255,255,255,.6)}
 .st{font-size:12.5px}
 .st.ok{color:var(--good)} .st.late{color:var(--warn)} .st.cx{color:var(--bad)}
-
-/* ---------- 狀態欄 ---------- */
 .stcell{display:flex;flex-direction:column;gap:2px;min-width:118px}
 .stcell .lead{font-size:12.5px;font-weight:600}
 .stcell .sub{font-size:11.5px;color:var(--dim);margin:0}
-.stcell .lead.done{color:var(--good)}
-.stcell .lead.wait{color:#555}
-.stcell .lead.late{color:var(--warn)}
-.stcell .lead.cx{color:var(--bad)}
-
-/* ---------- 定期班表 7 日格 ---------- */
+.stcell .lead.done{color:var(--good)} .stcell .lead.wait{color:var(--dim)} .stcell .lead.late{color:var(--warn)} .stcell .lead.cx{color:var(--bad)}
+.stcell .lead.boarding{color:var(--cyan);font-weight:600}
+.stcell .lead.final{color:#c08a30;font-weight:700}
+.boarding-tag{background:var(--green);color:#0d3a28;border-color:var(--green);animation:pulse 1.8s ease-in-out infinite}
+.boarding-box{border:2px solid var(--green);box-shadow:0 0 16px rgba(91,196,160,.2);background:rgba(255,255,255,.7)}
+.boarding-box tbody tr{background:rgba(91,196,160,.05)}
+.boarding-box tbody tr:hover{background:rgba(91,196,160,.12)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.wbtn{background:transparent;border:none;cursor:pointer;font-size:17px;line-height:1;color:var(--line2);padding:2px 4px;font-family:inherit}
+.wbtn:hover{color:var(--dim)} .wbtn.on{color:var(--cyan)}
 .gsday{text-align:center;font-size:12px;white-space:nowrap}
 .gsday.we{color:var(--cyan)}
-.gs-on{color:var(--good);font-weight:700}
-.gs-off{color:#d4d4d4}
+.gs-on{color:var(--good);font-weight:700} .gs-off{color:#c8d4dc}
 .gsrow-dir{font-size:11.5px}
-
-/* ---------- 看板分段標題 ---------- */
+.legs{white-space:normal;min-width:190px}
+.leg{display:inline-flex;align-items:baseline;gap:6px;margin:2px 6px 2px 0;padding:2px 9px;border-radius:999px;background:rgba(244,248,251,.8);border:1px solid var(--line);white-space:nowrap}
+.leg b{font-weight:600;font-size:12.5px}
+.leg em{font-style:normal;font-variant-numeric:tabular-nums;font-size:12.5px;color:var(--dim)}
+.leg i{font-style:normal;font-size:11px;color:#fff;background:var(--line2);border-radius:4px;padding:0 4px}
+.leg i.A{background:var(--cyan)}
 .bhead{display:flex;align-items:baseline;gap:10px;margin:22px 0 8px}
 .bhead h3{margin:0;font-size:16px;font-weight:500}
-.bhead .cnt{font-size:12.5px;color:var(--dim)}
-.bhead .tag{margin-left:2px}
+.bhead .cnt{font-size:12.5px;color:var(--dim)} .bhead .tag{margin-left:2px}
 .al{font-weight:500}
 .empty{padding:48px 16px;text-align:center;color:var(--dim);font-size:14px}
-
-/* ---------- bars ---------- */
 .bars{display:flex;flex-direction:column;gap:8px;margin-top:16px}
 .bar{display:grid;grid-template-columns:140px 1fr 74px;gap:12px;align-items:center;font-size:13px}
-.bar .track{background:#f1f1f1;border-radius:999px;height:18px;overflow:hidden;display:flex}
-.bar .fa{background:var(--green);height:100%}
-.bar .fd{background:#bdbdbd;height:100%}
+.bar .track{background:rgba(208,220,229,.4);border-radius:999px;height:18px;overflow:hidden;display:flex}
+.bar .fa{background:var(--green);height:100%} .bar .fd{background:var(--cyan);height:100%;opacity:.5}
 .bar .v{text-align:right;color:var(--dim)}
 .hist{display:flex;align-items:flex-end;gap:3px;height:150px;margin-top:16px;padding-top:8px}
 .hist .h{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;gap:2px;min-width:0}
 .hist .h .col{display:flex;flex-direction:column;justify-content:flex-end;height:100%;gap:1px}
 .hist .h .sa{background:var(--green);border-radius:3px 3px 0 0}
-.hist .h .sd{background:#bdbdbd;border-radius:3px 3px 0 0}
+.hist .h .sd{background:var(--cyan);opacity:.45;border-radius:3px 3px 0 0}
 .hist .h span{text-align:center;color:var(--dim);font-size:10.5px;padding-top:4px}
 .legend{display:flex;gap:18px;color:var(--dim);font-size:12.5px;margin-top:12px;flex-wrap:wrap}
 .legend i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:6px;vertical-align:-1px}
 .chart{width:100%;height:auto;display:block;margin-top:16px}
-.callout{background:var(--bg2);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:16px;padding:14px 16px;margin-top:16px;font-size:13.5px;line-height:1.75}
+.callout{background:rgba(255,255,255,.5);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  border:1px solid var(--line);border-left:3px solid var(--cyan);border-radius:16px;padding:14px 16px;margin-top:16px;font-size:13.5px;line-height:1.75}
 .callout b{color:var(--txt);font-weight:600}
 .delta{font-size:12px;margin-left:6px}
 .delta.up{color:var(--good)} .delta.down{color:var(--bad)} .delta.flat{color:var(--dim)}
-.hot{background:rgba(224,72,60,.05)}
+.hot{background:rgba(212,80,80,.06)}
 .dow{display:flex;gap:3px}
-.dow b{
-  width:22px;height:22px;line-height:21px;text-align:center;border-radius:7px;font-size:11.5px;font-weight:500;
-  background:#f2f2f2;color:#c2c2c2;border:1px solid #ececec
-}
-.dow b.on{background:var(--green);color:#0d2f19;border-color:var(--green)}
+.dow b{width:22px;height:22px;line-height:21px;text-align:center;border-radius:7px;font-size:11.5px;font-weight:500;
+  background:rgba(208,220,229,.3);color:#b0c0cc;border:1px solid var(--line)}
+.dow b.on{background:var(--green);color:#0d3a28;border-color:var(--green)}
 details{margin-top:14px}
 summary{cursor:pointer;color:var(--dim);font-size:13.5px}
 summary:hover{color:var(--txt)}
-code{background:#f2f2f2;padding:2px 7px;border-radius:6px;font-size:12.5px;color:#111}
+code{background:rgba(255,255,255,.6);border:1px solid var(--line);padding:2px 7px;border-radius:6px;font-size:12.5px;color:var(--txt)}
 .map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:14px}
 .map-grid label{font-size:12px;color:var(--dim);display:flex;flex-direction:column;gap:5px}
 .map-grid select{font-size:13px}
 h3{font-size:15px;margin:26px 0 0;font-weight:500}
-ul.doc{color:#555;font-size:13.5px;padding-left:20px}
+ul.doc{color:var(--dim);font-size:13.5px;padding-left:20px}
 ul.doc li{margin:6px 0}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#dce8f0;--bg2:#e8f0f5;--panel:#ffffff;--panel2:#f4f8fb;--line:#d0dce5;--line2:#c3d4e0;
+    --txt:#1a2e3d;--dim:#7a919e;--cyan:#3a8fa7;--green:#5bc4a0;--good:#3aab7a;--warn:#c08a30;--bad:#d45050}
+  html,body{background:#dce8f0;color:#1a2e3d}
+}
 @media(max-width:640px){
   h1{font-size:28px}
   .bar{grid-template-columns:100px 1fr 58px;font-size:12px}
-  .kpi b{font-size:22px}
-  .stamp b{font-size:22px}
+  .kpi b{font-size:22px} .stamp b{font-size:22px}
   .wrap{padding:0 14px 60px}
   .hbar,nav{padding-left:14px;padding-right:14px}
   .card{padding:16px;border-radius:16px}
 }
-/* 系統設定深色時，強制維持同一組淺色值，避免使用者代理自行套色 */
-@media (prefers-color-scheme: dark){
-  :root{
-    --bg:#ededed; --bg2:#f5f5f5; --panel:#ffffff; --panel2:#fafafa;
-    --line:#e6e6e6; --line2:#dcdcdc; --txt:#000000; --dim:#8a8a8a;
-    --amber:#1f1f1f; --cyan:#2fb35f; --green:#76fb91;
-    --good:#2fb35f; --warn:#b57600; --bad:#e0483c;
-  }
-  html,body{background:#ededed;color:#000}
-  .card,.tbox,table,thead th,tbody tr:hover{background:#ffffff}
-  thead th{background:#fafafa}
-  select,input[type=text],input[type=search],input[type=password],.btn,.chip{background:#ffffff;color:#000}
-  textarea{background:#f5f5f5;color:#000}
-}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-
+/* ── 即時影像 ── */
+.cam-stations{display:flex;flex-direction:column;gap:28px;margin-top:4px}
+.cam-station-hd{display:flex;align-items:baseline;gap:10px;margin:0 2px 12px}
+.cam-station-hd h3{margin:0;font-size:19px;font-weight:500;letter-spacing:-.3px}
+.cam-station-hd .code{font-size:12px;color:var(--dim);background:rgba(208,220,229,.4);border-radius:7px;padding:2px 9px;font-variant-numeric:tabular-nums}
+.cam-grid{display:grid;grid-template-columns:1fr;gap:20px}
+@media(min-width:900px){.cam-grid{grid-template-columns:1fr 1fr}}
+.cam-item{background:rgba(255,255,255,.55);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  border:1px solid var(--glass-border);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
+.cam-hd{display:flex;align-items:baseline;gap:10px;margin:2px 2px 12px;flex-wrap:wrap}
+.cam-hd h3{margin:0;font-size:16px;font-weight:500;letter-spacing:-.3px}
+.cam-hd .live{font-size:11px;color:#fff;background:var(--bad);border-radius:6px;padding:2px 8px;font-weight:500;display:inline-flex;align-items:center;gap:5px;margin-left:auto}
+.cam-hd .live::before{content:"";width:6px;height:6px;border-radius:50%;background:#fff;display:inline-block;animation:pulse 1.8s ease-in-out infinite}
+.cam-frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#0a1520}
+.cam-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.cam-note{margin:10px 2px 2px;font-size:12px;color:var(--dim)}
+.cam-note a{color:var(--cyan);text-decoration:none}
+.cam-note a:hover{text-decoration:underline}
+/* ── 航班地圖（嵌入開源 ADS-B 地圖）── */
+.fmap-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:14px}
+.fmap-frame{position:relative;width:100%;height:620px;border-radius:16px;overflow:hidden;border:1px solid var(--glass-border);background:#0a1520}
+.fmap-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.fmap-fallback{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:30px;text-align:center;color:var(--dim);background:var(--panel2)}
+.fmap-fallback h3{margin:0;font-size:17px;font-weight:500;color:var(--txt)}
+.fmap-fallback p{margin:0;max-width:440px;font-size:13.5px;line-height:1.7}
 </style>
 </head>
 <body>
@@ -249,7 +275,7 @@ ul.doc li{margin:6px 0}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-11a</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-11j</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -258,12 +284,13 @@ ul.doc li{margin:6px 0}
     </div>
   </div>
   <nav id="nav">
-    <button data-tab="tdx" aria-selected="true">TDX 桃園機場</button>
-    <button data-tab="import" aria-selected="false">資料匯入</button>
+    <button data-tab="tdx" aria-selected="true">資料匯入</button>
     <button data-tab="board" aria-selected="false">到離看板</button>
     <button data-tab="airline" aria-selected="false">航空公司</button>
     <button data-tab="sched" aria-selected="false">班表分析</button>
     <button data-tab="otd" aria-selected="false">準點分析</button>
+    <button data-tab="map" aria-selected="false">航班地圖</button>
+    <button data-tab="cam" aria-selected="false">即時影像</button>
     <button data-tab="help" aria-selected="false">格式說明</button>
   </nav>
 </header>
@@ -370,11 +397,10 @@ ul.doc li{margin:6px 0}
     抓取時會自動帶 <code>$top</code> 與 <code>$skip</code> 分頁（每頁 1000 筆），直到取完全部資料為止。
     遇到 <code>429</code>（呼叫頻率超限）會自動退避重試；若仍失敗，把「請求間隔」調長或減少場站數。Client Secret 不會顯示在畫面上，僅存在此瀏覽器。
   </div>
-</section>
 
-<!-- ============ IMPORT ============ -->
-<section id="tab-import" hidden>
-  <div class="card">
+  <div style="margin-top:28px;border-top:2px solid var(--line);padding-top:6px"></div>
+
+<div class="card">
     <h2>貼上航班資料</h2>
     <p>支援 JSON 陣列、含巢狀陣列的 JSON 物件、CSV／TSV。TDX 航班 FIDS、桃園機場開放資料、自建報表都可直接貼。</p>
     <textarea id="raw" placeholder='貼在這裡，例如：
@@ -487,12 +513,67 @@ ul.doc li{margin:6px 0}
 
 </details>
 </div>
-
 </section>
 
-
-<!-- ============ BOARD ============ -->
+<!-- ============ BOARD ============ --><!-- ============ BOARD ============ -->
 <section id="tab-board" hidden>
+  <div class="card">
+    <h2>航班追蹤與推播</h2>
+    <p>貼上你的中繼 URL，勾選要追蹤的航班與事件，狀態變化時自動推播。檢查時機是每一輪 TDX 抓取完成後，所以自動更新要開著。</p>
+    <div class="row">
+      <label class="f" style="flex:1 1 420px">中繼 URL
+        <input type="text" id="hookUrl" placeholder="https://...（Teams webhook 或你的中繼端點）">
+      </label>
+      <button class="btn" id="btnHookTest" style="align-self:flex-end">送出測試訊息</button>
+      <button class="btn ghost" id="btnWatchCheck" style="align-self:flex-end">立即檢查並推播</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label class="f" style="flex-direction:row;align-items:center;gap:7px;color:var(--txt);font-size:13.5px">
+        <input type="checkbox" id="nEvAll"> 全部事件
+      </label>
+      <span style="color:var(--line2);font-size:14px">│</span>
+      <label class="f" style="flex-direction:row;align-items:center;gap:7px;color:var(--txt);font-size:13.5px">
+        <input type="checkbox" id="nEvBoard" checked> 登機中
+      </label>
+      <label class="f" style="flex-direction:row;align-items:center;gap:7px;color:var(--txt);font-size:13.5px">
+        <input type="checkbox" id="nEvFinal" checked> 最後登機
+      </label>
+      <label class="f" style="flex-direction:row;align-items:center;gap:7px;color:var(--txt);font-size:13.5px">
+        <input type="checkbox" id="nEvAct" checked> 起飛／抵達
+      </label>
+      <label class="f" style="flex-direction:row;align-items:center;gap:7px;color:var(--txt);font-size:13.5px">
+        <input type="checkbox" id="nEvCx" checked> 取消
+      </label>
+      <label class="f" style="flex-direction:row;align-items:center;gap:7px;color:var(--txt);font-size:13.5px">
+        <input type="checkbox" id="nEvDelay" checked> 預估延誤超過
+      </label>
+      <label class="f">
+        <select id="nDelayThr"><option value="15">15 分</option><option value="30" selected>30 分</option><option value="60">60 分</option></select>
+      </label>
+      <span class="note" id="hookStatus" style="align-self:flex-end;padding-bottom:9px"></span>
+    </div>
+    <div class="row" style="margin-top:14px;border-top:1px solid var(--line);padding-top:14px">
+      <label class="f">航班號
+        <input type="text" id="wNo" placeholder="JX800" size="9">
+      </label>
+      <label class="f">方向
+        <select id="wDir"><option value="*">出發＋抵達</option><option value="D">只出發</option><option value="A">只抵達</option></select>
+      </label>
+      <label class="f">場站
+        <select id="wStn"><option value="*">全部場站</option><option value="TPE">TPE</option><option value="RMQ">RMQ</option><option value="KHH">KHH</option><option value="TSA">TSA</option></select>
+      </label>
+      <button class="btn" id="btnWatchAdd" style="align-self:flex-end">加入追蹤</button>
+    </div>
+    <div style="margin-top:12px">
+      <div class="note" style="margin-bottom:6px">追蹤清單（也可以直接點下方看板每一列的 ☆）</div>
+      <div class="chips" id="watchChips"></div>
+    </div>
+    <div class="note" style="margin-top:10px">
+      同一筆航班的同一種事件只會推一次，重開分頁也不會重複。中繼 URL 與追蹤清單存在這台裝置。
+      若瀏覽器因跨網域限制讀不到回應，系統會改用盲送模式，這時無法確認對方是否真的收到，請以 Teams 實際收訊為準。
+    </div>
+  </div>
+
   <div class="card">
     <h2>到離場看板</h2>
     <div class="row" style="margin-top:10px">
@@ -503,7 +584,7 @@ ul.doc li{margin:6px 0}
         <select id="fDate"><option value="all">全部日期</option></select>
       </label>
       <label class="f">狀態
-        <select id="fStatus"><option value="all">全部狀態</option><option value="ontime">準點（±15 分內）</option><option value="late">延誤逾 15 分</option><option value="cancel">取消</option></select>
+        <select id="fStatus"><option value="all">全部狀態</option><option value="boarding">登機中／最後登機</option><option value="ontime">準點（±15 分內）</option><option value="late">延誤逾 15 分</option><option value="cancel">取消</option></select>
       </label>
       <label class="f">搜尋航班／航點
         <input type="search" id="fSearch" placeholder="JX820 或 NRT" size="16">
@@ -530,7 +611,7 @@ ul.doc li{margin:6px 0}
     <div id="alAirlines" style="margin-top:8px"></div>
     <div class="kpis" id="alKpis"></div>
     <div class="bars" id="alBars"></div>
-    <div class="legend"><span><i style="background:var(--green)"></i>到場</span><span><i style="background:#bdbdbd"></i>離場</span></div>
+    <div class="legend"><span><i style="background:var(--green)"></i>到場</span><span><i style="background:rgba(58,143,167,.4)"></i>離場</span></div>
     <div class="tbox"><table id="alTable"></table></div>
   </div>
 </section>
@@ -626,11 +707,52 @@ ul.doc li{margin:6px 0}
   </div>
 </section>
 
+<!-- ============ CAM ============ -->
+<section id="tab-cam" hidden>
+  <div class="card">
+    <h2>各站即時影像</h2>
+    <p>桃園與高雄兩站的機場即時影像（24 小時 YouTube 直播）。畫面來自航空愛好者長期經營的公開直播，非機場官方頁面（官方頁面設有防嵌入限制，無法直接內嵌）。需要連線才能播放。</p>
+    <div class="cam-stations" id="camGrid"></div>
+  </div>
+</section>
+
+<!-- ============ MAP ============ -->
+<section id="tab-map" hidden>
+  <div class="card">
+    <h2>航班即時地圖</h2>
+    <p>嵌入開源 ADS-B 即時航班地圖（globe.airplanes.live），可對準各站空域檢視即時航機位置與軌跡。此為社群營運的公開服務，非商業追蹤軟體。</p>
+    <div class="fmap-toolbar">
+      <label class="f">對準機場
+        <select id="fmapAirport">
+          <option value="RCTP" selected>桃園 TPE（RCTP）</option>
+          <option value="RCKH">高雄 KHH（RCKH）</option>
+          <option value="RCSS">松山 TSA（RCSS）</option>
+          <option value="RCMQ">台中 RMQ（RCMQ）</option>
+          <option value="">全部（台灣周邊）</option>
+        </select>
+      </label>
+      <label class="f">來源
+        <select id="fmapSrc">
+          <option value="airplanes" selected>airplanes.live</option>
+          <option value="adsbfi">adsb.fi</option>
+        </select>
+      </label>
+      <button class="btn primary" id="btnFmapLoad">載入地圖</button>
+      <button class="btn ghost" id="btnFmapOpen">在新分頁開啟</button>
+      <span class="note" id="fmapStatus" style="align-self:flex-end;padding-bottom:9px"></span>
+    </div>
+    <div class="fmap-frame" id="fmapFrame"></div>
+    <div class="note" style="margin-top:8px">
+      若地圖區塊一片空白，代表該來源目前封鎖了跨站嵌入。可按「在新分頁開啟」直接使用，或改用「航班軌跡」的自建版本（若已安裝）。地圖資料為社群 ADS-B 網路提供，涵蓋範圍與更新率視收訊站分布而定。
+    </div>
+  </div>
+</section>
+
 <!-- ============ HELP ============ -->
 <section id="tab-help" hidden>
   <div class="card">
     <h2>怎麼用</h2>
-    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-11a</b>（航點含 SHI 下地島、UKB 神戶，依國家快選涵蓋日本 32 個航點）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
+    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-11j</b>（航點含 SHI 下地島、UKB 神戶，依國家快選涵蓋日本 32 個航點）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
     <ul class="doc">
       <li>桃園機場走「<b>TDX 桃園機場</b>」頁籤最省事：填 Client ID／Secret 後按立即抓取，到場與離場會一次抓齊。</li>
       <li>TDX 的 <code>$top</code> 預設值只有 <b>30 筆</b>，不分頁就只會拿到 30 班。本頁已改成自動帶 <code>$top</code>／<code>$skip</code> 分頁抓到底。</li>
@@ -669,6 +791,8 @@ ul.doc li{margin:6px 0}
       <li>存下來的 <code>航班資料_YYYY-MM-DD.json</code> 可隨時用「資料匯入」的讀入資料檔接回來，<b>可一次多選</b>整個月的檔案，重複讀同一天不會重複計算。</li>
       <li>瀏覽器本機儲存約 5MB，所以只保存「本機保留天數」內的資料（預設 21 天），且以精簡格式存放。要看更早的月份，把當時的每日檔案讀回來即可——讀進來的資料在關掉分頁前都能分析。</li>
       <li>場站篩選固定列出 TPE、RMQ、KHH、TSA 四站（後面數字是資料庫裡的筆數，0 代表還沒抓過），其餘場站依實際資料出現。</li>
+      <li>到離看板會自動判斷登機階段：離場航班、尚未起飛、距排定起飛 40 分鐘以內顯示「登機中」，15 分鐘以內顯示「最後登機」。TDX 不提供登機狀態，這是用時間推算的。若資料來源本身含有「登機中」「Boarding」「Final Call」等文字（非 TDX），也會直接辨識。正在登機的航班會浮到看板最上方的綠框置頂區，拿到實際起飛時間後自動消失。</li>
+      <li>追蹤中的航班進入登機或最後登機時，也會推播到你的 Teams 中繼 URL。</li>
       <li>定期班表的「航點篩選」可依國家快速選取：展開面板後上方會列出目前航點涵蓋的國家／地區，點一下就勾選該國所有航點，再點一次取消；也可以在下方逐一勾選單一航點，兩種方式可以混用。</li>
       <li>各航班表的「可比對班次」門檻可調；準點率低於 60% 的航班會以紅底標示。</li>
     </ul>
@@ -1165,6 +1289,7 @@ function filterBoard(){
     if(sel.length && sel.indexOf(f.airline) < 0) return false;
     if(q && (f.flightNo.indexOf(q) < 0 && String(f.peer).indexOf(q) < 0 && String(aptName(f.peer)).indexOf(q) < 0)) return false;
     if(st === "cancel" && !f.cancelled) return false;
+    if(st === "boarding" && !(boardingLevel(f) > 0 && !f.cancelled && !f.act)) return false;
     if(st === "late" && !(f.delay != null && f.delay > 15 && !f.cancelled)) return false;
     if(st === "ontime" && !(f.delay != null && Math.abs(f.delay) <= 15 && !f.cancelled)) return false;
     return true;
@@ -1175,14 +1300,47 @@ function filterBoard(){
    渲染：看板
    ========================================================= */
 /* 狀態欄：先講「到底飛了沒」，再講準點與否，最後帶上來源的備註文字。 */
+/* 從狀態文字判斷登機階段：TDX 常見值包含「登機中」「Boarding」「最後登機」「Final Call」「報到中」「準時」等。
+   boarding 分三級：2=最後登機，1=登機中，0=其他。 */
+function boardingLevel(f){
+  // 1) 文字判斷（非 TDX 來源可能直接給登機狀態）
+  var st = String(f.status || "").trim().toUpperCase();
+  if(/最後登機|FINAL.?CALL|LAST.?CALL|GATE.?CLOS/.test(st)) return 2;
+  if(/登機中|BOARDING|NOW.?BOARDING|GATE.?OPEN/.test(st)) return 1;
+
+  // 2) 時間推算：僅限離場、未起飛、未取消、當天航班
+  if(f.dir !== "D" || f.act || f.cancelled) return 0;
+  if(!f.sched || !f.date) return 0;
+  if(f.date !== twDate()) return 0;
+
+  var refTime = f.est || f.sched;
+  var depMin = toMin(refTime);
+  if(depMin == null) return 0;
+
+  var nowTW = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
+  var nowMin = nowTW.getHours() * 60 + nowTW.getMinutes();
+  var diff = depMin - nowMin;
+  if(diff > 720) diff -= 1440;
+  if(diff < -720) diff += 1440;
+
+  if(diff < -5) return 0;       // 過了起飛時間 5 分以上，可能已起飛
+  if(diff <= 15) return 2;      // 起飛前 15 分內 → 最後登機
+  if(diff <= 40) return 1;      // 起飛前 40 分內 → 登機中
+  return 0;
+}
 function statusCell(f){
   var arr = f.dir === "A";
+  var bl = boardingLevel(f);
   var lead, cls, parts = [];
 
   if(f.cancelled){
     lead = "取消"; cls = "cx";
   }else if(f.act){
     lead = arr ? "已抵達" : "已離場"; cls = "done";
+  }else if(bl === 2){
+    lead = "最後登機"; cls = "boarding final";
+  }else if(bl === 1){
+    lead = "登機中"; cls = "boarding";
   }else{
     lead = arr ? "尚未抵達" : "尚未離場"; cls = "wait";
     parts.push(f.est ? "預估 " + f.est : "僅表定");
@@ -1196,7 +1354,7 @@ function statusCell(f){
 
   // 來源備註若跟上面已經講過的意思重複（已到達 vs 已抵達、取消 vs 取消），就不再重複一次
   var remark = String(f.status || "").trim();
-  var dup = /^(已?(到達|抵達|降落|起飛|離站|出發)|取消|延誤|準點|on ?time|arrived|landed|departed|delayed|cancell?ed)$/i;
+  var dup = /^(已?(到達|抵達|降落|起飛|離站|出發)|取消|延誤|準點|登機中?|最後登機|報到中|on ?time|arrived|landed|departed|delayed|cancell?ed|boarding|final.?call|last.?call|gate.?clos(ing|ed)|now.?boarding|gate.?open|open)$/i;
   if(remark && !dup.test(remark)) parts.push(esc(remark));
 
   return '<div class="stcell"><span class="lead ' + cls + '">' + esc(lead) + "</span>" +
@@ -1221,9 +1379,11 @@ function renderBoard(){
   var late = withDelay.filter(function(f){ return f.delay > 15; }).length;
   var cx = rows.filter(function(f){ return f.cancelled; }).length;
   var peers = {}; rows.forEach(function(f){ if(f.peer) peers[f.peer] = 1; });
+  var nBoarding = rows.filter(function(f){ return boardingLevel(f) > 0 && !f.cancelled && !f.act; }).length;
   $("boardKpis").innerHTML =
     kpi("", "篩選後班次", rows.length) +
     kpi("c", "到場／離場", rows.filter(function(f){return f.dir==="A";}).length + " ／ " + rows.filter(function(f){return f.dir==="D";}).length) +
+    (nBoarding ? kpiRaw("g", "登機中", '<span style="color:var(--cyan);font-weight:700">' + nBoarding + " 班</span>") : "") +
     kpi("g", "準點率", withDelay.length ? Math.round(ontime/withDelay.length*100) + "%" : "—") +
     kpi("r", "延誤／取消", late + " ／ " + cx) +
     kpi("", "航點數", Object.keys(peers).length);
@@ -1233,13 +1393,17 @@ function renderBoard(){
     ["peer","航點"], ["act","實際／預估"], ["terminal","航廈"],
     ["gate","門"], ["counter","櫃檯"], ["belt","轉盤"], ["aircraft","機型"], ["date","日期"]
   ];
-  var thead = "<thead><tr>" + head.map(function(h){
+  var thead = "<thead><tr><th>追蹤</th>" + head.map(function(h){
     return '<th data-sort="' + h[0] + '" tabindex="0" class="' + (boardSort.key === h[0] ? "sorted" : "") + '">' +
       h[1] + (boardSort.key === h[0] ? (boardSort.dir > 0 ? " ↑" : " ↓") : "") + "</th>";
   }).join("") + "</tr></thead>";
 
   function rowHtml(f){
+    var on = matchWatch(f);
     return "<tr>" +
+      '<td><button type="button" class="wbtn' + (on ? " on" : "") + '" data-wno="' + esc(f.flightNo) +
+        '" data-wdir="' + f.dir + '" data-wstn="' + esc(f.station || "*") + '" title="追蹤這支航班">' +
+        (on ? "★" : "☆") + "</button></td>" +
       "<td>" + statusCell(f) + "</td>" +
       '<td class="mono">' + esc(f.station || "—") + "</td>" +
       '<td class="mono">' + esc(f.sched || "—") + "</td>" +
@@ -1268,8 +1432,25 @@ function renderBoard(){
       '<span class="cnt">' + list.length + " 班" + esc(scopeTxt) + "</span></div>" +
       '<div class="tbox"><table>' + thead + "<tbody>" +
       (list.length ? list.map(rowHtml).join("")
-                   : '<tr><td colspan="13" class="empty">這個條件下沒有' + title + "。</td></tr>") +
+                   : '<tr><td colspan="14" class="empty">這個條件下沒有' + title + "。</td></tr>") +
       "</tbody></table></div>";
+  }
+
+  // 正在作業的航班（登機中、最後登機）置頂
+  var boarding = rows.filter(function(f){ return boardingLevel(f) > 0 && !f.cancelled && !f.act; });
+  boarding.sort(function(a,b){
+    var la = boardingLevel(a), lb = boardingLevel(b);
+    if(la !== lb) return lb - la;   // 最後登機排最前
+    var ta = (a.sched || "99:99"), tb2 = (b.sched || "99:99");
+    return ta < tb2 ? -1 : (ta > tb2 ? 1 : 0);
+  });
+  var boardingHtml = "";
+  if(boarding.length){
+    boardingHtml = '<div class="bhead" style="margin-top:8px"><span class="tag boarding-tag">正在作業</span>' +
+      '<h3>登機中航班</h3><span class="cnt">' + boarding.length + ' 班　（航班離開登機狀態後自動消失）</span></div>' +
+      '<div class="tbox boarding-box"><table>' + thead + "<tbody>" +
+      boarding.map(rowHtml).join("") + "</tbody></table></div>" +
+      '<p class="note" style="margin-top:8px;color:var(--dim)">因無法取得「登機中」及「最後登機」之即時狀態，本資訊係依據 STD 前作業時程推估之狀態。</p>';
   }
 
   var shown = rows.slice(0, 4000);
@@ -1283,10 +1464,17 @@ function renderBoard(){
     html = section("A", shown.filter(function(f){ return f.dir === "A"; })) +
            section("D", shown.filter(function(f){ return f.dir === "D"; }));
   }
-  $("boardSections").innerHTML = html;
+  $("boardSections").innerHTML = boardingHtml + html;
 
   $("boardCount").textContent = "顯示 " + shown.length + " ／ " + rows.length + " 筆" +
     (rows.length > 4000 ? "（超過 4000 筆已截斷）" : "");
+
+  var wbs = $("boardSections").querySelectorAll(".wbtn");
+  for(var w=0;w<wbs.length;w++){
+    wbs[w].addEventListener("click", function(){
+      toggleWatch(this.getAttribute("data-wstn"), this.getAttribute("data-wdir"), this.getAttribute("data-wno"));
+    });
+  }
 
   var ths = $("boardSections").querySelectorAll("th[data-sort]");
   for(var i=0;i<ths.length;i++){
@@ -1294,6 +1482,184 @@ function renderBoard(){
     ths[i].addEventListener("keydown", function(e){ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); onBoardSort.call(this); } });
   }
 }
+/* ---------- 航班追蹤與推播 ----------
+   追蹤是以「場站＋方向＋航班號」為單位（場站／方向可用 * 代表不限），
+   所以今天勾了 JX800，明天同一班照樣會通知，不必天天重設。
+   已推播紀錄以「單筆航班 id ＋ 事件種類」記住，換分頁也不會重複轟炸。 */
+var HOOK_KEY = "teamsHookUrl", WATCH_KEY2 = "flightWatchList", NOTIFIED_KEY = "flightNotified", NEV_KEY = "flightNotifyEvents";
+var hookUrl = "";
+var watches = {};      // "場站|方向|班號" -> true
+var notified = {};     // "航班id|事件" -> 1
+
+function watchKey(stn, dir, no){
+  return (stn || "*") + "|" + (dir || "*") + "|" + String(no || "").toUpperCase();
+}
+function matchWatch(f){
+  for(var k in watches){
+    var p = k.split("|");
+    if(p[2] !== f.flightNo) continue;
+    if(p[0] !== "*" && p[0] !== (f.station || "")) continue;
+    if(p[1] !== "*" && p[1] !== f.dir) continue;
+    return true;
+  }
+  return false;
+}
+function saveWatch(){
+  try{
+    localStorage.setItem(WATCH_KEY2, JSON.stringify(Object.keys(watches)));
+    localStorage.setItem(NOTIFIED_KEY, JSON.stringify(notified));
+  }catch(e){}
+}
+function loadWatch(){
+  try{
+    var w = JSON.parse(localStorage.getItem(WATCH_KEY2) || "[]");
+    if(Array.isArray(w)) w.forEach(function(k){ watches[k] = true; });
+    var n = JSON.parse(localStorage.getItem(NOTIFIED_KEY) || "{}");
+    if(n && typeof n === "object") notified = n;
+    hookUrl = localStorage.getItem(HOOK_KEY) || "";
+    if($("hookUrl")) $("hookUrl").value = hookUrl;
+    var ev = JSON.parse(localStorage.getItem(NEV_KEY) || "null");
+    if(ev){
+      if($("nEvBoard")) $("nEvBoard").checked = ev.board !== false;
+      if($("nEvFinal")) $("nEvFinal").checked = ev.final !== false;
+      if($("nEvAct")) $("nEvAct").checked = ev.act !== false;
+      if($("nEvCx")) $("nEvCx").checked = ev.cx !== false;
+      if($("nEvDelay")) $("nEvDelay").checked = !!ev.delay;
+      if($("nDelayThr") && ev.thr) $("nDelayThr").value = String(ev.thr);
+      syncAllCheckbox();
+    }
+  }catch(e){}
+  pruneNotified();
+}
+function saveEvents(){
+  try{
+    localStorage.setItem(NEV_KEY, JSON.stringify({
+      board: $("nEvBoard").checked, final: $("nEvFinal").checked,
+      act: $("nEvAct").checked, cx: $("nEvCx").checked,
+      delay: $("nEvDelay").checked, thr: parseInt($("nDelayThr").value, 10)
+    }));
+  }catch(e){}
+}
+/* 已推播紀錄只留最近幾天，否則會無限長大 */
+function pruneNotified(){
+  var cut = gsAddDays(twDate(), -4);
+  var out = {};
+  for(var k in notified){
+    var m = /(\d{4}-\d{2}-\d{2})/.exec(k);
+    if(!m || m[1] >= cut) out[k] = 1;
+  }
+  notified = out;
+}
+function toggleWatch(stn, dir, no){
+  var k = watchKey(stn, dir, no);
+  if(watches[k]) delete watches[k]; else watches[k] = true;
+  saveWatch();
+  renderWatchChips();
+  renderBoard();
+}
+function renderWatchChips(){
+  var el = $("watchChips");
+  if(!el) return;
+  var keys = Object.keys(watches).sort();
+  if(!keys.length){ el.innerHTML = '<span class="note">目前沒有追蹤中的航班。</span>'; return; }
+  el.innerHTML = keys.map(function(k){
+    var p = k.split("|");
+    var label = p[2] + "　" + (p[0] === "*" ? "全場站" : p[0]) + "　" +
+                (p[1] === "*" ? "出發＋抵達" : (p[1] === "A" ? "抵達" : "出發"));
+    return '<button type="button" class="chip" aria-pressed="true" data-wkey="' + esc(k) + '">' +
+      esc(label) + '<span class="n">✕</span></button>';
+  }).join("");
+  var btns = el.querySelectorAll("[data-wkey]");
+  for(var i=0;i<btns.length;i++){
+    btns[i].addEventListener("click", function(){
+      delete watches[this.getAttribute("data-wkey")];
+      saveWatch();
+      renderWatchChips();
+      renderBoard();
+    });
+  }
+}
+function hookStatus(msg){
+  var el = $("hookStatus");
+  if(el) el.textContent = msg || "";
+}
+function watchMsg(f, kind){
+  var route = f.dir === "A"
+    ? (f.peer || "?") + (aptName(f.peer) ? "（" + aptName(f.peer) + "）" : "") + " → " + (f.station || "?")
+    : (f.station || "?") + " → " + (f.peer || "?") + (aptName(f.peer) ? "（" + aptName(f.peer) + "）" : "");
+  var head = "✈️ " + f.flightNo + "　" + route + "　" + (f.date || "");
+  if(kind === "cx") return head + "\n狀態：已取消（表定 " + (f.sched || "—") + "）";
+  if(kind === "boarding") return head + "\n狀態：🟢 登機中（表定 " + (f.sched || "—") + "　登機門 " + (f.gate || "—") + "）";
+  if(kind === "finalcall") return head + "\n狀態：🟠 最後登機（表定 " + (f.sched || "—") + "　登機門 " + (f.gate || "—") + "）";
+  if(kind === "delay") return head + "\n狀態：預估延誤 " + f.delay + " 分（表定 " + (f.sched || "—") +
+    "，預估 " + (f.est || "—") + "）";
+  var d = f.delay;
+  var tail = d == null ? "" : (d > 15 ? "，延誤 " + d + " 分" : (d < -15 ? "，早 " + Math.abs(d) + " 分" : "，準點"));
+  var extra = "";
+  if(f.gate) extra += "　登機門 " + f.gate;
+  if(f.dir === "A" && f.belt) extra += "　行李轉盤 " + f.belt;
+  if(f.dir === "D" && f.counter) extra += "　報到櫃檯 " + f.counter;
+  return head + "\n狀態：已" + (f.dir === "A" ? "抵達" : "起飛") +
+    "（表定 " + (f.sched || "—") + "／實際 " + (f.act || "—") + tail + "）" + extra;
+}
+/* 先照正常方式送；被 CORS 擋下時改用 no-cors 盲送，回傳值註明是哪一種 */
+function sendHook(text){
+  if(!hookUrl) return Promise.reject(new Error("尚未填中繼 URL"));
+  var body = JSON.stringify({ text: text });
+  return fetch(hookUrl, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: body
+  }).then(function(r){
+    if(!r.ok) throw new Error("HTTP " + r.status);
+    return "ok";
+  }).catch(function(e){
+    if(/HTTP \d/.test(e.message)) throw e;
+    return fetch(hookUrl, { method: "POST", mode: "no-cors", body: body }).then(function(){ return "blind"; });
+  });
+}
+function syncAllCheckbox(){
+  var ids = ["nEvBoard","nEvFinal","nEvAct","nEvCx","nEvDelay"];
+  var allOn = ids.every(function(id){ return $(id) && $(id).checked; });
+  if($("nEvAll")) $("nEvAll").checked = allOn;
+}
+function checkWatchNotify(manual){
+  if(!hookUrl){ if(manual) hookStatus("還沒填中繼 URL"); return; }
+  if(!Object.keys(watches).length){ if(manual) hookStatus("追蹤清單是空的"); return; }
+  var evBoard = $("nEvBoard").checked, evFinal = $("nEvFinal").checked;
+  var evAct = $("nEvAct").checked, evCx = $("nEvCx").checked, evDelay = $("nEvDelay").checked;
+  var thr = parseInt($("nDelayThr").value, 10);
+  var queue = [];
+  DB.flights.forEach(function(f){
+    if(!matchWatch(f)) return;
+    var bl = boardingLevel(f);
+    if(evBoard && bl === 1 && !notified[f.id + "|boarding"]) queue.push({ f:f, kind:"boarding" });
+    if(evFinal && bl === 2 && !notified[f.id + "|finalcall"]) queue.push({ f:f, kind:"finalcall" });
+    if(evCx && f.cancelled && !notified[f.id + "|cx"]) queue.push({ f:f, kind:"cx" });
+    if(evAct && f.act && !notified[f.id + "|act"]) queue.push({ f:f, kind:"act" });
+    if(evDelay && !f.cancelled && !f.act && f.delay != null && f.delay > thr && !notified[f.id + "|delay"]){
+      queue.push({ f:f, kind:"delay" });
+    }
+  });
+  if(!queue.length){ if(manual) hookStatus("目前沒有需要推播的異動"); return; }
+  hookStatus("推播中…（" + queue.length + " 則）");
+  var sent = 0, failed = 0, blind = false;
+  var chain = Promise.resolve();
+  queue.slice(0, 20).forEach(function(item){
+    chain = chain.then(function(){
+      return sendHook(watchMsg(item.f, item.kind)).then(function(mode){
+        if(mode === "blind") blind = true;
+        notified[item.f.id + "|" + item.kind] = 1;
+        sent++;
+      }).catch(function(){ failed++; });
+    });
+  });
+  chain.then(function(){
+    pruneNotified();
+    saveWatch();
+    hookStatus("已送出 " + sent + " 則" + (failed ? "、失敗 " + failed + " 則" : "") +
+      (blind ? "（盲送，無法確認對方是否收到）" : ""));
+  });
+}
+
 function onBoardSort(){
   var k = this.getAttribute("data-sort");
   if(boardSort.key === k) boardSort.dir *= -1; else { boardSort.key = k; boardSort.dir = 1; }
@@ -1510,7 +1876,7 @@ function renderSched(){
       '<div class="sa" style="height:' + ha + '%" title="' + i + '時 到場 ' + v + '"></div>' +
       "</div><span>" + i + "</span></div>";
   }).join("") + "</div>" +
-  '<div class="legend"><span><i style="background:var(--green)"></i>到場</span><span><i style="background:#bdbdbd"></i>離場</span></div>';
+  '<div class="legend"><span><i style="background:var(--green)"></i>到場</span><span><i style="background:rgba(58,143,167,.4)"></i>離場</span></div>';
 
   // 明細
   html += "<h3>" + (groupBy === "flight" ? "航班班表" : "航點班表") + "</h3>";
@@ -1889,7 +2255,7 @@ function keepNote(){
 
 /* 資料量大時，全部分頁一起重繪會明顯卡頓；只畫目前看得到的那一頁，
    其他頁標記為待重繪，切過去時才畫。 */
-var tabDirty = { board:true, airline:true, sched:true, otd:true };
+var tabDirty = { board:true, airline:true, sched:true, otd:true, cam:true, map:true };
 var activeTab = "tdx";
 
 function renderActiveTab(){
@@ -1901,6 +2267,10 @@ function renderActiveTab(){
     tabDirty.sched = false; renderSchedChips(); renderSched();
   }else if(activeTab === "otd" && tabDirty.otd){
     tabDirty.otd = false; renderOtdChips(); renderOtd();
+  }else if(activeTab === "cam" && tabDirty.cam){
+    tabDirty.cam = false; renderCams();
+  }else if(activeTab === "map" && tabDirty.map){
+    tabDirty.map = false; loadFmap();
   }
   if(activeTab === "sched") gsFetch(false);   // 進頁自動載入，6 小時內用快取
 }
@@ -2000,17 +2370,17 @@ function comboChart(labels, bars, rate, delay){
   var o = '<svg class="chart" viewBox="0 0 ' + W + " " + H + '" xmlns="http://www.w3.org/2000/svg">';
   [0,25,50,75,100].forEach(function(p){
     var y = T + ih - ih*p/100;
-    o += '<line x1="' + L + '" y1="' + y.toFixed(1) + '" x2="' + (W-R) + '" y2="' + y.toFixed(1) + '" stroke="#ececec" stroke-width="1"/>';
-    o += '<text x="' + (L-8) + '" y="' + (y+4).toFixed(1) + '" fill="#8a8a8a" font-size="11" text-anchor="end">' + p + '%</text>';
+    o += '<line x1="' + L + '" y1="' + y.toFixed(1) + '" x2="' + (W-R) + '" y2="' + y.toFixed(1) + '" stroke="#d0dce5" stroke-width="1"/>';
+    o += '<text x="' + (L-8) + '" y="' + (y+4).toFixed(1) + '" fill="#7a919e" font-size="11" text-anchor="end">' + p + '%</text>';
     var dv = dmin + dspan*p/100;
-    o += '<text x="' + (W-R+8) + '" y="' + (y+4).toFixed(1) + '" fill="#9a9a9a" font-size="11">' + Math.round(dv) + "</text>";
+    o += '<text x="' + (W-R+8) + '" y="' + (y+4).toFixed(1) + '" fill="#5bc4a0" font-size="11">' + Math.round(dv) + "</text>";
   });
-  o += '<text x="' + (W-R+8) + '" y="' + (T-2) + '" fill="#9a9a9a" font-size="10">分</text>';
+  o += '<text x="' + (W-R+8) + '" y="' + (T-2) + '" fill="#5bc4a0" font-size="10">分</text>';
   bars.forEach(function(v,i){
     var h = ih * 0.55 * (v/bmax);
     var x = L + step*i + (step-bw)/2;
     o += '<rect x="' + x.toFixed(1) + '" y="' + (T+ih-h).toFixed(1) + '" width="' + bw.toFixed(1) +
-         '" height="' + Math.max(0,h).toFixed(1) + '" fill="#d8d8d8" opacity=".7"><title>' +
+         '" height="' + Math.max(0,h).toFixed(1) + '" fill="#c3d4e0" opacity=".7"><title>' +
          esc(labels[i]) + "：" + v + " 班</title></rect>";
   });
   function series(vals, toY, color){
@@ -2030,20 +2400,20 @@ function comboChart(labels, bars, rate, delay){
     });
     return out;
   }
-  o += series(delay, function(v){ return T + ih - ih*(v-dmin)/dspan; }, "#9a9a9a");
-  o += series(rate, function(v){ return T + ih - ih*v/100; }, "#2fb35f");
+  o += series(delay, function(v){ return T + ih - ih*(v-dmin)/dspan; }, "#5bc4a0");
+  o += series(rate, function(v){ return T + ih - ih*v/100; }, "#3a8fa7");
   var every = Math.max(1, Math.ceil(n/16));
   labels.forEach(function(lb,i){
     if(i % every) return;
-    o += '<text x="' + (L+step*i+step/2).toFixed(1) + '" y="' + (H-12) + '" fill="#8a8a8a" font-size="10.5" text-anchor="middle">' + esc(lb) + "</text>";
+    o += '<text x="' + (L+step*i+step/2).toFixed(1) + '" y="' + (H-12) + '" fill="#7a919e" font-size="10.5" text-anchor="middle">' + esc(lb) + "</text>";
   });
-  o += '<line x1="' + L + '" y1="' + (T+ih) + '" x2="' + (W-R) + '" y2="' + (T+ih) + '" stroke="#d0d0d0" stroke-width="1"/>';
+  o += '<line x1="' + L + '" y1="' + (T+ih) + '" x2="' + (W-R) + '" y2="' + (T+ih) + '" stroke="#b8c8d4" stroke-width="1"/>';
   o += "</svg>";
   return o;
 }
-var OTD_LEGEND = '<div class="legend"><span><i style="background:#d8d8d8"></i>班次（相對高度）</span>' +
+var OTD_LEGEND = '<div class="legend"><span><i style="background:#c3d4e0"></i>班次（相對高度）</span>' +
   '<span><i style="background:#2fb35f"></i>準點率（左軸）</span>' +
-  '<span><i style="background:#9a9a9a"></i>平均延誤分鐘（右軸）</span></div>';
+  '<span><i style="background:#5bc4a0"></i>平均延誤分鐘（右軸）</span></div>';
 
 /* 月份下拉一定看得到「本月」與「上月」，即使那個月還沒有任何紀錄 —— 
    沒資料本身也是資訊，選下去會告訴你要怎麼累積。 */
@@ -2337,6 +2707,130 @@ function onOtdSort(){
 }
 
 /* =========================================================
+   即時影像
+   ─ 桃園 / 高雄兩站，嵌入 YouTube 24 小時直播
+   ─ 官方即時影像頁面設有 X-Frame-Options 無法內嵌，
+     故採用航空愛好者長期經營的公開 YouTube 直播源。
+   ─ 只在切到本頁時才建立 iframe，切走即清空停止播放。
+   ========================================================= */
+var CAMS = [
+  {
+    code: "TPE",
+    name: "桃園國際機場",
+    feeds: [
+      { label: "北跑道", desc: "北跑道即時影像 & 塔台通訊（05L／23R）", yt: "My-tDEttvXg" },
+      { label: "南跑道", desc: "南跑道 4K 即時影像（06/24）",           yt: "91PfFoqvuUk" }
+    ]
+  },
+  {
+    code: "KHH",
+    name: "高雄國際機場",
+    feeds: [
+      { label: "", desc: "高雄國際機場即時影像 & 塔台通訊（RCKH／KHH）", yt: "_hx5akJfzso" }
+    ]
+  }
+];
+
+function camFeedHtml(f, stnName){
+  var src   = "https://www.youtube.com/embed/" + f.yt + "?rel=0&modestbranding=1&playsinline=1";
+  var watch = "https://www.youtube.com/watch?v=" + f.yt;
+  var title = stnName + (f.label ? " " + f.label : "") + " 即時影像";
+  return '<div class="cam-item">' +
+    '<div class="cam-hd">' +
+      (f.label ? '<h3>' + esc(f.label) + '</h3>' : '<h3>即時影像</h3>') +
+      '<span class="live">LIVE</span>' +
+    '</div>' +
+    '<div class="cam-frame">' +
+      '<iframe src="' + src + '" title="' + esc(title) + '" ' +
+        'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
+        'allowfullscreen loading="lazy"></iframe>' +
+    '</div>' +
+    '<p class="cam-note">' + esc(f.desc) +
+      ' ｜ <a href="' + watch + '" target="_blank" rel="noopener">在 YouTube 開啟</a></p>' +
+    '</div>';
+}
+
+function renderCams(){
+  var box = $("camGrid");
+  if(!box) return;
+  box.innerHTML = CAMS.map(function(c){
+    return '<div class="cam-station">' +
+      '<div class="cam-station-hd">' +
+        '<h3>' + esc(c.name) + '</h3>' +
+        '<span class="code">' + esc(c.code) + '</span>' +
+      '</div>' +
+      '<div class="cam-grid">' +
+        c.feeds.map(function(f){ return camFeedHtml(f, c.name); }).join("") +
+      '</div>' +
+    '</div>';
+  }).join("");
+}
+
+/* =========================================================
+   航班地圖（嵌入開源 ADS-B 地圖）
+   ─ globe.airplanes.live / globe.adsb.fi，皆為 tar1090 引擎
+   ─ 用 URL 參數對準機場；若對方封鎖嵌入則畫面空白，
+     提供「新分頁開啟」備援。
+   ========================================================= */
+/* 各機場的地圖置中座標（lat, lon, zoom），用於 tar1090 URL */
+var FMAP_APT = {
+  RCTP: { lat:25.077, lon:121.233, z:10 },   /* 桃園 */
+  RCKH: { lat:22.577, lon:120.350, z:10 },   /* 高雄 */
+  RCSS: { lat:25.069, lon:121.552, z:11 },   /* 松山 */
+  RCMQ: { lat:24.264, lon:120.621, z:10 },   /* 台中 */
+  "":   { lat:23.7,   lon:121.0,   z:7  }     /* 台灣周邊 */
+};
+
+function fmapUrl(){
+  var apt = $("fmapAirport") ? $("fmapAirport").value : "RCTP";
+  var src = $("fmapSrc") ? $("fmapSrc").value : "airplanes";
+  var base = src === "adsbfi" ? "https://globe.adsb.fi/" : "https://globe.airplanes.live/";
+  var p = FMAP_APT[apt] || FMAP_APT.RCTP;
+  /* tar1090 支援 lat/lon/zoom 參數置中；airport 參數也可但座標較穩 */
+  var q = "?lat=" + p.lat + "&lon=" + p.lon + "&zoom=" + p.z + "&enableLabels";
+  return base + q;
+}
+
+function loadFmap(){
+  var frame = $("fmapFrame");
+  if(!frame) return;
+  var url = fmapUrl();
+  if($("fmapStatus")) $("fmapStatus").textContent = "載入中…";
+
+  /* 建立 iframe；onload 後清掉「載入中」，若被封鎖則畫面空白由備援文案提示 */
+  frame.innerHTML =
+    '<iframe src="' + url + '" title="航班即時地圖" ' +
+      'allow="fullscreen" referrerpolicy="no-referrer-when-downgrade" loading="eager"></iframe>' +
+    '<div class="fmap-fallback" id="fmapFallback" style="display:none">' +
+      '<h3>此來源可能封鎖了嵌入</h3>' +
+      '<p>若上方為空白，代表該站設有跨站嵌入限制。可按下方按鈕在新分頁直接使用，或切換到另一個來源試試。</p>' +
+      '<button class="btn primary" id="btnFmapFallback">在新分頁開啟地圖</button>' +
+    '</div>';
+
+  var fbBtn = $("btnFmapFallback");
+  if(fbBtn) fbBtn.addEventListener("click", openFmapNewTab);
+
+  var iframe = frame.querySelector("iframe");
+  var settled = false;
+  iframe.addEventListener("load", function(){
+    settled = true;
+    if($("fmapStatus")) $("fmapStatus").textContent = "已載入";
+  });
+  /* 6 秒仍未觸發 load，多半是被 X-Frame-Options 擋掉，顯示備援 */
+  setTimeout(function(){
+    if(!settled){
+      var fb = $("fmapFallback");
+      if(fb) fb.style.display = "flex";
+      if($("fmapStatus")) $("fmapStatus").textContent = "可能被封鎖";
+    }
+  }, 6000);
+}
+
+function openFmapNewTab(){
+  window.open(fmapUrl(), "_blank", "noopener");
+}
+
+/* =========================================================
    分頁
    ========================================================= */
 function switchTab(name){
@@ -2345,7 +2839,7 @@ function switchTab(name){
     var on = btns[i].getAttribute("data-tab") === name;
     btns[i].setAttribute("aria-selected", on ? "true" : "false");
   }
-  ["tdx","import","board","airline","sched","otd","help"].forEach(function(t){
+  ["tdx","board","airline","sched","otd","cam","map","help"].forEach(function(t){
     $("tab-" + t).hidden = (t !== name);
   });
   activeTab = name;
@@ -2847,6 +3341,7 @@ async function updateTDX(){
     );
 
     maybeAutoDownload();
+    checkWatchNotify(false);
 
     var sel = $("fDate");
     if(sel){
@@ -3105,10 +3600,15 @@ function gsRender(){
     var pk = (g.station || "—") + "|" + (g.peer || "—");
     var e = byPeer[pk];
     if(!e){
-      e = byPeer[pk] = { station:g.station || "—", peer:g.peer || "—", nos:{}, D:0, A:0, total:0,
+      e = byPeer[pk] = { station:g.station || "—", peer:g.peer || "—", nos:{}, legs:{}, D:0, A:0, total:0,
                          on:dates.map(function(){ return 0; }), first:"99:99", last:"" };
     }
     e.nos[g.flightNo] = 1;
+    var lk = g.flightNo + "|" + g.dir + "|" + (g.twTime || "");
+    if(!e.legs[lk]){
+      e.legs[lk] = { no:g.flightNo, dir:g.dir, time:(g.twTime && g.twTime !== "99:99") ? g.twTime : "", total:0 };
+    }
+    e.legs[lk].total += g.total;
     e[g.dir === "A" ? "A" : "D"] += g.total;
     e.total += g.total;
     g.on.forEach(function(v,i){ if(v) e.on[i]++; });
@@ -3140,16 +3640,23 @@ function gsRender(){
   var head, tb;
 
   if(groupBy === "peer"){
-    head = "<thead><tr><th>場站</th><th>航點</th><th>航班號數</th><th>航班號</th><th>出發</th><th>抵達</th>" +
+    head = "<thead><tr><th>場站</th><th>航點</th><th>航班號數</th><th>航班號與時間</th><th>出發班次</th><th>抵達班次</th>" +
       dayHead + "<th>" + dates.length + " 天班次</th></tr></thead>";
     tb = peerList.map(function(e){
       var nos = Object.keys(e.nos).sort();
+      var legs = Object.keys(e.legs).map(function(k){ return e.legs[k]; }).sort(function(a,b){
+        var ta = a.time || "99:99", tb2 = b.time || "99:99";
+        return ta < tb2 ? -1 : (ta > tb2 ? 1 : (a.no < b.no ? -1 : (a.no > b.no ? 1 : 0)));
+      });
       return "<tr>" +
         '<td class="mono">' + esc(e.station) + "</td>" +
         '<td class="mono" style="color:var(--amber);font-weight:600">' + esc(e.peer) +
           (aptName(e.peer) ? ' <span class="note">' + esc(aptName(e.peer)) + "</span>" : "") + "</td>" +
         '<td class="mono" style="font-weight:700">' + nos.length + "</td>" +
-        '<td class="mono">' + esc(nos.join("、")) + "</td>" +
+        '<td class="legs">' + legs.map(function(l){
+          return '<span class="leg"><b>' + esc(l.no) + '</b><em>' + esc(l.time || "—") +
+                 '</em><i class="' + l.dir + '">' + (l.dir === "A" ? "抵" : "出") + "</i></span>";
+        }).join("") + "</td>" +
         '<td class="mono">' + e.D + "</td>" +
         '<td class="mono">' + e.A + "</td>" +
         e.on.map(function(n){
@@ -3160,6 +3667,7 @@ function gsRender(){
 
     body.innerHTML = '<div class="tbox" style="margin-top:12px"><table>' + head + "<tbody>" + tb + "</tbody></table></div>" +
       '<p class="note" style="margin-top:8px">依航點彙整，預設按航班號數由多到少排。' +
+      "每支班號後面的時間是<b>該場站的當地時刻</b>：出發班次顯示起飛時間、抵達班次顯示落地時間。" +
       "日期欄裡的數字是當天飛這個航點的班次數（含來回），日期一律是場站當地日期。" +
       "想看某個航點的細節，就在上面的航點篩選勾起來，再把「彙整」切回<b>依航班號</b>。" +
       (span ? "<br>班表有效期間：" + esc(span) : "") + "</p>";
@@ -3396,7 +3904,7 @@ function demoJSON(){
         Terminal: (p[0] === "CI" || p[0] === "JX") ? "1" : "2",
         Gate: "A" + (1 + Math.floor(Math.random()*9)),
         CheckCounter: String.fromCharCode(65 + Math.floor(Math.random()*10)),
-        AircraftType: p[5], FlightStatus: jitterD > 15 ? "延誤" : "已起飛"
+        AircraftType: p[5], FlightStatus: jitterD > 15 ? "延誤" : (d===0 && parseInt(p[3],10) >= 7 && parseInt(p[3],10) <= 9 ? (parseInt(p[3],10) === 7 ? "登機中" : (parseInt(p[3],10) === 8 ? "最後登機" : "Gate Closing")) : "已起飛")
       });
       out.push({
         AirlineID: p[0], FlightNumber: p[0] + (201 + (p[1].charCodeAt(0)+p[1].charCodeAt(2)) % 700),
@@ -3538,6 +4046,52 @@ function shift(hhmm, mins){
   ["fDir","fDate","fStatus"].forEach(function(id){ $(id).addEventListener("change", renderBoard); });
   $("fSearch").addEventListener("input", renderBoard);
   ["sDir","sGroup","sSort"].forEach(function(id){ $(id).addEventListener("change", renderSched); });
+  if($("hookUrl")){
+    $("hookUrl").addEventListener("input", function(){
+      hookUrl = this.value.trim();
+      try{ localStorage.setItem(HOOK_KEY, hookUrl); }catch(e){}
+    });
+  }
+  ["nEvBoard","nEvFinal","nEvAct","nEvCx","nEvDelay","nDelayThr"].forEach(function(id){
+    if($(id)) $(id).addEventListener("change", function(){
+      if(id !== "nDelayThr") syncAllCheckbox();
+      saveEvents();
+    });
+  });
+  if($("nEvAll")){
+    $("nEvAll").addEventListener("change", function(){
+      var on = this.checked;
+      ["nEvBoard","nEvFinal","nEvAct","nEvCx","nEvDelay"].forEach(function(id){
+        if($(id)) $(id).checked = on;
+      });
+      saveEvents();
+    });
+  }
+  if($("btnHookTest")){
+    $("btnHookTest").addEventListener("click", function(){
+      hookStatus("送出測試訊息中…");
+      sendHook("✈️ 測試訊息：即時航班看板已連上中繼 URL（" + twDate() + "）")
+        .then(function(mode){ hookStatus(mode === "blind" ? "已盲送，請到 Teams 確認是否收到" : "測試訊息送出成功"); })
+        .catch(function(e){ hookStatus("送出失敗：" + e.message); });
+    });
+  }
+  if($("btnWatchCheck")){
+    $("btnWatchCheck").addEventListener("click", function(){ checkWatchNotify(true); });
+  }
+  if($("btnWatchAdd")){
+    $("btnWatchAdd").addEventListener("click", function(){
+      var no = $("wNo").value.trim().toUpperCase().replace(/\s+/g, "");
+      if(!no){ hookStatus("請先輸入航班號"); return; }
+      watches[watchKey($("wStn").value, $("wDir").value, no)] = true;
+      $("wNo").value = "";
+      saveWatch();
+      renderWatchChips();
+      renderBoard();
+      hookStatus("已加入追蹤：" + no);
+    });
+  }
+  loadWatch();
+  renderWatchChips();
   ["oMonth","oDir","oThr","oBase","oMin"].forEach(function(id){ $(id).addEventListener("change", renderOtd); });
   loadFlightDB();
   var t = new Date();
@@ -3572,6 +4126,11 @@ function shift(hhmm, mins){
     try{ localStorage.setItem("gsAirline", this.value.trim().toUpperCase()); }catch(e){}
     gsFetch(true);
   });
+
+  /* ── 航班地圖 ── */
+  if($("btnFmapLoad")) $("btnFmapLoad").addEventListener("click", loadFmap);
+  if($("btnFmapOpen")) $("btnFmapOpen").addEventListener("click", openFmapNewTab);
+
   switchTab("tdx");
   refreshAll();
 })();
