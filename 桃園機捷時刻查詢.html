@@ -420,7 +420,7 @@ async function connectTDX(){
 
     dot.className='hero-status live';
     tdxStatusMsg=`ok|✓ 連線成功！已取得 ${count} 筆站別時刻表資料。Token 有效至 ${new Date(tdxExpiry).toLocaleTimeString()}`;
-    toast('TDX 即時資料已同步');
+    // silent success — green dot in header is enough
     updateSetStatus();
 
   }catch(e){
@@ -502,8 +502,15 @@ function parseTDXTrains(originCode, destCode){
     });
   });
 
-  results.sort((a,b)=>a.dep-b.dep);
-  return results.length ? results : null;
+  // Deduplicate by departure time + type
+  const seen=new Set();
+  const unique=results.filter(r=>{
+    const key=`${r.dep}-${r.t}`;
+    if(seen.has(key)) return false;
+    seen.add(key);return true;
+  });
+  unique.sort((a,b)=>a.dep-b.dep);
+  return unique.length ? unique : null;
 }
 
 // ========== STATE ==========
