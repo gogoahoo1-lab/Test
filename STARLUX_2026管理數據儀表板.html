@@ -4492,14 +4492,21 @@
       html += '<button class="month-pill '+(opsMonthFilter===i?'active':'')+(has?'':' disabled')+'" data-opsm="'+i+'">'+MONTHS_ZH[i]+'</button>';
     }
     bar.innerHTML = html;
-    bar.querySelectorAll('.month-pill').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        const v = this.getAttribute('data-opsm');
+    // Event delegation: bind ONCE on the bar container so the handler
+    // survives any innerHTML rebuild (individual-button handlers can be
+    // lost when the DOM is destroyed and recreated).
+    if (!bar._opsBound){
+      bar._opsBound = true;
+      bar.addEventListener('click', function(e){
+        var pill = e.target.closest('.month-pill');
+        if (!pill) return;
+        if (pill.classList.contains('disabled')) return;
+        var v = pill.getAttribute('data-opsm');
         opsMonthFilter = v==='all' ? 'all' : parseInt(v, 10);
         renderOpsMonthBar();
         renderOpsAfterFilter();
       });
-    });
+    }
   }
 
   // Centralise "re-render everything in OPS after any filter change"
@@ -4557,7 +4564,12 @@
     const bar = document.getElementById('opsDepPills');
     if (!bar || !OPS) return;
     const counts = {};
-    OPS.flights.forEach(function(f){ if (f.dep) counts[f.dep] = (counts[f.dep]||0)+1; });
+    // Filter by current month so the counts reflect the selected month view
+    var pool = OPS.flights;
+    if (opsMonthFilter !== 'all') {
+      pool = pool.filter(function(f){ return f.monthIdx === opsMonthFilter; });
+    }
+    pool.forEach(function(f){ if (f.dep) counts[f.dep] = (counts[f.dep]||0)+1; });
     const deps = Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]; });
     let html = '<button class="pill'+(opsDepFilter==='ALL'?' active':'')+'" data-opsdep="ALL">'+
       (currentLang==='en'?'All':(currentLang==='ja'?'すべて':'全部'))+'</button>';
@@ -4565,10 +4577,13 @@
       html += '<button class="pill'+(opsDepFilter===d?' active':'')+'" data-opsdep="'+d+'">'+d+' ('+counts[d]+')</button>';
     });
     bar.innerHTML = html;
-    const btns = bar.querySelectorAll('.pill');
-    for (let i=0;i<btns.length;i++){
-      btns[i].addEventListener('click', function(){
-        opsDepFilter = this.getAttribute('data-opsdep');
+    // Event delegation: bind ONCE on the bar container
+    if (!bar._depBound){
+      bar._depBound = true;
+      bar.addEventListener('click', function(e){
+        var pill = e.target.closest('.pill');
+        if (!pill) return;
+        opsDepFilter = pill.getAttribute('data-opsdep');
         renderOpsAfterFilter();
       });
     }
@@ -4581,10 +4596,12 @@
       html += '<button class="pill'+(opsMetricFilter===m.key?' active':'')+'" data-opsmetric="'+m.key+'">'+opsMetricLabel(m.key)+'</button>';
     });
     bar.innerHTML = html;
-    const btns = bar.querySelectorAll('.pill');
-    for (let i=0;i<btns.length;i++){
-      btns[i].addEventListener('click', function(){
-        opsMetricFilter = this.getAttribute('data-opsmetric');
+    if (!bar._metricBound){
+      bar._metricBound = true;
+      bar.addEventListener('click', function(e){
+        var pill = e.target.closest('.pill');
+        if (!pill || !pill.getAttribute('data-opsmetric')) return;
+        opsMetricFilter = pill.getAttribute('data-opsmetric');
         renderOpsMetricPills();
         renderOpsLongestCard();
         renderOpsTopTable();
@@ -4687,7 +4704,7 @@
       if (!rd.total){
         return '<div class="ops-region-card" style="--region-color:'+r.color+';">'+
           '<div class="ops-region-name">'+r.name+'</div>'+
-          '<div class="ops-region-stations">'+r.region.stations.join(' / ')+'</div>'+
+          '<div class="ops-region-stations">'+r.stations.join(' / ')+'</div>'+
           '<div style="color:var(--muted);font-size:13px;">此篩選條件下無資料</div>'+
           '</div>';
       }
@@ -5032,7 +5049,7 @@
         '<div class="bid-type-badge">'+tp+'</div>'+
         '<div class="bid-type-avg">'+s.avg+'<span style="font-size:14px;font-weight:600;color:var(--muted);margin-left:3px;">分</span></div>'+
         '<div class="bid-type-meta">'+
-          '中位數 <b>'+s.median+'</b> 分　N='+s.n+'<br>'+
+          '中位數 <b>'+s.median+'</b> 分　班次數 '+s.n+'<br>'+
           'Min '+s.min+' / Max '+s.max+
         '</div>'+
         '<div class="bid-type-bar"><div class="bid-type-bar-fill" style="width:'+pct+'%"></div></div>'+
