@@ -4494,6 +4494,7 @@
     bar.innerHTML = html;
     bar.querySelectorAll('.month-pill').forEach(function(btn){
       btn.addEventListener('click', function(){
+        if (this.classList.contains('disabled')) return;
         const v = this.getAttribute('data-opsm');
         opsMonthFilter = v==='all' ? 'all' : parseInt(v, 10);
         renderOpsMonthBar();
@@ -4557,7 +4558,12 @@
     const bar = document.getElementById('opsDepPills');
     if (!bar || !OPS) return;
     const counts = {};
-    OPS.flights.forEach(function(f){ if (f.dep) counts[f.dep] = (counts[f.dep]||0)+1; });
+    // Filter by current month so the counts reflect the selected month view
+    var pool = OPS.flights;
+    if (opsMonthFilter !== 'all') {
+      pool = pool.filter(function(f){ return f.monthIdx === opsMonthFilter; });
+    }
+    pool.forEach(function(f){ if (f.dep) counts[f.dep] = (counts[f.dep]||0)+1; });
     const deps = Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]; });
     let html = '<button class="pill'+(opsDepFilter==='ALL'?' active':'')+'" data-opsdep="ALL">'+
       (currentLang==='en'?'All':(currentLang==='ja'?'すべて':'全部'))+'</button>';
