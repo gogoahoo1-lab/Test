@@ -776,9 +776,12 @@ function render(){
   if(!all){all=genFallback(selO,selD);source='內建'}
   const now=nowM();
   let trains=all;
+  // Express tab only if BOTH origin and destination are express stops
+  const bothExpress=STATIONS[selO].ex&&STATIONS[selD].ex;
+  // If user selected express filter but stations don't support it, reset to all
+  if(tf==='e'&&!bothExpress) tf='all';
   if(tf==='e')trains=trains.filter(t=>t.t==='e');
   if(tf==='c')trains=trains.filter(t=>t.t==='c');
-  const hasE=all.some(t=>t.t==='e');
   let ni=trains.findIndex(t=>t.dep>=now);
 
   allTrackerTrains=trains;
@@ -799,10 +802,10 @@ function render(){
     ${trackerHTML}
     <div class="res-hd"><div class="res-title">即將到來班次 <span style="font-size:10px;color:var(--text3);font-weight:400">(${source}・${nowStr} 起)</span></div><div class="res-route">${STATIONS[selO].n} \u2192 ${STATIONS[selD].n}</div></div>
     <div class="ftabs"><button class="ftab${tf==='all'?' act':''}" onclick="setF('all')">全部</button>
-    ${hasE?`<button class="ftab${tf==='e'?' act':''}" onclick="setF('e')">直達車</button>`:''}
+    ${bothExpress?`<button class="ftab${tf==='e'?' act':''}" onclick="setF('e')">直達車</button>`:''}
     <button class="ftab${tf==='c'?' act':''}" onclick="setF('c')">普通車</button></div>`;
 
-  if(!sh.length){h+=`<div class="no-res"><div class="nri">\ud83d\udd0d</div><div>無可用班次${!hasE&&tf==='e'?'<br>此區間無直達車':''}</div></div>`}
+  if(!sh.length){h+=`<div class="no-res"><div class="nri">\ud83d\udd0d</div><div>無可用班次${!bothExpress&&tf==='e'?'<br>此區間無直達車':''}</div></div>`}
   else{sh.forEach((t,i)=>{
     // Recalculate isNext relative to futureTrains
     const isN=t===trackerTarget;
