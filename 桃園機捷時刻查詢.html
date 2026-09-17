@@ -210,6 +210,19 @@ input,select,textarea{font-size:16px!important;touch-action:manipulation}
 .track-stn-dot.prev.passed{border-style:solid;border-color:var(--copper);background:var(--copper)}
 @keyframes cardFlash{0%{opacity:.4;transform:scale(.97)}100%{opacity:1;transform:scale(1)}}
 
+/* Mini tracker (en-route, shrunk) */
+.tracker-mini{margin:0 0 10px;background:var(--card);border-radius:12px;border:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden}
+.tracker-mini::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--ok)}
+.tm-badge span{display:inline-block;padding:3px 8px;border-radius:5px;font-size:9px;font-weight:700}
+.tm-info{flex:1;display:flex;align-items:center;gap:8px;font-size:12px}
+.tm-info .tm-times{font-weight:600;font-variant-numeric:tabular-nums}
+.tm-info .tm-arrow{color:var(--text3);font-size:10px}
+.tm-info .tm-status{color:var(--ok);font-size:10px;font-weight:600}
+.tm-cd{text-align:right;flex-shrink:0}
+.tm-cd .tm-cd-num{font-size:18px;font-weight:300;color:var(--ok);font-variant-numeric:tabular-nums;letter-spacing:1px}
+.tm-cd .tm-cd-lbl{font-size:9px;color:var(--text3)}
+.tm-progress{position:absolute;bottom:0;left:0;height:2px;background:var(--ok);transition:width .8s ease}
+
 /* Tab bar */
 .tab-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(12,12,14,.88);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-around;z-index:50}
 .tab-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:6px 10px;color:var(--text3);transition:color .2s;-webkit-tap-highlight-color:transparent;user-select:none}
@@ -683,17 +696,33 @@ function startTracker(train,stns){
   const hasPrev=originStnIdx>0;
   const originFrac=hasPrev?(originStnIdx/(stns.length-1)):0;
   const journeyFrac=1-originFrac;
+  let wasDeparted=false; // track if train was already departed when tracker started
 
   function update(){
     const d=new Date();
     const currentMin=d.getHours()*60+d.getMinutes()+d.getSeconds()/60;
     const countdown=document.getElementById('trkCountdown');
+    if(!countdown)return;
+
+    if(currentMin>=train.dep&&!wasDeparted){
+      // Train just departed from origin → re-render to swap to mini + next
+      wasDeparted=true;
+      clearInterval(trackerInterval);
+      setTimeout(()=>advanceToNextTrain(),500);
+      return;
+    }
+
+    if(currentMin>=train.dep){
+      // Already departed state - should not happen since we re-render above
+      // But as safety: if no next train, show en-route in full card
+      wasDeparted=true;
+    }
+
     const cdLabel=document.getElementById('trkCdLabel');
     const status=document.getElementById('trkStatus');
     const progress=document.getElementById('trkProgress');
     const trainEl=document.getElementById('trkTrain');
     const eta=document.getElementById('trkEta');
-    if(!countdown)return;
     const trackLine=document.querySelector('.track-line');
     if(!trackLine)return;
     const railLeft=16,railRight=trackLine.offsetWidth-16,railWidth=railRight-railLeft;
@@ -719,6 +748,7 @@ function startTracker(train,stns){
       document.querySelectorAll('.track-stn-dot').forEach(dot=>dot.classList.remove('passed'));
       if(hasPrev&&approachPct>0)document.querySelector('.track-stn-dot.prev')?.classList.add('passed');
     } else if(currentMin<train.arr){
+      // This branch only runs when there's no next train (safety fallback)
       const elapsed=currentMin-train.dep;
       const total=train.arr-train.dep;
       const pct=Math.min(elapsed/total,1);
@@ -737,7 +767,7 @@ function startTracker(train,stns){
       const curIdx=Math.min(Math.floor(pct*(jsLen-1)),jsLen-2);
       const fromStn=journeyStns[curIdx];
       const toStn=journeyStns[Math.min(curIdx+1,jsLen-1)];
-      eta.innerHTML=`${fromStn.name} \u2192 ${toStn.name}，預計 <strong>${mins} 分 ${secs} 秒</strong> 後抵達 ${stns[stns.length-1].name}`;
+      eta.innerHTML=`${fromStn.name} → ${toStn.name}，預計 <strong>${mins} 分 ${secs} 秒</strong> 後抵達 ${stns[stns.length-1].name}`;
       document.querySelectorAll('.track-stn-dot').forEach((dot,i)=>{
         const allDots=document.querySelectorAll('.track-stn-dot');
         const stnPct=i/(allDots.length-1);
@@ -754,62 +784,126 @@ function startTracker(train,stns){
       setTimeout(()=>advanceToNextTrain(),5000);
     }
   }
+  // Check if train is already departed at start
+  const nowCheck=nowM()+(new Date().getSeconds()/60);
+  if(nowCheck>=train.dep) wasDeparted=true;
   update();
   trackerInterval=setInterval(update,1000);
 }
 
 function advanceToNextTrain(){
-  if(!allTrackerTrains.length)return;
-  const now=nowM();
-  let target=null;
-  const nextIdx=allTrackerTrains.findIndex(t=>t.dep>=now);
-  if(nextIdx>=0){target=allTrackerTrains[nextIdx];trackerTrainIdx=nextIdx}
-  else{for(let i=allTrackerTrains.length-1;i>=0;i--){if(allTrackerTrains[i].arr>now){target=allTrackerTrains[i];trackerTrainIdx=i;break}}}
-  if(!target)return;
-  const stns=getStationsWithPrev(selO,selD);
-  const card=document.getElementById('trackerCard');
-  if(!card)return;
-  const tmp=document.createElement('div');
-  tmp.innerHTML=buildTrackerHTML(target,stns);
-  const newCard=tmp.firstElementChild;
-  card.replaceWith(newCard);
-  newCard.style.animation='cardFlash .6s ease';
-  setTimeout(()=>startTracker(target,stns),100);
+  // Re-render to properly swap mini/full cards
+  if(selO!==null&&selD!==null) render();
+}
+
+// Build mini tracker for en-route train
+function buildMiniTrackerHTML(train){
+  const isExpress=train.t==='e';
+  return `<div class="tracker-mini" id="miniTracker">
+    <div class="tm-badge"><span class="bd ${isExpress?'eb':'cb'}">${isExpress?'直達':'普通'}</span></div>
+    <div class="tm-info">
+      <span class="tm-times">${hm(train.dep)}</span>
+      <span class="tm-arrow">→</span>
+      <span class="tm-times">${hm(train.arr)}</span>
+      <span class="tm-status" id="miniStatus">行駛中</span>
+    </div>
+    <div class="tm-cd">
+      <div class="tm-cd-num" id="miniCd">--:--</div>
+      <div class="tm-cd-lbl">抵達倒數</div>
+    </div>
+    <div class="tm-progress" id="miniProgress" style="width:0%"></div>
+  </div>`;
+}
+
+let miniInterval=null;
+let miniTrain=null;
+
+function startMiniTracker(train){
+  miniTrain=train;
+  if(miniInterval) clearInterval(miniInterval);
+  function update(){
+    const d=new Date();
+    const cur=d.getHours()*60+d.getMinutes()+d.getSeconds()/60;
+    const cd=document.getElementById('miniCd');
+    const prog=document.getElementById('miniProgress');
+    const st=document.getElementById('miniStatus');
+    if(!cd) return;
+    if(cur<train.arr){
+      const remain=train.arr-cur;
+      const mins=Math.floor(remain);
+      const secs=Math.floor((remain-mins)*60);
+      cd.textContent=`${mins}:${String(secs).padStart(2,'0')}`;
+      const pct=Math.min((cur-train.dep)/(train.arr-train.dep),1);
+      prog.style.width=(pct*100)+'%';
+      st.textContent='行駛中';
+    } else {
+      cd.textContent='00:00';
+      st.textContent='已到站';
+      prog.style.width='100%';
+      clearInterval(miniInterval);
+      // Remove mini card after 3s
+      setTimeout(()=>{const el=document.getElementById('miniTracker');if(el)el.style.display='none'},3000);
+    }
+  }
+  update();
+  miniInterval=setInterval(update,1000);
 }
 
 function render(){
   if(trackerInterval){clearInterval(trackerInterval);trackerInterval=null}
+  if(miniInterval){clearInterval(miniInterval);miniInterval=null}
   const ct=document.getElementById('resCont');
   const oCode=STATIONS[selO].c,dCode=STATIONS[selD].c;
   let all=parseTDXTrains(oCode,dCode);
   let source='TDX';
   if(!all){all=genFallback(selO,selD);source='內建'}
   const now=nowM();
-  // Express only if BOTH origin and destination are express stops
   const bothExpress=STATIONS[selO].ex&&STATIONS[selD].ex;
-  // If route doesn't support express, remove all express trains from data
   if(!bothExpress) all=all.filter(t=>t.t!=='e');
   let trains=all;
   if(tf==='e'&&!bothExpress) tf='all';
   if(tf==='e')trains=trains.filter(t=>t.t==='e');
   if(tf==='c')trains=trains.filter(t=>t.t==='c');
-  let ni=trains.findIndex(t=>t.dep>=now);
 
   allTrackerTrains=trains;
-  let trackerTarget=null;
-  if(ni>=0){trackerTarget=trains[ni];trackerTrainIdx=ni}
-  else{for(let i=trains.length-1;i>=0;i--){if(trains[i].arr>now){trackerTarget=trains[i];ni=i;trackerTrainIdx=i;break}}}
 
-  // Only show trains from now onwards (include en-route trains whose arr > now)
+  // Find en-route train (already departed, not yet arrived)
+  let enRouteTrain=null;
+  for(let i=trains.length-1;i>=0;i--){
+    if(trains[i].dep<=now&&trains[i].arr>now){enRouteTrain=trains[i];break}
+  }
+
+  // Find next upcoming train (not yet departed)
+  let ni=trains.findIndex(t=>t.dep>=now);
+  let upcomingTrain=ni>=0?trains[ni]:null;
+
+  // Main tracker target: upcoming if exists, otherwise en-route
+  let trackerTarget=upcomingTrain||enRouteTrain;
+  if(trackerTarget) trackerTrainIdx=trains.indexOf(trackerTarget);
+
   const futureTrains=trains.filter(t=>t.arr>=now);
   const sh=futureTrains.slice(0,dc),more=futureTrains.length>dc;
   const stns=getStationsWithPrev(selO,selD);
 
+  // Build HTML: mini card for en-route + full card for upcoming
+  let miniHTML='';
   let trackerHTML='';
-  if(trackerTarget) trackerHTML=buildTrackerHTML(trackerTarget,stns);
+  if(enRouteTrain&&upcomingTrain){
+    // Train departed → show mini card for it, full card for next train
+    miniHTML=buildMiniTrackerHTML(enRouteTrain);
+    trackerHTML=buildTrackerHTML(upcomingTrain,stns);
+  } else if(enRouteTrain&&!upcomingTrain){
+    // Only en-route, no next → show full card for en-route
+    trackerHTML=buildTrackerHTML(enRouteTrain,stns);
+    trackerTarget=enRouteTrain;
+  } else if(upcomingTrain){
+    // Upcoming train not yet departed → show full card
+    trackerHTML=buildTrackerHTML(upcomingTrain,stns);
+  }
 
   const nowStr=hm(now);
   let h=`<div class="results-area">
+    ${miniHTML}
     ${trackerHTML}
     <div class="res-hd"><div class="res-title">即將到來班次 <span style="font-size:10px;color:var(--text3);font-weight:400">(${source}・${nowStr} 起)</span></div><div class="res-route">${STATIONS[selO].n} \u2192 ${STATIONS[selD].n}</div></div>
     <div class="ftabs"><button class="ftab${tf==='all'?' act':''}" onclick="setF('all')">全部</button>
@@ -818,7 +912,6 @@ function render(){
 
   if(!sh.length){h+=`<div class="no-res"><div class="nri">\ud83d\udd0d</div><div>無可用班次${!bothExpress&&tf==='e'?'<br>此區間無直達車':''}</div></div>`}
   else{sh.forEach((t,i)=>{
-    // Recalculate isNext relative to futureTrains
     const isN=t===trackerTarget;
     h+=`<div class="tc${isN?' nt':''}">
     ${isN?'<div class="next-lbl">NEXT</div>':''}
@@ -828,7 +921,14 @@ function render(){
     <div class="tc-dur"><div class="dv">${t.dur} 分</div><div class="dl2">車程</div></div></div>`});
     if(more)h+=`<div class="load-more"><button onclick="dc+=10;render()">顯示更多班次</button></div>`}
   h+='</div>';ct.innerHTML=h;
-  if(trackerTarget) setTimeout(()=>startTracker(trackerTarget,stns),100);
+
+  // Start trackers
+  if(enRouteTrain&&upcomingTrain){
+    setTimeout(()=>{startMiniTracker(enRouteTrain);startTracker(upcomingTrain,stns)},100);
+  } else if(trackerTarget){
+    const target=enRouteTrain||upcomingTrain;
+    if(target) setTimeout(()=>startTracker(target,stns),100);
+  }
   setTimeout(()=>{const el=document.querySelector('.tracker');if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},200);
 }
 
