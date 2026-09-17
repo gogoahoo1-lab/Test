@@ -477,17 +477,30 @@ function parseTDXTrains(originCode, destCode){
   // Collect departure times from origin
   const results=[];
   originEntries.forEach(entry=>{
+    // TrainType / TrainTypeName may be at entry level OR inside each timetable item
+    const entryTypeName=(entry.TrainTypeName?.Zh_tw||entry.TrainTypeName?.zh_tw||'');
+    const entryTrainType=entry.TrainType??entry.trainType;
+
     const tt = entry.Timetables || entry.timetables || [];
     tt.forEach(t=>{
       const depTime = t.DepartureTime || t.departureTime;
-      const trainType = t.TrainType || t.trainType; // 1=express, 2=commuter or similar
       if(!depTime) return;
       const [hh,mm] = depTime.split(':').map(Number);
       const depMin = hh*60+mm;
 
-      // Determine type — rely on TrainTypeName text, not numeric TrainType (varies by operator)
-      const typeName = (t.TrainTypeName?.Zh_tw || t.TrainTypeName?.zh_tw || t.trainTypeName?.Zh_tw || '');
-      const isExpress = typeName.includes('直達') || typeName.includes('Express');
+      // Determine type: check timetable-level first, then entry-level
+      const tTypeName=(t.TrainTypeName?.Zh_tw||t.TrainTypeName?.zh_tw||t.trainTypeName?.Zh_tw||'');
+      const tTrainType=t.TrainType??t.trainType??entryTrainType;
+      const combinedName=tTypeName||entryTypeName;
+
+      let isExpress=false;
+      if(combinedName){
+        // Text-based detection (most reliable)
+        isExpress=combinedName.includes('直達')||combinedName.includes('Express');
+      } else if(tTrainType!==undefined&&tTrainType!==null){
+        // Numeric fallback: TYMC uses 1=普通, 2=直達
+        isExpress=(tTrainType===2||tTrainType==='2');
+      }
       const type = isExpress ? 'e' : 'c';
 
       // Calculate arrival: use embedded travel times as reference
@@ -775,10 +788,11 @@ function render(){
   let source='TDX';
   if(!all){all=genFallback(selO,selD);source='內建'}
   const now=nowM();
-  let trains=all;
-  // Express tab only if BOTH origin and destination are express stops
+  // Express only if BOTH origin and destination are express stops
   const bothExpress=STATIONS[selO].ex&&STATIONS[selD].ex;
-  // If user selected express filter but stations don't support it, reset to all
+  // If route doesn't support express, remove all express trains from data
+  if(!bothExpress) all=all.filter(t=>t.t!=='e');
+  let trains=all;
   if(tf==='e'&&!bothExpress) tf='all';
   if(tf==='e')trains=trains.filter(t=>t.t==='e');
   if(tf==='c')trains=trains.filter(t=>t.t==='c');
@@ -908,10 +922,69 @@ function showSettingsPage(){
       </div>
 
       <button onclick="tabAction('home')" style="margin-top:16px;width:100%;height:48px;border:none;border-radius:24px;background:var(--copper);color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">返回時刻查詢</button>
+
+      ${apiTimetable?`<div style="margin-top:16px;background:var(--card);border-radius:var(--r);padding:18px;border:1px solid var(--border)">
+        <div style="font-size:14px;font-weight:700;margin-bottom:10px">TDX 原始資料檢查</div>
+        <button onclick="showTDXDebug()" class="set-btn pri" style="width:100%;margin-bottom:10px">檢視 TDX 回傳資料結構</button>
+        <div id="tdxDebug" style="display:none;font-size:11px;color:var(--text2);background:var(--bg);padding:12px;border-radius:8px;max-height:300px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;font-family:monospace"></div>
+      </div>`:''}
     </div>`;
 
   updateSetStatus();
   window.scrollTo({top:document.getElementById('resCont').offsetTop-80,behavior:'smooth'});
+}
+
+function showTDXDebug(){
+  const el=document.getElementById('tdxDebug');
+  if(!el||!apiTimetable) return;
+  el.style.display=el.style.display==='none'?'block':'none';
+  if(el.style.display==='none') return;
+
+  const data=Array.isArray(apiTimetable)?apiTimetable:(apiTimetable.StationTimetables||apiTimetable);
+  if(!Array.isArray(data)){el.textContent='資料格式非陣列';return}
+
+  // Show summary of first few entries with TrainType info
+  let out='共 '+data.length+' 筆 entry\n\n';
+  const sample=data.slice(0,6);
+  sample.forEach((e,i)=>{
+    out+=`--- Entry ${i} ---\n`;
+    out+=`StationID: ${e.StationID||e.stationID}\n`;
+    out+=`Direction: ${e.Direction??e.direction}\n`;
+    out+=`TrainType (entry): ${e.TrainType??e.trainType??'(無)'}\n`;
+    out+=`TrainTypeName (entry): ${JSON.stringify(e.TrainTypeName||e.trainTypeName||'(無)')}\n`;
+    const tt=e.Timetables||e.timetables||[];
+    out+=`Timetables: ${tt.length} 筆\n`;
+    if(tt.length>0){
+      const t0=tt[0];
+      out+=`  [0] DepartureTime=${t0.DepartureTime||t0.departureTime}\n`;
+      out+=`      TrainType=${t0.TrainType??t0.trainType??'(無)'}\n`;
+      out+=`      TrainTypeName=${JSON.stringify(t0.TrainTypeName||t0.trainTypeName||'(無)')}\n`;
+      if(tt.length>1){
+        const t1=tt[1];
+        out+=`  [1] DepartureTime=${t1.DepartureTime||t1.departureTime}\n`;
+        out+=`      TrainType=${t1.TrainType??t1.trainType??'(無)'}\n`;
+      }
+    }
+    out+='\n';
+  });
+
+  // Count express vs commuter
+  let eCnt=0,cCnt=0;
+  data.forEach(e=>{
+    const eType=e.TrainType??e.trainType;
+    const tt=e.Timetables||e.timetables||[];
+    tt.forEach(t=>{
+      const tType=t.TrainType??t.trainType??eType;
+      const name=(t.TrainTypeName?.Zh_tw||e.TrainTypeName?.Zh_tw||'');
+      let isExp=false;
+      if(name) isExp=name.includes('直達');
+      else if(tType!==undefined) isExp=(tType===2||tType==='2');
+      if(isExp) eCnt++; else cCnt++;
+    });
+  });
+  out+=`\n=== 車種統計 ===\n直達車: ${eCnt} 筆\n普通車: ${cCnt} 筆\n`;
+
+  el.textContent=out;
 }
 
 function showInfo(){ tabAction('settings'); }
