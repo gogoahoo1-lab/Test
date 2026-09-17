@@ -298,15 +298,12 @@ input,select,textarea{font-size:16px!important;touch-action:manipulation}
   <div class="tab-item active" onclick="tabAction('home')" data-tab="home">
     <span class="tab-ic">🚈</span><span class="tab-lb">時刻</span>
   </div>
-  <div class="tab-item" onclick="tabAction('settings')" data-tab="settings">
-    <span class="tab-ic">⚙</span><span class="tab-lb">設定</span>
-  </div>
-  <div class="tab-center" onclick="tabAction('search')">✳</div>
   <div class="tab-item" onclick="tabAction('sync')" data-tab="sync">
     <span class="tab-ic">↻</span><span class="tab-lb">同步</span>
   </div>
-  <div class="tab-item" onclick="tabAction('info')" data-tab="info">
-    <span class="tab-ic">ℹ</span><span class="tab-lb">關於</span>
+  <div class="tab-center" onclick="tabAction('search')">✳</div>
+  <div class="tab-item" onclick="tabAction('settings')" data-tab="settings">
+    <span class="tab-ic">⚙</span><span class="tab-lb">設定</span>
   </div>
 </div>
 
@@ -870,9 +867,6 @@ function tabAction(action){
         document.querySelector(`.tab-item[data-tab="${currentTab}"]`).classList.add('active');
       },500);
       break;
-
-    case 'info':
-      currentTab='info';showInfo();break;
   }
 }
 
@@ -986,8 +980,6 @@ function showTDXDebug(){
 
   el.textContent=out;
 }
-
-function showInfo(){ tabAction('settings'); }
 
 // Init
 async function init(){
