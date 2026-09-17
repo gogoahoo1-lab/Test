@@ -410,7 +410,7 @@ async function connectTDX(){
   }
 
   dot.className='hero-status offline';
-  toast('正在連線 TDX⋯');
+  // silent — header dot shows status
 
   try{
     await getToken(creds.id, creds.secret);
@@ -428,7 +428,7 @@ async function connectTDX(){
     dot.className='hero-status err';
     if(e.message==='NO_CREDS') tdxStatusMsg='info|請先填入 TDX API 金鑰';
     else tdxStatusMsg=`err|✕ 連線失敗：${e.message}。請檢查金鑰是否正確。`;
-    toast('TDX 連線失敗');
+    // silent — header dot turns red
     updateSetStatus();
   }
 }
@@ -485,9 +485,9 @@ function parseTDXTrains(originCode, destCode){
       const [hh,mm] = depTime.split(':').map(Number);
       const depMin = hh*60+mm;
 
-      // Determine type
-      const isExpress = trainType===1 || trainType==='1' ||
-        (t.TrainTypeName && (t.TrainTypeName.Zh_tw||'').includes('直達'));
+      // Determine type — rely on TrainTypeName text, not numeric TrainType (varies by operator)
+      const typeName = (t.TrainTypeName?.Zh_tw || t.TrainTypeName?.zh_tw || t.trainTypeName?.Zh_tw || '');
+      const isExpress = typeName.includes('直達') || typeName.includes('Express');
       const type = isExpress ? 'e' : 'c';
 
       // Calculate arrival: use embedded travel times as reference
