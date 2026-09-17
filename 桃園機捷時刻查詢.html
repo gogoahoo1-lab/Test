@@ -779,21 +779,27 @@ function render(){
   if(ni>=0){trackerTarget=trains[ni];trackerTrainIdx=ni}
   else{for(let i=trains.length-1;i>=0;i--){if(trains[i].arr>now){trackerTarget=trains[i];ni=i;trackerTrainIdx=i;break}}}
 
-  const sh=trains.slice(0,dc),more=trains.length>dc;
+  // Only show trains from now onwards (include en-route trains whose arr > now)
+  const futureTrains=trains.filter(t=>t.arr>=now);
+  const sh=futureTrains.slice(0,dc),more=futureTrains.length>dc;
   const stns=getStationsWithPrev(selO,selD);
 
   let trackerHTML='';
   if(trackerTarget) trackerHTML=buildTrackerHTML(trackerTarget,stns);
 
+  const nowStr=hm(now);
   let h=`<div class="results-area">
     ${trackerHTML}
-    <div class="res-hd"><div class="res-title">全部班次 <span style="font-size:10px;color:var(--text3);font-weight:400">(${source})</span></div><div class="res-route">${STATIONS[selO].n} \u2192 ${STATIONS[selD].n}</div></div>
+    <div class="res-hd"><div class="res-title">即將到來班次 <span style="font-size:10px;color:var(--text3);font-weight:400">(${source}・${nowStr} 起)</span></div><div class="res-route">${STATIONS[selO].n} \u2192 ${STATIONS[selD].n}</div></div>
     <div class="ftabs"><button class="ftab${tf==='all'?' act':''}" onclick="setF('all')">全部</button>
     ${hasE?`<button class="ftab${tf==='e'?' act':''}" onclick="setF('e')">直達車</button>`:''}
     <button class="ftab${tf==='c'?' act':''}" onclick="setF('c')">普通車</button></div>`;
 
   if(!sh.length){h+=`<div class="no-res"><div class="nri">\ud83d\udd0d</div><div>無可用班次${!hasE&&tf==='e'?'<br>此區間無直達車':''}</div></div>`}
-  else{sh.forEach((t,i)=>{const isN=i===ni;h+=`<div class="tc${isN?' nt':''}">
+  else{sh.forEach((t,i)=>{
+    // Recalculate isNext relative to futureTrains
+    const isN=t===trackerTarget;
+    h+=`<div class="tc${isN?' nt':''}">
     ${isN?'<div class="next-lbl">NEXT</div>':''}
     <div class="tc-badge"><span class="bd ${t.t==='e'?'eb':'cb'}">${t.t==='e'?'直達':'普通'}</span></div>
     <div class="tc-times"><div class="tc-t"><div class="tl">出發</div><div class="tv">${hm(t.dep)}</div></div>
