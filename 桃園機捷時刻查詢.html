@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>桃園機捷時刻查詢</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap');
+:root{
+  --bg:#0C0C0E;--card:#18181C;--card2:#222226;
+  --copper:#D4956B;--copper-l:#E8B898;--copper-d:#B87A4F;
+  --copper-g:rgba(212,149,107,.15);--copper-g2:rgba(212,149,107,.08);
+  --text:#F0EBE6;--text2:#8A8488;--text3:#5A5558;--border:#2A2A2E;
+  --express:#D4956B;--commuter:#7A9EC2;
+  --ok:#6BBF7B;--err:#E05A5A;--r:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans TC',-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.app{max-width:430px;margin:0 auto;padding-bottom:100px;position:relative}
+
+/* Hero */
+.hero{position:relative;padding:56px 24px 32px;overflow:hidden;
+  background:linear-gradient(180deg,#3D2A1A 0%,#C4794C 35%,#D4956B 50%,#B87A4F 65%,#2A1D14 85%,var(--bg) 100%)}
+.hero::before{content:'';position:absolute;top:30%;left:50%;transform:translate(-50%,-50%);width:280px;height:280px;
+  background:radial-gradient(circle,rgba(255,220,180,.35) 0%,rgba(212,149,107,.15) 40%,transparent 70%);border-radius:50%;pointer-events:none}
+.hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:80px;background:linear-gradient(180deg,transparent,var(--bg));pointer-events:none}
+.hero-top{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1;margin-bottom:24px}
+.hero-brand{display:flex;align-items:center;gap:8px}
+.hero-logo{font-size:22px;opacity:.9}.hero-name{font-size:18px;font-weight:700;letter-spacing:1px}
+.hero-loc{font-size:11px;color:rgba(255,255,255,.7);background:rgba(255,255,255,.12);padding:4px 12px;border-radius:20px}
+
+.date-strip{display:flex;justify-content:center;gap:6px;position:relative;z-index:1;margin-bottom:28px}
+.date-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
+.date-num{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;
+  background:rgba(255,255,255,.1);color:rgba(255,255,255,.7)}
+.date-item.active .date-num{background:rgba(255,255,255,.25);color:#fff;box-shadow:0 0 20px rgba(255,255,255,.15);font-size:16px;width:46px;height:46px}
+.date-day{font-size:10px;color:rgba(255,255,255,.5);font-weight:500}
+.date-item.active .date-day{color:rgba(255,255,255,.85)}
+
+.hero-time{text-align:center;position:relative;z-index:1;margin-bottom:8px}
+.hero-time .big{font-size:48px;font-weight:300;letter-spacing:4px;color:#fff}
+.hero-time .label{font-size:12px;color:rgba(255,255,255,.5);margin-top:2px}
+
+/* Source bar */
+.src-bar{display:flex;align-items:center;gap:8px;margin:0 20px;padding:10px 16px;background:var(--card);border-radius:12px;margin-top:-16px;position:relative;z-index:2}
+.src-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.src-dot.live{background:var(--ok);box-shadow:0 0 8px var(--ok);animation:pulse 2s infinite}
+.src-dot.local{background:var(--copper)}
+.src-dot.loading{background:var(--text3);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.src-lbl{flex:1;font-size:11px;color:var(--text2);font-weight:400}
+.src-btns{display:flex;gap:6px}
+.src-btn{background:none;border:none;color:var(--copper);font-size:11px;cursor:pointer;font-family:inherit;font-weight:500;padding:2px 4px}
+
+/* Favs */
+.fav-bar{padding:16px 20px 0;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+.fav-bar::-webkit-scrollbar{display:none}
+.fav-bar:empty{display:none}
+.fav-chip{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--card);border:1px solid var(--border);border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;color:var(--text2);transition:all .2s}
+.fav-chip:hover{border-color:var(--copper);color:var(--copper)}
+.fav-chip .fs{color:var(--copper);font-size:10px}
+.fav-chip .fa{opacity:.4;font-size:11px}
+.fav-chip .fd{opacity:.3;font-size:13px;margin-left:2px;transition:all .2s}
+.fav-chip:hover .fd{opacity:1;color:var(--err)}
+
+/* Selector */
+.sel-area{padding:16px 20px}
+.sel-card{background:var(--card2);border-radius:var(--r);overflow:hidden;border:1px solid rgba(212,149,107,.15)}
+.stn-row{display:flex;align-items:center;padding:0 18px;height:62px;gap:14px;cursor:pointer;transition:background .15s;position:relative}
+.stn-row:hover{background:var(--copper-g2)}
+.stn-dot{width:12px;height:12px;border-radius:50%;border:2.5px solid var(--copper);flex-shrink:0}
+.stn-dot.dest{background:var(--copper)}
+.stn-line{position:absolute;left:32px;width:2px;background:var(--copper);opacity:.4}
+.ol{top:40px;height:22px}.dl{top:0;height:22px}
+.stn-lbl{font-size:11px;color:var(--copper);font-weight:600;width:32px;flex-shrink:0}
+.stn-disp{flex:1;font-size:15px;font-weight:600}
+.stn-disp.ph{color:var(--text2);font-weight:400}
+.stn-chev{color:var(--text2);font-size:13px}
+
+.swap-zone{display:flex;justify-content:center;position:relative;height:0;z-index:2}
+.swap-btn{position:absolute;top:-19px;width:38px;height:38px;border-radius:50%;border:3px solid var(--card2);background:var(--copper);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 16px rgba(212,149,107,.3);transition:transform .3s,background .2s}
+.swap-btn:hover{background:var(--copper-d)}
+.swap-btn:active{transform:rotate(180deg)}
+.swap-btn svg{width:16px;height:16px}
+
+/* Actions */
+.actions{padding:0 20px;margin-top:14px;display:flex;gap:10px}
+.btn-pri{flex:1;height:50px;border:none;border-radius:25px;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;background:var(--copper);color:#fff;transition:all .2s}
+.btn-pri:hover{background:var(--copper-d)}
+.btn-pri:disabled{background:var(--card2);color:var(--text3);cursor:not-allowed}
+.btn-fav{width:50px;height:50px;border:1.5px solid var(--border);border-radius:50%;background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;color:var(--text3);transition:all .2s}
+.btn-fav:hover{border-color:var(--copper)}
+.btn-fav.is-fav{color:var(--copper);border-color:var(--copper);background:var(--copper-g)}
+
+/* Settings panel */
+.settings{margin:14px 20px 0;background:var(--card);border-radius:var(--r);border:1px solid var(--border);overflow:hidden}
+.set-hd{display:flex;align-items:center;gap:8px;padding:14px 18px;cursor:pointer}
+.set-hd .set-ic{color:var(--copper);font-size:14px}
+.set-hd .set-tt{flex:1;font-size:13px;font-weight:600;color:var(--copper)}
+.set-hd .set-tg{font-size:11px;color:var(--text3);transition:transform .3s}
+.set-hd .set-tg.open{transform:rotate(180deg)}
+.set-bd{display:none;padding:0 18px 16px}
+.set-bd.show{display:block}
+.set-desc{font-size:11px;color:var(--text3);line-height:1.6;margin-bottom:12px}
+.set-desc a{color:var(--copper);text-decoration:none}
+.set-row{margin-bottom:10px}
+.set-row label{display:block;font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:500}
+.set-row input{width:100%;height:40px;border:1px solid var(--border);border-radius:10px;padding:0 14px;font-size:13px;font-family:inherit;background:var(--card2);color:var(--text);outline:none}
+.set-row input:focus{border-color:var(--copper)}
+.set-row input::placeholder{color:var(--text3)}
+.set-actions{display:flex;gap:8px}
+.set-btn{flex:1;height:38px;border:none;border-radius:19px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.set-btn.pri{background:var(--copper);color:#fff}
+.set-btn.pri:hover{background:var(--copper-d)}
+.set-btn.sec{background:var(--card2);color:var(--text2);border:1px solid var(--border)}
+.set-status{margin-top:10px;padding:10px;border-radius:8px;font-size:11px;line-height:1.5;display:none}
+.set-status.ok{display:block;background:rgba(107,191,123,.1);color:var(--ok)}
+.set-status.err{display:block;background:rgba(224,90,90,.1);color:var(--err)}
+.set-status.info{display:block;background:var(--copper-g2);color:var(--text2)}
+
+/* Results */
+.results-area{padding:16px 20px}
+.res-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.res-title{font-size:16px;font-weight:700}
+.res-route{font-size:11px;color:var(--text2)}
+.ftabs{display:flex;gap:4px;margin-bottom:16px;background:var(--card);padding:3px;border-radius:25px;border:1px solid var(--border)}
+.ftab{flex:1;height:32px;border:none;border-radius:22px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;color:var(--text3);transition:all .2s}
+.ftab.act{background:var(--copper);color:#fff}
+
+.tc{background:var(--card);border-radius:14px;padding:16px 18px;margin-bottom:8px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;border:1px solid var(--border);transition:border-color .2s}
+.tc.nt{border-color:var(--copper)}
+.tc.nt::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--copper),var(--copper-l),var(--copper))}
+.next-lbl{position:absolute;top:6px;right:12px;font-size:9px;font-weight:600;color:var(--copper);letter-spacing:.5px}
+.tc-badge{width:42px;flex-shrink:0;text-align:center}
+.tc-badge .bd{display:inline-block;padding:4px 0;width:42px;border-radius:8px;font-size:10px;font-weight:700}
+.bd.eb{background:var(--copper-g);color:var(--copper)}
+.bd.cb{background:rgba(122,158,194,.12);color:var(--commuter)}
+.tc-times{flex:1;display:flex;align-items:center;gap:8px}
+.tc-t{text-align:center}
+.tc-t .tl{font-size:9px;color:var(--text3);margin-bottom:3px;font-weight:500}
+.tc-t .tv{font-size:20px;font-weight:300;font-variant-numeric:tabular-nums;letter-spacing:1px}
+.tc-arr{color:var(--text3);font-size:14px;flex-shrink:0}
+.tc-dur{text-align:right;flex-shrink:0}
+.tc-dur .dv{font-size:15px;font-weight:600;color:var(--copper)}
+.tc-dur .dl2{font-size:9px;color:var(--text3)}
+.no-res{text-align:center;padding:40px 20px;color:var(--text3)}
+.no-res .nri{font-size:36px;margin-bottom:12px;opacity:.5}
+.empty-st{text-align:center;padding:48px 30px;color:var(--text3)}
+.empty-st .esi{font-size:44px;margin-bottom:16px;opacity:.5}
+.empty-st .est{font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px}
+.empty-st .ess{font-size:12px;line-height:1.7;color:var(--text2)}
+.load-more{text-align:center;padding:12px}
+.load-more button{background:transparent;border:1px solid var(--border);border-radius:20px;padding:8px 28px;font-size:12px;color:var(--copper);cursor:pointer;font-family:inherit;font-weight:500}
+.load-more button:hover{background:var(--copper-g)}
+
+/* Tab bar */
+.tab-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;padding:8px 24px calc(8px + env(safe-area-inset-bottom));background:rgba(12,12,14,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-around;z-index:50}
+.tab-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 12px;color:var(--text3);font-size:18px;transition:color .2s}
+.tab-item.active{color:var(--text)}
+.tab-item span{font-size:9px;font-weight:500}
+.tab-center{width:52px;height:52px;border-radius:50%;background:var(--copper);display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(212,149,107,.35);margin-top:-20px;transition:transform .15s}
+.tab-center:active{transform:scale(.92)}
+
+/* Modal */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px)}
+.modal-ov.show{display:flex}
+.modal{background:var(--card);width:100%;max-width:430px;max-height:85vh;border-radius:24px 24px 0 0;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-hd{padding:20px 20px 14px;display:flex;align-items:center;justify-content:space-between}
+.modal-hd h2{font-size:17px;font-weight:700}
+.modal-cl{width:30px;height:30px;border-radius:50%;border:none;background:var(--card2);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:var(--text2)}
+.modal-sr{padding:0 20px 12px}
+.modal-sr input{width:100%;height:42px;border:1px solid var(--border);border-radius:21px;padding:0 18px;font-size:14px;font-family:inherit;background:var(--card2);color:var(--text);outline:none}
+.modal-sr input:focus{border-color:var(--copper)}
+.modal-sr input::placeholder{color:var(--text3)}
+.stn-list{flex:1;overflow-y:auto;padding:4px 0 28px}
+.stn-item{display:flex;align-items:center;padding:14px 20px;gap:14px;cursor:pointer;transition:background .15s}
+.stn-item:hover{background:var(--copper-g2)}
+.stn-item.sel{background:var(--copper-g)}
+.stn-item.dis{opacity:.25;cursor:not-allowed}
+.stn-code{font-size:11px;font-weight:700;color:var(--bg);background:var(--copper);width:38px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.stn-code.co{background:var(--commuter)}
+.stn-info{flex:1}
+.stn-info .nm{font-size:15px;font-weight:600}
+.stn-info .tgs{display:flex;gap:6px;margin-top:3px}
+.tg{font-size:9px;padding:2px 7px;border-radius:4px;font-weight:600}
+.tg.ex{background:var(--copper-g);color:var(--copper)}
+.tg.cm{background:rgba(122,158,194,.1);color:var(--commuter)}
+.stn-chk{color:var(--copper);font-size:16px;font-weight:700}
+
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--card2);color:var(--text);border:1px solid var(--border);padding:10px 22px;border-radius:25px;font-size:13px;font-weight:500;z-index:200;transition:transform .3s;pointer-events:none;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.disclaimer{text-align:center;padding:20px 24px;font-size:10px;color:var(--text3);line-height:1.6}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hero">
+    <div class="hero-top">
+      <div class="hero-brand"><span class="hero-logo">✳</span><span class="hero-name">機捷時刻</span></div>
+      <div class="hero-loc">桃園機場捷運</div>
+    </div>
+    <div class="date-strip" id="dateStrip"></div>
+    <div class="hero-time"><div class="big" id="heroTime">--:--</div><div class="label">目前時間</div></div>
+  </div>
+
+  <div class="src-bar">
+    <div class="src-dot local" id="srcDot"></div>
+    <span class="src-lbl" id="srcLbl">尚未連線</span>
+    <div class="src-btns">
+      <button class="src-btn" onclick="connectTDX()">連線 TDX</button>
+    </div>
+  </div>
+
+  <div class="fav-bar" id="favBar"></div>
+
+  <div class="sel-area">
+    <div class="sel-card">
+      <div class="stn-row" onclick="openPicker('origin')">
+        <div class="stn-dot"></div><div class="stn-line ol"></div>
+        <div class="stn-lbl">起站</div>
+        <div class="stn-disp ph" id="oDisp">選擇出發站</div>
+        <div class="stn-chev">›</div>
+      </div>
+      <div class="swap-zone">
+        <button class="swap-btn" onclick="doSwap()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4l-4 4 4 4"/><path d="M3 8h14"/><path d="M17 20l4-4-4-4"/><path d="M21 16H7"/></svg>
+        </button>
+      </div>
+      <div class="stn-row" onclick="openPicker('dest')">
+        <div class="stn-dot dest"></div><div class="stn-line dl"></div>
+        <div class="stn-lbl">迄站</div>
+        <div class="stn-disp ph" id="dDisp">選擇到達站</div>
+        <div class="stn-chev">›</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-pri" id="goBtn" onclick="search()" disabled>查詢時刻</button>
+    <button class="btn-fav" id="favBtn" onclick="toggleFav()">☆</button>
+  </div>
+
+  <!-- TDX Settings -->
+  <div class="settings" id="setPanel">
+    <div class="set-hd" onclick="toggleSet()">
+      <span class="set-ic">⚙</span><span class="set-tt">TDX API 設定</span>
+      <span class="set-tg" id="setTg">▼</span>
+    </div>
+    <div class="set-bd" id="setBd">
+      <div class="set-desc">
+        請至 <a href="https://tdx.transportdata.tw/" target="_blank">TDX 運輸資料流通服務</a> 免費註冊會員並取得 API 金鑰，填入下方即可取得即時時刻表。金鑰僅存在本機瀏覽器，不會上傳。
+      </div>
+      <div class="set-row">
+        <label>Client ID</label>
+        <input type="text" id="tdxId" placeholder="貼上你的 Client ID">
+      </div>
+      <div class="set-row">
+        <label>Client Secret</label>
+        <input type="password" id="tdxSecret" placeholder="貼上你的 Client Secret">
+      </div>
+      <div class="set-actions">
+        <button class="set-btn pri" onclick="connectTDX()">連線測試</button>
+        <button class="set-btn sec" onclick="clearTDX()">清除金鑰</button>
+      </div>
+      <div class="set-status" id="setStatus"></div>
+    </div>
+  </div>
+
+  <div id="resCont"></div>
+  <div class="disclaimer">
+    本機版 — 直接呼叫 TDX API 取得即時時刻表<br>
+    若尚未設定 TDX 金鑰，則使用內建參考資料
+  </div>
+</div>
+
+<div class="tab-bar">
+  <div class="tab-item active"><span>🚈</span><span>時刻</span></div>
+  <div class="tab-item" onclick="toggleSet()"><span>⚙</span><span>設定</span></div>
+  <div class="tab-center" onclick="search()">✳</div>
+  <div class="tab-item" onclick="connectTDX()"><span>↻</span><span>同步</span></div>
+  <div class="tab-item"><span>☰</span><span>更多</span></div>
+</div>
+
+<div class="modal-ov" id="mOv" onclick="closePicker(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hd"><h2 id="mTitle">選擇車站</h2><button class="modal-cl" onclick="closePicker()">✕</button></div>
+    <div class="modal-sr"><input type="text" id="mSearch" placeholder="搜尋站名或代碼⋯" oninput="filterS()"></div>
+    <div class="stn-list" id="sList"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ========== EMBEDDED FALLBACK DATA ==========
+const STATIONS=[
+  {c:'A1', n:'台北車站',     ex:true,  cm:0,  em:0},
+  {c:'A2', n:'三重',         ex:false, cm:4,  em:null},
+  {c:'A3', n:'新北產業園區', ex:true,  cm:8,  em:6},
+  {c:'A4', n:'新莊副都心',   ex:false, cm:12, em:null},
+  {c:'A5', n:'泰山',         ex:false, cm:15, em:null},
+  {c:'A6', n:'泰山貴和',     ex:false, cm:18, em:null},
+  {c:'A7', n:'體育大學',     ex:false, cm:21, em:null},
+  {c:'A8', n:'長庚醫院',     ex:true,  cm:25, em:18},
+  {c:'A9', n:'林口',         ex:false, cm:29, em:null},
+  {c:'A10',n:'山鼻',         ex:false, cm:33, em:null},
+  {c:'A11',n:'坑口',         ex:false, cm:36, em:null},
+  {c:'A12',n:'機場第一航廈', ex:true,  cm:40, em:32},
+  {c:'A13',n:'機場第二航廈', ex:true,  cm:43, em:35},
+  {c:'A15',n:'大園',         ex:false, cm:49, em:null},
+  {c:'A16',n:'橫山',         ex:false, cm:52, em:null},
+  {c:'A17',n:'領航',         ex:false, cm:55, em:null},
+  {c:'A18',n:'高鐵桃園',     ex:true,  cm:59, em:49},
+  {c:'A19',n:'桃園體育園區', ex:false, cm:63, em:null},
+  {c:'A20',n:'興南',         ex:false, cm:66, em:null},
+  {c:'A21',n:'環北',         ex:true,  cm:70, em:57},
+];
+const TC=70,TE=57;
+const SC={c:{fA:360,lA:1380,fB:362,lB:1382,iv:15},e:{fA:366,lA:1356,fB:368,lB:1358,iv:15}};
+
+// ========== TDX API ==========
+const TDX_TOKEN_URL='https://tdx.transportdata.tw/auth/realms/TDXConnect/protocol/openid-connect/token';
+const TDX_BASE='https://tdx.transportdata.tw/api/basic/v2/Rail/Metro';
+const TDX_TIMETABLE=`${TDX_BASE}/StationTimeTable/TYMC?$format=JSON`;
+const TDX_TRAVEL=`${TDX_BASE}/S2STravelTime/TYMC?$format=JSON`;
+const TDX_FIRSTLAST=`${TDX_BASE}/FirstLastTripInfo/TYMC?$format=JSON`;
+const TDX_LIVEBOARD=`${TDX_BASE}/LiveBoard/TYMC?$format=JSON`;
+
+let tdxToken=null, tdxExpiry=0;
+let apiTimetable=null; // parsed TDX data when available
+
+function loadCreds(){
+  try{
+    return{id:localStorage.getItem('tdx_id')||'',secret:localStorage.getItem('tdx_secret')||''};
+  }catch(e){return{id:'',secret:''}}
+}
+function saveCreds(id,secret){
+  try{localStorage.setItem('tdx_id',id);localStorage.setItem('tdx_secret',secret)}catch(e){}
+}
+
+async function getToken(id,secret){
+  const res=await fetch(TDX_TOKEN_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:`grant_type=client_credentials&client_id=${encodeURIComponent(id)}&client_secret=${encodeURIComponent(secret)}`
+  });
+  if(!res.ok) throw new Error(`Auth failed: ${res.status}`);
+  const data=await res.json();
+  tdxToken=data.access_token;
+  tdxExpiry=Date.now()+(data.expires_in-60)*1000;
+  return tdxToken;
+}
+
+async function tdxFetch(url){
+  const creds=loadCreds();
+  if(!creds.id||!creds.secret) throw new Error('NO_CREDS');
+  if(!tdxToken||Date.now()>tdxExpiry) await getToken(creds.id,creds.secret);
+  const res=await fetch(url,{headers:{Authorization:`Bearer ${tdxToken}`}});
+  if(res.status===401){tdxToken=null;await getToken(creds.id,creds.secret);
+    const r2=await fetch(url,{headers:{Authorization:`Bearer ${tdxToken}`}});
+    if(!r2.ok) throw new Error(`API ${r2.status}`);return r2.json()}
+  if(!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+async function connectTDX(){
+  const dot=document.getElementById('srcDot');
+  const lbl=document.getElementById('srcLbl');
+  const status=document.getElementById('setStatus');
+
+  // Read fields first
+  const idEl=document.getElementById('tdxId');
+  const secEl=document.getElementById('tdxSecret');
+  if(idEl.value.trim()) saveCreds(idEl.value.trim(), secEl.value.trim());
+
+  const creds=loadCreds();
+  if(!creds.id||!creds.secret){
+    dot.className='src-dot local';
+    lbl.textContent='請先設定 TDX 金鑰';
+    status.className='set-status info';
+    status.textContent='請填入 Client ID 與 Client Secret 後按連線測試';
+    // Open settings
+    document.getElementById('setBd').classList.add('show');
+    document.getElementById('setTg').classList.add('open');
+    return;
+  }
+
+  dot.className='src-dot loading';
+  lbl.textContent='連線 TDX 中⋯';
+  status.className='set-status info';
+  status.textContent='正在驗證金鑰並取得時刻表⋯';
+
+  try{
+    // Auth
+    await getToken(creds.id, creds.secret);
+
+    // Fetch timetable
+    const ttData=await tdxFetch(TDX_TIMETABLE);
+    apiTimetable=ttData;
+
+    const count=Array.isArray(ttData)?ttData.length:
+                (ttData.StationTimetables?ttData.StationTimetables.length:'?');
+
+    dot.className='src-dot live';
+    lbl.textContent=`TDX 即時連線中（${count} 筆站別時刻）`;
+    status.className='set-status ok';
+    status.textContent=`✓ 連線成功！已取得 ${count} 筆站別時刻表資料。Token 有效至 ${new Date(tdxExpiry).toLocaleTimeString()}`;
+    toast('TDX API 連線成功');
+
+    // Fill credential fields
+    idEl.value=creds.id;
+    secEl.value=creds.secret;
+
+  }catch(e){
+    tdxToken=null;
+    apiTimetable=null;
+    dot.className='src-dot local';
+    lbl.textContent='TDX 連線失敗，使用內建資料';
+
+    if(e.message==='NO_CREDS'){
+      status.className='set-status info';
+      status.textContent='請先填入 TDX API 金鑰';
+    } else {
+      status.className='set-status err';
+      status.textContent=`✕ 連線失敗：${e.message}。請檢查金鑰是否正確。`;
+    }
+  }
+}
+
+function clearTDX(){
+  try{localStorage.removeItem('tdx_id');localStorage.removeItem('tdx_secret')}catch(e){}
+  document.getElementById('tdxId').value='';
+  document.getElementById('tdxSecret').value='';
+  tdxToken=null;apiTimetable=null;
+  document.getElementById('srcDot').className='src-dot local';
+  document.getElementById('srcLbl').textContent='金鑰已清除，使用內建資料';
+  document.getElementById('setStatus').className='set-status info';
+  document.getElementById('setStatus').textContent='金鑰已從本機清除';
+  toast('金鑰已清除');
+}
+
+// ========== TDX DATA PARSING ==========
+function parseTDXTrains(originCode, destCode){
+  if(!apiTimetable) return null;
+  // TDX StationTimeTable format: array of {StationID, Direction, Timetables:[{DepartureTime, TrainType}]}
+  const data = Array.isArray(apiTimetable) ? apiTimetable : (apiTimetable.StationTimetables || apiTimetable);
+  if(!Array.isArray(data)||!data.length) return null;
+
+  const oIdx=STATIONS.findIndex(s=>s.c===originCode);
+  const dIdx=STATIONS.findIndex(s=>s.c===destCode);
+  if(oIdx<0||dIdx<0) return null;
+  const direction = oIdx < dIdx ? 0 : 1; // 0=south, 1=north
+
+  // Find timetable entries for origin station in the right direction
+  const originEntries = data.filter(e=>{
+    const sid = e.StationID || e.stationID;
+    const dir = e.Direction !== undefined ? e.Direction : e.direction;
+    return sid === originCode && dir === direction;
+  });
+
+  if(!originEntries.length) return null;
+
+  // Collect departure times from origin
+  const results=[];
+  originEntries.forEach(entry=>{
+    const tt = entry.Timetables || entry.timetables || [];
+    tt.forEach(t=>{
+      const depTime = t.DepartureTime || t.departureTime;
+      const trainType = t.TrainType || t.trainType; // 1=express, 2=commuter or similar
+      if(!depTime) return;
+      const [hh,mm] = depTime.split(':').map(Number);
+      const depMin = hh*60+mm;
+
+      // Determine type
+      const isExpress = trainType===1 || trainType==='1' ||
+        (t.TrainTypeName && (t.TrainTypeName.Zh_tw||'').includes('直達'));
+      const type = isExpress ? 'e' : 'c';
+
+      // Calculate arrival: use embedded travel times as reference
+      const oS=STATIONS[oIdx], dS=STATIONS[dIdx];
+      let dur;
+      if(isExpress && oS.ex && dS.ex){
+        dur = Math.abs(dS.em - oS.em);
+      } else {
+        dur = Math.abs(dS.cm - oS.cm);
+      }
+      results.push({t:type, dep:depMin, arr:depMin+dur, dur});
+    });
+  });
+
+  results.sort((a,b)=>a.dep-b.dep);
+  return results.length ? results : null;
+}
+
+// ========== STATE ==========
+let selO=null,selD=null,pm=null,tf='all',dc=10;
+const hm=m=>`${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+const nowM=()=>{const d=new Date();return d.getHours()*60+d.getMinutes()};
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+
+function renderDateStrip(){
+  const ds=document.getElementById('dateStrip');const today=new Date();
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let h='';for(let i=-3;i<=3;i++){const d=new Date(today);d.setDate(d.getDate()+i);
+    h+=`<div class="date-item${i===0?' active':''}"><div class="date-num">${d.getDate()}</div><div class="date-day">${days[d.getDay()]}</div></div>`}
+  ds.innerHTML=h;
+}
+function updateClock(){const d=new Date();document.getElementById('heroTime').textContent=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
+
+// Favs
+function loadF(){try{const d=localStorage.getItem('mrt_fav');if(d)favs=JSON.parse(d)}catch(e){}}
+let favs=[];
+function saveF(){try{localStorage.setItem('mrt_fav',JSON.stringify(favs))}catch(e){}}
+function renderF(){const b=document.getElementById('favBar');b.innerHTML='';favs.forEach((f,i)=>{const c=document.createElement('div');c.className='fav-chip';c.innerHTML=`<span class="fs">★</span>${f.oN}<span class="fa">⇄</span>${f.dN}<span class="fd" onclick="event.stopPropagation();rmF(${i})">✕</span>`;c.onclick=e=>{if(e.target.classList.contains('fd'))return;selO=STATIONS.findIndex(s=>s.c===f.oC);selD=STATIONS.findIndex(s=>s.c===f.dC);upUI();search()};b.appendChild(c)})}
+function rmF(i){favs.splice(i,1);saveF();renderF();upFav();toast('已移除')}
+function toggleFav(){if(selO===null||selD===null)return;const o=STATIONS[selO],d=STATIONS[selD],k=`${o.c}-${d.c}`;const i=favs.findIndex(f=>`${f.oC}-${f.dC}`===k);if(i>=0){favs.splice(i,1);toast('已取消最愛')}else{if(favs.length>=6){toast('最多6組');return}favs.push({oC:o.c,oN:o.n,dC:d.c,dN:d.n});toast('已加入最愛')}saveF();renderF();upFav()}
+function upFav(){const b=document.getElementById('favBtn');if(selO===null||selD===null){b.className='btn-fav';b.innerHTML='☆';return}const k=`${STATIONS[selO].c}-${STATIONS[selD].c}`;const is=favs.some(f=>`${f.oC}-${f.dC}`===k);b.className=is?'btn-fav is-fav':'btn-fav';b.innerHTML=is?'★':'☆'}
+
+// Picker
+function openPicker(m){pm=m;document.getElementById('mTitle').textContent=m==='origin'?'選擇出發站':'選擇到達站';document.getElementById('mSearch').value='';renderSL('');document.getElementById('mOv').classList.add('show');setTimeout(()=>document.getElementById('mSearch').focus(),300)}
+function closePicker(e){if(e&&e.target!==document.getElementById('mOv'))return;document.getElementById('mOv').classList.remove('show')}
+function filterS(){renderSL(document.getElementById('mSearch').value.trim())}
+function renderSL(q){const l=document.getElementById('sList'),di=pm==='origin'?selD:selO,si=pm==='origin'?selO:selD,ql=q.toLowerCase();let h='';STATIONS.forEach((s,i)=>{if(ql&&!s.n.includes(ql)&&!s.c.toLowerCase().includes(ql))return;h+=`<div class="stn-item${i===si?' sel':''}${i===di?' dis':''}" onclick="${i===di?'':`pickS(${i})`}"><div class="stn-code${s.ex?'':' co'}">${s.c}</div><div class="stn-info"><div class="nm">${s.n}</div><div class="tgs">${s.ex?'<span class="tg ex">直達車</span>':''}<span class="tg cm">普通車</span></div></div>${i===si?'<div class="stn-chk">✓</div>':''}</div>`});l.innerHTML=h}
+function pickS(i){if(pm==='origin')selO=i;else selD=i;document.getElementById('mOv').classList.remove('show');upUI()}
+function doSwap(){[selO,selD]=[selD,selO];upUI();if(document.getElementById('resCont').innerHTML.includes('tc '))search()}
+function upUI(){const od=document.getElementById('oDisp'),dd=document.getElementById('dDisp');if(selO!==null){od.textContent=`${STATIONS[selO].c} ${STATIONS[selO].n}`;od.classList.remove('ph')}else{od.textContent='選擇出發站';od.classList.add('ph')}if(selD!==null){dd.textContent=`${STATIONS[selD].c} ${STATIONS[selD].n}`;dd.classList.remove('ph')}else{dd.textContent='選擇到達站';dd.classList.add('ph')}document.getElementById('goBtn').disabled=(selO===null||selD===null);upFav()}
+
+// Settings toggle
+let setOpen=false;
+function toggleSet(){setOpen=!setOpen;document.getElementById('setBd').classList.toggle('show',setOpen);document.getElementById('setTg').classList.toggle('open',setOpen)}
+
+// Trains (embedded fallback)
+function genFallback(oi,di){
+  const south=oi<di,res=[];
+  const cs=SC.c;
+  if(south){const ot=STATIONS[oi].cm,dt=STATIONS[di].cm,dur=dt-ot;for(let d=cs.fA;d<=cs.lA;d+=cs.iv)res.push({t:'c',dep:d+ot,arr:d+dt,dur})}
+  else{const ot=TC-STATIONS[oi].cm,dt=TC-STATIONS[di].cm,dur=dt-ot;for(let d=cs.fB;d<=cs.lB;d+=cs.iv)res.push({t:'c',dep:d+ot,arr:d+dt,dur})}
+  if(STATIONS[oi].ex&&STATIONS[di].ex){
+    const es=SC.e;
+    if(south){const ot=STATIONS[oi].em,dt=STATIONS[di].em,dur=dt-ot;for(let d=es.fA;d<=es.lA;d+=es.iv)res.push({t:'e',dep:d+ot,arr:d+dt,dur})}
+    else{const ot=TE-STATIONS[oi].em,dt=TE-STATIONS[di].em,dur=dt-ot;for(let d=es.fB;d<=es.lB;d+=es.iv)res.push({t:'e',dep:d+ot,arr:d+dt,dur})}
+  }
+  res.sort((a,b)=>a.dep-b.dep);return res;
+}
+
+function search(){
+  if(selO===null||selD===null)return;dc=10;tf='all';render();
+}
+
+function setF(f){tf=f;dc=10;render()}
+
+function render(){
+  const ct=document.getElementById('resCont');
+  const oCode=STATIONS[selO].c, dCode=STATIONS[selD].c;
+
+  // Try TDX data first, fallback to embedded
+  let all = parseTDXTrains(oCode, dCode);
+  let source = 'TDX';
+  if(!all){all=genFallback(selO,selD);source='內建'}
+
+  const now=nowM();
+  let trains=all;
+  if(tf==='e')trains=trains.filter(t=>t.t==='e');
+  if(tf==='c')trains=trains.filter(t=>t.t==='c');
+  const hasE=all.some(t=>t.t==='e');
+  let ni=trains.findIndex(t=>t.dep>=now);
+  const sh=trains.slice(0,dc),more=trains.length>dc;
+
+  let h=`<div class="results-area"><div class="res-hd"><div class="res-title">查詢結果 <span style="font-size:10px;color:var(--text3);font-weight:400">(${source})</span></div><div class="res-route">${STATIONS[selO].n} → ${STATIONS[selD].n}</div></div>
+    <div class="ftabs"><button class="ftab${tf==='all'?' act':''}" onclick="setF('all')">全部</button>
+    ${hasE?`<button class="ftab${tf==='e'?' act':''}" onclick="setF('e')">直達車</button>`:''}
+    <button class="ftab${tf==='c'?' act':''}" onclick="setF('c')">普通車</button></div>`;
+
+  if(!sh.length){h+=`<div class="no-res"><div class="nri">🔍</div><div>無可用班次${!hasE&&tf==='e'?'<br>此區間無直達車':''}</div></div>`}
+  else{sh.forEach((t,i)=>{const isN=i===ni;h+=`<div class="tc${isN?' nt':''}">
+    ${isN?'<div class="next-lbl">NEXT</div>':''}
+    <div class="tc-badge"><span class="bd ${t.t==='e'?'eb':'cb'}">${t.t==='e'?'直達':'普通'}</span></div>
+    <div class="tc-times"><div class="tc-t"><div class="tl">出發</div><div class="tv">${hm(t.dep)}</div></div>
+    <div class="tc-arr">→</div><div class="tc-t"><div class="tl">抵達</div><div class="tv">${hm(t.arr)}</div></div></div>
+    <div class="tc-dur"><div class="dv">${t.dur} 分</div><div class="dl2">車程</div></div></div>`});
+    if(more)h+=`<div class="load-more"><button onclick="dc+=10;render()">顯示更多班次</button></div>`}
+  h+='</div>';ct.innerHTML=h;
+  setTimeout(()=>{const el=document.querySelector('.nt');if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},100);
+}
+
+// Init
+async function init(){
+  loadF();renderF();upUI();updateClock();renderDateStrip();
+  setInterval(updateClock,30000);
+  document.getElementById('resCont').innerHTML=`<div class="empty-st"><div class="esi">🚈</div><div class="est">選擇起訖站開始查詢</div><div class="ess">選好出發站與到達站<br>按下查詢即可查看班次時刻</div></div>`;
+
+  // Load saved creds into fields
+  const creds=loadCreds();
+  if(creds.id){
+    document.getElementById('tdxId').value=creds.id;
+    document.getElementById('tdxSecret').value=creds.secret;
+    // Auto-connect
+    await connectTDX();
+  } else {
+    document.getElementById('srcDot').className='src-dot local';
+    document.getElementById('srcLbl').textContent='內建時刻資料（請設定 TDX 金鑰以連線）';
+  }
+}
+init();
+</script>
+</body>
+</html>
