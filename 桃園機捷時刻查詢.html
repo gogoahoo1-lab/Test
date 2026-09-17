@@ -31,9 +31,10 @@ input,select,textarea{font-size:16px!important;touch-action:manipulation}
 .hero-logo{font-size:22px;opacity:.9}.hero-name{font-size:18px;font-weight:700;letter-spacing:1px}
 .hero-loc{font-size:11px;color:rgba(255,255,255,.7);background:rgba(255,255,255,.12);padding:4px 12px;border-radius:20px;display:flex;align-items:center;gap:6px}
 .hero-status{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.hero-status.live{background:#6BBF7B;box-shadow:0 0 6px #6BBF7B}
+.hero-status.live{background:#6BBF7B;box-shadow:0 0 6px #6BBF7B;animation:pulse 2s infinite}
 .hero-status.offline{background:#8A8488}
 .hero-status.err{background:#E05A5A}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
 .date-strip{display:flex;justify-content:center;gap:6px;position:relative;z-index:1;margin-bottom:28px}
 .date-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
@@ -147,29 +148,6 @@ input,select,textarea{font-size:16px!important;touch-action:manipulation}
 .load-more{text-align:center;padding:12px}
 .load-more button{background:transparent;border:1px solid var(--border);border-radius:20px;padding:8px 28px;font-size:12px;color:var(--copper);cursor:pointer;font-family:inherit;font-weight:500}
 .load-more button:hover{background:var(--copper-g)}
-
-/* ===== ARRIVAL BOARD (月台到站看板) ===== */
-.arr-board{margin:0 0 14px;background:var(--card);border-radius:var(--r);border:1px solid var(--border);overflow:hidden}
-.ab-header{padding:16px 20px 10px;display:flex;align-items:flex-end;gap:10px}
-.ab-stn-name{font-size:16px;font-weight:700;flex:1}
-.ab-stn-code{font-size:11px;font-weight:700;color:var(--bg);background:var(--copper);padding:2px 8px;border-radius:5px}
-.ab-dir{font-size:11px;color:var(--text2);font-weight:500}
-.ab-label{padding:0 20px;margin-bottom:8px;display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text3);font-weight:500}
-.ab-label::before{content:'';flex:0 0 4px;height:4px;border-radius:50%;background:var(--ok);box-shadow:0 0 6px var(--ok);animation:pulse 2s infinite}
-.ab-rows{padding:0 20px 12px}
-.ab-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
-.ab-row:last-child{border-bottom:none}
-.ab-row .ab-badge{width:42px;flex-shrink:0}
-.ab-row .ab-badge span{display:block;text-align:center;padding:4px 0;border-radius:6px;font-size:10px;font-weight:700}
-.ab-row .ab-info{flex:1}
-.ab-row .ab-dest-name{font-size:13px;font-weight:600}
-.ab-row .ab-dep-time{font-size:11px;color:var(--text2);margin-top:1px}
-.ab-row .ab-cd{text-align:right;flex-shrink:0;min-width:70px}
-.ab-row .ab-cd-num{font-size:24px;font-weight:300;color:var(--copper-l);font-variant-numeric:tabular-nums;letter-spacing:1px;line-height:1}
-.ab-row .ab-cd-unit{font-size:10px;color:var(--text3);margin-top:2px}
-.ab-row.is-next .ab-cd-num{color:var(--copper);font-weight:400}
-.ab-row.is-next{background:var(--copper-g2);margin:0 -20px;padding:12px 20px;border-radius:8px;border-bottom:none}
-.ab-row.is-next+.ab-row{border-top:none}
 
 /* ===== LIVE TRACKER ===== */
 .tracker{margin:0 0 16px;background:var(--card);border-radius:var(--r);border:1px solid var(--copper);overflow:hidden;position:relative}
@@ -538,8 +516,8 @@ function parseTDXTrains(originCode, destCode){
 
 // ========== STATE ==========
 let selO=null,selD=null,pm=null,tf='all',dc=10;
-const hm=m=>`${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
-const nowM=()=>{const d=new Date();return d.getHours()*60+d.getMinutes()};
+const hm=m=>`${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(Math.floor(m)%60).padStart(2,'0')}`;
+const nowM=()=>{const d=new Date();return d.getHours()*60+d.getMinutes()+d.getSeconds()/60};
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
 
 function renderDateStrip(){
@@ -593,7 +571,6 @@ function setF(f){tf=f;dc=10;render()}
 let trackerInterval=null;
 let trackerTrain=null;
 let trackerStations=[];
-let boardTrains=[];
 let allTrackerTrains=[];
 let trackerTrainIdx=0;
 
@@ -613,35 +590,6 @@ function getStationsWithPrev(oi,di){
     stns.unshift({idx:prevIdx,code:ps.c,name:ps.n,ex:ps.ex,isPrev:true});
   }
   return stns;
-}
-
-function buildArrivalBoardHTML(trains,originIdx,destIdx,now){
-  const oStn=STATIONS[originIdx],dStn=STATIONS[destIdx];
-  const direction='往 '+dStn.n+' 方向';
-  const upcoming=trains.filter(t=>t.dep>=now).slice(0,3);
-  if(!upcoming.length) return '';
-  boardTrains=upcoming;
-  let rowsHTML=upcoming.map((t,i)=>{
-    const isExpress=t.t==='e';
-    const remain=t.dep-now;
-    const mins=Math.floor(remain);
-    const isNext=i===0;
-    return `<div class="ab-row${isNext?' is-next':''}" data-board-idx="${i}">
-      <div class="ab-badge"><span class="bd ${isExpress?'eb':'cb'}">${isExpress?'直達':'普通'}</span></div>
-      <div class="ab-info">
-        <div class="ab-dest-name">\u2192 ${dStn.n}</div>
-        <div class="ab-dep-time">${hm(t.dep)} 發車\u30FB${t.dur} 分車程</div>
-      </div>
-      <div class="ab-cd">
-        <div class="ab-cd-num" id="abCd${i}">${mins}</div>
-        <div class="ab-cd-unit" id="abCdU${i}">分鐘</div>
-      </div>
-    </div>`;
-  }).join('');
-  return `<div class="arr-board" id="arrBoard">
-    <div class="ab-header"><div class="ab-stn-name">${oStn.n}</div><div class="ab-stn-code">${oStn.c}</div></div>
-    <div class="ab-label">列車進站倒數\u30FB${direction}</div>
-    <div class="ab-rows">${rowsHTML}</div></div>`;
 }
 
 function buildTrackerHTML(train,stns){
@@ -784,9 +732,8 @@ function startTracker(train,stns){
       setTimeout(()=>advanceToNextTrain(),5000);
     }
   }
-  // Check if train is already departed at start
-  const nowCheck=nowM()+(new Date().getSeconds()/60);
-  if(nowCheck>=train.dep) wasDeparted=true;
+  // If train already departed when tracker starts, mark it
+  if(nowM()>=train.dep) wasDeparted=true;
   update();
   trackerInterval=setInterval(update,1000);
 }
@@ -867,15 +814,20 @@ function render(){
 
   allTrackerTrains=trains;
 
-  // Find en-route train (already departed, not yet arrived)
+  // Find en-route train (already departed, not yet arrived) — strict < now
   let enRouteTrain=null;
   for(let i=trains.length-1;i>=0;i--){
-    if(trains[i].dep<=now&&trains[i].arr>now){enRouteTrain=trains[i];break}
+    if(trains[i].dep<now&&trains[i].arr>now){enRouteTrain=trains[i];break}
   }
 
-  // Find next upcoming train (not yet departed)
+  // Find next upcoming train (not yet departed) — >= now
   let ni=trains.findIndex(t=>t.dep>=now);
   let upcomingTrain=ni>=0?trains[ni]:null;
+
+  // If upcoming and en-route are the same train (edge case), keep as upcoming only
+  if(enRouteTrain&&upcomingTrain&&enRouteTrain.dep===upcomingTrain.dep){
+    enRouteTrain=null;
+  }
 
   // Main tracker target: upcoming if exists, otherwise en-route
   let trackerTarget=upcomingTrain||enRouteTrain;
