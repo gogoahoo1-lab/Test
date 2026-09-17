@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>桃園機捷時刻查詢</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap');
@@ -15,7 +15,9 @@
   --ok:#6BBF7B;--err:#E05A5A;--r:16px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
+html{-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%;touch-action:manipulation}
 body{font-family:'Noto Sans TC',-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+input,select,textarea{font-size:16px!important;touch-action:manipulation}
 .app{max-width:430px;margin:0 auto;padding-bottom:100px;position:relative}
 
 /* Hero */
@@ -105,7 +107,7 @@ body{font-family:'Noto Sans TC',-apple-system,system-ui,sans-serif;background:va
 .set-desc a{color:var(--copper);text-decoration:none}
 .set-row{margin-bottom:10px}
 .set-row label{display:block;font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:500}
-.set-row input{width:100%;height:40px;border:1px solid var(--border);border-radius:10px;padding:0 14px;font-size:13px;font-family:inherit;background:var(--card2);color:var(--text);outline:none}
+.set-row input{width:100%;height:44px;border:1px solid var(--border);border-radius:10px;padding:0 14px;font-size:16px;font-family:inherit;background:var(--card2);color:var(--text);outline:none}
 .set-row input:focus{border-color:var(--copper)}
 .set-row input::placeholder{color:var(--text3)}
 .set-actions{display:flex;gap:8px}
@@ -153,13 +155,50 @@ body{font-family:'Noto Sans TC',-apple-system,system-ui,sans-serif;background:va
 .load-more button{background:transparent;border:1px solid var(--border);border-radius:20px;padding:8px 28px;font-size:12px;color:var(--copper);cursor:pointer;font-family:inherit;font-weight:500}
 .load-more button:hover{background:var(--copper-g)}
 
+/* ===== LIVE TRACKER ===== */
+.tracker{margin:0 0 16px;background:var(--card);border-radius:var(--r);border:1px solid var(--copper);overflow:hidden;position:relative}
+.tracker::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--copper),var(--copper-l),var(--copper),transparent)}
+.tracker-top{display:flex;align-items:center;padding:18px 20px 0}
+.tracker-badge{display:flex;align-items:center;gap:8px;flex:1}
+.tracker-badge .trkb{font-size:10px;font-weight:700;padding:4px 10px;border-radius:6px}
+.tracker-badge .trk-status{font-size:11px;color:var(--text2);font-weight:500}
+.tracker-countdown{text-align:right}
+.tracker-countdown .cd-num{font-size:36px;font-weight:300;letter-spacing:2px;font-variant-numeric:tabular-nums;color:var(--copper-l)}
+.tracker-countdown .cd-lbl{font-size:10px;color:var(--text3);margin-top:-2px}
+
+.tracker-times{display:flex;align-items:center;justify-content:center;gap:16px;padding:12px 20px 0;font-size:13px;color:var(--text2)}
+.tracker-times .tt-dep,.tracker-times .tt-arr{font-weight:600;color:var(--text);font-size:15px;font-variant-numeric:tabular-nums}
+.tracker-times .tt-arrow{color:var(--text3);font-size:12px}
+.tracker-times .tt-dur{font-size:11px;color:var(--copper);font-weight:600;margin-left:4px}
+
+/* Track animation */
+.track-wrap{padding:20px 20px 18px;position:relative}
+.track-line{position:relative;height:40px;display:flex;align-items:center}
+.track-rail{position:absolute;left:16px;right:16px;height:3px;background:var(--border);border-radius:2px;top:50%;transform:translateY(-50%)}
+.track-progress{position:absolute;left:16px;height:3px;background:linear-gradient(90deg,var(--copper),var(--copper-l));border-radius:2px;top:50%;transform:translateY(-50%);transition:width .8s ease}
+.track-train{position:absolute;width:22px;height:22px;border-radius:50%;background:var(--copper);border:3px solid var(--bg);display:flex;align-items:center;justify-content:center;font-size:10px;top:50%;transform:translate(-50%,-50%);transition:left .8s ease;z-index:3;box-shadow:0 0 12px rgba(212,149,107,.5),0 0 24px rgba(212,149,107,.2)}
+.track-train::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(212,149,107,.3);animation:trainPulse 2s infinite}
+@keyframes trainPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0;transform:scale(1.6)}}
+
+.track-stations{position:relative;display:flex;justify-content:space-between;padding:0 10px;margin-top:4px}
+.track-stn{display:flex;flex-direction:column;align-items:center;position:relative;z-index:2}
+.track-stn-dot{width:10px;height:10px;border-radius:50%;background:var(--border);border:2px solid var(--card);margin-bottom:4px;transition:background .3s}
+.track-stn-dot.passed{background:var(--copper)}
+.track-stn-dot.origin,.track-stn-dot.dest{width:12px;height:12px;background:var(--copper)}
+.track-stn-name{font-size:9px;color:var(--text3);white-space:nowrap;max-width:48px;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.track-stn-name.endpoint{color:var(--text);font-weight:600;font-size:10px;max-width:60px}
+
+.tracker-eta{text-align:center;padding:0 20px 16px;font-size:12px;color:var(--text2)}
+.tracker-eta strong{color:var(--copper-l);font-size:14px;font-weight:600}
+
 /* Tab bar */
-.tab-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;padding:8px 24px calc(8px + env(safe-area-inset-bottom));background:rgba(12,12,14,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-around;z-index:50}
-.tab-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 12px;color:var(--text3);font-size:18px;transition:color .2s}
-.tab-item.active{color:var(--text)}
-.tab-item span{font-size:9px;font-weight:500}
-.tab-center{width:52px;height:52px;border-radius:50%;background:var(--copper);display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(212,149,107,.35);margin-top:-20px;transition:transform .15s}
-.tab-center:active{transform:scale(.92)}
+.tab-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(12,12,14,.88);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-around;z-index:50}
+.tab-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:6px 10px;color:var(--text3);transition:color .2s;-webkit-tap-highlight-color:transparent;user-select:none}
+.tab-item.active{color:var(--copper)}
+.tab-item .tab-ic{font-size:22px;line-height:1}
+.tab-item .tab-lb{font-size:12px;font-weight:600;letter-spacing:.3px}
+.tab-center{width:56px;height:56px;border-radius:50%;background:var(--copper);display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(212,149,107,.35);margin-top:-22px;transition:transform .15s;-webkit-tap-highlight-color:transparent;user-select:none}
+.tab-center:active{transform:scale(.9)}
 
 /* Modal */
 .modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px)}
@@ -170,7 +209,7 @@ body{font-family:'Noto Sans TC',-apple-system,system-ui,sans-serif;background:va
 .modal-hd h2{font-size:17px;font-weight:700}
 .modal-cl{width:30px;height:30px;border-radius:50%;border:none;background:var(--card2);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:var(--text2)}
 .modal-sr{padding:0 20px 12px}
-.modal-sr input{width:100%;height:42px;border:1px solid var(--border);border-radius:21px;padding:0 18px;font-size:14px;font-family:inherit;background:var(--card2);color:var(--text);outline:none}
+.modal-sr input{width:100%;height:44px;border:1px solid var(--border);border-radius:22px;padding:0 18px;font-size:16px;font-family:inherit;background:var(--card2);color:var(--text);outline:none}
 .modal-sr input:focus{border-color:var(--copper)}
 .modal-sr input::placeholder{color:var(--text3)}
 .stn-list{flex:1;overflow-y:auto;padding:4px 0 28px}
@@ -274,12 +313,20 @@ body{font-family:'Noto Sans TC',-apple-system,system-ui,sans-serif;background:va
   </div>
 </div>
 
-<div class="tab-bar">
-  <div class="tab-item active"><span>🚈</span><span>時刻</span></div>
-  <div class="tab-item" onclick="toggleSet()"><span>⚙</span><span>設定</span></div>
-  <div class="tab-center" onclick="search()">✳</div>
-  <div class="tab-item" onclick="connectTDX()"><span>↻</span><span>同步</span></div>
-  <div class="tab-item"><span>☰</span><span>更多</span></div>
+<div class="tab-bar" id="tabBar">
+  <div class="tab-item active" onclick="tabAction('home')" data-tab="home">
+    <span class="tab-ic">🚈</span><span class="tab-lb">時刻</span>
+  </div>
+  <div class="tab-item" onclick="tabAction('settings')" data-tab="settings">
+    <span class="tab-ic">⚙</span><span class="tab-lb">設定</span>
+  </div>
+  <div class="tab-center" onclick="tabAction('search')">✳</div>
+  <div class="tab-item" onclick="tabAction('sync')" data-tab="sync">
+    <span class="tab-ic">↻</span><span class="tab-lb">同步</span>
+  </div>
+  <div class="tab-item" onclick="tabAction('info')" data-tab="info">
+    <span class="tab-ic">ℹ</span><span class="tab-lb">關於</span>
+  </div>
 </div>
 
 <div class="modal-ov" id="mOv" onclick="closePicker(event)">
@@ -549,13 +596,174 @@ function search(){
 
 function setF(f){tf=f;dc=10;render()}
 
+// ========== LIVE TRACKER ==========
+let trackerInterval=null;
+let trackerTrain=null; // {t, dep, arr, dur}
+let trackerStations=[]; // intermediate station codes between origin and dest
+
+function getStationsBetween(oi,di){
+  const start=Math.min(oi,di), end=Math.max(oi,di);
+  const stns=[];
+  for(let i=start;i<=end;i++) stns.push({idx:i, code:STATIONS[i].c, name:STATIONS[i].n, ex:STATIONS[i].ex});
+  if(oi>di) stns.reverse();
+  return stns;
+}
+
+function buildTrackerHTML(train, stns, source){
+  const isExpress=train.t==='e';
+  const badgeCls=isExpress?'eb':'cb';
+  const typeName=isExpress?'直達車':'普通車';
+
+  // Show max ~7 station dots to keep it clean
+  let displayStns=stns;
+  if(stns.length>7){
+    const step=Math.max(1,Math.floor((stns.length-2)/5));
+    displayStns=[stns[0]];
+    for(let i=step;i<stns.length-1;i+=step) displayStns.push(stns[i]);
+    if(displayStns[displayStns.length-1]!==stns[stns.length-1]) displayStns.push(stns[stns.length-1]);
+  }
+
+  const stnDotsHTML=displayStns.map((s,i)=>{
+    const isOrig=i===0, isDest=i===displayStns.length-1;
+    const cls=isOrig?'origin':isDest?'dest':'';
+    const nameCls=(isOrig||isDest)?'endpoint':'';
+    return `<div class="track-stn"><div class="track-stn-dot ${cls}" data-stn="${s.code}"></div><div class="track-stn-name ${nameCls}">${isOrig||isDest?s.name:s.code}</div></div>`;
+  }).join('');
+
+  return `<div class="tracker" id="trackerCard">
+    <div class="tracker-top">
+      <div class="tracker-badge">
+        <span class="trkb bd ${badgeCls}">${typeName}</span>
+        <span class="trk-status" id="trkStatus">等待發車</span>
+      </div>
+      <div class="tracker-countdown">
+        <div class="cd-num" id="trkCountdown">--:--</div>
+        <div class="cd-lbl" id="trkCdLabel">剩餘時間</div>
+      </div>
+    </div>
+    <div class="tracker-times">
+      <span class="tt-dep">${hm(train.dep)}</span>
+      <span class="tt-arrow">出發 →</span>
+      <span class="tt-arr">${hm(train.arr)}</span>
+      <span class="tt-arrow">抵達</span>
+      <span class="tt-dur">${train.dur}分</span>
+    </div>
+    <div class="track-wrap">
+      <div class="track-line">
+        <div class="track-rail"></div>
+        <div class="track-progress" id="trkProgress" style="width:0%"></div>
+        <div class="track-train" id="trkTrain" style="left:16px">🚈</div>
+      </div>
+      <div class="track-stations" id="trkStations">${stnDotsHTML}</div>
+    </div>
+    <div class="tracker-eta" id="trkEta">即時追蹤中⋯</div>
+  </div>`;
+}
+
+function startTracker(train, stns){
+  trackerTrain=train;
+  trackerStations=stns;
+  if(trackerInterval) clearInterval(trackerInterval);
+
+  function update(){
+    const d=new Date();
+    const currentMin=d.getHours()*60+d.getMinutes()+d.getSeconds()/60;
+    const countdown=document.getElementById('trkCountdown');
+    const cdLabel=document.getElementById('trkCdLabel');
+    const status=document.getElementById('trkStatus');
+    const progress=document.getElementById('trkProgress');
+    const trainEl=document.getElementById('trkTrain');
+    const eta=document.getElementById('trkEta');
+    if(!countdown) return;
+
+    // Track rail width calculation
+    const trackLine=document.querySelector('.track-line');
+    if(!trackLine) return;
+    const railLeft=16, railRight=trackLine.offsetWidth-16;
+    const railWidth=railRight-railLeft;
+
+    if(currentMin<train.dep){
+      // === WAITING FOR DEPARTURE ===
+      const remain=train.dep-currentMin;
+      const mins=Math.floor(remain);
+      const secs=Math.floor((remain-mins)*60);
+      countdown.textContent=`${mins}:${String(secs).padStart(2,'0')}`;
+      cdLabel.textContent='等待發車';
+      status.textContent='即將進站';
+      status.style.color='var(--copper-l)';
+
+      // Animate train approaching origin (oscillate near start)
+      const approach=Math.max(0, 1-remain/5); // last 5 min approach animation
+      const pos=railLeft+Math.min(approach*railWidth*0.02, railWidth*0.02);
+      progress.style.width='0%';
+      trainEl.style.left=pos+'px';
+
+      eta.innerHTML=`列車將於 <strong>${mins} 分 ${secs} 秒</strong> 後從 ${stns[0].name} 發車`;
+
+      // Mark no stations as passed
+      document.querySelectorAll('.track-stn-dot').forEach(d=>d.classList.remove('passed'));
+      document.querySelector('.track-stn-dot.origin')?.classList.add('passed');
+
+    } else if(currentMin<train.arr){
+      // === EN ROUTE ===
+      const elapsed=currentMin-train.dep;
+      const total=train.arr-train.dep;
+      const pct=Math.min(elapsed/total,1);
+      const remain=train.arr-currentMin;
+      const mins=Math.floor(remain);
+      const secs=Math.floor((remain-mins)*60);
+
+      countdown.textContent=`${mins}:${String(secs).padStart(2,'0')}`;
+      cdLabel.textContent='抵達倒數';
+      status.textContent='行駛中';
+      status.style.color='var(--ok)';
+
+      const pos=railLeft+pct*railWidth;
+      progress.style.width=(pct*100)+'%';
+      trainEl.style.left=pos+'px';
+
+      // Determine current position between which stations
+      const totalStns=stns.length;
+      const currentStnIdx=Math.min(Math.floor(pct*(totalStns-1)),totalStns-2);
+      const fromStn=stns[currentStnIdx];
+      const toStn=stns[Math.min(currentStnIdx+1,totalStns-1)];
+
+      eta.innerHTML=`${fromStn.name} → ${toStn.name}，預計 <strong>${mins} 分 ${secs} 秒</strong> 後抵達 ${stns[stns.length-1].name}`;
+
+      // Mark passed stations
+      document.querySelectorAll('.track-stn-dot').forEach((dot,i)=>{
+        // Map display index to progress
+        const displayStns=document.querySelectorAll('.track-stn-dot');
+        const stnPct=i/(displayStns.length-1);
+        if(stnPct<=pct) dot.classList.add('passed');
+        else dot.classList.remove('passed');
+      });
+
+    } else {
+      // === ARRIVED ===
+      countdown.textContent='00:00';
+      cdLabel.textContent='已抵達';
+      status.textContent='已到站';
+      status.style.color='var(--copper-l)';
+      progress.style.width='100%';
+      trainEl.style.left=railRight+'px';
+      eta.innerHTML=`已抵達 <strong>${stns[stns.length-1].name}</strong> 🎉`;
+      document.querySelectorAll('.track-stn-dot').forEach(d=>d.classList.add('passed'));
+      clearInterval(trackerInterval);
+    }
+  }
+
+  update();
+  trackerInterval=setInterval(update,1000);
+}
+
 function render(){
+  if(trackerInterval){clearInterval(trackerInterval);trackerInterval=null}
   const ct=document.getElementById('resCont');
   const oCode=STATIONS[selO].c, dCode=STATIONS[selD].c;
 
-  // Try TDX data first, fallback to embedded
-  let all = parseTDXTrains(oCode, dCode);
-  let source = 'TDX';
+  let all=parseTDXTrains(oCode,dCode);
+  let source='TDX';
   if(!all){all=genFallback(selO,selD);source='內建'}
 
   const now=nowM();
@@ -564,9 +772,30 @@ function render(){
   if(tf==='c')trains=trains.filter(t=>t.t==='c');
   const hasE=all.some(t=>t.t==='e');
   let ni=trains.findIndex(t=>t.dep>=now);
-  const sh=trains.slice(0,dc),more=trains.length>dc;
 
-  let h=`<div class="results-area"><div class="res-hd"><div class="res-title">查詢結果 <span style="font-size:10px;color:var(--text3);font-weight:400">(${source})</span></div><div class="res-route">${STATIONS[selO].n} → ${STATIONS[selD].n}</div></div>
+  // If no upcoming train, find the closest past train that hasn't arrived yet
+  let trackerTarget=null;
+  if(ni>=0){
+    trackerTarget=trains[ni];
+  } else {
+    // Check if last train is still en route
+    for(let i=trains.length-1;i>=0;i--){
+      if(trains[i].arr>now){trackerTarget=trains[i];ni=i;break}
+    }
+  }
+
+  const sh=trains.slice(0,dc),more=trains.length>dc;
+  const stns=getStationsBetween(selO,selD);
+
+  // Build tracker HTML
+  let trackerHTML='';
+  if(trackerTarget){
+    trackerHTML=buildTrackerHTML(trackerTarget, stns, source);
+  }
+
+  let h=`<div class="results-area">
+    ${trackerHTML}
+    <div class="res-hd"><div class="res-title">全部班次 <span style="font-size:10px;color:var(--text3);font-weight:400">(${source})</span></div><div class="res-route">${STATIONS[selO].n} → ${STATIONS[selD].n}</div></div>
     <div class="ftabs"><button class="ftab${tf==='all'?' act':''}" onclick="setF('all')">全部</button>
     ${hasE?`<button class="ftab${tf==='e'?' act':''}" onclick="setF('e')">直達車</button>`:''}
     <button class="ftab${tf==='c'?' act':''}" onclick="setF('c')">普通車</button></div>`;
@@ -580,7 +809,88 @@ function render(){
     <div class="tc-dur"><div class="dv">${t.dur} 分</div><div class="dl2">車程</div></div></div>`});
     if(more)h+=`<div class="load-more"><button onclick="dc+=10;render()">顯示更多班次</button></div>`}
   h+='</div>';ct.innerHTML=h;
-  setTimeout(()=>{const el=document.querySelector('.nt');if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},100);
+
+  // Start live tracker
+  if(trackerTarget){
+    setTimeout(()=>startTracker(trackerTarget, stns),100);
+  }
+
+  setTimeout(()=>{const el=document.querySelector('.tracker');if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},200);
+}
+
+// ========== TAB BAR ACTIONS ==========
+function tabAction(action){
+  // Update active state
+  document.querySelectorAll('.tab-item').forEach(el=>el.classList.remove('active'));
+  const clicked=document.querySelector(`.tab-item[data-tab="${action}"]`);
+  if(clicked) clicked.classList.add('active');
+
+  switch(action){
+    case 'home':
+      window.scrollTo({top:0,behavior:'smooth'});
+      // Close settings if open
+      setOpen=false;
+      document.getElementById('setBd').classList.remove('show');
+      document.getElementById('setTg').classList.remove('open');
+      break;
+
+    case 'settings':
+      // Open settings panel and scroll to it
+      if(!setOpen) toggleSet();
+      setTimeout(()=>{
+        document.getElementById('setPanel').scrollIntoView({behavior:'smooth',block:'center'});
+      },100);
+      break;
+
+    case 'search':
+      if(selO===null||selD===null){
+        toast('請先選擇起訖站');
+        window.scrollTo({top:0,behavior:'smooth'});
+      } else {
+        search();
+      }
+      // Re-highlight home tab
+      document.querySelectorAll('.tab-item').forEach(el=>el.classList.remove('active'));
+      document.querySelector('.tab-item[data-tab="home"]').classList.add('active');
+      break;
+
+    case 'sync':
+      connectTDX();
+      toast('正在同步 TDX⋯');
+      // Re-highlight home after
+      setTimeout(()=>{
+        document.querySelectorAll('.tab-item').forEach(el=>el.classList.remove('active'));
+        document.querySelector('.tab-item[data-tab="home"]').classList.add('active');
+      },1500);
+      break;
+
+    case 'info':
+      showInfo();
+      break;
+  }
+}
+
+function showInfo(){
+  const ct=document.getElementById('resCont');
+  ct.innerHTML=`
+    <div style="padding:24px 20px">
+      <div style="background:var(--card);border-radius:var(--r);padding:24px;border:1px solid var(--border)">
+        <div style="font-size:17px;font-weight:700;margin-bottom:16px">關於本 APP</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.8">
+          <p style="margin-bottom:12px"><strong style="color:var(--text)">桃園機捷時刻查詢</strong> — 本機離線版</p>
+          <p style="margin-bottom:12px">✦ 資料來源：TDX 運輸資料流通服務平臺<br>
+          ✦ API 端點：v2/Rail/Metro/StationTimeTable/TYMC<br>
+          ✦ 認證方式：OAuth2 Client Credentials</p>
+          <p style="margin-bottom:12px">本 APP 直接呼叫 TDX API 取得桃園捷運站別時刻表即時資料。若未設定 TDX 金鑰或連線失敗，將自動切換為內建參考時刻。</p>
+          <p style="margin-bottom:12px"><strong style="color:var(--text)">如何取得 TDX 金鑰：</strong></p>
+          <p>1. 前往 <a href="https://tdx.transportdata.tw/" target="_blank" style="color:var(--copper)">tdx.transportdata.tw</a> 註冊（免費）<br>
+          2. 登入後至「會員中心」建立 API 金鑰<br>
+          3. 將 Client ID / Secret 貼到「設定」面板</p>
+        </div>
+        <button onclick="tabAction('home')" style="margin-top:16px;width:100%;height:44px;border:none;border-radius:22px;background:var(--copper);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">返回時刻查詢</button>
+      </div>
+    </div>`;
+  window.scrollTo({top:document.getElementById('resCont').offsetTop-100,behavior:'smooth'});
 }
 
 // Init
