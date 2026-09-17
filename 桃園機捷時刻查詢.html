@@ -804,9 +804,6 @@ function render(){
   const bothExpress=STATIONS[selO].ex&&STATIONS[selD].ex;
   if(!bothExpress) all=all.filter(t=>t.t!=='e');
   let trains=all;
-  if(tf==='e'&&!bothExpress) tf='all';
-  if(tf==='e')trains=trains.filter(t=>t.t==='e');
-  if(tf==='c')trains=trains.filter(t=>t.t==='c');
 
   allTrackerTrains=trains;
 
