@@ -29,7 +29,11 @@ input,select,textarea{font-size:16px!important;touch-action:manipulation}
 .hero-top{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1;margin-bottom:24px}
 .hero-brand{display:flex;align-items:center;gap:8px}
 .hero-logo{font-size:22px;opacity:.9}.hero-name{font-size:18px;font-weight:700;letter-spacing:1px}
-.hero-loc{font-size:11px;color:rgba(255,255,255,.7);background:rgba(255,255,255,.12);padding:4px 12px;border-radius:20px}
+.hero-loc{font-size:11px;color:rgba(255,255,255,.7);background:rgba(255,255,255,.12);padding:4px 12px;border-radius:20px;display:flex;align-items:center;gap:6px}
+.hero-status{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.hero-status.live{background:#6BBF7B;box-shadow:0 0 6px #6BBF7B}
+.hero-status.offline{background:#8A8488}
+.hero-status.err{background:#E05A5A}
 
 .date-strip{display:flex;justify-content:center;gap:6px;position:relative;z-index:1;margin-bottom:28px}
 .date-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
@@ -42,17 +46,6 @@ input,select,textarea{font-size:16px!important;touch-action:manipulation}
 .hero-time{text-align:center;position:relative;z-index:1;margin-bottom:8px}
 .hero-time .big{font-size:48px;font-weight:300;letter-spacing:4px;color:#fff}
 .hero-time .label{font-size:12px;color:rgba(255,255,255,.5);margin-top:2px}
-
-/* Source bar */
-.src-bar{display:flex;align-items:center;gap:8px;margin:0 20px;padding:10px 16px;background:var(--card);border-radius:12px;margin-top:-16px;position:relative;z-index:2}
-.src-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.src-dot.live{background:var(--ok);box-shadow:0 0 8px var(--ok);animation:pulse 2s infinite}
-.src-dot.local{background:var(--copper)}
-.src-dot.loading{background:var(--text3);animation:pulse 1s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.src-lbl{flex:1;font-size:11px;color:var(--text2);font-weight:400}
-.src-btns{display:flex;gap:6px}
-.src-btn{background:none;border:none;color:var(--copper);font-size:11px;cursor:pointer;font-family:inherit;font-weight:500;padding:2px 4px}
 
 /* Favs */
 .fav-bar{padding:16px 20px 0;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
@@ -155,6 +148,29 @@ input,select,textarea{font-size:16px!important;touch-action:manipulation}
 .load-more button{background:transparent;border:1px solid var(--border);border-radius:20px;padding:8px 28px;font-size:12px;color:var(--copper);cursor:pointer;font-family:inherit;font-weight:500}
 .load-more button:hover{background:var(--copper-g)}
 
+/* ===== ARRIVAL BOARD (月台到站看板) ===== */
+.arr-board{margin:0 0 14px;background:var(--card);border-radius:var(--r);border:1px solid var(--border);overflow:hidden}
+.ab-header{padding:16px 20px 10px;display:flex;align-items:flex-end;gap:10px}
+.ab-stn-name{font-size:16px;font-weight:700;flex:1}
+.ab-stn-code{font-size:11px;font-weight:700;color:var(--bg);background:var(--copper);padding:2px 8px;border-radius:5px}
+.ab-dir{font-size:11px;color:var(--text2);font-weight:500}
+.ab-label{padding:0 20px;margin-bottom:8px;display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text3);font-weight:500}
+.ab-label::before{content:'';flex:0 0 4px;height:4px;border-radius:50%;background:var(--ok);box-shadow:0 0 6px var(--ok);animation:pulse 2s infinite}
+.ab-rows{padding:0 20px 12px}
+.ab-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.ab-row:last-child{border-bottom:none}
+.ab-row .ab-badge{width:42px;flex-shrink:0}
+.ab-row .ab-badge span{display:block;text-align:center;padding:4px 0;border-radius:6px;font-size:10px;font-weight:700}
+.ab-row .ab-info{flex:1}
+.ab-row .ab-dest-name{font-size:13px;font-weight:600}
+.ab-row .ab-dep-time{font-size:11px;color:var(--text2);margin-top:1px}
+.ab-row .ab-cd{text-align:right;flex-shrink:0;min-width:70px}
+.ab-row .ab-cd-num{font-size:24px;font-weight:300;color:var(--copper-l);font-variant-numeric:tabular-nums;letter-spacing:1px;line-height:1}
+.ab-row .ab-cd-unit{font-size:10px;color:var(--text3);margin-top:2px}
+.ab-row.is-next .ab-cd-num{color:var(--copper);font-weight:400}
+.ab-row.is-next{background:var(--copper-g2);margin:0 -20px;padding:12px 20px;border-radius:8px;border-bottom:none}
+.ab-row.is-next+.ab-row{border-top:none}
+
 /* ===== LIVE TRACKER ===== */
 .tracker{margin:0 0 16px;background:var(--card);border-radius:var(--r);border:1px solid var(--copper);overflow:hidden;position:relative}
 .tracker::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--copper),var(--copper-l),var(--copper),transparent)}
@@ -190,6 +206,9 @@ input,select,textarea{font-size:16px!important;touch-action:manipulation}
 
 .tracker-eta{text-align:center;padding:0 20px 16px;font-size:12px;color:var(--text2)}
 .tracker-eta strong{color:var(--copper-l);font-size:14px;font-weight:600}
+.track-stn-dot.prev{width:10px;height:10px;border:2px dashed var(--text3);background:transparent}
+.track-stn-dot.prev.passed{border-style:solid;border-color:var(--copper);background:var(--copper)}
+@keyframes cardFlash{0%{opacity:.4;transform:scale(.97)}100%{opacity:1;transform:scale(1)}}
 
 /* Tab bar */
 .tab-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(12,12,14,.88);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-around;z-index:50}
@@ -237,18 +256,10 @@ input,select,textarea{font-size:16px!important;touch-action:manipulation}
   <div class="hero">
     <div class="hero-top">
       <div class="hero-brand"><span class="hero-logo">✳</span><span class="hero-name">機捷時刻</span></div>
-      <div class="hero-loc">桃園機場捷運</div>
+      <div class="hero-loc"><div class="hero-status offline" id="heroStat"></div>桃園機場捷運</div>
     </div>
     <div class="date-strip" id="dateStrip"></div>
     <div class="hero-time"><div class="big" id="heroTime">--:--</div><div class="label">目前時間</div></div>
-  </div>
-
-  <div class="src-bar">
-    <div class="src-dot local" id="srcDot"></div>
-    <span class="src-lbl" id="srcLbl">尚未連線</span>
-    <div class="src-btns">
-      <button class="src-btn" onclick="connectTDX()">連線 TDX</button>
-    </div>
   </div>
 
   <div class="fav-bar" id="favBar"></div>
@@ -280,37 +291,7 @@ input,select,textarea{font-size:16px!important;touch-action:manipulation}
     <button class="btn-fav" id="favBtn" onclick="toggleFav()">☆</button>
   </div>
 
-  <!-- TDX Settings -->
-  <div class="settings" id="setPanel">
-    <div class="set-hd" onclick="toggleSet()">
-      <span class="set-ic">⚙</span><span class="set-tt">TDX API 設定</span>
-      <span class="set-tg" id="setTg">▼</span>
-    </div>
-    <div class="set-bd" id="setBd">
-      <div class="set-desc">
-        請至 <a href="https://tdx.transportdata.tw/" target="_blank">TDX 運輸資料流通服務</a> 免費註冊會員並取得 API 金鑰，填入下方即可取得即時時刻表。金鑰僅存在本機瀏覽器，不會上傳。
-      </div>
-      <div class="set-row">
-        <label>Client ID</label>
-        <input type="text" id="tdxId" placeholder="貼上你的 Client ID">
-      </div>
-      <div class="set-row">
-        <label>Client Secret</label>
-        <input type="password" id="tdxSecret" placeholder="貼上你的 Client Secret">
-      </div>
-      <div class="set-actions">
-        <button class="set-btn pri" onclick="connectTDX()">連線測試</button>
-        <button class="set-btn sec" onclick="clearTDX()">清除金鑰</button>
-      </div>
-      <div class="set-status" id="setStatus"></div>
-    </div>
-  </div>
-
   <div id="resCont"></div>
-  <div class="disclaimer">
-    本機版 — 直接呼叫 TDX API 取得即時時刻表<br>
-    若尚未設定 TDX 金鑰，則使用內建參考資料
-  </div>
 </div>
 
 <div class="tab-bar" id="tabBar">
@@ -410,80 +391,66 @@ async function tdxFetch(url){
   return res.json();
 }
 
-async function connectTDX(){
-  const dot=document.getElementById('srcDot');
-  const lbl=document.getElementById('srcLbl');
-  const status=document.getElementById('setStatus');
+let tdxStatusMsg=''; // store status message for settings page
 
-  // Read fields first
+async function connectTDX(){
+  const dot=document.getElementById('heroStat');
+
+  // Read fields if they exist (settings page open)
   const idEl=document.getElementById('tdxId');
   const secEl=document.getElementById('tdxSecret');
-  if(idEl.value.trim()) saveCreds(idEl.value.trim(), secEl.value.trim());
+  if(idEl&&idEl.value.trim()) saveCreds(idEl.value.trim(), secEl.value.trim());
 
   const creds=loadCreds();
   if(!creds.id||!creds.secret){
-    dot.className='src-dot local';
-    lbl.textContent='請先設定 TDX 金鑰';
-    status.className='set-status info';
-    status.textContent='請填入 Client ID 與 Client Secret 後按連線測試';
-    // Open settings
-    document.getElementById('setBd').classList.add('show');
-    document.getElementById('setTg').classList.add('open');
+    dot.className='hero-status offline';
+    tdxStatusMsg='info|請填入 Client ID 與 Client Secret 後按連線測試';
+    tabAction('settings');
     return;
   }
 
-  dot.className='src-dot loading';
-  lbl.textContent='連線 TDX 中⋯';
-  status.className='set-status info';
-  status.textContent='正在驗證金鑰並取得時刻表⋯';
+  dot.className='hero-status offline';
+  toast('正在連線 TDX⋯');
 
   try{
-    // Auth
     await getToken(creds.id, creds.secret);
-
-    // Fetch timetable
     const ttData=await tdxFetch(TDX_TIMETABLE);
     apiTimetable=ttData;
+    const count=Array.isArray(ttData)?ttData.length:(ttData.StationTimetables?ttData.StationTimetables.length:'?');
 
-    const count=Array.isArray(ttData)?ttData.length:
-                (ttData.StationTimetables?ttData.StationTimetables.length:'?');
-
-    dot.className='src-dot live';
-    lbl.textContent=`TDX 即時連線中（${count} 筆站別時刻）`;
-    status.className='set-status ok';
-    status.textContent=`✓ 連線成功！已取得 ${count} 筆站別時刻表資料。Token 有效至 ${new Date(tdxExpiry).toLocaleTimeString()}`;
-    toast('TDX API 連線成功');
-
-    // Fill credential fields
-    idEl.value=creds.id;
-    secEl.value=creds.secret;
+    dot.className='hero-status live';
+    tdxStatusMsg=`ok|✓ 連線成功！已取得 ${count} 筆站別時刻表資料。Token 有效至 ${new Date(tdxExpiry).toLocaleTimeString()}`;
+    toast('TDX 即時資料已同步');
+    updateSetStatus();
 
   }catch(e){
-    tdxToken=null;
-    apiTimetable=null;
-    dot.className='src-dot local';
-    lbl.textContent='TDX 連線失敗，使用內建資料';
-
-    if(e.message==='NO_CREDS'){
-      status.className='set-status info';
-      status.textContent='請先填入 TDX API 金鑰';
-    } else {
-      status.className='set-status err';
-      status.textContent=`✕ 連線失敗：${e.message}。請檢查金鑰是否正確。`;
-    }
+    tdxToken=null;apiTimetable=null;
+    dot.className='hero-status err';
+    if(e.message==='NO_CREDS') tdxStatusMsg='info|請先填入 TDX API 金鑰';
+    else tdxStatusMsg=`err|✕ 連線失敗：${e.message}。請檢查金鑰是否正確。`;
+    toast('TDX 連線失敗');
+    updateSetStatus();
   }
 }
 
 function clearTDX(){
   try{localStorage.removeItem('tdx_id');localStorage.removeItem('tdx_secret')}catch(e){}
-  document.getElementById('tdxId').value='';
-  document.getElementById('tdxSecret').value='';
+  const idEl=document.getElementById('tdxId');
+  const secEl=document.getElementById('tdxSecret');
+  if(idEl){idEl.value='';secEl.value=''}
   tdxToken=null;apiTimetable=null;
-  document.getElementById('srcDot').className='src-dot local';
-  document.getElementById('srcLbl').textContent='金鑰已清除，使用內建資料';
-  document.getElementById('setStatus').className='set-status info';
-  document.getElementById('setStatus').textContent='金鑰已從本機清除';
+  document.getElementById('heroStat').className='hero-status offline';
+  tdxStatusMsg='info|金鑰已從本機清除';
+  updateSetStatus();
   toast('金鑰已清除');
+}
+
+function updateSetStatus(){
+  const el=document.getElementById('setStatus');
+  if(!el||!tdxStatusMsg) return;
+  const [type,msg]=tdxStatusMsg.split('|');
+  el.className=`set-status ${type}`;
+  el.textContent=msg;
 }
 
 // ========== TDX DATA PARSING ==========
@@ -572,10 +539,6 @@ function pickS(i){if(pm==='origin')selO=i;else selD=i;document.getElementById('m
 function doSwap(){[selO,selD]=[selD,selO];upUI();if(document.getElementById('resCont').innerHTML.includes('tc '))search()}
 function upUI(){const od=document.getElementById('oDisp'),dd=document.getElementById('dDisp');if(selO!==null){od.textContent=`${STATIONS[selO].c} ${STATIONS[selO].n}`;od.classList.remove('ph')}else{od.textContent='選擇出發站';od.classList.add('ph')}if(selD!==null){dd.textContent=`${STATIONS[selD].c} ${STATIONS[selD].n}`;dd.classList.remove('ph')}else{dd.textContent='選擇到達站';dd.classList.add('ph')}document.getElementById('goBtn').disabled=(selO===null||selD===null);upFav()}
 
-// Settings toggle
-let setOpen=false;
-function toggleSet(){setOpen=!setOpen;document.getElementById('setBd').classList.toggle('show',setOpen);document.getElementById('setTg').classList.toggle('open',setOpen)}
-
 // Trains (embedded fallback)
 function genFallback(oi,di){
   const south=oi<di,res=[];
@@ -598,72 +561,111 @@ function setF(f){tf=f;dc=10;render()}
 
 // ========== LIVE TRACKER ==========
 let trackerInterval=null;
-let trackerTrain=null; // {t, dep, arr, dur}
-let trackerStations=[]; // intermediate station codes between origin and dest
+let trackerTrain=null;
+let trackerStations=[];
+let boardTrains=[];
+let allTrackerTrains=[];
+let trackerTrainIdx=0;
 
 function getStationsBetween(oi,di){
-  const start=Math.min(oi,di), end=Math.max(oi,di);
-  const stns=[];
-  for(let i=start;i<=end;i++) stns.push({idx:i, code:STATIONS[i].c, name:STATIONS[i].n, ex:STATIONS[i].ex});
+  const start=Math.min(oi,di),end=Math.max(oi,di),stns=[];
+  for(let i=start;i<=end;i++) stns.push({idx:i,code:STATIONS[i].c,name:STATIONS[i].n,ex:STATIONS[i].ex});
   if(oi>di) stns.reverse();
   return stns;
 }
 
-function buildTrackerHTML(train, stns, source){
+function getStationsWithPrev(oi,di){
+  const stns=getStationsBetween(oi,di);
+  const goingSouth=oi<di;
+  const prevIdx=goingSouth?oi-1:oi+1;
+  if(prevIdx>=0&&prevIdx<STATIONS.length){
+    const ps=STATIONS[prevIdx];
+    stns.unshift({idx:prevIdx,code:ps.c,name:ps.n,ex:ps.ex,isPrev:true});
+  }
+  return stns;
+}
+
+function buildArrivalBoardHTML(trains,originIdx,destIdx,now){
+  const oStn=STATIONS[originIdx],dStn=STATIONS[destIdx];
+  const direction='往 '+dStn.n+' 方向';
+  const upcoming=trains.filter(t=>t.dep>=now).slice(0,3);
+  if(!upcoming.length) return '';
+  boardTrains=upcoming;
+  let rowsHTML=upcoming.map((t,i)=>{
+    const isExpress=t.t==='e';
+    const remain=t.dep-now;
+    const mins=Math.floor(remain);
+    const isNext=i===0;
+    return `<div class="ab-row${isNext?' is-next':''}" data-board-idx="${i}">
+      <div class="ab-badge"><span class="bd ${isExpress?'eb':'cb'}">${isExpress?'直達':'普通'}</span></div>
+      <div class="ab-info">
+        <div class="ab-dest-name">\u2192 ${dStn.n}</div>
+        <div class="ab-dep-time">${hm(t.dep)} 發車\u30FB${t.dur} 分車程</div>
+      </div>
+      <div class="ab-cd">
+        <div class="ab-cd-num" id="abCd${i}">${mins}</div>
+        <div class="ab-cd-unit" id="abCdU${i}">分鐘</div>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="arr-board" id="arrBoard">
+    <div class="ab-header"><div class="ab-stn-name">${oStn.n}</div><div class="ab-stn-code">${oStn.c}</div></div>
+    <div class="ab-label">列車進站倒數\u30FB${direction}</div>
+    <div class="ab-rows">${rowsHTML}</div></div>`;
+}
+
+function buildTrackerHTML(train,stns){
   const isExpress=train.t==='e';
   const badgeCls=isExpress?'eb':'cb';
   const typeName=isExpress?'直達車':'普通車';
+  const originIdx=stns.findIndex(s=>!s.isPrev);
 
-  // Show max ~7 station dots to keep it clean
   let displayStns=stns;
-  if(stns.length>7){
-    const step=Math.max(1,Math.floor((stns.length-2)/5));
+  if(stns.length>8){
+    const step=Math.max(1,Math.floor((stns.length-2)/6));
     displayStns=[stns[0]];
-    for(let i=step;i<stns.length-1;i+=step) displayStns.push(stns[i]);
-    if(displayStns[displayStns.length-1]!==stns[stns.length-1]) displayStns.push(stns[stns.length-1]);
+    for(let i=1;i<stns.length-1;i++){if(i===originIdx||i%step===0)displayStns.push(stns[i])}
+    if(displayStns[displayStns.length-1]!==stns[stns.length-1])displayStns.push(stns[stns.length-1]);
   }
 
   const stnDotsHTML=displayStns.map((s,i)=>{
-    const isOrig=i===0, isDest=i===displayStns.length-1;
-    const cls=isOrig?'origin':isDest?'dest':'';
-    const nameCls=(isOrig||isDest)?'endpoint':'';
-    return `<div class="track-stn"><div class="track-stn-dot ${cls}" data-stn="${s.code}"></div><div class="track-stn-name ${nameCls}">${isOrig||isDest?s.name:s.code}</div></div>`;
+    const isPrev=!!s.isPrev;
+    const isOrig=!isPrev&&i===displayStns.findIndex(x=>!x.isPrev);
+    const isDest=i===displayStns.length-1;
+    const cls=isPrev?'prev':isOrig?'origin':isDest?'dest':'';
+    const showName=isPrev||isOrig||isDest;
+    const nameCls=showName?'endpoint':'';
+    return `<div class="track-stn"><div class="track-stn-dot ${cls}" data-stn="${s.code}"></div><div class="track-stn-name ${nameCls}">${showName?s.name:s.code}</div></div>`;
   }).join('');
 
   return `<div class="tracker" id="trackerCard">
     <div class="tracker-top">
-      <div class="tracker-badge">
-        <span class="trkb bd ${badgeCls}">${typeName}</span>
-        <span class="trk-status" id="trkStatus">等待發車</span>
-      </div>
-      <div class="tracker-countdown">
-        <div class="cd-num" id="trkCountdown">--:--</div>
-        <div class="cd-lbl" id="trkCdLabel">剩餘時間</div>
-      </div>
+      <div class="tracker-badge"><span class="trkb bd ${badgeCls}">${typeName}</span><span class="trk-status" id="trkStatus">等待發車</span></div>
+      <div class="tracker-countdown"><div class="cd-num" id="trkCountdown">--:--</div><div class="cd-lbl" id="trkCdLabel">剩餘時間</div></div>
     </div>
     <div class="tracker-times">
-      <span class="tt-dep">${hm(train.dep)}</span>
-      <span class="tt-arrow">出發 →</span>
-      <span class="tt-arr">${hm(train.arr)}</span>
-      <span class="tt-arrow">抵達</span>
-      <span class="tt-dur">${train.dur}分</span>
+      <span class="tt-dep">${hm(train.dep)}</span><span class="tt-arrow">出發 \u2192</span>
+      <span class="tt-arr">${hm(train.arr)}</span><span class="tt-arrow">抵達</span><span class="tt-dur">${train.dur}分</span>
     </div>
     <div class="track-wrap">
       <div class="track-line">
         <div class="track-rail"></div>
         <div class="track-progress" id="trkProgress" style="width:0%"></div>
-        <div class="track-train" id="trkTrain" style="left:16px">🚈</div>
+        <div class="track-train" id="trkTrain" style="left:16px">\ud83d\ude88</div>
       </div>
       <div class="track-stations" id="trkStations">${stnDotsHTML}</div>
     </div>
-    <div class="tracker-eta" id="trkEta">即時追蹤中⋯</div>
+    <div class="tracker-eta" id="trkEta">即時追蹤中\u22ef</div>
   </div>`;
 }
 
-function startTracker(train, stns){
-  trackerTrain=train;
-  trackerStations=stns;
-  if(trackerInterval) clearInterval(trackerInterval);
+function startTracker(train,stns){
+  trackerTrain=train;trackerStations=stns;
+  if(trackerInterval)clearInterval(trackerInterval);
+  const originStnIdx=stns.findIndex(s=>!s.isPrev);
+  const hasPrev=originStnIdx>0;
+  const originFrac=hasPrev?(originStnIdx/(stns.length-1)):0;
+  const journeyFrac=1-originFrac;
 
   function update(){
     const d=new Date();
@@ -674,98 +676,97 @@ function startTracker(train, stns){
     const progress=document.getElementById('trkProgress');
     const trainEl=document.getElementById('trkTrain');
     const eta=document.getElementById('trkEta');
-    if(!countdown) return;
-
-    // Track rail width calculation
+    if(!countdown)return;
     const trackLine=document.querySelector('.track-line');
-    if(!trackLine) return;
-    const railLeft=16, railRight=trackLine.offsetWidth-16;
-    const railWidth=railRight-railLeft;
+    if(!trackLine)return;
+    const railLeft=16,railRight=trackLine.offsetWidth-16,railWidth=railRight-railLeft;
+    const originPos=railLeft+originFrac*railWidth;
 
     if(currentMin<train.dep){
-      // === WAITING FOR DEPARTURE ===
       const remain=train.dep-currentMin;
       const mins=Math.floor(remain);
       const secs=Math.floor((remain-mins)*60);
       countdown.textContent=`${mins}:${String(secs).padStart(2,'0')}`;
-      cdLabel.textContent='等待發車';
-      status.textContent='即將進站';
+      cdLabel.textContent='進站倒數';
+      status.textContent='列車接近中';
       status.style.color='var(--copper-l)';
-
-      // Animate train approaching origin (oscillate near start)
-      const approach=Math.max(0, 1-remain/5); // last 5 min approach animation
-      const pos=railLeft+Math.min(approach*railWidth*0.02, railWidth*0.02);
+      const approachWindow=3;
+      const approachPct=Math.max(0,Math.min(1,1-remain/approachWindow));
+      let pos=hasPrev?railLeft+approachPct*originFrac*railWidth:railLeft;
       progress.style.width='0%';
       trainEl.style.left=pos+'px';
-
-      eta.innerHTML=`列車將於 <strong>${mins} 分 ${secs} 秒</strong> 後從 ${stns[0].name} 發車`;
-
-      // Mark no stations as passed
-      document.querySelectorAll('.track-stn-dot').forEach(d=>d.classList.remove('passed'));
-      document.querySelector('.track-stn-dot.origin')?.classList.add('passed');
-
+      const prevName=hasPrev?stns[0].name:'';
+      const origName=stns[originStnIdx].name;
+      if(remain>approachWindow) eta.innerHTML=`列車將於 <strong>${mins} 分 ${secs} 秒</strong> 後抵達 ${origName}`;
+      else eta.innerHTML=`列車已從 ${prevName} 出發，<strong>${mins} 分 ${secs} 秒</strong> 後進站`;
+      document.querySelectorAll('.track-stn-dot').forEach(dot=>dot.classList.remove('passed'));
+      if(hasPrev&&approachPct>0)document.querySelector('.track-stn-dot.prev')?.classList.add('passed');
     } else if(currentMin<train.arr){
-      // === EN ROUTE ===
       const elapsed=currentMin-train.dep;
       const total=train.arr-train.dep;
       const pct=Math.min(elapsed/total,1);
       const remain=train.arr-currentMin;
       const mins=Math.floor(remain);
       const secs=Math.floor((remain-mins)*60);
-
       countdown.textContent=`${mins}:${String(secs).padStart(2,'0')}`;
       cdLabel.textContent='抵達倒數';
       status.textContent='行駛中';
       status.style.color='var(--ok)';
-
-      const pos=railLeft+pct*railWidth;
-      progress.style.width=(pct*100)+'%';
+      const pos=originPos+pct*journeyFrac*railWidth;
+      progress.style.width=((originFrac+pct*journeyFrac)*100)+'%';
       trainEl.style.left=pos+'px';
-
-      // Determine current position between which stations
-      const totalStns=stns.length;
-      const currentStnIdx=Math.min(Math.floor(pct*(totalStns-1)),totalStns-2);
-      const fromStn=stns[currentStnIdx];
-      const toStn=stns[Math.min(currentStnIdx+1,totalStns-1)];
-
-      eta.innerHTML=`${fromStn.name} → ${toStn.name}，預計 <strong>${mins} 分 ${secs} 秒</strong> 後抵達 ${stns[stns.length-1].name}`;
-
-      // Mark passed stations
+      const journeyStns=stns.slice(originStnIdx);
+      const jsLen=journeyStns.length;
+      const curIdx=Math.min(Math.floor(pct*(jsLen-1)),jsLen-2);
+      const fromStn=journeyStns[curIdx];
+      const toStn=journeyStns[Math.min(curIdx+1,jsLen-1)];
+      eta.innerHTML=`${fromStn.name} \u2192 ${toStn.name}，預計 <strong>${mins} 分 ${secs} 秒</strong> 後抵達 ${stns[stns.length-1].name}`;
       document.querySelectorAll('.track-stn-dot').forEach((dot,i)=>{
-        // Map display index to progress
-        const displayStns=document.querySelectorAll('.track-stn-dot');
-        const stnPct=i/(displayStns.length-1);
-        if(stnPct<=pct) dot.classList.add('passed');
-        else dot.classList.remove('passed');
+        const allDots=document.querySelectorAll('.track-stn-dot');
+        const stnPct=i/(allDots.length-1);
+        const trainPct=originFrac+pct*journeyFrac;
+        if(stnPct<=trainPct)dot.classList.add('passed');else dot.classList.remove('passed');
       });
-
     } else {
-      // === ARRIVED ===
-      countdown.textContent='00:00';
-      cdLabel.textContent='已抵達';
-      status.textContent='已到站';
-      status.style.color='var(--copper-l)';
-      progress.style.width='100%';
-      trainEl.style.left=railRight+'px';
-      eta.innerHTML=`已抵達 <strong>${stns[stns.length-1].name}</strong> 🎉`;
+      countdown.textContent='00:00';cdLabel.textContent='已抵達';
+      status.textContent='已到站';status.style.color='var(--copper-l)';
+      progress.style.width='100%';trainEl.style.left=railRight+'px';
       document.querySelectorAll('.track-stn-dot').forEach(d=>d.classList.add('passed'));
+      eta.innerHTML=`已抵達 <strong>${stns[stns.length-1].name}</strong>`;
       clearInterval(trackerInterval);
+      setTimeout(()=>advanceToNextTrain(),5000);
     }
   }
-
   update();
   trackerInterval=setInterval(update,1000);
+}
+
+function advanceToNextTrain(){
+  if(!allTrackerTrains.length)return;
+  const now=nowM();
+  let target=null;
+  const nextIdx=allTrackerTrains.findIndex(t=>t.dep>=now);
+  if(nextIdx>=0){target=allTrackerTrains[nextIdx];trackerTrainIdx=nextIdx}
+  else{for(let i=allTrackerTrains.length-1;i>=0;i--){if(allTrackerTrains[i].arr>now){target=allTrackerTrains[i];trackerTrainIdx=i;break}}}
+  if(!target)return;
+  const stns=getStationsWithPrev(selO,selD);
+  const card=document.getElementById('trackerCard');
+  if(!card)return;
+  const tmp=document.createElement('div');
+  tmp.innerHTML=buildTrackerHTML(target,stns);
+  const newCard=tmp.firstElementChild;
+  card.replaceWith(newCard);
+  newCard.style.animation='cardFlash .6s ease';
+  setTimeout(()=>startTracker(target,stns),100);
 }
 
 function render(){
   if(trackerInterval){clearInterval(trackerInterval);trackerInterval=null}
   const ct=document.getElementById('resCont');
-  const oCode=STATIONS[selO].c, dCode=STATIONS[selD].c;
-
+  const oCode=STATIONS[selO].c,dCode=STATIONS[selD].c;
   let all=parseTDXTrains(oCode,dCode);
   let source='TDX';
   if(!all){all=genFallback(selO,selD);source='內建'}
-
   const now=nowM();
   let trains=all;
   if(tf==='e')trains=trains.filter(t=>t.t==='e');
@@ -773,125 +774,131 @@ function render(){
   const hasE=all.some(t=>t.t==='e');
   let ni=trains.findIndex(t=>t.dep>=now);
 
-  // If no upcoming train, find the closest past train that hasn't arrived yet
+  allTrackerTrains=trains;
   let trackerTarget=null;
-  if(ni>=0){
-    trackerTarget=trains[ni];
-  } else {
-    // Check if last train is still en route
-    for(let i=trains.length-1;i>=0;i--){
-      if(trains[i].arr>now){trackerTarget=trains[i];ni=i;break}
-    }
-  }
+  if(ni>=0){trackerTarget=trains[ni];trackerTrainIdx=ni}
+  else{for(let i=trains.length-1;i>=0;i--){if(trains[i].arr>now){trackerTarget=trains[i];ni=i;trackerTrainIdx=i;break}}}
 
   const sh=trains.slice(0,dc),more=trains.length>dc;
-  const stns=getStationsBetween(selO,selD);
+  const stns=getStationsWithPrev(selO,selD);
 
-  // Build tracker HTML
   let trackerHTML='';
-  if(trackerTarget){
-    trackerHTML=buildTrackerHTML(trackerTarget, stns, source);
-  }
+  if(trackerTarget) trackerHTML=buildTrackerHTML(trackerTarget,stns);
 
   let h=`<div class="results-area">
     ${trackerHTML}
-    <div class="res-hd"><div class="res-title">全部班次 <span style="font-size:10px;color:var(--text3);font-weight:400">(${source})</span></div><div class="res-route">${STATIONS[selO].n} → ${STATIONS[selD].n}</div></div>
+    <div class="res-hd"><div class="res-title">全部班次 <span style="font-size:10px;color:var(--text3);font-weight:400">(${source})</span></div><div class="res-route">${STATIONS[selO].n} \u2192 ${STATIONS[selD].n}</div></div>
     <div class="ftabs"><button class="ftab${tf==='all'?' act':''}" onclick="setF('all')">全部</button>
     ${hasE?`<button class="ftab${tf==='e'?' act':''}" onclick="setF('e')">直達車</button>`:''}
     <button class="ftab${tf==='c'?' act':''}" onclick="setF('c')">普通車</button></div>`;
 
-  if(!sh.length){h+=`<div class="no-res"><div class="nri">🔍</div><div>無可用班次${!hasE&&tf==='e'?'<br>此區間無直達車':''}</div></div>`}
+  if(!sh.length){h+=`<div class="no-res"><div class="nri">\ud83d\udd0d</div><div>無可用班次${!hasE&&tf==='e'?'<br>此區間無直達車':''}</div></div>`}
   else{sh.forEach((t,i)=>{const isN=i===ni;h+=`<div class="tc${isN?' nt':''}">
     ${isN?'<div class="next-lbl">NEXT</div>':''}
     <div class="tc-badge"><span class="bd ${t.t==='e'?'eb':'cb'}">${t.t==='e'?'直達':'普通'}</span></div>
     <div class="tc-times"><div class="tc-t"><div class="tl">出發</div><div class="tv">${hm(t.dep)}</div></div>
-    <div class="tc-arr">→</div><div class="tc-t"><div class="tl">抵達</div><div class="tv">${hm(t.arr)}</div></div></div>
+    <div class="tc-arr">\u2192</div><div class="tc-t"><div class="tl">抵達</div><div class="tv">${hm(t.arr)}</div></div></div>
     <div class="tc-dur"><div class="dv">${t.dur} 分</div><div class="dl2">車程</div></div></div>`});
     if(more)h+=`<div class="load-more"><button onclick="dc+=10;render()">顯示更多班次</button></div>`}
   h+='</div>';ct.innerHTML=h;
-
-  // Start live tracker
-  if(trackerTarget){
-    setTimeout(()=>startTracker(trackerTarget, stns),100);
-  }
-
+  if(trackerTarget) setTimeout(()=>startTracker(trackerTarget,stns),100);
   setTimeout(()=>{const el=document.querySelector('.tracker');if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},200);
 }
 
 // ========== TAB BAR ACTIONS ==========
+let currentTab='home';
+
 function tabAction(action){
-  // Update active state
   document.querySelectorAll('.tab-item').forEach(el=>el.classList.remove('active'));
   const clicked=document.querySelector(`.tab-item[data-tab="${action}"]`);
   if(clicked) clicked.classList.add('active');
 
   switch(action){
     case 'home':
+      currentTab='home';
+      if(selO!==null&&selD!==null){render()}
+      else{document.getElementById('resCont').innerHTML=`<div class="empty-st"><div class="esi">🚈</div><div class="est">選擇起訖站開始查詢</div><div class="ess">選好出發站與到達站<br>按下查詢即可查看班次時刻</div></div>`}
       window.scrollTo({top:0,behavior:'smooth'});
-      // Close settings if open
-      setOpen=false;
-      document.getElementById('setBd').classList.remove('show');
-      document.getElementById('setTg').classList.remove('open');
       break;
 
     case 'settings':
-      // Open settings panel and scroll to it
-      if(!setOpen) toggleSet();
-      setTimeout(()=>{
-        document.getElementById('setPanel').scrollIntoView({behavior:'smooth',block:'center'});
-      },100);
+      currentTab='settings';
+      showSettingsPage();
       break;
 
     case 'search':
-      if(selO===null||selD===null){
-        toast('請先選擇起訖站');
-        window.scrollTo({top:0,behavior:'smooth'});
-      } else {
-        search();
-      }
-      // Re-highlight home tab
+      if(selO===null||selD===null){toast('請先選擇起訖站');window.scrollTo({top:0,behavior:'smooth'})}
+      else{currentTab='home';render()}
       document.querySelectorAll('.tab-item').forEach(el=>el.classList.remove('active'));
       document.querySelector('.tab-item[data-tab="home"]').classList.add('active');
       break;
 
     case 'sync':
       connectTDX();
-      toast('正在同步 TDX⋯');
-      // Re-highlight home after
       setTimeout(()=>{
         document.querySelectorAll('.tab-item').forEach(el=>el.classList.remove('active'));
-        document.querySelector('.tab-item[data-tab="home"]').classList.add('active');
-      },1500);
+        document.querySelector(`.tab-item[data-tab="${currentTab}"]`).classList.add('active');
+      },500);
       break;
 
     case 'info':
-      showInfo();
-      break;
+      currentTab='info';showInfo();break;
   }
 }
 
-function showInfo(){
+function showSettingsPage(){
+  const creds=loadCreds();
+  const isLive=document.getElementById('heroStat').classList.contains('live');
+  const statusDot=isLive?'background:var(--ok)':'background:var(--text3)';
+  const statusText=isLive?'TDX 已連線':'未連線';
+
   const ct=document.getElementById('resCont');
   ct.innerHTML=`
-    <div style="padding:24px 20px">
+    <div style="padding:20px">
       <div style="background:var(--card);border-radius:var(--r);padding:24px;border:1px solid var(--border)">
-        <div style="font-size:17px;font-weight:700;margin-bottom:16px">關於本 APP</div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.8">
-          <p style="margin-bottom:12px"><strong style="color:var(--text)">桃園機捷時刻查詢</strong> — 本機離線版</p>
-          <p style="margin-bottom:12px">✦ 資料來源：TDX 運輸資料流通服務平臺<br>
-          ✦ API 端點：v2/Rail/Metro/StationTimeTable/TYMC<br>
-          ✦ 認證方式：OAuth2 Client Credentials</p>
-          <p style="margin-bottom:12px">本 APP 直接呼叫 TDX API 取得桃園捷運站別時刻表即時資料。若未設定 TDX 金鑰或連線失敗，將自動切換為內建參考時刻。</p>
-          <p style="margin-bottom:12px"><strong style="color:var(--text)">如何取得 TDX 金鑰：</strong></p>
-          <p>1. 前往 <a href="https://tdx.transportdata.tw/" target="_blank" style="color:var(--copper)">tdx.transportdata.tw</a> 註冊（免費）<br>
-          2. 登入後至「會員中心」建立 API 金鑰<br>
-          3. 將 Client ID / Secret 貼到「設定」面板</p>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <span style="font-size:18px">⚙</span>
+          <span style="font-size:17px;font-weight:700;flex:1">TDX API 設定</span>
+          <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)">
+            <span style="width:7px;height:7px;border-radius:50%;${statusDot}"></span>${statusText}
+          </span>
         </div>
-        <button onclick="tabAction('home')" style="margin-top:16px;width:100%;height:44px;border:none;border-radius:22px;background:var(--copper);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">返回時刻查詢</button>
+        <div style="font-size:12px;color:var(--text3);line-height:1.7;margin-bottom:16px">
+          請至 <a href="https://tdx.transportdata.tw/" target="_blank" style="color:var(--copper)">TDX 運輸資料流通服務</a> 免費註冊會員並取得 API 金鑰。<br>金鑰僅存在本機瀏覽器，不會上傳至任何伺服器。
+        </div>
+        <div class="set-row">
+          <label>Client ID</label>
+          <input type="text" id="tdxId" placeholder="貼上你的 Client ID" value="${creds.id}">
+        </div>
+        <div class="set-row">
+          <label>Client Secret</label>
+          <input type="password" id="tdxSecret" placeholder="貼上你的 Client Secret" value="${creds.secret}">
+        </div>
+        <div class="set-actions" style="margin-top:4px">
+          <button class="set-btn pri" onclick="connectTDX()">連線測試</button>
+          <button class="set-btn sec" onclick="clearTDX()">清除金鑰</button>
+        </div>
+        <div class="set-status" id="setStatus"></div>
       </div>
+
+      <div style="background:var(--card);border-radius:var(--r);padding:24px;border:1px solid var(--border);margin-top:14px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:12px">關於本 APP</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.8">
+          <p style="margin-bottom:8px">✦ 資料來源：TDX 運輸資料流通服務平臺</p>
+          <p style="margin-bottom:8px">✦ API 端點：v2/Rail/Metro/StationTimeTable/TYMC</p>
+          <p style="margin-bottom:8px">✦ 認證方式：OAuth2 Client Credentials</p>
+          <p>若未設定金鑰或連線失敗，自動切換為內建參考時刻表。</p>
+        </div>
+      </div>
+
+      <button onclick="tabAction('home')" style="margin-top:16px;width:100%;height:48px;border:none;border-radius:24px;background:var(--copper);color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">返回時刻查詢</button>
     </div>`;
-  window.scrollTo({top:document.getElementById('resCont').offsetTop-100,behavior:'smooth'});
+
+  updateSetStatus();
+  window.scrollTo({top:document.getElementById('resCont').offsetTop-80,behavior:'smooth'});
 }
+
+function showInfo(){ tabAction('settings'); }
 
 // Init
 async function init(){
@@ -899,16 +906,12 @@ async function init(){
   setInterval(updateClock,30000);
   document.getElementById('resCont').innerHTML=`<div class="empty-st"><div class="esi">🚈</div><div class="est">選擇起訖站開始查詢</div><div class="ess">選好出發站與到達站<br>按下查詢即可查看班次時刻</div></div>`;
 
-  // Load saved creds into fields
+  // Auto-connect if saved creds exist
   const creds=loadCreds();
-  if(creds.id){
-    document.getElementById('tdxId').value=creds.id;
-    document.getElementById('tdxSecret').value=creds.secret;
-    // Auto-connect
+  if(creds.id&&creds.secret){
     await connectTDX();
   } else {
-    document.getElementById('srcDot').className='src-dot local';
-    document.getElementById('srcLbl').textContent='內建時刻資料（請設定 TDX 金鑰以連線）';
+    document.getElementById('heroStat').className='hero-status offline';
   }
 }
 init();
