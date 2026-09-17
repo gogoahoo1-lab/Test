@@ -157,7 +157,7 @@ input,select,textarea{font-size:16px!important;touch-action:manipulation}
 .tracker-badge .trkb{font-size:10px;font-weight:700;padding:4px 10px;border-radius:6px}
 .tracker-badge .trk-status{font-size:11px;color:var(--text2);font-weight:500}
 .tracker-countdown{text-align:right}
-.tracker-countdown .cd-num{font-size:36px;font-weight:300;letter-spacing:2px;font-variant-numeric:tabular-nums;color:var(--copper-l)}
+.tracker-countdown .cd-num{font-size:72px;font-weight:700;letter-spacing:2px;font-variant-numeric:tabular-nums;color:var(--copper-l);line-height:1}
 .tracker-countdown .cd-lbl{font-size:10px;color:var(--text3);margin-top:-2px}
 
 .tracker-times{display:flex;align-items:center;justify-content:center;gap:16px;padding:12px 20px 0;font-size:13px;color:var(--text2)}
@@ -292,7 +292,6 @@ input,select,textarea{font-size:16px!important;touch-action:manipulation}
   <div class="tab-item" onclick="tabAction('sync')" data-tab="sync">
     <span class="tab-ic">↻</span><span class="tab-lb">同步</span>
   </div>
-  <div class="tab-center" onclick="tabAction('search')">✳</div>
   <div class="tab-item" onclick="tabAction('settings')" data-tab="settings">
     <span class="tab-ic">⚙</span><span class="tab-lb">設定</span>
   </div>
@@ -619,7 +618,7 @@ function buildTrackerHTML(train,stns){
   return `<div class="tracker" id="trackerCard">
     <div class="tracker-top">
       <div class="tracker-badge"><span class="trkb bd ${badgeCls}">${typeName}</span><span class="trk-status" id="trkStatus">等待發車</span></div>
-      <div class="tracker-countdown"><div class="cd-num" id="trkCountdown">--:--</div><div class="cd-lbl" id="trkCdLabel">剩餘時間</div></div>
+      <div class="tracker-countdown"><div class="cd-num" id="trkCountdown">--</div><div class="cd-lbl" id="trkCdLabel">分鐘後</div></div>
     </div>
     <div class="tracker-times">
       <span class="tt-dep">${hm(train.dep)}</span><span class="tt-arrow">出發 \u2192</span>
@@ -678,10 +677,9 @@ function startTracker(train,stns){
 
     if(currentMin<train.dep){
       const remain=train.dep-currentMin;
-      const mins=Math.floor(remain);
-      const secs=Math.floor((remain-mins)*60);
-      countdown.textContent=`${mins}:${String(secs).padStart(2,'0')}`;
-      cdLabel.textContent='進站倒數';
+      const mins=Math.ceil(remain);
+      countdown.textContent=`${mins}`;
+      cdLabel.textContent='分鐘後進站';
       status.textContent='列車接近中';
       status.style.color='var(--copper-l)';
       const approachWindow=3;
@@ -691,8 +689,8 @@ function startTracker(train,stns){
       trainEl.style.left=pos+'px';
       const prevName=hasPrev?stns[0].name:'';
       const origName=stns[originStnIdx].name;
-      if(remain>approachWindow) eta.innerHTML=`列車將於 <strong>${mins} 分 ${secs} 秒</strong> 後抵達 ${origName}`;
-      else eta.innerHTML=`列車已從 ${prevName} 出發，<strong>${mins} 分 ${secs} 秒</strong> 後進站`;
+      if(remain>approachWindow) eta.innerHTML=`列車將於 <strong>${mins} 分鐘</strong>後抵達 ${origName}`;
+      else eta.innerHTML=`列車已從 ${prevName} 出發，<strong>${mins} 分鐘</strong>後進站`;
       document.querySelectorAll('.track-stn-dot').forEach(dot=>dot.classList.remove('passed'));
       if(hasPrev&&approachPct>0)document.querySelector('.track-stn-dot.prev')?.classList.add('passed');
     } else if(currentMin<train.arr){
@@ -701,10 +699,9 @@ function startTracker(train,stns){
       const total=train.arr-train.dep;
       const pct=Math.min(elapsed/total,1);
       const remain=train.arr-currentMin;
-      const mins=Math.floor(remain);
-      const secs=Math.floor((remain-mins)*60);
-      countdown.textContent=`${mins}:${String(secs).padStart(2,'0')}`;
-      cdLabel.textContent='抵達倒數';
+      const mins=Math.ceil(remain);
+      countdown.textContent=`${mins}`;
+      cdLabel.textContent='分鐘後抵達';
       status.textContent='行駛中';
       status.style.color='var(--ok)';
       const pos=originPos+pct*journeyFrac*railWidth;
@@ -715,7 +712,7 @@ function startTracker(train,stns){
       const curIdx=Math.min(Math.floor(pct*(jsLen-1)),jsLen-2);
       const fromStn=journeyStns[curIdx];
       const toStn=journeyStns[Math.min(curIdx+1,jsLen-1)];
-      eta.innerHTML=`${fromStn.name} → ${toStn.name}，預計 <strong>${mins} 分 ${secs} 秒</strong> 後抵達 ${stns[stns.length-1].name}`;
+      eta.innerHTML=`${fromStn.name} → ${toStn.name}，預計 <strong>${mins} 分鐘</strong>後抵達 ${stns[stns.length-1].name}`;
       document.querySelectorAll('.track-stn-dot').forEach((dot,i)=>{
         const allDots=document.querySelectorAll('.track-stn-dot');
         const stnPct=i/(allDots.length-1);
@@ -723,7 +720,7 @@ function startTracker(train,stns){
         if(stnPct<=trainPct)dot.classList.add('passed');else dot.classList.remove('passed');
       });
     } else {
-      countdown.textContent='00:00';cdLabel.textContent='已抵達';
+      countdown.textContent='0';cdLabel.textContent='已抵達';
       status.textContent='已到站';status.style.color='var(--copper-l)';
       progress.style.width='100%';trainEl.style.left=railRight+'px';
       document.querySelectorAll('.track-stn-dot').forEach(d=>d.classList.add('passed'));
@@ -755,8 +752,8 @@ function buildMiniTrackerHTML(train){
       <span class="tm-status" id="miniStatus">行駛中</span>
     </div>
     <div class="tm-cd">
-      <div class="tm-cd-num" id="miniCd">--:--</div>
-      <div class="tm-cd-lbl">抵達倒數</div>
+      <div class="tm-cd-num" id="miniCd">--</div>
+      <div class="tm-cd-lbl">分鐘後抵達</div>
     </div>
     <div class="tm-progress" id="miniProgress" style="width:0%"></div>
   </div>`;
@@ -777,14 +774,13 @@ function startMiniTracker(train){
     if(!cd) return;
     if(cur<train.arr){
       const remain=train.arr-cur;
-      const mins=Math.floor(remain);
-      const secs=Math.floor((remain-mins)*60);
-      cd.textContent=`${mins}:${String(secs).padStart(2,'0')}`;
+      const mins=Math.ceil(remain);
+      cd.textContent=`${mins}`;
       const pct=Math.min((cur-train.dep)/(train.arr-train.dep),1);
       prog.style.width=(pct*100)+'%';
       st.textContent='行駛中';
     } else {
-      cd.textContent='00:00';
+      cd.textContent='0';
       st.textContent='已到站';
       prog.style.width='100%';
       clearInterval(miniInterval);
