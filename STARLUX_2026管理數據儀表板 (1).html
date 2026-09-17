@@ -4495,9 +4495,13 @@
     bar.querySelectorAll('.month-pill').forEach(function(btn){
       btn.addEventListener('click', function(){
         if (this.classList.contains('disabled')) return;
-        const v = this.getAttribute('data-opsm');
+        var v = this.getAttribute('data-opsm');
         opsMonthFilter = v==='all' ? 'all' : parseInt(v, 10);
-        renderOpsMonthBar();
+        // Toggle active class in-place instead of rebuilding entire month bar
+        // (rebuilding via renderOpsMonthBar() inside its own click handler
+        //  destroys the DOM mid-event and can break handlers on subsequent clicks)
+        bar.querySelectorAll('.month-pill').forEach(function(p){ p.classList.remove('active'); });
+        this.classList.add('active');
         renderOpsAfterFilter();
       });
     });
