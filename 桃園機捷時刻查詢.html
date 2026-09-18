@@ -514,7 +514,7 @@ function parseTDXTrains(originCode, destCode){
 }
 
 // ========== STATE ==========
-let selO=null,selD=null,pm=null,tf='all',dc=10;
+let selO=null,selD=null,pm=null,dc=10;
 const hm=m=>`${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(Math.floor(m)%60).padStart(2,'0')}`;
 const nowM=()=>{const d=new Date();return d.getHours()*60+d.getMinutes()+d.getSeconds()/60};
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
@@ -561,10 +561,8 @@ function genFallback(oi,di){
 }
 
 function search(){
-  if(selO===null||selD===null)return;dc=10;tf='all';render();
+  if(selO===null||selD===null)return;dc=10;render();
 }
-
-function setF(f){tf=f;dc=10;render()}
 
 // ========== LIVE TRACKER ==========
 let trackerInterval=null;
@@ -850,12 +848,9 @@ function render(){
   let h=`<div class="results-area">
     ${miniHTML}
     ${trackerHTML}
-    <div class="res-hd"><div class="res-title">即將到來班次 <span style="font-size:10px;color:var(--text3);font-weight:400">(${source}・${nowStr} 起)</span></div><div class="res-route">${STATIONS[selO].n} \u2192 ${STATIONS[selD].n}</div></div>
-    <div class="ftabs"><button class="ftab${tf==='all'?' act':''}" onclick="setF('all')">全部</button>
-    ${bothExpress?`<button class="ftab${tf==='e'?' act':''}" onclick="setF('e')">直達車</button>`:''}
-    <button class="ftab${tf==='c'?' act':''}" onclick="setF('c')">普通車</button></div>`;
+    <div class="res-hd"><div class="res-title">即將到來班次 <span style="font-size:10px;color:var(--text3);font-weight:400">(${source}・${nowStr} 起)</span></div><div class="res-route">${STATIONS[selO].n} \u2192 ${STATIONS[selD].n}</div></div>`;
 
-  if(!sh.length){h+=`<div class="no-res"><div class="nri">\ud83d\udd0d</div><div>無可用班次${!bothExpress&&tf==='e'?'<br>此區間無直達車':''}</div></div>`}
+  if(!sh.length){h+=`<div class="no-res"><div class="nri">\ud83d\udd0d</div><div>無可用班次</div></div>`}
   else{sh.forEach((t,i)=>{
     const isN=t===trackerTarget;
     h+=`<div class="tc${isN?' nt':''}">
