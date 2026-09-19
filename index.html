@@ -154,7 +154,19 @@
   .queue-list { flex: 1; overflow-y: auto; padding: 12px 16px; -webkit-overflow-scrolling: touch; }
   .queue-hour { font-family: 'JetBrains Mono'; font-size: 12px; color: var(--muted); padding: 12px 4px 6px; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 1px; }
   .queue-hour::after { content: ""; flex: 1; height: 1px; background: var(--line); }
-  .queue-item { background: var(--paper); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; cursor: pointer; border: 1px solid transparent; }
+  .queue-hour.qg-over { color: #C53E1D; font-weight: 700; letter-spacing: 0.5px; }
+  .queue-hour.qg-now { color: var(--cleaning); font-weight: 700; letter-spacing: 0.5px; }
+  .queue-hour.qg-soon { color: #B57A24; font-weight: 600; }
+  .queue-hour.qg-later { color: var(--muted); }
+  .queue-item { background: var(--paper); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; cursor: pointer; border: 1px solid transparent; border-left-width: 3px; transition: background 0.3s; }
+  .queue-item.q-safe { border-left-color: var(--avail); }
+  .queue-item.q-warn { border-left-color: var(--dirty); background: linear-gradient(90deg, var(--dirty-bg), var(--paper) 40%); }
+  .queue-item.q-urgent { border-left-color: var(--cleaning); background: linear-gradient(90deg, var(--cleaning-bg), var(--paper) 45%); }
+  .queue-item.q-over { border-left-color: #C53E1D; background: linear-gradient(90deg, #FFECEC, var(--paper) 50%); animation: overtime-pulse 2.5s ease-in-out infinite; }
+  @keyframes overtime-pulse {
+    0%, 100% { background: linear-gradient(90deg, #FFECEC, var(--paper) 50%); }
+    50%     { background: linear-gradient(90deg, #FFD8D8, var(--paper) 45%); }
+  }
   .queue-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--navy-700), var(--navy-500)); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; position: relative; }
   .queue-avatar .status-dot { position: absolute; bottom: -2px; right: -2px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--cream-2); }
   .status-dot.st-seated { background: var(--seated); }
@@ -165,6 +177,18 @@
   .queue-right { text-align: right; font-family: 'JetBrains Mono'; font-size: 14px; }
   .queue-right .seat-label { color: var(--gold); font-weight: 600; }
   .queue-right .std { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .q-countdown { margin-top: 4px; padding: 2px 6px; border-radius: 6px; font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono'; display: inline-block; min-width: 52px; text-align: center; letter-spacing: -0.3px; }
+  .q-countdown.safe    { background: var(--avail-bg); color: #3E7A5D; }
+  .q-countdown.warn    { background: var(--dirty-bg); color: #7A5514; }
+  .q-countdown.urgent  { background: var(--cleaning-bg); color: #8A3D14; }
+  .q-countdown.over    { background: #C53E1D; color: #fff; }
+  .q-countdown .cd-num { font-size: 13px; display: block; line-height: 1.1; }
+  .q-countdown .cd-lbl { font-size: 9px; font-weight: 500; opacity: 0.8; letter-spacing: 0.3px; }
+  .tab-count.has-over { background: #C53E1D !important; color: #fff !important; animation: overtime-pulse-dot 1.5s ease-in-out infinite; }
+  @keyframes overtime-pulse-dot {
+    0%, 100% { transform: scale(1); }
+    50%     { transform: scale(1.15); }
+  }
 
   .view { display: none; } .view.active { display: block; }
 
@@ -2101,33 +2125,140 @@ function renderStats() {
   }
 }
 
+// Time band for depart-countdown (mins until "should leave" = STD - 30)
+// over: already past → 應離場; now: 0-15 → 準備叫客; soon: 15-30; later: >30
+function departBand(minsToDep, hasStd) {
+  if (!hasStd) return 'later';
+  if (minsToDep < 0) return 'over';
+  if (minsToDep < 15) return 'now';
+  if (minsToDep < 30) return 'soon';
+  return 'later';
+}
+function bandToItemClass(b) {
+  return b === 'over' ? 'q-over' : b === 'now' ? 'q-urgent' : b === 'soon' ? 'q-warn' : 'q-safe';
+}
+function bandToCdClass(b) {
+  return b === 'over' ? 'over' : b === 'now' ? 'urgent' : b === 'soon' ? 'warn' : 'safe';
+}
+function formatCountdown(m) {
+  // m = mins until "should leave". Negative = overtime.
+  if (m < 0) {
+    const over = Math.abs(m);
+    if (over >= 60) { const h = Math.floor(over/60), r = over%60; return `+${h}時${r}分`; }
+    return `+${over} 分`;
+  }
+  if (m >= 60) { const h = Math.floor(m/60), r = m%60; return `${h}時${r}分`; }
+  return `${m} 分`;
+}
+function departHint(m) {
+  if (m < 0) return '⚠️ 應離場';
+  if (m < 5)  return '🔔 立即叫客';
+  if (m < 15) return '準備叫客';
+  if (m < 30) return '即將離場';
+  return '離場倒數';
+}
+
 function renderQueue() {
   const list = document.getElementById('queueList'); list.innerHTML = '';
   const all = [];
   Object.entries(seats).forEach(([code,s]) => {
-    if (s.status==='seated' && s.passenger_name) all.push({ code, name: s.passenger_name, vip: s.vip, fno: s.flight_no, destName: s.destination_name, std: s.std, status: 'seated' });
-    else if (s.status==='dirty') all.push({ code, status: 'dirty', std: '—', name: '待清潔' });
-  });
-  let items = currentQTab==='upcoming' ? all.filter(x=>x.status==='seated').sort((a,b)=>stdToMin(a.std)-stdToMin(b.std))
-    : currentQTab==='dirty' ? all.filter(x=>x.status==='dirty') : all;
-  document.getElementById('cntUpcoming').textContent = all.filter(x=>x.status==='seated').length;
-  document.getElementById('cntDirty').textContent = all.filter(x=>x.status==='dirty').length;
-  document.getElementById('cntAll').textContent = all.length;
-  if (items.length===0) { list.innerHTML = '<div class="empty">目前沒有項目</div>'; return; }
-  let lastHour = -1;
-  items.forEach(item => {
-    if (currentQTab==='upcoming' && item.std && item.std !== '—') {
-      const h = Math.floor(stdToMin(item.std)/60);
-      if (h !== lastHour) { const hdr = document.createElement('div'); hdr.className='queue-hour'; hdr.textContent = `${String(h).padStart(2,'0')}:00`; list.appendChild(hdr); lastHour = h; }
+    if (s.status==='seated' && s.passenger_name) {
+      const hasStd = !!s.std;
+      const dep = hasStd ? minsUntilDep(s.std) : 9999;
+      all.push({ code, name: s.passenger_name, vip: s.vip, fno: s.flight_no, destName: s.destination_name, std: s.std, status: 'seated', departMin: dep, hasStd });
     }
-    const el = document.createElement('div'); el.className='queue-item';
-    const min = item.std && item.std!=='—' ? minsUntilSTD(item.std) : 0;
-    const statusClass = item.status==='dirty'?'st-departed':(min<30?'st-imminent':'st-seated');
-    const flightLine = item.fno ? `<span>${escapeHtml(item.fno)}</span> · <span>${escapeHtml(item.destName||'')}</span>` : `<span>座位釋出</span>`;
+    else if (s.status==='dirty') all.push({ code, status: 'dirty', std: '—', name: '待清潔', departMin: 9999, hasStd: false });
+  });
+
+  const upcoming = all.filter(x=>x.status==='seated');
+  const overCount = upcoming.filter(x => x.hasStd && x.departMin < 0).length;
+  const dirtyCount = all.filter(x=>x.status==='dirty').length;
+
+  // Tab count badges — highlight the "即將離開" count red when someone is overdue
+  const upcomingBadge = document.getElementById('cntUpcoming');
+  if (overCount > 0) {
+    upcomingBadge.textContent = `${overCount}⚠ / ${upcoming.length}`;
+    upcomingBadge.classList.add('has-over');
+  } else {
+    upcomingBadge.textContent = upcoming.length;
+    upcomingBadge.classList.remove('has-over');
+  }
+  document.getElementById('cntDirty').textContent = dirtyCount;
+  document.getElementById('cntAll').textContent = all.length;
+
+  // Sort: upcoming by departMin ascending (most urgent first). "all" also sorts likewise
+  // so dirty items (departMin=9999) sink to the bottom.
+  let items = currentQTab==='upcoming'
+    ? upcoming.slice().sort((a,b)=> a.departMin - b.departMin)
+    : currentQTab==='dirty'
+      ? all.filter(x=>x.status==='dirty')
+      : all.slice().sort((a,b)=> a.departMin - b.departMin);
+
+  if (items.length===0) {
+    const msg = currentQTab==='upcoming' ? '目前沒有座位使用中' : currentQTab==='dirty' ? '沒有待清潔座位' : '目前沒有項目';
+    list.innerHTML = `<div class="empty">${msg}</div>`;
+    return;
+  }
+
+  const groupLabels = {
+    over:  '🚨 已超時 · 該離場',
+    now:   '⚠️ 15 分內 · 準備叫客',
+    soon:  '⏰ 15–30 分內',
+    later: '⏳ 30 分以上',
+    dirty: '🧹 待清潔',
+  };
+
+  let lastGroup = null;
+  items.forEach(item => {
+    // Decide grouping band
+    let band;
+    if (item.status === 'dirty') band = 'dirty';
+    else band = departBand(item.departMin, item.hasStd);
+
+    // In "upcoming" tab we always show group headers.
+    // In "all" tab we show them too (mix of bands + dirty at bottom).
+    // In "dirty" tab we skip headers (single group).
+    if (currentQTab !== 'dirty' && band !== lastGroup) {
+      const hdr = document.createElement('div');
+      hdr.className = 'queue-hour qg-' + band;
+      hdr.textContent = groupLabels[band] || '';
+      list.appendChild(hdr);
+      lastGroup = band;
+    }
+
+    const el = document.createElement('div');
+    const itemBandClass = item.status === 'dirty' ? '' : bandToItemClass(band);
+    el.className = 'queue-item ' + itemBandClass;
+
     const initial = item.name ? escapeHtml(item.name.charAt(0)) : '?';
+    const statusClass = item.status==='dirty'
+      ? 'st-departed'
+      : (item.hasStd && item.departMin < 0 ? 'st-imminent' : 'st-seated');
+    const flightLine = item.fno
+      ? `<span>${escapeHtml(item.fno)}</span> · <span>${escapeHtml(item.destName||'')}</span>`
+      : `<span>座位釋出</span>`;
+
+    // Countdown block (only for seated with STD)
+    let cdHtml = '';
+    if (item.status === 'seated' && item.hasStd) {
+      const cdCls = bandToCdClass(band);
+      cdHtml = `
+        <div class="q-countdown ${cdCls}" title="STD ${escapeHtml(item.std)} · 應離場 STD 前 30 分">
+          <span class="cd-lbl">${departHint(item.departMin)}</span>
+          <span class="cd-num">${formatCountdown(item.departMin)}</span>
+        </div>`;
+    }
+
     el.innerHTML = `<div class="queue-avatar">${initial}<span class="status-dot ${statusClass}"></span></div>
-      <div class="queue-meta"><div class="name">${escapeHtml(item.name||'—')}${item.vip?' ★':''}</div><div class="flight-line">${flightLine}</div></div>
-      <div class="queue-right"><div class="seat-label">${escapeHtml(item.code)}</div><div class="std">${escapeHtml(item.std!=='—'?item.std:'')}</div></div>`;
+      <div class="queue-meta">
+        <div class="name">${escapeHtml(item.name||'—')}${item.vip?' ★':''}</div>
+        <div class="flight-line">${flightLine}</div>
+      </div>
+      <div class="queue-right">
+        <div class="seat-label">${escapeHtml(item.code)}</div>
+        <div class="std">${escapeHtml(item.std!=='—'?item.std:'')}</div>
+        ${cdHtml}
+      </div>`;
     el.addEventListener('click', () => { openSeatModal(item.code); if (window.innerWidth <= 1024) closeQueue(); });
     list.appendChild(el);
   });
@@ -2457,12 +2588,41 @@ function renderGroup(g) {
   const bubbles = g.map(m => { const d = new Date(m.created_at); return `<div class="msg ${isMe?'me':'them'}">${escapeHtml(m.content)}<div class="msg-time">${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}</div></div>`; }).join('');
   return `<div class="msg-group ${isMe?'me':'them'}">${senderLbl}${bubbles}</div>`;
 }
+// Flag: set to false once we detect messages.sender_id column doesn't exist.
+// When false, subsequent sends skip sender_id and renderGroup falls back to
+// name-based identity matching (which is what the old schema does).
+let messagesHasSenderId = true;
+
 async function sendMsg() {
   const inp = document.getElementById('chatInput');
   const text = inp.value.trim(); if (!text || !currentChannelId || !currentUser) return;
   inp.value = '';
-  if (isConfigured) await sb.from('messages').insert({ channel_id: currentChannelId, sender_id: currentUser.id, sender_name: currentUser.name, sender_role: currentUser.role, content: text });
-  else { if (!messagesByChannel[currentChannelId]) messagesByChannel[currentChannelId] = []; messagesByChannel[currentChannelId].push({ sender_id: currentUser.id, sender_name: currentUser.name, sender_role: currentUser.role, content: text, created_at: new Date().toISOString() }); renderMessages(); }
+
+  if (!isConfigured) {
+    if (!messagesByChannel[currentChannelId]) messagesByChannel[currentChannelId] = [];
+    messagesByChannel[currentChannelId].push({ sender_id: currentUser.id, sender_name: currentUser.name, sender_role: currentUser.role, content: text, created_at: new Date().toISOString() });
+    renderMessages();
+    return;
+  }
+
+  const payload = { channel_id: currentChannelId, sender_name: currentUser.name, sender_role: currentUser.role, content: text };
+  if (messagesHasSenderId && currentUser.id != null) payload.sender_id = currentUser.id;
+
+  let { error } = await sb.from('messages').insert(payload);
+  if (error) {
+    // Detect "column messages.sender_id does not exist" (Postgres error 42703)
+    const msg = (error.message || '') + ' ' + (error.details || '') + ' ' + (error.hint || '');
+    if (/sender_id/i.test(msg) || error.code === '42703') {
+      console.warn('messages.sender_id column missing, retrying without it');
+      messagesHasSenderId = false;
+      delete payload.sender_id;
+      ({ error } = await sb.from('messages').insert(payload));
+    }
+  }
+  if (error) {
+    inp.value = text;  // restore so user can retry
+    alert('傳送失敗：' + (error.message || error.code || '未知錯誤') + '\n\n若持續失敗，請按 F12 貼 console 的紅色錯誤給我。');
+  }
 }
 document.getElementById('chatSend').addEventListener('click', sendMsg);
 document.getElementById('chatInput').addEventListener('keypress', e => { if (e.key==='Enter') sendMsg(); });
@@ -3292,7 +3452,46 @@ function updateClock() {
 function renderAll() { renderSeats(); renderStats(); renderQueue(); }
 
 setInterval(() => { renderSeats(); renderStats(); renderQueue(); }, 60000);
+// Faster tick just for queue countdown (every 30s) so the 分 number stays fresh
+// without the full seat/stat re-render load. Also drives overtime notifications.
+setInterval(() => { renderQueue(); checkOvertimeAlert(); }, 30000);
 setInterval(updateClock, 1000);
+
+// Overtime alert: when a seated passenger crosses into "應離場" territory
+// (departMin < 0), push a Slack alert once per (seat, session). We throttle
+// per-seat via a simple in-memory set that clears when the seat releases.
+const _overtimeNotified = new Set();
+function checkOvertimeAlert() {
+  const nowSeated = new Set();
+  const overdueList = [];
+  Object.entries(seats).forEach(([code, s]) => {
+    if (s.status !== 'seated' || !s.std) return;
+    nowSeated.add(code);
+    const dep = minsUntilDep(s.std);
+    if (dep < 0 && dep > -60) {  // between just-overdue and 1hr past (avoid noisy long-dwell)
+      const key = code + ':' + (s.entry_time || '');
+      if (!_overtimeNotified.has(key)) {
+        _overtimeNotified.add(key);
+        overdueList.push({ code, name: s.passenger_name, fno: s.flight_no, std: s.std, vip: s.vip });
+      }
+    }
+  });
+  // Cleanup keys for seats no longer seated
+  for (const key of Array.from(_overtimeNotified)) {
+    const code = key.split(':')[0];
+    if (!nowSeated.has(code)) _overtimeNotified.delete(key);
+  }
+  // Fire (batched into one Slack message if multiple overdue at once)
+  if (overdueList.length > 0 && slackConfig?.webhook_url) {
+    const lines = overdueList.map(o =>
+      `• *${currentTerminal}-${o.code}* ${escapeHtml(o.name || '訪客')}${o.vip?' ★':''} · ${o.fno || '手動'} STD ${o.std} (${Math.abs(minsUntilDep(o.std))} 分前已達離場時間)`
+    ).join('\n');
+    notifySlack('overflow', {
+      message: `⚠️ *以下旅客已超過建議離場時間*\n${lines}\n請儘速確認是否已前往登機門`,
+      terminal: currentTerminal,
+    });
+  }
+}
 
 // Live-update cfg status hint + profile dropdown as user types
 ['cfgUrl', 'cfgKey'].forEach(id => {
