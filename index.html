@@ -114,13 +114,18 @@
   .zone-c .seat-grid { grid-template-columns: repeat(3, 1fr); }
   .zone-d .seat-grid { grid-template-columns: repeat(2, 1fr); }
 
-  .seat { aspect-ratio: 1.4 / 1; background: var(--avail-bg); border: 1.5px solid transparent; border-radius: 10px; cursor: pointer; padding: 8px 7px; display: flex; flex-direction: column; justify-content: space-between; position: relative; transition: all 0.12s ease; overflow: hidden; }
+  .seat { aspect-ratio: 1.4 / 1; background: var(--avail-bg); border: 1.5px solid transparent; border-radius: 10px; cursor: pointer; padding: 8px 7px; display: flex; flex-direction: column; justify-content: space-between; position: relative; transition: all 0.12s ease; overflow: hidden; border-top-width: 3px; }
   .seat:active { transform: scale(0.98); }
   .seat.selected { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,166,107,0.2); }
   .seat.avail { background: var(--avail-bg); } .seat.avail .seat-code { color: #3E7A5D; }
   .seat.seated { background: var(--seated-bg); } .seat.seated .seat-code { color: var(--seated); }
   .seat.dirty { background: var(--dirty-bg); } .seat.dirty .seat-code { color: #B57A24; }
   .seat.cleaning { background: var(--cleaning-bg); } .seat.cleaning .seat-code { color: var(--cleaning); }
+  .seat.blocked { background: var(--blocked-bg); opacity: 0.55; cursor: help; }
+  .seat.blocked .seat-code { color: var(--blocked); }
+  .seat.blocked::after { content: "同桌佔用"; position: absolute; bottom: 4px; left: 6px; right: 6px; font-size: 9px; color: var(--blocked); text-align: center; letter-spacing: 0.3px; }
+
+  body.seat-select .seat.blocked { opacity: 0.25; }
 
   body.seat-select .seat:not(.avail) { opacity: 0.3; cursor: not-allowed; }
   body.seat-select .seat.avail { animation: seatPulse 1.6s infinite; box-shadow: 0 0 0 2px var(--gold); cursor: pointer; }
@@ -626,7 +631,7 @@
       <div class="center-pane">
         <section class="view active" id="view-lounge">
           <div class="stats-row">
-            <div class="stat-card"><div class="label">空位</div><div class="value"><span id="statAvail">0</span> <span class="unit">/ <span id="statTotal">41</span> 席</span></div><div class="delta" style="color:var(--muted);">使用中 <span id="statUsed">0</span> · 使用率 <span id="statUtil">0</span>%</div><div class="util-bar"><div class="util-bar-fill" id="statBar" style="width:0%"></div></div></div>
+            <div class="stat-card"><div class="label">可帶桌位</div><div class="value"><span id="statAvail">0</span> <span class="unit">/ <span id="statTotal">25</span> 桌</span></div><div class="delta" style="color:var(--muted);">使用中 <span id="statUsed">0</span> 桌 · 使用率 <span id="statUtil">0</span>%<br/><span style="font-size:11px;">席位 <span id="statAvailSeats">0</span>/<span id="statTotalSeats">41</span></span></div><div class="util-bar"><div class="util-bar-fill" id="statBar" style="width:0%"></div></div></div>
             <div class="stat-card"><div class="label">今日累計</div><div class="value"><span id="statToday">0</span> <span class="unit">人</span></div><div class="delta" id="statTodayDelta" style="color:var(--muted);">—</div></div>
             <div class="stat-card"><div class="label">待清潔</div><div class="value"><span id="statDirty">0</span></div><div class="delta down" id="statDirtyDelta" style="color:var(--muted);">—</div></div>
             <div class="stat-card accent"><div class="label">30 分登機</div><div class="value"><span id="statImminent">0</span> <span class="unit" style="color:rgba(255,255,255,0.4)">組</span></div><div class="delta" style="color:var(--gold-light);">釋出 <span id="statRelease">0</span> 席</div></div>
@@ -778,8 +783,9 @@
                 <div>
                   <div class="fc-model-h">⚠️ 溢流判定</div>
                   <ul>
-                    <li>座位總數由座位表即時計算（現況 T1 <b id="fcModelCapT1">41</b> 席、T2 <b id="fcModelCapT2">41</b> 席）</li>
-                    <li>溢流人數 = <code>max(0, 該小時佔用 − 座位總數)</code></li>
+                    <li>桌位總數由座位表分桌計算（現況 T1 <b id="fcModelCapT1">25</b> 桌、T2 <b id="fcModelCapT2">25</b> 桌）</li>
+                    <li>預估旅客人數會除以 <b>1.6</b>（平均每桌人數）轉為桌位需求</li>
+                    <li>溢流桌數 = <code>max(0, 該小時桌位需求 − 桌位總數)</code></li>
                     <li>當預估溢流時，建議提早調度或引導至其他航廈貴賓室</li>
                   </ul>
                 </div>
@@ -1872,10 +1878,49 @@ function setConnStatus(state, text, short) {
 }
 
 let seats = {}, flights = {};
+let tables = {};  // table_id → { table_id, zone, codes: [...], label }
 let currentTerminal = 'T1';
 let selectedSeat = null;
 let currentQTab = 'upcoming';
 const zones = { A: { label: 'A · 沙發休憩區', codes: [] }, B: { label: 'B · 用餐區', codes: [] }, C: { label: 'C · 商務工作區', codes: [] }, D: { label: 'D · 吧檯 & 淋浴間', codes: [] } };
+
+// ---- Table helpers -----------------------------------------------------
+function tableLabelFor(tid) {
+  if (!tid) return '';
+  if (tid.startsWith('sofa-'))   return '沙發 ' + tid.slice(5);
+  if (tid.startsWith('dining-')) return '餐桌 ' + tid.slice(7);
+  if (tid.startsWith('desk-'))   return '';  // solo, no label
+  if (tid.startsWith('bar-'))    return '';
+  if (tid.startsWith('shower-')) return '';
+  if (tid.startsWith('solo-'))   return '';
+  return tid;
+}
+function tableIdOf(codeOrSeat) {
+  const s = typeof codeOrSeat === 'string' ? seats[codeOrSeat] : codeOrSeat;
+  if (!s) return null;
+  return s.table_id || ('solo-' + s.code);
+}
+function tableOf(code) {
+  const tid = tableIdOf(code);
+  return tid ? tables[tid] : null;
+}
+function rebuildTablesIndex() {
+  tables = {};
+  Object.values(seats).forEach(s => {
+    const tid = tableIdOf(s);
+    if (!tables[tid]) tables[tid] = { table_id: tid, zone: s.zone, codes: [], label: tableLabelFor(tid) };
+    tables[tid].codes.push(s.code);
+  });
+  Object.values(tables).forEach(t => t.codes.sort());
+}
+// Same-table color palette so operators can see which chairs belong together
+const TABLE_PALETTE = ['#C9A66B','#6BA688','#4A6FA5','#C97C4A','#B57A24','#98A0B5','#8B6BA6','#5E8A7A'];
+function tableTintFor(tid) {
+  if (!tid || tid.startsWith('desk-') || tid.startsWith('bar-') || tid.startsWith('shower-') || tid.startsWith('solo-')) return null;
+  let hash = 0;
+  for (let i = 0; i < tid.length; i++) hash = ((hash << 5) - hash + tid.charCodeAt(i)) | 0;
+  return TABLE_PALETTE[Math.abs(hash) % TABLE_PALETTE.length];
+}
 
 async function initData() {
   if (!isConfigured) { setConnStatus('local', '本機模式 · 點設定連線', '設定'); loadLocalFallback(); return; }
@@ -1901,6 +1946,7 @@ async function loadSeats() {
     if (zones[row.zone]) zones[row.zone].codes.push(row.code);
   });
   Object.keys(zones).forEach(z => zones[z].codes.sort());
+  rebuildTablesIndex();
   renderAll();
 }
 async function loadFlights() {
@@ -1919,6 +1965,7 @@ function subscribeRealtime() {
     if (!row || row.terminal !== currentTerminal) return;
     if (payload.eventType === 'DELETE') delete seats[row.code];
     else seats[row.code] = row;
+    rebuildTablesIndex();
     renderAll();
   }).subscribe();
   if (flightSub) sb.removeChannel(flightSub);
@@ -1944,6 +1991,17 @@ function loadLocalFallback() {
     'B-01','B-02','B-03','B-04','B-05','B-06','B-07','B-08','B-09','B-10','B-11','B-12',
     'C-01','C-02','C-03','C-04','C-05','C-06','C-07','C-08','C-09',
     'D-01','D-02','D-03','D-04','S-01','S-02','S-03','S-04'];
+  // Table assignments matching the SQL migration
+  const tableAssign = {
+    'A-01':'sofa-1','A-02':'sofa-1','A-03':'sofa-1',
+    'A-04':'sofa-2','A-05':'sofa-2','A-06':'sofa-2',
+    'A-07':'sofa-3','A-08':'sofa-3','A-09':'sofa-3',
+    'A-10':'sofa-4','A-11':'sofa-4','A-12':'sofa-4',
+    'B-01':'dining-1','B-02':'dining-1','B-03':'dining-1',
+    'B-04':'dining-2','B-05':'dining-2','B-06':'dining-2',
+    'B-07':'dining-3','B-08':'dining-3','B-09':'dining-3',
+    'B-10':'dining-4','B-11':'dining-4','B-12':'dining-4',
+  };
   seats = {}; Object.keys(zones).forEach(z => zones[z].codes = []);
   const mockFlights = [
     {flight_no:'JX121',destination:'HKG',destination_name:'香港',std:'09:55',terminal:'T1'},
@@ -1954,8 +2012,9 @@ function loadLocalFallback() {
   ];
   codes.forEach(c => {
     const zk = c[0] === 'S' ? 'D' : c[0];
+    const tid = tableAssign[c] || (c[0]==='C'?'desk-':c[0]==='D'?'bar-':'shower-') + c.split('-')[1];
     const r = Math.random();
-    seats[c] = { code: c, zone: zk, terminal: currentTerminal, status: r<0.4?'seated':(r<0.5?'dirty':'avail') };
+    seats[c] = { code: c, zone: zk, terminal: currentTerminal, table_id: tid, status: r<0.4?'seated':(r<0.5?'dirty':'avail') };
     if (seats[c].status === 'seated') {
       const f = mockFlights[Math.floor(Math.random()*mockFlights.length)];
       Object.assign(seats[c], { passenger_name: '示範旅客', flight_no: f.flight_no, destination: f.destination, destination_name: f.destination_name, std: f.std, party_size: 1, class: 'ECN' });
@@ -1964,6 +2023,15 @@ function loadLocalFallback() {
   });
   Object.keys(zones).forEach(z => zones[z].codes.sort());
   flights = {}; mockFlights.forEach(f => flights[f.flight_no] = { ...f });
+  rebuildTablesIndex();
+  // Fake blocked: for any seated seat, mark same-table siblings as blocked
+  Object.values(seats).filter(s => s.status === 'seated').forEach(s => {
+    const t = tables[tableIdOf(s)];
+    if (!t) return;
+    t.codes.filter(c => c !== s.code).forEach(other => {
+      if (seats[other] && seats[other].status === 'avail') seats[other].status = 'blocked';
+    });
+  });
   renderAll();
 }
 
@@ -1971,8 +2039,21 @@ async function updateSeat(code, patch) {
   patch = { ...patch, updated_at: new Date().toISOString(), updated_by: currentUser?.name || 'anon' };
   if (isConfigured) {
     const { error } = await sb.from('seats').update(patch).eq('terminal', currentTerminal).eq('code', code);
-    if (error) alert('更新失敗：' + error.message);
+    if (error) alert('更新失敗:' + error.message);
   } else { Object.assign(seats[code], patch); renderAll(); }
+}
+
+// Batch update: change status/fields for multiple codes at same table in one round-trip.
+async function updateSeats(codes, patch) {
+  if (!codes || codes.length === 0) return;
+  patch = { ...patch, updated_at: new Date().toISOString(), updated_by: currentUser?.name || 'anon' };
+  if (isConfigured) {
+    const { error } = await sb.from('seats').update(patch).eq('terminal', currentTerminal).in('code', codes);
+    if (error) alert('批次更新失敗:' + error.message);
+  } else {
+    codes.forEach(c => { if (seats[c]) Object.assign(seats[c], patch); });
+    renderAll();
+  }
 }
 
 // Log entry when someone is seated
@@ -2020,13 +2101,24 @@ async function logExit(code, seatBefore) {
 async function releaseSeat(code) {
   const before = { ...seats[code] };
   await updateSeat(code, { status: 'dirty', passenger_name: null, flight_no: null, destination: null, destination_name: null, std: null, party_size: null, class: null, vip: null, entry_time: null });
+  // Unblock siblings: they were 'blocked' while this table was occupied, now free again
+  const table = tableOf(code);
+  if (table && table.codes.length > 1) {
+    const blocked = table.codes.filter(c => c !== code && seats[c]?.status === 'blocked');
+    if (blocked.length > 0) await updateSeats(blocked, { status: 'avail' });
+  }
   await logExit(code, before);
 }
 async function markCleaning(code) { await updateSeat(code, { status: 'cleaning' }); }
 async function markAvail(code) {
   const before = { ...seats[code] };
   await updateSeat(code, { status: 'avail', passenger_name: null, flight_no: null, destination: null, destination_name: null, std: null, party_size: null, class: null, vip: null, entry_time: null });
-  // If skipping dirty (e.g. cleaning done), still close any open entry
+  // If skipping dirty (e.g. cleaning done fast), also unblock siblings just in case
+  const table = tableOf(code);
+  if (table && table.codes.length > 1) {
+    const blocked = table.codes.filter(c => c !== code && seats[c]?.status === 'blocked');
+    if (blocked.length > 0) await updateSeats(blocked, { status: 'avail' });
+  }
   if (before.status === 'seated') await logExit(code, before);
 }
 
@@ -2067,18 +2159,38 @@ function timeBand(s) { const m = minsUntilSTD(s); if (m<30) return 'band-imminen
 function renderSeats() {
   Object.entries(zones).forEach(([zk, z]) => {
     const grid = document.getElementById(`grid-${zk}`); if (!grid) return;
-    grid.innerHTML = ''; let avail = 0;
+    grid.innerHTML = '';
+    // Track table-level and seat-level counts for zone header
+    const zoneTables = {};       // tid → { total, availSeats, tableUsed }
     z.codes.forEach(code => {
       const s = seats[code]; if (!s) return;
-      if (s.status === 'avail') avail++;
+      const tid = tableIdOf(s);
+      if (!zoneTables[tid]) zoneTables[tid] = { availSeats: 0, tableUsed: false, codes: [] };
+      zoneTables[tid].codes.push(code);
+      if (s.status === 'avail') zoneTables[tid].availSeats++;
+      if (['seated','dirty','cleaning','blocked'].includes(s.status)) zoneTables[tid].tableUsed = true;
+    });
+    let availTablesInZone = 0;
+    let totalTablesInZone = 0;
+    Object.values(zoneTables).forEach(t => {
+      totalTablesInZone++;
+      if (!t.tableUsed) availTablesInZone++;
+    });
+
+    z.codes.forEach(code => {
+      const s = seats[code]; if (!s) return;
+      const tid = tableIdOf(s);
+      const tint = tableTintFor(tid);
       const el = document.createElement('div');
       el.className = `seat ${s.status}` + (selectedSeat===code?' selected':'');
-      const iconMap = { avail:'', seated:'●', dirty:'🧹', cleaning:'✨' };
+      el.dataset.table = tid || '';
+      if (tint) el.style.borderTopColor = tint;
+      const iconMap = { avail:'', seated:'●', dirty:'🧹', cleaning:'✨', blocked:'🔒' };
       let inner = `<div class="seat-code">${escapeHtml(code)} <span class="seat-icon">${iconMap[s.status]||''}</span></div>`;
       if (s.status === 'seated' && s.passenger_name) {
         inner += `<div class="seat-info"><div class="name">${escapeHtml(s.passenger_name)}${s.vip?' ★':''}</div><div class="flight">${escapeHtml(s.flight_no||'')} ${escapeHtml(s.std||'')}</div></div>`;
         if (s.std) inner += `<div class="seat-time-band ${timeBand(s.std)}"></div>`;
-      } else {
+      } else if (s.status !== 'blocked') {
         const t = { avail:'空位', dirty:'待清潔', cleaning:'清潔中' }[s.status] || '';
         inner += `<div class="seat-info"><div style="color:var(--muted);font-size:9px;">${t}</div></div>`;
       }
@@ -2087,39 +2199,55 @@ function renderSeats() {
       grid.appendChild(el);
     });
     const el = document.getElementById(`count${zk}`);
-    if (el) el.textContent = `${z.codes.length-avail}/${z.codes.length}`;
+    if (el) el.textContent = `${totalTablesInZone - availTablesInZone}/${totalTablesInZone} 桌`;
   });
 }
 
 function renderStats() {
-  const total = Object.keys(seats).length; let used=0, dirty=0, imm=0, avail=0;
+  // Seat-level counts (still needed for chart bar + right-pane queue)
+  const totalSeats = Object.keys(seats).length;
+  let usedSeats=0, dirtySeats=0, imm=0, availSeats=0;
   Object.values(seats).forEach(s => {
-    if (s.status === 'seated') { used++; if (s.std && minsUntilSTD(s.std) < 30) imm++; }
-    if (s.status === 'dirty') dirty++;
-    if (s.status === 'avail') avail++;
+    if (s.status === 'seated') { usedSeats++; if (s.std && minsUntilSTD(s.std) < 30) imm++; }
+    if (s.status === 'dirty') dirtySeats++;
+    if (s.status === 'avail') availSeats++;
   });
-  const util = total ? Math.round((used/total)*100) : 0;
-  document.getElementById('statAvail').textContent = avail;
-  document.getElementById('statUsed').textContent = used;
+
+  // Table-level counts (main KPI)
+  let totalTables = 0, availTables = 0, usedTables = 0;
+  Object.values(tables).forEach(t => {
+    totalTables++;
+    const anyOccupied = t.codes.some(c => ['seated','dirty','cleaning','blocked'].includes(seats[c]?.status));
+    if (anyOccupied) usedTables++;
+    else availTables++;
+  });
+
+  const util = totalTables ? Math.round((usedTables / totalTables) * 100) : 0;
+  document.getElementById('statAvail').textContent = availTables;
+  document.getElementById('statUsed').textContent = usedTables;
   document.getElementById('statUtil').textContent = util;
-  document.getElementById('statTotal').textContent = total;
-  document.getElementById('statDirty').textContent = dirty;
+  document.getElementById('statTotal').textContent = totalTables;
+  const availSeatsEl = document.getElementById('statAvailSeats');
+  const totalSeatsEl = document.getElementById('statTotalSeats');
+  if (availSeatsEl) availSeatsEl.textContent = availSeats;
+  if (totalSeatsEl) totalSeatsEl.textContent = totalSeats;
+  document.getElementById('statDirty').textContent = dirtySeats;
   document.getElementById('statImminent').textContent = imm;
   document.getElementById('statRelease').textContent = imm;
   document.getElementById('statBar').style.width = util + '%';
   const dirtyDeltaEl = document.getElementById('statDirtyDelta');
-  if (dirtyDeltaEl) dirtyDeltaEl.textContent = dirty > 0 ? `${dirty} 席等清潔` : '無待清潔';
+  if (dirtyDeltaEl) dirtyDeltaEl.textContent = dirtySeats > 0 ? `${dirtySeats} 席等清潔` : '無待清潔';
   const fabBadge = document.getElementById('fabBadge');
-  const alerts = imm + dirty;
+  const alerts = imm + dirtySeats;
   if (alerts > 0) { fabBadge.style.display = 'block'; fabBadge.textContent = alerts; }
   else fabBadge.style.display = 'none';
-  // 今日累計進場 (async, cached)
   refreshTodayCount();
 
-  // Slack: capacity warning (avail < 10% of total)
-  if (total > 0 && avail / total < 0.1) {
+  // Slack capacity warning: now triggered on TABLE availability, not seats.
+  // Threshold: <10% tables remaining (more sensitive since 25 tables total).
+  if (totalTables > 0 && availTables / totalTables < 0.1) {
     notifySlack('capacity_warn', {
-      message: `*${currentTerminal}* 貴賓室即將客滿\n剩餘空位：*${avail}/${total}* (${Math.round(avail/total*100)}%)\n使用中：${used} · 待清潔：${dirty}`,
+      message: `*${currentTerminal}* 貴賓室即將客滿\n可帶桌位剩：*${availTables}/${totalTables}* 桌 (${Math.round(availTables/totalTables*100)}%)\n使用中：${usedTables} 桌 · 席位剩 ${availSeats}/${totalSeats}`,
       terminal: currentTerminal,
     });
   }
@@ -2270,6 +2398,14 @@ function onSeatClick(code) {
   if (!s) return;  // race condition guard (realtime DELETE / terminal switch)
   if (pendingIntake && s.status === 'avail') { assignSeatToPending(code); return; }
   if (pendingIntake) return;
+  // Blocked chair: redirect to the occupied chair at same table
+  if (s.status === 'blocked') {
+    const t = tableOf(code);
+    if (t) {
+      const occupied = t.codes.find(c => ['seated','dirty','cleaning'].includes(seats[c]?.status));
+      if (occupied) { openSeatModal(occupied); return; }
+    }
+  }
   openSeatModal(code);
 }
 
@@ -2277,6 +2413,13 @@ function openSeatModal(code) {
   selectedSeat = code; renderSeats();
   const s = seats[code]; if (!s) return;
   const zn = zones[s.zone] ? zones[s.zone].label : '';
+  const table = tableOf(code);
+  const tableInfo = (table && table.codes.length > 1)
+    ? `<div style="background:var(--cream-2); border-left:3px solid var(--gold); padding:8px 12px; margin-bottom:12px; font-size:12px; color:var(--ink-2); border-radius:6px;">
+         🪑 <b>${table.label || '同桌'}</b> · 席位 ${escapeHtml(table.codes.join('、'))}
+         <div style="margin-top:2px; color:var(--muted); font-size:11px;">同桌其他座位帶位期間無法接待其他組別</div>
+       </div>`
+    : '';
   document.getElementById('modalSeat').textContent = code;
   document.getElementById('modalZone').textContent = zn;
   const body = document.getElementById('modalBody');
@@ -2286,6 +2429,7 @@ function openSeatModal(code) {
     const minDep = s.std ? minsUntilDep(s.std) : 0;
     const paxInitial = s.passenger_name ? escapeHtml(s.passenger_name.charAt(0)) : '?';
     body.innerHTML = `
+      ${tableInfo}
       <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
         <div style="width:44px; height:44px; border-radius:50%; background:var(--navy-700); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:600;">${paxInitial}</div>
         <div><div style="font-size:16px; font-weight:600;">${escapeHtml(s.passenger_name)} ${s.vip?'★ VIP':''}</div><div style="font-size:12px; color:var(--muted);">${s.class==='FST'?'頭等艙':s.class==='BUS'?'商務艙':'經濟艙'} · ${s.party_size||1} 位</div></div>
@@ -2295,14 +2439,17 @@ function openSeatModal(code) {
       <div class="form-row"><label>入場</label><div style="font-family:'JetBrains Mono';">${s.entry_time ? new Date(s.entry_time).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}) : '-'}</div></div>
       <div class="form-row"><label>預估離開</label><div style="font-family:'JetBrains Mono'; color:${minDep<15?'#E5674C':'var(--ink)'}; font-weight:600;">${minDep>=0?minDep+' 分鐘後':'應已離開'}</div></div>`;
     footer.innerHTML = `<button class="danger" onclick="releaseSeat('${code}').then(closeModal)">旅客已離開</button><button class="primary" onclick="closeModal()">關閉</button>`;
+  } else if (s.status === 'blocked') {
+    body.innerHTML = `${tableInfo}<div style="text-align:center; padding:20px 0;"><div style="font-size:36px;">🔒</div><div style="font-size:15px; font-weight:600; margin-top:8px;">同桌被佔用</div><div style="font-size:12px; color:var(--muted); margin-top:6px;">此位置為 ${table?.label || '同桌'} 的一部份<br/>需等同桌旅客離開才會釋出</div></div>`;
+    footer.innerHTML = `<button class="primary" onclick="closeModal()">了解</button>`;
   } else if (s.status === 'dirty') {
-    body.innerHTML = `<div style="text-align:center; padding:20px 0;"><div style="font-size:36px;">🧹</div><div style="font-size:15px; font-weight:600; margin-top:8px;">待清潔</div></div>`;
+    body.innerHTML = `${tableInfo}<div style="text-align:center; padding:20px 0;"><div style="font-size:36px;">🧹</div><div style="font-size:15px; font-weight:600; margin-top:8px;">待清潔</div></div>`;
     footer.innerHTML = `<button onclick="markCleaning('${code}').then(closeModal)">開始清潔</button><button class="primary" onclick="markAvail('${code}').then(closeModal)">完成 · 設為空位</button>`;
   } else if (s.status === 'cleaning') {
-    body.innerHTML = `<div style="text-align:center; padding:20px 0;"><div style="font-size:36px;">✨</div><div style="font-size:15px; font-weight:600; margin-top:8px;">清潔中</div></div>`;
+    body.innerHTML = `${tableInfo}<div style="text-align:center; padding:20px 0;"><div style="font-size:36px;">✨</div><div style="font-size:15px; font-weight:600; margin-top:8px;">清潔中</div></div>`;
     footer.innerHTML = `<button onclick="closeModal()">取消</button><button class="primary" onclick="markAvail('${code}').then(closeModal)">✓ 完成</button>`;
   } else {
-    body.innerHTML = `<div style="text-align:center; padding:20px 0;"><div style="font-size:36px;">🪑</div><div style="font-size:13px; margin-top:8px; color:var(--muted);">空位 · 使用「＋ 新帶位」或快速入座：</div></div>
+    body.innerHTML = `${tableInfo}<div style="text-align:center; padding:20px 0;"><div style="font-size:36px;">🪑</div><div style="font-size:13px; margin-top:8px; color:var(--muted);">空位 · 使用「＋ 新帶位」或快速入座：</div></div>
       <div class="form-row"><label>姓名</label><input type="text" id="qName" placeholder="臨時客人"/></div>`;
     footer.innerHTML = `<button onclick="closeModal()">取消</button><button class="primary" onclick="quickSeat('${code}')">快速入座</button>`;
   }
@@ -2463,7 +2610,25 @@ function enterSeatSelection() {
 function cancelSelection() { pendingIntake = null; document.body.classList.remove('seat-select'); document.getElementById('selectBanner').classList.remove('active'); }
 async function assignSeatToPending(code) {
   const p = pendingIntake;
+  const seat = seats[code];
+  if (!seat) { cancelSelection(); return; }
+
+  // 1) Seat the pax at the clicked chair
   await updateSeat(code, { status: 'seated', passenger_name: p.name, flight_no: p.flight_no, destination: p.destination, destination_name: p.destination_name, std: p.std, party_size: p.party_size, class: p.class, vip: !!p.vip, entry_time: new Date().toISOString() });
+
+  // 2) Block the sibling chairs at the same table (can't be given to another group)
+  const table = tableOf(code);
+  if (table && table.codes.length > 1) {
+    const siblings = table.codes.filter(c => c !== code && seats[c]?.status === 'avail');
+    if (siblings.length > 0) {
+      await updateSeats(siblings, {
+        status: 'blocked',
+        passenger_name: null, flight_no: null, destination: null, destination_name: null,
+        std: null, party_size: null, class: null, vip: null, entry_time: null,
+      });
+    }
+  }
+
   await logEntry(code, p);
   // Slack push: VIP check-in
   if (p.vip) {
@@ -2832,11 +2997,14 @@ document.querySelectorAll('.period-switch button').forEach(b => b.addEventListen
 let fcPeriod = 'today';       // 'today' | 'tomorrow'
 let fcTermView = 'T1';        // which terminal for hourly chart
 let fcInputs = {};            // { 'JX121': 12, ... } for current period
-let fcCapacity = { T1: 41, T2: 41 };  // will be refreshed from seats
-let fcCurrent = { T1: { used: 0, avail: 41 }, T2: { used: 0, avail: 41 } };
+let fcCapacity = { T1: 25, T2: 25 };  // table count (was seat count)
+let fcCurrent = { T1: { used: 0, avail: 25 }, T2: { used: 0, avail: 25 } };
 
 const LOUNGE_ARRIVAL_BEFORE_STD = 90; // min
 const LOUNGE_DEPART_BEFORE_STD = 30;  // min
+// Average number of pax per occupied table (used to convert head-count → table-count)
+// Conservative estimate: solo travellers dominant, small groups share tables.
+const AVG_PAX_PER_TABLE = 1.6;
 
 function fcGetDate() {
   const d = new Date();
@@ -2867,21 +3035,31 @@ async function loadForecast() {
   document.getElementById('fcSubtitle').textContent = `${dateLabel} · 預估貴賓室進場人數與溢流警示`;
 
   try {
-    // 1. Load capacity from seats table (both terminals)
-    const { data: seatData } = await sb.from('seats').select('terminal, status');
+    // 1. Load capacity from seats table (both terminals) — count TABLES not seats
+    const { data: seatData } = await sb.from('seats').select('terminal, status, table_id, code');
     fcCapacity = { T1: 0, T2: 0 };
     fcCurrent = { T1: { used: 0, avail: 0 }, T2: { used: 0, avail: 0 } };
+    // Group by (terminal, table_id) to count tables
+    const termTables = { T1: {}, T2: {} };
     (seatData || []).forEach(s => {
-      if (!fcCapacity[s.terminal]) fcCapacity[s.terminal] = 0;
-      fcCapacity[s.terminal]++;
-      if (s.status === 'seated') fcCurrent[s.terminal].used++;
-      else if (s.status === 'avail') fcCurrent[s.terminal].avail++;
+      const tid = s.table_id || ('solo-' + s.code);
+      if (!termTables[s.terminal]) return;
+      if (!termTables[s.terminal][tid]) termTables[s.terminal][tid] = { used: false };
+      if (['seated','dirty','cleaning','blocked'].includes(s.status)) {
+        termTables[s.terminal][tid].used = true;
+      }
+    });
+    ['T1','T2'].forEach(t => {
+      const tabs = Object.values(termTables[t]);
+      fcCapacity[t] = tabs.length;
+      fcCurrent[t].used  = tabs.filter(x => x.used).length;
+      fcCurrent[t].avail = tabs.filter(x => !x.used).length;
     });
     // Update the capacity numbers shown in the model explanation
     const capT1El = document.getElementById('fcModelCapT1');
     const capT2El = document.getElementById('fcModelCapT2');
-    if (capT1El) capT1El.textContent = fcCapacity.T1 || 41;
-    if (capT2El) capT2El.textContent = fcCapacity.T2 || 41;
+    if (capT1El) capT1El.textContent = fcCapacity.T1 || 25;
+    if (capT2El) capT2El.textContent = fcCapacity.T2 || 25;
 
     // 2. Load saved forecast inputs for this date
     const { data: fcData } = await sb.from('capacity_forecast').select('*').eq('flight_date', dateStr);
@@ -2891,7 +3069,7 @@ async function loadForecast() {
     renderForecast();
   } catch (e) {
     console.error(e);
-    document.getElementById('fcSubtitle').textContent = '載入失敗：' + e.message;
+    document.getElementById('fcSubtitle').textContent = '載入失敗:' + e.message;
   }
 }
 
@@ -2951,8 +3129,9 @@ function autoEstimateAll() {
 }
 
 function occupancyAtMinute(minute, terminal) {
-  // At time `minute` of day, sum expected users whose window covers `minute`
-  let count = 0;
+  // At time `minute` of day, sum expected TABLES occupied whose window covers `minute`.
+  // Users (head count) is converted to tables using AVG_PAX_PER_TABLE.
+  let tables = 0;
   Object.values(flights).forEach(f => {
     if (f.terminal !== terminal) return;
     const users = fcInputs[f.flight_no] || 0;
@@ -2960,9 +3139,9 @@ function occupancyAtMinute(minute, terminal) {
     const stdMin = stdToMin(f.std);
     const arrival = stdMin - LOUNGE_ARRIVAL_BEFORE_STD;
     const departure = stdMin - LOUNGE_DEPART_BEFORE_STD;
-    if (arrival <= minute && minute < departure) count += users;
+    if (arrival <= minute && minute < departure) tables += Math.ceil(users / AVG_PAX_PER_TABLE);
   });
-  return count;
+  return tables;
 }
 
 function hourlyOccupancy(terminal) {
@@ -2992,13 +3171,13 @@ function renderForecast() {
         <div class="fc-t-badge ${overflow > 0 ? 'warn' : 'ok'}">${overflow > 0 ? '⚠️ 預估溢流' : '✓ 容量充足'}</div>
       </div>
       <div class="fc-t-metrics">
-        <div class="fc-metric"><div class="k">座位總數</div><div class="v">${cap} <span class="unit">席</span></div></div>
-        <div class="fc-metric"><div class="k">目前空位</div><div class="v">${fcCurrent[term].avail} <span class="unit">/ ${cap}</span></div></div>
+        <div class="fc-metric"><div class="k">桌位總數</div><div class="v">${cap} <span class="unit">桌</span></div></div>
+        <div class="fc-metric"><div class="k">目前空桌</div><div class="v">${fcCurrent[term].avail} <span class="unit">/ ${cap}</span></div></div>
         <div class="fc-metric"><div class="k">預估總進場</div><div class="v">${totalExpected} <span class="unit">人</span></div></div>
-        <div class="fc-metric"><div class="k">尖峰佔用</div><div class="v" style="color:${overflow>0?'#C53E1D':'var(--ink)'}">${peak.count} <span class="unit">/ ${cap}</span></div></div>
+        <div class="fc-metric"><div class="k">尖峰佔用</div><div class="v" style="color:${overflow>0?'#C53E1D':'var(--ink)'}">${peak.count} <span class="unit">桌 / ${cap}</span></div></div>
       </div>
       <div class="fc-t-peak">尖峰時段：<b>${peak.count > 0 ? String(peak.hour).padStart(2,'0')+':00' : '—'}</b> · 使用率 <b>${cap ? Math.round(peak.count/cap*100) : 0}%</b></div>
-      ${overflow > 0 ? `<div class="fc-t-overflow-alert">⚠️ 預估 <b>${overflow}</b> 位旅客可能因客滿而溢流，建議提早調度或引導至其他航廈貴賓室</div>` : ''}
+      ${overflow > 0 ? `<div class="fc-t-overflow-alert">⚠️ 預估 <b>${overflow}</b> 桌不足，可能需引導至其他航廈貴賓室或提早叫客</div>` : ''}
     `;
   });
 
