@@ -915,7 +915,11 @@
       </div>
       <div id="accountActions" style="display: flex; gap: 6px; margin-bottom: 16px;">
         <button type="button" onclick="showChangePassword()" style="flex:1; padding:8px; border:1px solid var(--line); background:var(--paper); border-radius:8px; cursor:pointer; font-family:inherit; font-size:12px;">🔑 更改密碼</button>
+        <button type="button" onclick="openSecuritySetup()" style="flex:1; padding:8px; border:1px solid var(--line); background:var(--paper); border-radius:8px; cursor:pointer; font-family:inherit; font-size:12px;">🔐 安全提示問題</button>
         <button type="button" onclick="doLogout()" style="flex:1; padding:8px; border:1px solid #F5CFC0; background:#FFF3F0; color:#C53E1D; border-radius:8px; cursor:pointer; font-family:inherit; font-size:12px;">🚪 登出</button>
+      </div>
+      <div id="securityStatus" style="font-size:11px; color:var(--muted); margin-bottom:12px; padding:6px 10px; background:var(--cream-2); border-radius:6px; display:none;">
+        <span id="securityStatusText">—</span>
       </div>
 
       <div id="supabaseSection">
@@ -1002,10 +1006,163 @@
         沒有帳號？請聯絡管理員建立。<br/>
         首次使用預設 <code>admin</code> / <code>admin123</code>（登入後強制改）。
       </div>
+      <div style="text-align:center; margin-top:12px;">
+        <a href="#" onclick="event.preventDefault(); openForgotPassword();" style="font-size:12px; color:var(--navy-700); text-decoration:underline;">🔑 忘記密碼？</a>
+      </div>
     </div>
     <div class="modal-footer">
       <button type="button" onclick="openSupabaseFromLogin()" style="flex:0.6;">🔧 系統連線設定</button>
       <button class="primary" onclick="doLogin()">登入</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FORGOT PASSWORD MODAL ============ -->
+<div class="modal-backdrop" id="forgotPasswordModal">
+  <div class="modal" style="width: 440px;">
+    <div class="modal-header">
+      <div>
+        <div style="font-size:16px; font-weight:600;">忘記密碼</div>
+        <div id="fpSubtitle" style="font-size:12px; color:rgba(255,255,255,0.6); margin-top:2px;">用安全提示問題自助重設密碼</div>
+      </div>
+      <button class="modal-close" onclick="closeForgotPassword()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex; background:var(--cream); border-radius:10px; padding:3px; margin-bottom:14px; font-size:12px; font-weight:600;">
+        <button id="fpTabSelf" onclick="switchFpTab('self')" style="flex:1; padding:8px; border:none; background:var(--navy-900); color:var(--gold); border-radius:8px; cursor:pointer; font-family:inherit; font-size:12px; font-weight:600;">🔐 安全問題自助重設</button>
+        <button id="fpTabEmergency" onclick="switchFpTab('emergency')" style="flex:1; padding:8px; border:none; background:transparent; color:var(--ink-2); border-radius:8px; cursor:pointer; font-family:inherit; font-size:12px; font-weight:600;">🆘 緊急救援</button>
+      </div>
+
+      <!-- ============ SELF-SERVE (SECURITY QUESTION) FLOW ============ -->
+      <div id="fpTabSelfBody">
+        <div id="fpError" style="display:none; background:#FFECEC; color:#C53E1D; padding:8px 12px; border-radius:8px; font-size:12px; margin-bottom:12px;"></div>
+        <div id="fpSuccess" style="display:none; background:var(--avail-bg); color:#3E7A5D; padding:10px 12px; border-radius:8px; font-size:13px; margin-bottom:12px;"></div>
+
+        <!-- Step 1: Username -->
+        <div id="fpStep1">
+          <div style="font-size:12px; color:var(--muted); margin-bottom:12px; line-height:1.5;">
+            請輸入你的帳號，我們會顯示你曾設定的安全提示問題。<br/>
+            <b>沒設過安全問題？</b>請找管理員重設，或點右上「🆘 緊急救援」。
+          </div>
+          <div class="form-row"><label>帳號</label><input type="text" id="fpUsername" placeholder="username" autocomplete="username"/></div>
+        </div>
+
+        <!-- Step 2: Security question + answer + new password -->
+        <div id="fpStep2" style="display:none;">
+          <div style="background:var(--cream-2); border-radius:10px; padding:12px 14px; margin-bottom:12px;">
+            <div style="font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">你的安全提示問題</div>
+            <div id="fpQuestion" style="font-size:14px; font-weight:600; color:var(--ink);">—</div>
+          </div>
+          <div class="form-row"><label>答案</label><input type="text" id="fpAnswer" placeholder="不區分大小寫、忽略前後空白" autocomplete="off"/></div>
+          <div class="form-row"><label>新密碼</label><input type="password" id="fpNewPwd" placeholder="至少 4 字元" autocomplete="new-password"/></div>
+          <div class="form-row"><label>再輸一次</label><input type="password" id="fpConfirmPwd" autocomplete="new-password"/></div>
+          <div style="font-size:11px; color:var(--muted); line-height:1.5; margin-top:6px;">
+            ⚠️ 答案錯 <b>5 次</b>將暫時鎖定 30 分鐘。<br/>
+            ✓ 成功後所有裝置的登入 session 會被撤銷，需重新登入。
+          </div>
+        </div>
+
+        <!-- Step 3: Success -->
+        <div id="fpStep3" style="display:none; text-align:center; padding:20px 0;">
+          <div style="font-size:48px; margin-bottom:12px;">✅</div>
+          <div style="font-size:16px; font-weight:600; margin-bottom:6px;">密碼已重設</div>
+          <div style="font-size:13px; color:var(--muted); margin-bottom:16px;">請用新密碼登入。</div>
+        </div>
+      </div>
+
+      <!-- ============ EMERGENCY (SQL) TAB ============ -->
+      <div id="fpTabEmergencyBody" style="display:none;">
+        <div style="background:var(--dirty-bg); color:#7A5514; padding:10px 14px; border-radius:10px; font-size:12px; margin-bottom:14px; line-height:1.5;">
+          <b>什麼時候用這個？</b><br/>
+          當所有 admin 都忘記密碼、或沒設安全問題時，需要有 Supabase Dashboard 存取權的人員（通常是 IT）到 <b>SQL Editor</b> 執行下方指令。
+        </div>
+
+        <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); margin-bottom:6px;">
+          Step 1 · 登入 Supabase Dashboard
+        </div>
+        <div style="font-size:12px; color:var(--ink-2); margin-bottom:12px; line-height:1.5;">
+          左側點 <b>SQL Editor</b> → <b>+ New query</b>
+        </div>
+
+        <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); margin-bottom:6px;">
+          Step 2 · 貼上並執行以下 SQL
+        </div>
+        <div style="position:relative; margin-bottom:6px;">
+          <pre id="fpEmergencySql" style="background:var(--navy-900); color:var(--gold-light); padding:14px; border-radius:10px; font-family:'JetBrains Mono', monospace; font-size:11px; line-height:1.6; overflow-x:auto; white-space:pre; margin:0;">-- 重設 admin 密碼為 admin123（登入後強制改）
+UPDATE users
+   SET password_hash = crypt('admin123', gen_salt('bf', 10)),
+       must_change_password = TRUE,
+       is_active = TRUE
+ WHERE username = 'admin';
+
+-- 若要重設其他帳號，把 'admin' 改成該帳號
+-- 若要重設安全問題（避免鎖住），追加：
+-- UPDATE users SET security_locked_until = NULL,
+--                  security_failed_attempts = 0
+--  WHERE username = 'admin';</pre>
+          <button onclick="copyEmergencySql()" style="position:absolute; top:8px; right:8px; padding:4px 10px; background:var(--gold); color:var(--navy-900); border:none; border-radius:6px; cursor:pointer; font-family:inherit; font-size:11px; font-weight:600;">📋 複製</button>
+        </div>
+
+        <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); margin-top:14px; margin-bottom:6px;">
+          Step 3 · 用 admin / admin123 登入
+        </div>
+        <div style="font-size:12px; color:var(--ink-2); margin-bottom:8px; line-height:1.5;">
+          登入後系統會強制你改密碼。<b>強烈建議接著到「⚙️ 設定 → 🔐 安全提示問題」設好，之後就不用再走這條路。</b>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button id="fpBackBtn" onclick="fpBack()" style="display:none;">← 上一步</button>
+      <button onclick="closeForgotPassword()">關閉</button>
+      <button id="fpNextBtn" class="primary" onclick="fpNext()">下一步</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SECURITY QUESTION SETUP MODAL (post-login prompt) ============ -->
+<div class="modal-backdrop" id="securitySetupModal">
+  <div class="modal" style="width: 440px;">
+    <div class="modal-header">
+      <div>
+        <div style="font-size:16px; font-weight:600;">🔐 建議設定安全提示問題</div>
+        <div style="font-size:12px; color:rgba(255,255,255,0.6); margin-top:2px;">未來忘記密碼時可以自助重設</div>
+      </div>
+      <button class="modal-close" onclick="dismissSecuritySetup()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="ssError" style="display:none; background:#FFECEC; color:#C53E1D; padding:8px 12px; border-radius:8px; font-size:12px; margin-bottom:12px;"></div>
+      <div style="font-size:12px; color:var(--muted); margin-bottom:14px; line-height:1.5;">
+        密碼是 bcrypt 單向雜湊，一旦忘記無法救回、只能重設。<br/>
+        設好安全問題後，忘記密碼時可以自助重設，不用麻煩管理員。
+      </div>
+      <div class="form-row">
+        <label>問題</label>
+        <select id="ssQuestion" style="padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-family:inherit; font-size:13px; background:var(--paper); outline:none;">
+          <option value="">— 選一題或自行輸入 —</option>
+          <option>我的員工編號末四碼？</option>
+          <option>我入行第一家航空公司？</option>
+          <option>我最喜歡的機場代碼？</option>
+          <option>我第一次值班的機型？</option>
+          <option>我最想飛的航點？</option>
+          <option value="__custom__">✏️ 自訂問題…</option>
+        </select>
+      </div>
+      <div class="form-row" id="ssCustomRow" style="display:none;">
+        <label>自訂問題</label>
+        <input type="text" id="ssCustomQuestion" placeholder="例：我的暱稱是？" autocomplete="off"/>
+      </div>
+      <div class="form-row">
+        <label>答案</label>
+        <input type="text" id="ssAnswer" placeholder="不區分大小寫、忽略前後空白" autocomplete="off"/>
+      </div>
+      <div style="font-size:11px; color:var(--muted); line-height:1.5; margin-top:6px;">
+        📝 答案會 bcrypt 雜湊儲存，管理員也<b>無法查看</b>。<br/>
+        建議選只有你自己知道、不容易被同事猜到的內容。
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="dismissSecuritySetup()">稍後再說</button>
+      <button class="primary" onclick="saveSecurityQuestion()">💾 儲存</button>
     </div>
   </div>
 </div>
@@ -1219,7 +1376,248 @@ function openSupabaseFromLogin() {
   renderAccountBox();
 }
 
-/* Change Password */
+/* ============================================================
+   FORGOT PASSWORD (self-serve via security question)
+   ============================================================ */
+let fpStep = 1;
+let fpTab = 'self';
+let fpUsernameCache = '';
+
+function openForgotPassword() {
+  document.getElementById('loginModal').classList.remove('active');
+  document.getElementById('forgotPasswordModal').classList.add('active');
+  switchFpTab('self');
+  fpResetToStep1();
+  // Pre-fill username if entered on login screen
+  const loginUname = document.getElementById('loginUsername').value.trim();
+  if (loginUname) document.getElementById('fpUsername').value = loginUname;
+  setTimeout(() => document.getElementById('fpUsername').focus(), 100);
+}
+function closeForgotPassword() {
+  document.getElementById('forgotPasswordModal').classList.remove('active');
+  if (!currentUser) showLoginModal();
+}
+function switchFpTab(tab) {
+  fpTab = tab;
+  const selfBtn = document.getElementById('fpTabSelf');
+  const emergencyBtn = document.getElementById('fpTabEmergency');
+  const selfBody = document.getElementById('fpTabSelfBody');
+  const emergencyBody = document.getElementById('fpTabEmergencyBody');
+  const nextBtn = document.getElementById('fpNextBtn');
+  const backBtn = document.getElementById('fpBackBtn');
+  if (tab === 'self') {
+    selfBtn.style.background = 'var(--navy-900)'; selfBtn.style.color = 'var(--gold)';
+    emergencyBtn.style.background = 'transparent'; emergencyBtn.style.color = 'var(--ink-2)';
+    selfBody.style.display = ''; emergencyBody.style.display = 'none';
+    document.getElementById('fpSubtitle').textContent = '用安全提示問題自助重設密碼';
+    nextBtn.style.display = '';
+    backBtn.style.display = fpStep > 1 && fpStep < 3 ? '' : 'none';
+  } else {
+    selfBtn.style.background = 'transparent'; selfBtn.style.color = 'var(--ink-2)';
+    emergencyBtn.style.background = 'var(--navy-900)'; emergencyBtn.style.color = 'var(--gold)';
+    selfBody.style.display = 'none'; emergencyBody.style.display = '';
+    document.getElementById('fpSubtitle').textContent = 'SQL Editor 緊急重設';
+    nextBtn.style.display = 'none';
+    backBtn.style.display = 'none';
+  }
+}
+function fpResetToStep1() {
+  fpStep = 1;
+  document.getElementById('fpStep1').style.display = '';
+  document.getElementById('fpStep2').style.display = 'none';
+  document.getElementById('fpStep3').style.display = 'none';
+  document.getElementById('fpError').style.display = 'none';
+  document.getElementById('fpSuccess').style.display = 'none';
+  document.getElementById('fpBackBtn').style.display = 'none';
+  document.getElementById('fpNextBtn').textContent = '下一步';
+  document.getElementById('fpNextBtn').style.display = '';
+  document.getElementById('fpUsername').value = '';
+  document.getElementById('fpAnswer').value = '';
+  document.getElementById('fpNewPwd').value = '';
+  document.getElementById('fpConfirmPwd').value = '';
+}
+function fpShowError(msg) {
+  const el = document.getElementById('fpError');
+  el.textContent = msg; el.style.display = 'block';
+  document.getElementById('fpSuccess').style.display = 'none';
+}
+async function fpNext() {
+  const errEl = document.getElementById('fpError');
+  errEl.style.display = 'none';
+  if (fpStep === 1) {
+    const uname = document.getElementById('fpUsername').value.trim();
+    if (!uname) { fpShowError('請輸入帳號'); return; }
+    if (!isConfigured) { fpShowError('尚未設定 Supabase 連線，無法查詢安全問題'); return; }
+    try {
+      const { data, error } = await sb.rpc('get_security_question_public', { p_username: uname });
+      if (error) throw error;
+      if (!data) {
+        fpShowError('該帳號未設定安全問題、已停用、或已被暫時鎖定。\n請找管理員重設，或改走「🆘 緊急救援」。');
+        return;
+      }
+      fpUsernameCache = uname;
+      document.getElementById('fpQuestion').textContent = data;
+      document.getElementById('fpStep1').style.display = 'none';
+      document.getElementById('fpStep2').style.display = '';
+      document.getElementById('fpBackBtn').style.display = '';
+      document.getElementById('fpNextBtn').textContent = '重設密碼';
+      fpStep = 2;
+      setTimeout(() => document.getElementById('fpAnswer').focus(), 100);
+    } catch(e) {
+      fpShowError('查詢失敗：' + e.message);
+    }
+  } else if (fpStep === 2) {
+    const answer = document.getElementById('fpAnswer').value;
+    const newPwd = document.getElementById('fpNewPwd').value;
+    const confirmPwd = document.getElementById('fpConfirmPwd').value;
+    if (!answer.trim()) { fpShowError('請填入答案'); return; }
+    if (!newPwd) { fpShowError('請設定新密碼'); return; }
+    if (newPwd.length < 4) { fpShowError('新密碼至少 4 字元'); return; }
+    if (newPwd !== confirmPwd) { fpShowError('兩次新密碼不一致'); return; }
+    try {
+      const { data, error } = await sb.rpc('reset_password_with_security_answer', {
+        p_username: fpUsernameCache,
+        p_answer: answer,
+        p_new_password: newPwd,
+      });
+      if (error) throw error;
+      if (!data) {
+        fpShowError('答案錯誤或已被鎖定。\n連續 5 次錯誤會鎖定 30 分鐘，過久請找管理員或走緊急救援。');
+        return;
+      }
+      // Success
+      document.getElementById('fpStep2').style.display = 'none';
+      document.getElementById('fpStep3').style.display = '';
+      document.getElementById('fpBackBtn').style.display = 'none';
+      document.getElementById('fpNextBtn').textContent = '前往登入';
+      fpStep = 3;
+    } catch(e) {
+      fpShowError('重設失敗：' + e.message);
+    }
+  } else if (fpStep === 3) {
+    // Back to login
+    closeForgotPassword();
+    document.getElementById('loginUsername').value = fpUsernameCache;
+    document.getElementById('loginPassword').focus();
+  }
+}
+function fpBack() {
+  if (fpStep === 2) {
+    document.getElementById('fpStep2').style.display = 'none';
+    document.getElementById('fpStep1').style.display = '';
+    document.getElementById('fpBackBtn').style.display = 'none';
+    document.getElementById('fpNextBtn').textContent = '下一步';
+    document.getElementById('fpError').style.display = 'none';
+    fpStep = 1;
+  }
+}
+function copyEmergencySql() {
+  const sql = document.getElementById('fpEmergencySql').textContent;
+  navigator.clipboard.writeText(sql).then(() => {
+    const btn = event.target;
+    const orig = btn.textContent;
+    btn.textContent = '✓ 已複製';
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  }).catch(() => {
+    // Fallback: select the text so user can copy manually
+    const range = document.createRange();
+    range.selectNodeContents(document.getElementById('fpEmergencySql'));
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    alert('請按 Ctrl/Cmd + C 複製');
+  });
+}
+
+/* ============================================================
+   SECURITY QUESTION SETUP (self-management)
+   ============================================================ */
+function openSecuritySetup() {
+  if (!currentUser) return;
+  document.getElementById('ssError').style.display = 'none';
+  document.getElementById('ssQuestion').value = '';
+  document.getElementById('ssCustomRow').style.display = 'none';
+  document.getElementById('ssCustomQuestion').value = '';
+  document.getElementById('ssAnswer').value = '';
+  document.getElementById('securitySetupModal').classList.add('active');
+}
+function dismissSecuritySetup() {
+  document.getElementById('securitySetupModal').classList.remove('active');
+}
+document.addEventListener('DOMContentLoaded', () => {}); // ensure DOM ready before wiring
+document.addEventListener('change', (e) => {
+  if (e.target && e.target.id === 'ssQuestion') {
+    document.getElementById('ssCustomRow').style.display = e.target.value === '__custom__' ? '' : 'none';
+    if (e.target.value === '__custom__') {
+      setTimeout(() => document.getElementById('ssCustomQuestion').focus(), 100);
+    }
+  }
+});
+async function saveSecurityQuestion() {
+  const errEl = document.getElementById('ssError');
+  errEl.style.display = 'none';
+  let question = document.getElementById('ssQuestion').value;
+  if (question === '__custom__') {
+    question = document.getElementById('ssCustomQuestion').value.trim();
+  }
+  const answer = document.getElementById('ssAnswer').value.trim();
+  if (!question) { errEl.textContent = '請選一題或輸入自訂問題'; errEl.style.display = 'block'; return; }
+  if (!answer) { errEl.textContent = '請填入答案'; errEl.style.display = 'block'; return; }
+  if (!isConfigured) { errEl.textContent = '尚未設定 Supabase 連線'; errEl.style.display = 'block'; return; }
+  try {
+    const { data, error } = await sb.rpc('set_security_question', {
+      p_token: currentUser.session_token,
+      p_question: question,
+      p_answer: answer,
+    });
+    if (error) throw error;
+    if (!data) { errEl.textContent = '儲存失敗'; errEl.style.display = 'block'; return; }
+    document.getElementById('securitySetupModal').classList.remove('active');
+    // Refresh status shown in identity modal
+    refreshSecurityStatus();
+    if (document.getElementById('identityModal').classList.contains('active')) {
+      // stays open
+    } else {
+      alert('✓ 安全提示問題已儲存');
+    }
+  } catch(e) {
+    errEl.textContent = '失敗：' + e.message;
+    errEl.style.display = 'block';
+  }
+}
+async function refreshSecurityStatus() {
+  const box = document.getElementById('securityStatus');
+  const text = document.getElementById('securityStatusText');
+  if (!box || !text || !currentUser || !isConfigured) return;
+  try {
+    const { data } = await sb.rpc('has_security_question', { p_token: currentUser.session_token });
+    if (data === true) {
+      text.innerHTML = '✓ 已設定安全提示問題（忘記密碼時可自助重設）';
+      box.style.background = 'var(--avail-bg)';
+      box.style.color = '#3E7A5D';
+    } else {
+      text.innerHTML = '⚠️ 尚未設定安全提示問題，忘記密碼時只能找管理員或走緊急救援';
+      box.style.background = 'var(--dirty-bg)';
+      box.style.color = '#7A5514';
+    }
+    box.style.display = 'block';
+  } catch(e) { /* silent */ }
+}
+async function checkAndPromptSecurityQuestion() {
+  // Called after successful password change (first-login flow) —
+  // if user hasn't set a security question yet, gently prompt.
+  if (!currentUser || !isConfigured) return;
+  try {
+    const { data } = await sb.rpc('has_security_question', { p_token: currentUser.session_token });
+    if (data !== true) {
+      setTimeout(() => openSecuritySetup(), 400);
+    }
+  } catch(e) { /* silent */ }
+}
+
+/* ============================================================
+   CHANGE PASSWORD
+   ============================================================ */
 let pwdMustChange = false;
 function showChangePassword(mustChange = false) {
   pwdMustChange = mustChange;
@@ -1254,6 +1652,8 @@ async function doChangePassword() {
     pwdMustChange = false;
     document.getElementById('pwdModal').classList.remove('active');
     alert('密碼已更改');
+    // If this was the forced first-login flow, prompt to set security question
+    checkAndPromptSecurityQuestion();
   } catch (e) {
     errEl.textContent = '失敗：' + e.message;
     errEl.style.display = 'block';
@@ -1285,12 +1685,14 @@ function showIdentityModal() {
 }
 function renderAccountBox() {
   const actions = document.getElementById('accountActions');
+  const secStatus = document.getElementById('securityStatus');
   if (!currentUser) {
     document.getElementById('accName').textContent = '未登入';
     document.getElementById('accMeta').textContent = '請先登入';
     document.getElementById('accAvatar').textContent = '?';
     document.getElementById('accBadge').innerHTML = '';
     if (actions) actions.style.display = 'none';
+    if (secStatus) secStatus.style.display = 'none';
     return;
   }
   document.getElementById('accName').textContent = currentUser.display_name;
@@ -1300,6 +1702,7 @@ function renderAccountBox() {
     ? '<span class="badge-admin">👑 管理員</span>'
     : '<span class="badge-user">使用者</span>';
   if (actions) actions.style.display = 'flex';
+  refreshSecurityStatus();
 }
 function closeSettings() {
   document.getElementById('identityModal').classList.remove('active');
@@ -2709,6 +3112,11 @@ function generateTempPassword() {
 // Login modal: press Enter to submit
 document.getElementById('loginPassword').addEventListener('keypress', e => { if (e.key === 'Enter') doLogin(); });
 document.getElementById('loginUsername').addEventListener('keypress', e => { if (e.key === 'Enter') document.getElementById('loginPassword').focus(); });
+// Forgot password: press Enter to advance
+['fpUsername', 'fpAnswer', 'fpNewPwd', 'fpConfirmPwd'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('keypress', e => { if (e.key === 'Enter') fpNext(); });
+});
 
 /* ============================================================
    SLACK PUSH NOTIFICATIONS
