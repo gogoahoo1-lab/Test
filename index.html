@@ -602,9 +602,9 @@
       <div class="center-pane">
         <section class="view active" id="view-lounge">
           <div class="stats-row">
-            <div class="stat-card"><div class="label">空位</div><div class="value"><span id="statAvail">0</span> <span class="unit">/ <span id="statTotal">42</span> 席</span></div><div class="delta" style="color:var(--muted);">使用中 <span id="statUsed">0</span> · 使用率 <span id="statUtil">0</span>%</div><div class="util-bar"><div class="util-bar-fill" id="statBar" style="width:0%"></div></div></div>
-            <div class="stat-card"><div class="label">今日累計</div><div class="value"><span id="statToday">0</span> <span class="unit">人</span></div><div class="delta">↑ 12%</div></div>
-            <div class="stat-card"><div class="label">待清潔</div><div class="value"><span id="statDirty">0</span></div><div class="delta down">等候 4 分</div></div>
+            <div class="stat-card"><div class="label">空位</div><div class="value"><span id="statAvail">0</span> <span class="unit">/ <span id="statTotal">41</span> 席</span></div><div class="delta" style="color:var(--muted);">使用中 <span id="statUsed">0</span> · 使用率 <span id="statUtil">0</span>%</div><div class="util-bar"><div class="util-bar-fill" id="statBar" style="width:0%"></div></div></div>
+            <div class="stat-card"><div class="label">今日累計</div><div class="value"><span id="statToday">0</span> <span class="unit">人</span></div><div class="delta" id="statTodayDelta" style="color:var(--muted);">—</div></div>
+            <div class="stat-card"><div class="label">待清潔</div><div class="value"><span id="statDirty">0</span></div><div class="delta down" id="statDirtyDelta" style="color:var(--muted);">—</div></div>
             <div class="stat-card accent"><div class="label">30 分登機</div><div class="value"><span id="statImminent">0</span> <span class="unit" style="color:rgba(255,255,255,0.4)">組</span></div><div class="delta" style="color:var(--gold-light);">釋出 <span id="statRelease">0</span> 席</div></div>
           </div>
 
@@ -1093,7 +1093,18 @@ let currentUser = null;
 async function bootstrapAuth() {
   const savedSession = localStorage.getItem('lounge_session');
   if (!savedSession) { showLoginModal(); return; }
-  const session = JSON.parse(savedSession);
+  let session;
+  try {
+    session = JSON.parse(savedSession);
+    if (!session || typeof session !== 'object' || !session.session_token) {
+      throw new Error('malformed session');
+    }
+  } catch(err) {
+    console.warn('Corrupt session in localStorage, clearing:', err);
+    localStorage.removeItem('lounge_session');
+    showLoginModal();
+    return;
+  }
   if (!isConfigured) {
     // Can't verify without Supabase. Fall through to login screen but pre-fill.
     showLoginModal();
@@ -1476,7 +1487,8 @@ let seatSub = null, flightSub = null;
 function subscribeRealtime() {
   if (seatSub) sb.removeChannel(seatSub);
   seatSub = sb.channel('rt-seats').on('postgres_changes', { event: '*', schema: 'public', table: 'seats' }, (payload) => {
-    const row = payload.new || payload.old;
+    // DELETE payload.new is `{}` (truthy empty), so we can't use `|| payload.old` — pick by eventType.
+    const row = payload.eventType === 'DELETE' ? payload.old : payload.new;
     if (!row || row.terminal !== currentTerminal) return;
     if (payload.eventType === 'DELETE') delete seats[row.code];
     else seats[row.code] = row;
@@ -1484,7 +1496,19 @@ function subscribeRealtime() {
   }).subscribe();
   if (flightSub) sb.removeChannel(flightSub);
   flightSub = sb.channel('rt-flights').on('postgres_changes', { event: '*', schema: 'public', table: 'flights' }, (payload) => {
-    const f = payload.new; if (f) flights[f.flight_no] = f;
+    if (payload.eventType === 'DELETE') {
+      const old = payload.old; if (old && old.flight_no) delete flights[old.flight_no];
+    } else {
+      const f = payload.new; if (f && f.flight_no) flights[f.flight_no] = f;
+    }
+    // Refresh whichever view is currently showing flight data
+    const active = document.querySelector('.view.active')?.id;
+    if (active === 'view-forecast') renderForecast();
+    // Refresh intake flight search dropdown if open
+    if (document.getElementById('intakeModal')?.classList.contains('active')) {
+      const flFnoEl = document.getElementById('flFno');
+      if (flFnoEl && flFnoEl.value.trim()) onFnoInput();
+    }
   }).subscribe();
 }
 
@@ -1494,7 +1518,13 @@ function loadLocalFallback() {
     'C-01','C-02','C-03','C-04','C-05','C-06','C-07','C-08','C-09',
     'D-01','D-02','D-03','D-04','S-01','S-02','S-03','S-04'];
   seats = {}; Object.keys(zones).forEach(z => zones[z].codes = []);
-  const mockFlights = [{flight_no:'JX121',destination:'HKG',destination_name:'香港',std:'09:55'},{flight_no:'JX801',destination:'HND',destination_name:'東京羽田',std:'11:30'}];
+  const mockFlights = [
+    {flight_no:'JX121',destination:'HKG',destination_name:'香港',std:'09:55',terminal:'T1'},
+    {flight_no:'JX801',destination:'HND',destination_name:'東京羽田',std:'11:30',terminal:'T1'},
+    {flight_no:'JX202',destination:'ICN',destination_name:'首爾仁川',std:'08:40',terminal:'T2'},
+    {flight_no:'JX741',destination:'BKK',destination_name:'曼谷',std:'14:20',terminal:'T2'},
+    {flight_no:'JX2',destination:'LAX',destination_name:'洛杉磯',std:'22:10',terminal:'T1'},
+  ];
   codes.forEach(c => {
     const zk = c[0] === 'S' ? 'D' : c[0];
     const r = Math.random();
@@ -1506,7 +1536,7 @@ function loadLocalFallback() {
     zones[zk].codes.push(c);
   });
   Object.keys(zones).forEach(z => zones[z].codes.sort());
-  flights = {}; mockFlights.forEach(f => flights[f.flight_no] = { ...f, terminal: 'T1' });
+  flights = {}; mockFlights.forEach(f => flights[f.flight_no] = { ...f });
   renderAll();
 }
 
@@ -1573,6 +1603,34 @@ async function markAvail(code) {
   if (before.status === 'seated') await logExit(code, before);
 }
 
+let _todayCountCache = { key: null, value: 0, at: 0 };
+async function refreshTodayCount() {
+  const todayEl = document.getElementById('statToday');
+  const deltaEl = document.getElementById('statTodayDelta');
+  if (!todayEl) return;
+  if (!isConfigured) { todayEl.textContent = 0; if (deltaEl) deltaEl.textContent = '本機模式'; return; }
+  // Cache: refresh at most once per 60s per (terminal, local-date) key
+  const key = currentTerminal + ':' + localDateStr();
+  if (_todayCountCache.key === key && Date.now() - _todayCountCache.at < 60000) {
+    todayEl.textContent = _todayCountCache.value;
+    return;
+  }
+  try {
+    const now = new Date();
+    const start = new Date(now); start.setHours(0,0,0,0);
+    const end = new Date(now); end.setHours(23,59,59,999);
+    const { count } = await sb.from('entries')
+      .select('id', { count: 'exact', head: true })
+      .eq('terminal', currentTerminal)
+      .gte('entry_time', start.toISOString())
+      .lte('entry_time', end.toISOString());
+    const c = count || 0;
+    _todayCountCache = { key, value: c, at: Date.now() };
+    todayEl.textContent = c;
+    if (deltaEl) deltaEl.textContent = c > 0 ? `${currentTerminal} 今日進場` : '尚無進場';
+  } catch(e) { /* silent */ }
+}
+
 function stdToMin(s) { if (!s) return 9999; const [h,m] = s.split(':').map(Number); return h*60+m; }
 function nowMin() { const d = new Date(); return d.getHours()*60+d.getMinutes(); }
 function minsUntilSTD(s) { return stdToMin(s) - nowMin(); }
@@ -1588,10 +1646,10 @@ function renderSeats() {
       if (s.status === 'avail') avail++;
       const el = document.createElement('div');
       el.className = `seat ${s.status}` + (selectedSeat===code?' selected':'');
-      const iconMap = { avail:'', seated:'●', dirty:'⚠', cleaning:'🧹' };
-      let inner = `<div class="seat-code">${code} <span class="seat-icon">${iconMap[s.status]||''}</span></div>`;
+      const iconMap = { avail:'', seated:'●', dirty:'🧹', cleaning:'✨' };
+      let inner = `<div class="seat-code">${escapeHtml(code)} <span class="seat-icon">${iconMap[s.status]||''}</span></div>`;
       if (s.status === 'seated' && s.passenger_name) {
-        inner += `<div class="seat-info"><div class="name">${s.passenger_name}${s.vip?' ★':''}</div><div class="flight">${s.flight_no||''} ${s.std||''}</div></div>`;
+        inner += `<div class="seat-info"><div class="name">${escapeHtml(s.passenger_name)}${s.vip?' ★':''}</div><div class="flight">${escapeHtml(s.flight_no||'')} ${escapeHtml(s.std||'')}</div></div>`;
         if (s.std) inner += `<div class="seat-time-band ${timeBand(s.std)}"></div>`;
       } else {
         const t = { avail:'空位', dirty:'待清潔', cleaning:'清潔中' }[s.status] || '';
@@ -1622,10 +1680,14 @@ function renderStats() {
   document.getElementById('statImminent').textContent = imm;
   document.getElementById('statRelease').textContent = imm;
   document.getElementById('statBar').style.width = util + '%';
+  const dirtyDeltaEl = document.getElementById('statDirtyDelta');
+  if (dirtyDeltaEl) dirtyDeltaEl.textContent = dirty > 0 ? `${dirty} 席等清潔` : '無待清潔';
   const fabBadge = document.getElementById('fabBadge');
   const alerts = imm + dirty;
   if (alerts > 0) { fabBadge.style.display = 'block'; fabBadge.textContent = alerts; }
   else fabBadge.style.display = 'none';
+  // 今日累計進場 (async, cached)
+  refreshTodayCount();
 
   // Slack: capacity warning (avail < 10% of total)
   if (total > 0 && avail / total < 0.1) {
@@ -1658,10 +1720,11 @@ function renderQueue() {
     const el = document.createElement('div'); el.className='queue-item';
     const min = item.std && item.std!=='—' ? minsUntilSTD(item.std) : 0;
     const statusClass = item.status==='dirty'?'st-departed':(min<30?'st-imminent':'st-seated');
-    const flightLine = item.fno ? `<span>${item.fno}</span> · <span>${item.destName||''}</span>` : `<span>座位釋出</span>`;
-    el.innerHTML = `<div class="queue-avatar">${item.name?item.name[0]:'?'}<span class="status-dot ${statusClass}"></span></div>
-      <div class="queue-meta"><div class="name">${item.name||'—'}${item.vip?' ★':''}</div><div class="flight-line">${flightLine}</div></div>
-      <div class="queue-right"><div class="seat-label">${item.code}</div><div class="std">${item.std!=='—'?item.std:''}</div></div>`;
+    const flightLine = item.fno ? `<span>${escapeHtml(item.fno)}</span> · <span>${escapeHtml(item.destName||'')}</span>` : `<span>座位釋出</span>`;
+    const initial = item.name ? escapeHtml(item.name.charAt(0)) : '?';
+    el.innerHTML = `<div class="queue-avatar">${initial}<span class="status-dot ${statusClass}"></span></div>
+      <div class="queue-meta"><div class="name">${escapeHtml(item.name||'—')}${item.vip?' ★':''}</div><div class="flight-line">${flightLine}</div></div>
+      <div class="queue-right"><div class="seat-label">${escapeHtml(item.code)}</div><div class="std">${escapeHtml(item.std!=='—'?item.std:'')}</div></div>`;
     el.addEventListener('click', () => { openSeatModal(item.code); if (window.innerWidth <= 1024) closeQueue(); });
     list.appendChild(el);
   });
@@ -1670,6 +1733,7 @@ function renderQueue() {
 let pendingIntake = null;
 function onSeatClick(code) {
   const s = seats[code];
+  if (!s) return;  // race condition guard (realtime DELETE / terminal switch)
   if (pendingIntake && s.status === 'avail') { assignSeatToPending(code); return; }
   if (pendingIntake) return;
   openSeatModal(code);
@@ -1686,13 +1750,14 @@ function openSeatModal(code) {
   if (s.status === 'seated' && s.passenger_name) {
     const min = s.std ? minsUntilSTD(s.std) : 0;
     const minDep = s.std ? minsUntilDep(s.std) : 0;
+    const paxInitial = s.passenger_name ? escapeHtml(s.passenger_name.charAt(0)) : '?';
     body.innerHTML = `
       <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
-        <div style="width:44px; height:44px; border-radius:50%; background:var(--navy-700); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:600;">${s.passenger_name[0]}</div>
-        <div><div style="font-size:16px; font-weight:600;">${s.passenger_name} ${s.vip?'★ VIP':''}</div><div style="font-size:12px; color:var(--muted);">${s.class==='FST'?'頭等艙':s.class==='BUS'?'商務艙':'經濟艙'} · ${s.party_size||1} 位</div></div>
+        <div style="width:44px; height:44px; border-radius:50%; background:var(--navy-700); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:600;">${paxInitial}</div>
+        <div><div style="font-size:16px; font-weight:600;">${escapeHtml(s.passenger_name)} ${s.vip?'★ VIP':''}</div><div style="font-size:12px; color:var(--muted);">${s.class==='FST'?'頭等艙':s.class==='BUS'?'商務艙':'經濟艙'} · ${s.party_size||1} 位</div></div>
       </div>
-      <div class="form-row"><label>航班</label><div style="font-family:'JetBrains Mono'; font-weight:600;">${s.flight_no||'-'} → ${s.destination_name||''}</div></div>
-      <div class="form-row"><label>STD</label><div style="font-family:'JetBrains Mono';">${s.std||'-'} <span style="color:var(--muted); margin-left:8px;">(${min} 分後)</span></div></div>
+      <div class="form-row"><label>航班</label><div style="font-family:'JetBrains Mono'; font-weight:600;">${escapeHtml(s.flight_no||'-')} → ${escapeHtml(s.destination_name||'')}</div></div>
+      <div class="form-row"><label>STD</label><div style="font-family:'JetBrains Mono';">${escapeHtml(s.std||'-')} <span style="color:var(--muted); margin-left:8px;">(${min} 分後)</span></div></div>
       <div class="form-row"><label>入場</label><div style="font-family:'JetBrains Mono';">${s.entry_time ? new Date(s.entry_time).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}) : '-'}</div></div>
       <div class="form-row"><label>預估離開</label><div style="font-family:'JetBrains Mono'; color:${minDep<15?'#E5674C':'var(--ink)'}; font-weight:600;">${minDep>=0?minDep+' 分鐘後':'應已離開'}</div></div>`;
     footer.innerHTML = `<button class="danger" onclick="releaseSeat('${code}').then(closeModal)">旅客已離開</button><button class="primary" onclick="closeModal()">關閉</button>`;
@@ -1746,10 +1811,10 @@ function onFnoInput() {
   const matches = Object.values(flights).filter(f => f.flight_no.includes(q) || (f.destination_name||'').includes(q));
   if (matches.length === 0) { results.style.display='none'; preview.innerHTML = `<div style="padding:8px; font-size:12px; color:var(--cleaning);">找不到航班 ${q}（TDX 尚未同步或無此班次）</div>`; return; }
   results.innerHTML = matches.slice(0, 10).map(f => `
-    <div style="padding:10px 12px; cursor:pointer; display:grid; grid-template-columns:70px 1fr auto; gap:10px; font-family:'JetBrains Mono'; font-size:12px; align-items:center; border-bottom:1px solid var(--line);" onclick="pickFlight('${f.flight_no}')">
-      <span style="font-weight:600; color:var(--navy-900);">${f.flight_no}</span>
-      <span style="font-family:'Noto Sans TC';">${f.destination_name||''} (${f.destination||''})</span>
-      <span>STD ${f.std}</span>
+    <div style="padding:10px 12px; cursor:pointer; display:grid; grid-template-columns:70px 1fr auto; gap:10px; font-family:'JetBrains Mono'; font-size:12px; align-items:center; border-bottom:1px solid var(--line);" onclick="pickFlight('${escapeHtml(f.flight_no)}')">
+      <span style="font-weight:600; color:var(--navy-900);">${escapeHtml(f.flight_no)}</span>
+      <span style="font-family:'Noto Sans TC';">${escapeHtml(f.destination_name||'')} (${escapeHtml(f.destination||'')})</span>
+      <span>STD ${escapeHtml(f.std||'')}</span>
     </div>`).join('');
   results.style.display = 'block';
   const exact = matches.find(f => f.flight_no === q);
@@ -1767,9 +1832,9 @@ function pickFlight(fno) {
 }
 function renderPaxCard(p) {
   return `<div class="pax-card">
-    <div class="pax-top"><div><div class="pax-name">${p.name || '-'}</div>${p.pnr?'<div class="pax-pnr">PNR '+p.pnr+'</div>':''}</div><div class="pax-class">${p.class==='FST'?'FIRST':p.class==='BUS'?'BUSINESS':'ECONOMY'}</div></div>
-    <div class="pax-flight"><div class="airport"><div class="code">TPE</div><div class="name">桃園</div></div><div class="plane">✈</div><div class="airport"><div class="code">${p.destination||'-'}</div><div class="name">${p.destination_name||''}</div></div></div>
-    <div class="pax-meta"><div><div class="k">航班</div><div class="v">${p.flight_no||'-'}</div></div><div><div class="k">STD</div><div class="v">${p.std||'-'}</div></div><div><div class="k">人數</div><div class="v">${p.party_size||1} 位</div></div></div>
+    <div class="pax-top"><div><div class="pax-name">${escapeHtml(p.name || '-')}</div>${p.pnr?'<div class="pax-pnr">PNR '+escapeHtml(p.pnr)+'</div>':''}</div><div class="pax-class">${p.class==='FST'?'FIRST':p.class==='BUS'?'BUSINESS':'ECONOMY'}</div></div>
+    <div class="pax-flight"><div class="airport"><div class="code">TPE</div><div class="name">桃園</div></div><div class="plane">✈</div><div class="airport"><div class="code">${escapeHtml(p.destination||'-')}</div><div class="name">${escapeHtml(p.destination_name||'')}</div></div></div>
+    <div class="pax-meta"><div><div class="k">航班</div><div class="v">${escapeHtml(p.flight_no||'-')}</div></div><div><div class="k">STD</div><div class="v">${escapeHtml(p.std||'-')}</div></div><div><div class="k">人數</div><div class="v">${p.party_size||1} 位</div></div></div>
   </div>`;
 }
 
@@ -1823,7 +1888,7 @@ function parseBCBP(str) {
     return { name, pnr, from, to, airline, flightNumber, compartment, seat };
   } catch (e) { return null; }
 }
-function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escapeHtml(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
 async function confirmIntake() {
   let pax = null;
@@ -1887,6 +1952,9 @@ document.addEventListener('click', (e) => {
 
 /* Nav / terminal / tabs */
 document.querySelectorAll('.nav-btn[data-view]').forEach(btn => btn.addEventListener('click', () => {
+  // If a seat-selection is in progress and user leaves the lounge view, cancel it
+  // (leaves banner + body class in a stuck state otherwise)
+  if (pendingIntake && btn.dataset.view !== 'lounge') cancelSelection();
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -1901,10 +1969,13 @@ document.querySelectorAll('[data-terminal]').forEach(b => b.addEventListener('cl
   document.querySelectorAll('[data-terminal]').forEach(x=>x.classList.remove('active'));
   b.classList.add('active');
   currentTerminal = b.dataset.terminal;
-  document.getElementById('terminalSubtitle').textContent = currentTerminal==='T1'?'桃園第一航廈':'桃園第二航廈';
+  document.getElementById('terminalSubtitle').textContent = currentTerminal==='T1'?'桃園第一航廈 · 出境層':'桃園第二航廈 · 出境層';
   cancelSelection();
   if (isConfigured) { await loadSeats(); } else { loadLocalFallback(); }
   if (document.getElementById('view-stats').classList.contains('active')) loadStats();
+  if (document.getElementById('view-forecast').classList.contains('active')) loadForecast();
+  // Reset today's count cache for the new terminal
+  _todayCountCache = { key: null, value: 0, at: 0 };
 }));
 document.querySelectorAll('.right-tab').forEach(t => t.addEventListener('click', () => {
   document.querySelectorAll('.right-tab').forEach(x=>x.classList.remove('active'));
@@ -1930,13 +2001,17 @@ function loadLocalChannels() {
 function renderChannelList() {
   const c = document.getElementById('channelListItems');
   document.getElementById('channelListStatus').textContent = channels.length + ' 頻道';
-  c.innerHTML = channels.map(ch => `<div class="chat-list-item ${ch.id === currentChannelId ? 'active' : ''}" onclick="selectChannel('${ch.id}')"><div class="chat-avatar" style="background:${ch.color || 'var(--navy-700)'};">${ch.icon || ch.name[0]}</div><div class="chat-list-meta"><div class="name">${ch.name}</div><div class="preview">${(messagesByChannel[ch.id] && messagesByChannel[ch.id].slice(-1)[0]?.content) || '尚無訊息'}</div></div></div>`).join('');
+  c.innerHTML = channels.map(ch => {
+    const initial = ch.icon || (ch.name ? ch.name.charAt(0) : '?');
+    const last = (messagesByChannel[ch.id] && messagesByChannel[ch.id].slice(-1)[0]?.content) || '尚無訊息';
+    return `<div class="chat-list-item ${ch.id === currentChannelId ? 'active' : ''}" onclick="selectChannel('${escapeHtml(String(ch.id))}')"><div class="chat-avatar" style="background:${ch.color || 'var(--navy-700)'};">${escapeHtml(initial)}</div><div class="chat-list-meta"><div class="name">${escapeHtml(ch.name || '')}</div><div class="preview">${escapeHtml(last)}</div></div></div>`;
+  }).join('');
 }
 async function selectChannel(cid) {
   currentChannelId = cid; renderChannelList();
   const ch = channels.find(c=>c.id===cid); if (!ch) return;
-  document.getElementById('chatHeaderName').textContent = ch.name;
-  document.getElementById('chatHeaderAvatar').textContent = ch.icon || ch.name[0];
+  document.getElementById('chatHeaderName').textContent = ch.name || '';
+  document.getElementById('chatHeaderAvatar').textContent = ch.icon || (ch.name ? ch.name.charAt(0) : '?');
   document.getElementById('chatHeaderAvatar').style.background = ch.color || 'var(--navy-700)';
   document.getElementById('chatHeaderStatus').textContent = isConfigured?'Realtime':'本機';
   if (isConfigured) {
@@ -1960,14 +2035,22 @@ function renderMessages() {
   const c = document.getElementById('chatMessages');
   const msgs = messagesByChannel[currentChannelId] || [];
   if (msgs.length===0) { c.innerHTML = '<div class="empty">尚無訊息</div>'; return; }
-  let html = ''; let lastSender = null; let group = [];
-  msgs.forEach(m => { if (m.sender_name !== lastSender) { if (group.length) html += renderGroup(group); group = []; lastSender = m.sender_name; } group.push(m); });
+  let html = ''; let lastKey = null; let group = [];
+  msgs.forEach(m => {
+    const key = m.sender_id != null ? 'id:' + m.sender_id : 'name:' + m.sender_name;
+    if (key !== lastKey) { if (group.length) html += renderGroup(group); group = []; lastKey = key; }
+    group.push(m);
+  });
   if (group.length) html += renderGroup(group);
   c.innerHTML = html; c.scrollTop = c.scrollHeight;
 }
 function renderGroup(g) {
-  const isMe = currentUser && g[0].sender_name === currentUser.name;
-  const senderLbl = isMe?'':`<div class="msg-sender">${g[0].sender_name} · ${g[0].sender_role||''}</div>`;
+  // Prefer sender_id (unique) over sender_name (could collide across users with same display name)
+  const isMe = currentUser && (
+    (g[0].sender_id != null && g[0].sender_id === currentUser.id) ||
+    (g[0].sender_id == null && g[0].sender_name === currentUser.name)
+  );
+  const senderLbl = isMe?'':`<div class="msg-sender">${escapeHtml(g[0].sender_name || '')} · ${escapeHtml(g[0].sender_role||'')}</div>`;
   const bubbles = g.map(m => { const d = new Date(m.created_at); return `<div class="msg ${isMe?'me':'them'}">${escapeHtml(m.content)}<div class="msg-time">${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}</div></div>`; }).join('');
   return `<div class="msg-group ${isMe?'me':'them'}">${senderLbl}${bubbles}</div>`;
 }
@@ -1975,8 +2058,8 @@ async function sendMsg() {
   const inp = document.getElementById('chatInput');
   const text = inp.value.trim(); if (!text || !currentChannelId || !currentUser) return;
   inp.value = '';
-  if (isConfigured) await sb.from('messages').insert({ channel_id: currentChannelId, sender_name: currentUser.name, sender_role: currentUser.role, content: text });
-  else { if (!messagesByChannel[currentChannelId]) messagesByChannel[currentChannelId] = []; messagesByChannel[currentChannelId].push({ sender_name: currentUser.name, sender_role: currentUser.role, content: text, created_at: new Date().toISOString() }); renderMessages(); }
+  if (isConfigured) await sb.from('messages').insert({ channel_id: currentChannelId, sender_id: currentUser.id, sender_name: currentUser.name, sender_role: currentUser.role, content: text });
+  else { if (!messagesByChannel[currentChannelId]) messagesByChannel[currentChannelId] = []; messagesByChannel[currentChannelId].push({ sender_id: currentUser.id, sender_name: currentUser.name, sender_role: currentUser.role, content: text, created_at: new Date().toISOString() }); renderMessages(); }
 }
 document.getElementById('chatSend').addEventListener('click', sendMsg);
 document.getElementById('chatInput').addEventListener('keypress', e => { if (e.key==='Enter') sendMsg(); });
@@ -2066,10 +2149,10 @@ function renderKPIs() {
 
 function renderHourChart(data) {
   const container = document.getElementById('hourBars');
-  const hourly = new Array(18).fill(0); // 06:00 - 23:00
+  const hourly = new Array(24).fill(0); // 00:00 - 23:00 (full day, includes red-eye departures)
   data.forEach(e => {
     const h = new Date(e.entry_time).getHours();
-    if (h >= 6 && h <= 23) hourly[h - 6] += (e.party_size || 1);
+    if (h >= 0 && h <= 23) hourly[h] += (e.party_size || 1);
   });
   const max = Math.max(...hourly, 1);
   container.innerHTML = '';
@@ -2077,8 +2160,8 @@ function renderHourChart(data) {
     const bar = document.createElement('div');
     bar.className = 'hour-bar' + (v === 0 ? ' empty' : '');
     bar.style.height = (v / max * 100) + '%';
-    bar.title = `${6 + i}:00 — ${v} 人`;
-    bar.innerHTML = `${v > 0 ? `<div class="bar-value">${v}</div>` : ''}<div class="bar-label">${6 + i}</div>`;
+    bar.title = `${i}:00 — ${v} 人`;
+    bar.innerHTML = `${v > 0 ? `<div class="bar-value">${v}</div>` : ''}<div class="bar-label">${i}</div>`;
     container.appendChild(bar);
   });
   document.getElementById('hourChartHint').textContent = data.length > 0 ? `最高峰 ${max} 人` : '尚無資料';
@@ -2097,7 +2180,7 @@ function renderDestBreakdown(data) {
   if (rows.length === 0) { container.innerHTML = '<div class="empty">尚無資料</div>'; return; }
   container.innerHTML = rows.map(([code, info]) => `
     <div class="dest-row">
-      <div class="dest-code">${code}<div style="font-family:'Noto Sans TC'; font-size:10px; color:var(--muted); font-weight:400; margin-top:1px;">${info.name}</div></div>
+      <div class="dest-code">${escapeHtml(code)}<div style="font-family:'Noto Sans TC'; font-size:10px; color:var(--muted); font-weight:400; margin-top:1px;">${escapeHtml(info.name)}</div></div>
       <div class="dest-bar"><div class="dest-bar-fill" style="width:${(info.count/max*100)}%"></div></div>
       <div class="dest-count">${info.count}</div>
     </div>`).join('');
@@ -2131,8 +2214,8 @@ function renderRecent(data) {
     const isOpen = e.exit_time == null;
     return `<div class="recent-row ${isOpen ? 'open' : ''}">
       <div class="recent-time">${timeStr}</div>
-      <div class="recent-name">${e.passenger_name || '—'} ${e.vip ? '★' : ''}<span style="color:var(--muted); font-size:11px; margin-left:6px;">${e.seat_code}</span></div>
-      <div class="recent-flight">${e.flight_no || ''} ${e.destination || ''}</div>
+      <div class="recent-name">${escapeHtml(e.passenger_name || '—')} ${e.vip ? '★' : ''}<span style="color:var(--muted); font-size:11px; margin-left:6px;">${escapeHtml(e.seat_code || '')}</span></div>
+      <div class="recent-flight">${escapeHtml(e.flight_no || '')} ${escapeHtml(e.destination || '')}</div>
       <div class="recent-duration">${dur}</div>
     </div>`;
   }).join('');
@@ -2167,7 +2250,7 @@ function exportStatsCSV() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `lounge_${currentTerminal}_${statsPeriod}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.download = `lounge_${currentTerminal}_${statsPeriod}_${localDateStr()}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -2195,7 +2278,18 @@ const LOUNGE_DEPART_BEFORE_STD = 30;  // min
 function fcGetDate() {
   const d = new Date();
   if (fcPeriod === 'tomorrow') d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
+  // Use LOCAL date, not UTC — otherwise between 00:00–08:00 Taiwan time
+  // toISOString() returns yesterday's date and capacity_forecast lookup breaks.
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+function localDateStr(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 async function loadForecast() {
@@ -2253,16 +2347,38 @@ async function saveFcInput(flightNo, users) {
   } catch (e) { console.error(e); }
 }
 
-// 自動估算：頭等艙 100%、商務艙 80%、經濟艙 5% 進貴賓室的粗略比例
-// 假設每航班平均 200 人，各艙等比例大約 F:2, C:20, Y:178
+// 自動估算：依艙等佔比與機型座位數估算
+// 頭等艙 100%、商務艙 80%、經濟艙 5% 進貴賓室
+// 各機型座位分布（粗估，實務可依實際機型細分）：
+//   Wide body (A330-900neo)：F 4、J 30、Y 260 (總 294)  → 4×1 + 30×0.8 + 260×0.05 = 41
+//   Narrow body (A321-neo)：J 8、Y 180 (總 188)         → 8×0.8 + 180×0.05 = 15
+// 目的地簡易判斷：亞洲短程用 narrow body 15 人，長程 (SFO/LAX/SEA/JFK/YVR/CDG/LHR/FRA/SYD/MEL) 用 wide body 41 人
+const LONG_HAUL_DESTS = new Set(['SFO','LAX','SEA','JFK','LAS','ONT','YVR','YYZ','CDG','LHR','FRA','MUC','SYD','MEL','BNE']);
+function estimateForFlight(f) {
+  if (!f) return 15;
+  const isLongHaul = LONG_HAUL_DESTS.has((f.destination || '').toUpperCase());
+  return isLongHaul ? 41 : 15;
+}
 function autoEstimateAll() {
-  if (!confirm('依艙等佔比自動估算所有航班（可再手動調整），確定？')) return;
-  const promises = Object.values(flights).map(f => {
-    // Rough estimate: 15 lounge users per flight (mix of F/J + eligible frequent flyers)
-    const estimate = 15;
-    return saveFcInput(f.flight_no, estimate);
+  const flightArr = Object.values(flights);
+  if (flightArr.length === 0) { alert('尚無航班資料 · 請先跑 TDX Edge Function 同步班表'); return; }
+  if (!confirm(`依艙等佔比自動估算 ${flightArr.length} 個航班（長程 41 人、短程 15 人，可再手動調整），確定？`)) return;
+  // Update local state for all flights first (avoid N re-renders), then batch upsert
+  flightArr.forEach(f => { fcInputs[f.flight_no] = estimateForFlight(f); });
+  renderForecast();
+  if (!isConfigured) { alert('已估算 ' + flightArr.length + ' 個航班（本機模式）'); return; }
+  const dateStr = fcGetDate();
+  const rows = flightArr.map(f => ({
+    flight_no: f.flight_no,
+    flight_date: dateStr,
+    expected_users: estimateForFlight(f),
+    updated_by: currentUser?.name || 'anon',
+    updated_at: new Date().toISOString(),
+  }));
+  sb.from('capacity_forecast').upsert(rows).then(({ error }) => {
+    if (error) alert('儲存失敗：' + error.message);
+    else alert('已自動估算並儲存 ' + rows.length + ' 個航班');
   });
-  Promise.all(promises).then(() => alert('已自動估算 ' + Object.keys(flights).length + ' 個航班'));
 }
 
 function occupancyAtMinute(minute, terminal) {
@@ -2360,12 +2476,12 @@ function renderForecast() {
       const isPeak = hourInfo && hourInfo.count > cap * 0.8;
       const rowCls = isOverflow ? 'overflow' : (isPeak ? 'peak' : '');
       return `<div class="fc-flight-row ${rowCls}">
-        <div class="fc-f-fno">${f.flight_no}</div>
-        <div class="fc-f-dest"><span class="name">${f.destination_name || ''}</span><span class="code">${f.destination}</span></div>
-        <div class="fc-f-std">${f.std}</div>
-        <div class="fc-f-term ${f.terminal === 'T1' ? 't1' : 't2'}">${f.terminal || '?'}</div>
+        <div class="fc-f-fno">${escapeHtml(f.flight_no)}</div>
+        <div class="fc-f-dest"><span class="name">${escapeHtml(f.destination_name || '')}</span><span class="code">${escapeHtml(f.destination || '')}</span></div>
+        <div class="fc-f-std">${escapeHtml(f.std || '')}</div>
+        <div class="fc-f-term ${f.terminal === 'T1' ? 't1' : 't2'}">${escapeHtml(f.terminal || '?')}</div>
         <div class="fc-f-input">
-          <input type="number" min="0" max="300" value="${users}" onchange="saveFcInput('${f.flight_no}', parseInt(this.value)||0)" />
+          <input type="number" min="0" max="300" value="${users}" onchange="saveFcInput('${escapeHtml(f.flight_no)}', parseInt(this.value)||0)" />
           <span class="lbl">人</span>
         </div>
       </div>`;
@@ -2598,7 +2714,14 @@ document.getElementById('loginUsername').addEventListener('keypress', e => { if 
    SLACK PUSH NOTIFICATIONS
    ============================================================ */
 let slackConfig = null;
-let slackThrottle = {};  // { key: lastNotifyTime } to prevent spam
+// Persist throttle across page reloads so iPad kiosk reloads don't spam Slack
+let slackThrottle = (() => {
+  try { return JSON.parse(localStorage.getItem('slack_throttle') || '{}'); }
+  catch { return {}; }
+})();
+function saveSlackThrottle() {
+  try { localStorage.setItem('slack_throttle', JSON.stringify(slackThrottle)); } catch(e) {}
+}
 
 async function loadSlackConfig() {
   if (!isConfigured || !currentUser) return;
@@ -2652,8 +2775,12 @@ async function testSlack() {
     sender: currentUser?.display_name || 'System',
   });
   try {
-    await sendToSlack(url, msg);
-    statusEl.innerHTML = '<span style="color:var(--avail);">✓ 已送出 · 請到 Slack 頻道確認是否收到<br/><small style="color:var(--muted);">（瀏覽器無法讀取 Slack 回應，需人工確認）</small></span>';
+    const result = await sendToSlack(url, msg);
+    if (result.verified) {
+      statusEl.innerHTML = '<span style="color:var(--avail);">✓ Slack 已確認收到（回應 ok）</span>';
+    } else {
+      statusEl.innerHTML = '<span style="color:var(--dirty);">⚠️ 已送出但無法驗證 · 瀏覽器 CORS 阻擋回應<br/><small style="color:var(--muted);">請到 Slack 頻道人工確認；若沒收到，多半是 Webhook URL 錯字或該 App 被停用</small></span>';
+    }
   } catch(e) {
     statusEl.innerHTML = `<span style="color:#C53E1D;">網路失敗：${e.message}</span>`;
   }
@@ -2670,9 +2797,9 @@ async function sendToSlack(webhookUrl, message) {
     });
     const text = await res.text();
     if (text.trim() !== 'ok') throw new Error(`Slack: ${text}`);
-    return { success: true };
+    return { success: true, verified: true };
   } catch (corsErr) {
-    // CORS blocked → fallback to no-cors (fire and forget)
+    // CORS blocked → fallback to no-cors (fire and forget, cannot read response)
     console.warn('CORS blocked, falling back to no-cors:', corsErr);
     await fetch(webhookUrl, {
       method: 'POST',
@@ -2680,7 +2807,7 @@ async function sendToSlack(webhookUrl, message) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(message),
     });
-    return { success: true, opaque: true };
+    return { success: true, verified: false, opaque: true };  // could not read status
   }
 }
 
@@ -2704,6 +2831,7 @@ async function notifySlack(type, payload) {
     const last = slackThrottle[throttleKey] || 0;
     if (Date.now() - last < throttleMs[type]) return;
     slackThrottle[throttleKey] = Date.now();
+    saveSlackThrottle();
   }
 
   try {
