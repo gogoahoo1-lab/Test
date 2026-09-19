@@ -2899,15 +2899,19 @@ async function saveFcInput(flightNo, users) {
   fcInputs[flightNo] = users;
   if (!isConfigured) { renderForecast(); return; }
   try {
-    await sb.from('capacity_forecast').upsert({
+    const { error } = await sb.from('capacity_forecast').upsert({
       flight_no: flightNo,
       flight_date: fcGetDate(),
       expected_users: users,
       updated_by: currentUser?.name || 'anon',
       updated_at: new Date().toISOString(),
-    });
+    }, { onConflict: 'flight_no,flight_date' });
+    if (error) throw error;
     renderForecast();
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error(e);
+    alert('儲存預估失敗：' + (e.message || '未知錯誤'));
+  }
 }
 
 // 自動估算：依艙等佔比與機型座位數估算
@@ -2938,7 +2942,9 @@ function autoEstimateAll() {
     updated_by: currentUser?.name || 'anon',
     updated_at: new Date().toISOString(),
   }));
-  sb.from('capacity_forecast').upsert(rows).then(({ error }) => {
+  sb.from('capacity_forecast')
+    .upsert(rows, { onConflict: 'flight_no,flight_date' })
+    .then(({ error }) => {
     if (error) alert('儲存失敗：' + error.message);
     else alert('已自動估算並儲存 ' + rows.length + ' 個航班');
   });
