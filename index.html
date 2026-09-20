@@ -38,12 +38,12 @@
     --line: #e5e0d5;
     --line-2: #d9d3c1;
     --line-strong: #b8b0a0;
-    /* Seat status colors — muted forest-green palette */
-    --avail: #6ba688; --avail-bg: #f0f5ee;
-    --seated: #4a6fa5; --seated-bg: #eaf0f7;
-    --dirty: #c9a66b; --dirty-bg: #fdf5e5;
-    --cleaning: #d68a5c; --cleaning-bg: #fbeadf;
-    --blocked: #a89f83; --blocked-bg: #f0eee7;
+    /* Seat status colors — traffic-light logic (綠空位 / 紅佔位 / 黃待清潔) */
+    --avail: #5ea87a; --avail-bg: #eaf3ec;        /* 綠 · 空位 */
+    --seated: #c94f3f; --seated-bg: #fbe8e4;      /* 紅 · 佔位 */
+    --dirty: #e0a938; --dirty-bg: #fdf3d9;        /* 黃 · 待清潔 */
+    --cleaning: #d68a5c; --cleaning-bg: #fbeadf;  /* 橘 · 清潔中（進行中） */
+    --blocked: #a89f83; --blocked-bg: #f0eee7;    /* 灰 · 同桌鎖定（舊資料相容） */
     /* Legacy vars kept for backward compat */
     --navy-900: #1a2f28;
     --navy-800: #24413a;
@@ -881,18 +881,19 @@
     border-radius: 10px;
     box-shadow: 0 1px 3px rgba(26,47,40,0.04);
   }
-  .seat.avail { background: var(--avail-bg); border-color: #d5e0ce; border-top-color: var(--avail); }
-  .seat.seated { background: var(--seated-bg); border-color: #cfd8e6; border-top-color: var(--seated); box-shadow: 0 2px 6px rgba(74,111,165,0.1); }
-  .seat.dirty { background: var(--dirty-bg); border-color: #e8dab0; border-top-color: var(--dirty); }
+  .seat.avail { background: var(--avail-bg); border-color: #cfe0d5; border-top-color: var(--avail); }
+  .seat.seated { background: var(--seated-bg); border-color: #f2ccc4; border-top-color: var(--seated); box-shadow: 0 2px 6px rgba(201,79,63,0.12); }
+  .seat.dirty { background: var(--dirty-bg); border-color: #ecd9a0; border-top-color: var(--dirty); }
   .seat.cleaning { background: var(--cleaning-bg); border-color: #e8c6b0; border-top-color: var(--cleaning); }
   .seat.blocked { background: var(--blocked-bg); border-color: #ded9c8; border-top-color: var(--blocked); opacity: 0.6; }
   .seat.selected { border-color: var(--gold) !important; box-shadow: 0 0 0 2px var(--gold), 0 4px 16px rgba(201,166,107,0.3) !important; }
   .seat.pre-selected { border-color: var(--gold) !important; box-shadow: 0 0 0 2px rgba(201,166,107,0.7), 0 4px 12px rgba(201,166,107,0.2) !important; background: linear-gradient(135deg, #fdf5e5, #fbeed4) !important; border-top-color: var(--gold) !important; }
   .seat.pre-selected::before { color: var(--gold); text-shadow: none; }
   .seat .seat-code { color: var(--ink); font-family: 'JetBrains Mono', monospace; font-weight: 700; text-shadow: none; letter-spacing: 0.5px; }
-  .seat.seated .seat-code { color: var(--seated); text-shadow: none; }
-  .seat.dirty .seat-code { color: var(--gold-dark); }
-  .seat.cleaning .seat-code { color: #a05d28; }
+  .seat.avail .seat-code { color: #2d7a4f !important; text-shadow: none; }        /* 深綠 */
+  .seat.seated .seat-code { color: var(--seated) !important; text-shadow: none; } /* 紅 */
+  .seat.dirty .seat-code { color: #a17a1e !important; }                            /* 深黃 */
+  .seat.cleaning .seat-code { color: #a05d28 !important; }                         /* 深橘 */
   .seat.blocked .seat-code { color: var(--muted); }
   .seat-info .name { color: var(--ink); font-weight: 500; }
   .seat-info .flight { color: var(--ink-3); font-family: 'JetBrains Mono', monospace; }
