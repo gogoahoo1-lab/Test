@@ -457,6 +457,25 @@
   .recent-tag.t1 { background: #eaf0f7; color: #4a6fa5; }
   .recent-tag.t2 { background: #fdf5e5; color: #a67e28; }
 
+  /* Quantity stepper — big touch-friendly +/- buttons */
+  .qty-stepper { display: flex; align-items: stretch; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--paper); }
+  .qty-stepper .qs-btn { width: 56px; height: 52px; background: var(--ivory); color: var(--ink); border: none; font-size: 28px; font-weight: 400; cursor: pointer; user-select: none; transition: background 0.15s, color 0.15s; font-family: 'Inter', sans-serif; line-height: 1; padding: 0; flex-shrink: 0; }
+  .qty-stepper .qs-btn:hover { background: var(--gold); color: var(--ink); }
+  .qty-stepper .qs-btn:active { background: var(--gold-dark); color: #fff; }
+  .qty-stepper .qs-btn:disabled { opacity: 0.35; cursor: not-allowed; background: var(--ivory) !important; color: var(--muted) !important; }
+  .qty-stepper .qs-btn:first-child { border-right: 1px solid var(--line); }
+  .qty-stepper .qs-btn:last-child { border-left: 1px solid var(--line); }
+  .qty-stepper .qs-val { flex: 1; text-align: center; border: none !important; background: transparent !important; font-family: 'Playfair Display', 'Noto Serif TC', serif !important; font-size: 24px !important; font-weight: 500 !important; color: var(--ink) !important; padding: 0 !important; border-radius: 0 !important; box-shadow: none !important; -moz-appearance: textfield; min-width: 50px; letter-spacing: -0.3px; height: 52px; }
+  .qty-stepper .qs-val:focus { box-shadow: none !important; outline: none !important; border: none !important; }
+  .qty-stepper .qs-val::-webkit-outer-spin-button,
+  .qty-stepper .qs-val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+  /* Flight number input with JX prefix badge */
+  .flight-input-wrap { position: relative; display: block; }
+  .flight-input-wrap .flight-prefix { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--gold-dark); font-size: 15px; letter-spacing: 2px; pointer-events: none; z-index: 1; user-select: none; }
+  .flight-input-wrap input { padding-left: 46px !important; font-family: 'JetBrains Mono', monospace !important; font-weight: 700 !important; letter-spacing: 2px !important; font-size: 15px !important; }
+  .flight-input-wrap input::placeholder { font-weight: 400; letter-spacing: 1px; opacity: 0.5; }
+
   .dest-list, .class-list { display: flex; flex-direction: column; gap: 8px; }
   .dest-row, .class-row { display: grid; grid-template-columns: 60px 1fr 40px; gap: 12px; align-items: center; font-size: 13px; }
   .dest-row .dest-code, .class-row .class-name { font-family: 'JetBrains Mono'; font-weight: 600; color: var(--navy-900); }
@@ -1548,9 +1567,20 @@
 
       <div class="intake-section active" id="section-flight">
         <div class="form-row"><label>旅客姓名</label><input type="text" id="flName" placeholder="選填，未填顯示「訪客」"/></div>
-        <div class="form-row"><label>航班</label><input type="text" id="flFno" placeholder="JX121" autocomplete="off" oninput="onFnoInput()"/></div>
+        <div class="form-row"><label>航班</label>
+          <div class="flight-input-wrap">
+            <span class="flight-prefix">JX</span>
+            <input type="text" id="flFno" placeholder="741" autocomplete="off" inputmode="numeric" oninput="onFnoInput()"/>
+          </div>
+        </div>
         <div id="flightSearchResults" style="max-height:120px; overflow-y:auto; background:var(--cream-2); border-radius:8px; display:none;"></div>
-        <div class="form-row"><label>人數</label><input type="number" id="flParty" value="1" min="1" max="8"/></div>
+        <div class="form-row"><label>人數</label>
+          <div class="qty-stepper">
+            <button type="button" class="qs-btn" onclick="stepQty('flParty', -1)" aria-label="減少人數">−</button>
+            <input type="number" id="flParty" value="1" min="1" max="8" class="qs-val" onblur="clampQty('flParty')" inputmode="numeric"/>
+            <button type="button" class="qs-btn" onclick="stepQty('flParty', 1)" aria-label="增加人數">+</button>
+          </div>
+        </div>
         <div class="form-row"><label>艙等</label><select id="flClass"><option value="ECN">經濟艙</option><option value="BUS">商務艙</option><option value="FST">頭等艙</option></select></div>
         <div id="flPreview"></div>
       </div>
@@ -1567,7 +1597,13 @@
       <div class="intake-section" id="section-manual">
         <div class="form-row"><label>姓名</label><input type="text" id="mnName" placeholder="選填，未填顯示「訪客」"/></div>
         <div class="form-row"><label>備註</label><input type="text" id="mnNote" placeholder="例：VIP、輪椅、素食"/></div>
-        <div class="form-row"><label>人數</label><input type="number" id="mnParty" value="1" min="1" max="8"/></div>
+        <div class="form-row"><label>人數</label>
+          <div class="qty-stepper">
+            <button type="button" class="qs-btn" onclick="stepQty('mnParty', -1)" aria-label="減少人數">−</button>
+            <input type="number" id="mnParty" value="1" min="1" max="8" class="qs-val" onblur="clampQty('mnParty')" inputmode="numeric"/>
+            <button type="button" class="qs-btn" onclick="stepQty('mnParty', 1)" aria-label="增加人數">+</button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -3823,6 +3859,7 @@ function openIntakeWizard() {
   switchIntakeMethod('flight');
   document.getElementById('intakeModal').classList.add('active');
   ['flName','flFno','mnName','mnNote'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  ['flParty','mnParty'].forEach(id => { const el = document.getElementById(id); if (el) el.value = 1; });
   document.getElementById('flPreview').innerHTML = '';
   document.getElementById('scanResult').innerHTML = '';
   document.getElementById('scanPrompt').style.display = 'block';
@@ -3837,12 +3874,41 @@ function switchIntakeMethod(m) {
   if (m !== 'scan') stopScanner();
 }
 
+// Quantity stepper helpers — for touch-friendly +/- controls
+function stepQty(id, delta) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const min = parseInt(el.min || '1', 10);
+  const max = parseInt(el.max || '99', 10);
+  const cur = parseInt(el.value || '1', 10) || 1;
+  const next = Math.max(min, Math.min(max, cur + delta));
+  el.value = next;
+  el.dispatchEvent(new Event('change'));
+}
+function clampQty(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const min = parseInt(el.min || '1', 10);
+  const max = parseInt(el.max || '99', 10);
+  let v = parseInt(el.value || '1', 10);
+  if (!v || v < min) v = min;
+  if (v > max) v = max;
+  el.value = v;
+}
+
 function onFnoInput() {
-  const q = document.getElementById('flFno').value.trim().toUpperCase();
+  const inputEl = document.getElementById('flFno');
+  let raw = (inputEl.value || '').trim().toUpperCase();
+  // Strip user-typed JX prefix so it doesn't double up with the badge
+  if (raw.startsWith('JX')) {
+    raw = raw.replace(/^JX/, '').trim();
+    inputEl.value = raw;
+  }
+  const q = raw ? 'JX' + raw : '';
   const results = document.getElementById('flightSearchResults');
   const preview = document.getElementById('flPreview');
-  if (!q) { results.style.display='none'; preview.innerHTML=''; return; }
-  const matches = Object.values(flights).filter(f => f.flight_no.includes(q) || (f.destination_name||'').includes(q));
+  if (!raw) { results.style.display='none'; preview.innerHTML=''; return; }
+  const matches = Object.values(flights).filter(f => f.flight_no.includes(q) || (f.destination_name||'').includes(raw));
   if (matches.length === 0) { results.style.display='none'; preview.innerHTML = `<div style="padding:8px; font-size:12px; color:var(--cleaning);">找不到航班 ${q}（TDX 尚未同步或無此班次）</div>`; return; }
   results.innerHTML = matches.slice(0, 10).map(f => `
     <div style="padding:10px 12px; cursor:pointer; display:grid; grid-template-columns:70px 1fr auto; gap:10px; font-family:'JetBrains Mono'; font-size:12px; align-items:center; border-bottom:1px solid var(--line);" onclick="pickFlight('${escapeHtml(f.flight_no)}')">
@@ -3855,7 +3921,9 @@ function onFnoInput() {
   if (exact) pickFlight(exact.flight_no);
 }
 function pickFlight(fno) {
-  document.getElementById('flFno').value = fno;
+  // Show number part only in input; the "JX" badge is UI-only
+  const inputVal = String(fno || '').replace(/^JX/i, '');
+  document.getElementById('flFno').value = inputVal;
   document.getElementById('flightSearchResults').style.display = 'none';
   const f = flights[fno]; if (!f) return;
   document.getElementById('flPreview').innerHTML = renderPaxCard({
@@ -3928,7 +3996,8 @@ async function confirmIntake() {
   let pax = null;
   if (intakeMethod === 'flight') {
     const name = document.getElementById('flName').value.trim() || '訪客';
-    const fno = document.getElementById('flFno').value.trim().toUpperCase();
+    const rawFno = document.getElementById('flFno').value.trim().toUpperCase().replace(/^JX/i, '');
+    const fno = rawFno ? 'JX' + rawFno : '';
     const f = flights[fno];
     if (!f) { alert('請選擇有效航班'); return; }
     pax = { name, flight_no: f.flight_no, destination: f.destination, destination_name: f.destination_name, std: f.std,
