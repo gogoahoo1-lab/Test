@@ -10,44 +10,61 @@
 <title>STARLUX Galactic Lounge · 貴賓室管理系統</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=Noto+Serif+TC:wght@400;500;600;700;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"></script>
 
 <style>
   :root {
-    /* ═══ AVIATION FMS PALETTE (太空艙儀表) ═══ */
-    --navy-900: #050b14; --navy-800: #0a1420; --navy-700: #142744; --navy-500: #1e3555;
-    --gold: #ffb84d; --gold-light: #ffcd82; --gold-dark: #d48932;
-    /* Panel / card backgrounds — semi-transparent over navy */
-    --cream: rgba(20, 35, 55, 0.55); --cream-2: rgba(30, 50, 75, 0.4);
-    --paper: rgba(14, 25, 40, 0.75); --paper-solid: #0f1e33;
-    /* Text on dark */
-    --ink: #d4dfe8; --ink-2: #a4b8cc; --muted: #7a8a9a;
-    /* Gold-tinted borders */
-    --line: rgba(255, 180, 80, 0.18); --line-strong: rgba(255, 180, 80, 0.4); --line-dim: rgba(255, 255, 255, 0.06);
-    /* Seat status colors — aviation palette */
-    --avail: #4ade80; --avail-bg: rgba(74, 222, 128, 0.08);
-    --seated: #64c8ff; --seated-bg: rgba(100, 200, 255, 0.12);
-    --dirty: #f7a76a; --dirty-bg: rgba(247, 167, 106, 0.14);
-    --cleaning: #ffb84d; --cleaning-bg: rgba(255, 184, 77, 0.12);
-    --blocked: #5a6a7a; --blocked-bg: rgba(80, 90, 105, 0.18);
-    --shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 180, 80, 0.06);
-    --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 180, 80, 0.1);
+    /* ═══ EDITORIAL PALETTE (雜誌編輯) ═══ */
+    --ivory: #faf7f0;         /* 象牙白背景 */
+    --ivory-2: #f2ede0;       /* 淡奶油 */
+    --paper: #ffffff;         /* 純白卡片 */
+    --paper-shade: #f7f4ec;   /* 卡片微陰影底 */
+    /* Deep forest green — 主要 ink */
+    --ink: #1a2f28;
+    --ink-2: #4a5c53;
+    --ink-3: #6a7d72;
+    --muted: #8a9089;
+    /* STARLUX gold accent */
+    --gold: #c9a66b;
+    --gold-light: #e5cc8d;
+    --gold-dark: #a67e28;
+    /* Coral for danger/alert */
+    --coral: #e5674c;
+    --coral-light: #f4a894;
+    --coral-bg: #fdf1ee;
+    /* Divider lines — subtle warm neutral */
+    --line: #e5e0d5;
+    --line-2: #d9d3c1;
+    --line-strong: #b8b0a0;
+    /* Seat status colors — muted forest-green palette */
+    --avail: #6ba688; --avail-bg: #f0f5ee;
+    --seated: #4a6fa5; --seated-bg: #eaf0f7;
+    --dirty: #c9a66b; --dirty-bg: #fdf5e5;
+    --cleaning: #d68a5c; --cleaning-bg: #fbeadf;
+    --blocked: #a89f83; --blocked-bg: #f0eee7;
+    /* Legacy vars kept for backward compat */
+    --navy-900: #1a2f28;
+    --navy-800: #24413a;
+    --navy-700: #33564b;
+    --navy-500: #557066;
+    --cream: #f7f4ec;
+    --cream-2: #f2ede0;
+    --paper-solid: #ffffff;
+    --line-dim: #efebde;
+    --shadow: 0 2px 12px rgba(26, 47, 40, 0.06), 0 1px 3px rgba(26, 47, 40, 0.04);
+    --shadow-lg: 0 12px 32px rgba(26, 47, 40, 0.1), 0 4px 12px rgba(26, 47, 40, 0.06);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
-    color-scheme: dark;
+    color-scheme: light;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body {
     height: 100%;
     font-family: 'Noto Sans TC', 'Inter', -apple-system, sans-serif;
-    background:
-      radial-gradient(ellipse 900px 700px at 20% -5%, rgba(76, 118, 176, 0.16), transparent 60%),
-      radial-gradient(ellipse 800px 600px at 90% 110%, rgba(255, 184, 77, 0.06), transparent 60%),
-      linear-gradient(180deg, #0d1a2c 0%, #050b14 100%);
-    background-attachment: fixed;
+    background: var(--ivory);
     color: var(--ink);
-    font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; overscroll-behavior: none;
+    font-size: 14px; line-height: 1.6; -webkit-font-smoothing: antialiased; overscroll-behavior: none;
   }
   button { font-family: inherit; }
 
@@ -395,12 +412,50 @@
   .chart-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
   .chart-title::before { content: ""; display: none; }
 
-  .hour-bars { display: grid; grid-template-columns: repeat(18, 1fr); gap: 4px; align-items: end; height: 200px; padding-bottom: 28px; position: relative; }
-  .hour-bar { background: linear-gradient(180deg, var(--gold), var(--navy-700)); border-radius: 4px 4px 0 0; position: relative; cursor: pointer; transition: opacity 0.15s; min-height: 2px; }
-  .hour-bar:hover { opacity: 0.75; }
+  .hour-bars { display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; align-items: end; height: 200px; padding-bottom: 28px; position: relative; }
+  .hour-bar { background: transparent; border-radius: 4px 4px 0 0; position: relative; cursor: pointer; transition: opacity 0.15s; min-height: 2px; display: flex; flex-direction: column-reverse; overflow: visible; }
+  .hour-bar:hover { opacity: 0.85; }
+  .hour-bar .bar-t1 { background: linear-gradient(180deg, #4a86f0, #6ba0e6); width: 100%; border-radius: 0; }
+  .hour-bar .bar-t2 { background: linear-gradient(180deg, #c9a66b, #d4b88a); width: 100%; border-radius: 4px 4px 0 0; }
+  .hour-bar .bar-t1:only-child { border-radius: 4px 4px 0 0; }
   .hour-bar .bar-value { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-family: 'JetBrains Mono'; font-size: 10px; color: var(--ink-2); font-weight: 600; }
   .hour-bar .bar-label { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); font-family: 'JetBrains Mono'; font-size: 10px; color: var(--muted); }
-  .hour-bar.empty { background: var(--line); }
+  .hour-bar.empty { background: var(--line); border-radius: 4px 4px 0 0; }
+
+  /* Stats T1/T2 dual layout */
+  .stats-legend { display: flex; gap: 20px; font-size: 12px; color: var(--ink-2); font-weight: 500; align-items: center; }
+  .stats-legend .lg-dot { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
+
+  /* KPI grand total (合計) */
+  .stat-total { font-family: 'Playfair Display', 'Noto Serif TC', serif; font-size: 40px; font-weight: 500; color: var(--ink); letter-spacing: -1.5px; line-height: 1.05; margin: 4px 0 2px; }
+  .stat-total .stat-unit { font-size: 13px; color: var(--muted); margin-left: 6px; letter-spacing: 0; font-weight: 400; font-family: 'Inter', 'Noto Sans TC', sans-serif; }
+  .stat-sub { font-size: 12px; color: var(--muted); margin-bottom: 10px; font-family: 'Inter', 'Noto Sans TC', sans-serif; }
+  .stat-card.accent .stat-total { color: var(--gold); }
+  .stat-card.accent .stat-total .stat-unit { color: rgba(255,255,255,0.5); }
+  .stat-card.accent .stat-sub { color: rgba(255,255,255,0.55); }
+  .stat-card.accent .label { color: rgba(255,255,255,0.55); }
+
+  /* T1/T2 mini row inside KPI card */
+  .dual-kpi { display: flex; gap: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .dual-kpi > div { flex: 1; min-width: 0; }
+  .dual-kpi > div:first-child { border-right: 1px solid var(--line); padding-right: 12px; }
+  .dual-kpi .dk-term { font-size: 10px; color: var(--muted); font-weight: 700; letter-spacing: 1.5px; margin-bottom: 3px; }
+  .dual-kpi .dk-val { font-family: 'Playfair Display', 'Noto Serif TC', serif; font-size: 18px; font-weight: 500; color: var(--ink-2); letter-spacing: -0.3px; line-height: 1.1; }
+  .dual-kpi .dk-sub { font-size: 10px; color: var(--muted); margin-top: 2px; font-family: 'Inter', 'Noto Sans TC', sans-serif; }
+  .stat-card.accent .dual-kpi { border-top-color: rgba(255,255,255,0.15); }
+  .stat-card.accent .dual-kpi > div:first-child { border-right-color: rgba(255,255,255,0.15); }
+  .stat-card.accent .dual-kpi .dk-term { color: rgba(255,255,255,0.5); }
+  .stat-card.accent .dual-kpi .dk-val { color: rgba(255,255,255,0.85); }
+  .stat-card.accent .dual-kpi .dk-sub { color: rgba(255,255,255,0.45); }
+
+  /* Dest/Class rows with T1/T2 split labels */
+  .dest-split, .class-split { display: flex; gap: 4px; margin-top: 2px; font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--muted); font-weight: 500; }
+  .dest-split .split-t1, .class-split .split-t1 { color: #4a86f0; }
+  .dest-split .split-t2, .class-split .split-t2 { color: #a67e28; }
+
+  .recent-tag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-right: 6px; letter-spacing: 0.5px; }
+  .recent-tag.t1 { background: #eaf0f7; color: #4a6fa5; }
+  .recent-tag.t2 { background: #fdf5e5; color: #a67e28; }
 
   .dest-list, .class-list { display: flex; flex-direction: column; gap: 8px; }
   .dest-row, .class-row { display: grid; grid-template-columns: 60px 1fr 40px; gap: 12px; align-items: center; font-size: 13px; }
@@ -693,216 +748,405 @@
     .queue-fab { bottom: calc(76px + var(--safe-bottom)); right: 12px; width: 52px; height: 52px; }
   }
   /* ═════════════════════════════════════════════════════════
-     AVIATION FMS THEME · Component Overrides
+     EDITORIAL MAGAZINE THEME · Component Overrides
+     Ivory + Deep Forest Green + STARLUX Gold + Playfair Display
      ═════════════════════════════════════════════════════════ */
-  /* Topbar / brand */
-  .topbar { background: rgba(10, 20, 32, 0.85); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
-  .brand-mark { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: var(--navy-900); box-shadow: 0 0 20px rgba(255,184,77,0.35), inset 0 1px 2px rgba(255,255,255,0.3); }
-  .terminal-badge { background: rgba(30, 50, 75, 0.5); border: 1px solid var(--line); }
-  #currentTerminalBadge { color: var(--gold) !important; text-shadow: 0 0 8px rgba(255,184,77,0.5); font-family: 'JetBrains Mono', monospace; letter-spacing: 1px; }
-  #switchTerminalBtn { background: rgba(30, 50, 75, 0.4) !important; border-color: var(--line) !important; color: var(--ink-2) !important; }
-  #switchTerminalBtn:hover { background: rgba(255,184,77,0.1) !important; color: var(--gold) !important; }
+
+  /* Serif titles across headings */
+  h1, h2, h3, h4, .modal-header > div > div:first-child, .stats-header h2,
+  .seat-code-lg, .zone-title, .tc-zone-header, .zc-terminal-block h3 {
+    font-family: 'Playfair Display', 'Noto Serif TC', Georgia, serif;
+    letter-spacing: -0.3px;
+  }
+
+  /* Topbar */
+  .topbar { background: rgba(255,255,255,0.9); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+  .brand-mark {
+    background: var(--ink);
+    color: var(--gold);
+    border-radius: 10px;
+    font-family: 'Playfair Display', serif;
+    font-weight: 500;
+    letter-spacing: 1px;
+    box-shadow: 0 2px 8px rgba(26,47,40,0.15);
+    border: 1px solid var(--gold);
+  }
+  .terminal-badge { background: var(--paper); border: 1px solid var(--line); }
+  #currentTerminalBadge { color: var(--gold) !important; font-family: 'JetBrains Mono', monospace; font-weight: 700; letter-spacing: 1px; text-shadow: none !important; }
+  #switchTerminalBtn { background: var(--paper) !important; border-color: var(--line) !important; color: var(--ink-2) !important; }
+  #switchTerminalBtn:hover { background: var(--ivory-2) !important; color: var(--ink) !important; border-color: var(--gold) !important; }
 
   /* Nav sidebar */
-  .sidebar { background: linear-gradient(180deg, #0a1420 0%, #050b14 100%); border-right: 1px solid var(--line); }
-  .nav-btn.active { background: rgba(255,184,77,0.12); color: var(--gold); box-shadow: inset 0 0 20px rgba(255,184,77,0.06); }
-  .nav-btn.active::before { background: var(--gold); box-shadow: 0 0 8px var(--gold); }
-  .nav-btn .badge { border-color: #0a1420 !important; box-shadow: 0 0 6px currentColor; }
+  .sidebar { background: var(--ink); border-right: 1px solid rgba(255,255,255,0.05); }
+  .nav-btn { color: rgba(255,255,255,0.6); }
+  .nav-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
+  .nav-btn.active { background: rgba(201,166,107,0.15); color: var(--gold); box-shadow: none; }
+  .nav-btn.active::before { background: var(--gold); box-shadow: none; }
+  .nav-btn .badge { border-color: var(--ink) !important; box-shadow: none; }
 
   /* Cards / panels */
-  .chart-card, .card, .panel { background: var(--paper) !important; border: 1px solid var(--line); backdrop-filter: blur(10px); }
+  .chart-card, .card, .panel { background: var(--paper) !important; border: 1px solid var(--line); backdrop-filter: none; box-shadow: var(--shadow); border-radius: 12px; }
   .empty { color: var(--muted); }
 
-  /* Stats header */
-  .stats-header h2 { color: var(--ink); }
-  .stats-header div div { color: var(--muted); }
+  /* Stats header — magazine layout */
+  .stats-header h2 { color: var(--ink) !important; font-family: 'Playfair Display', 'Noto Serif TC', serif; font-weight: 600; font-size: 26px; letter-spacing: -0.5px; }
+  .stats-header div div, .stats-header div > div:nth-child(2) { color: var(--ink-3); }
+  .stats-header { border-bottom: 1px solid var(--line); padding-bottom: 16px; margin-bottom: 20px; }
 
   /* Buttons */
-  button.primary, button.primary-btn, .primary-btn { background: linear-gradient(135deg, var(--gold), var(--gold-dark)) !important; color: var(--navy-900) !important; border: 1px solid var(--gold-light); box-shadow: 0 4px 16px rgba(255,184,77,0.25); font-weight: 600; }
-  button.primary:hover, .primary-btn:hover { box-shadow: 0 0 24px rgba(255,184,77,0.45); }
-  button.danger { background: rgba(239, 68, 68, 0.15) !important; color: #ff6b6b !important; border: 1px solid rgba(239, 68, 68, 0.4) !important; }
-  button:not(.primary):not(.danger):not(.sb-cancel):not(.sb-confirm):not(.tab):not(.nav-btn):not(.right-tab):not(.admin-subtab):not(.admin-term-tab) { background: rgba(30, 50, 75, 0.4); color: var(--ink-2); border: 1px solid var(--line); }
-
-  /* Inputs / selects / textareas */
-  input[type="text"], input[type="password"], input[type="email"], input[type="number"], input[type="date"], input[type="time"], input[type="search"], select, textarea {
-    background: rgba(10, 20, 32, 0.6) !important;
-    color: var(--ink) !important;
-    border: 1px solid var(--line) !important;
-    border-radius: 8px !important;
-    padding: 10px 12px !important;
+  button.primary, button.primary-btn, .primary-btn {
+    background: var(--ink) !important; color: var(--gold) !important;
+    border: 1px solid var(--ink) !important;
+    box-shadow: 0 2px 8px rgba(26,47,40,0.15);
+    font-weight: 600; letter-spacing: 0.3px;
   }
-  input:focus, select:focus, textarea:focus { border-color: var(--gold) !important; outline: none !important; box-shadow: 0 0 0 3px rgba(255,184,77,0.15) !important; }
+  button.primary:hover, .primary-btn:hover {
+    background: var(--gold) !important; color: var(--ink) !important; border-color: var(--gold) !important;
+    box-shadow: 0 4px 16px rgba(201,166,107,0.35);
+  }
+  button.danger {
+    background: var(--coral-bg) !important; color: var(--coral) !important;
+    border: 1px solid var(--coral-light) !important;
+  }
+  button.danger:hover { background: var(--coral) !important; color: #fff !important; }
+  button:not(.primary):not(.danger):not(.sb-cancel):not(.sb-confirm):not(.tab):not(.nav-btn):not(.right-tab):not(.admin-subtab):not(.admin-term-tab) {
+    background: var(--paper); color: var(--ink-2); border: 1px solid var(--line);
+  }
+
+  /* Inputs */
+  input[type="text"], input[type="password"], input[type="email"], input[type="number"], input[type="date"], input[type="time"], input[type="search"], select, textarea {
+    background: var(--paper) !important; color: var(--ink) !important;
+    border: 1px solid var(--line) !important; border-radius: 8px !important; padding: 10px 12px !important;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--gold) !important; outline: none !important;
+    box-shadow: 0 0 0 3px rgba(201,166,107,0.15) !important;
+  }
   input::placeholder { color: var(--muted); }
-  select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--gold) 50%), linear-gradient(-45deg, transparent 50%, var(--gold) 50%) !important; background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50% !important; background-size: 5px 5px !important; background-repeat: no-repeat !important; padding-right: 30px !important; }
-  .form-row label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+  select {
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ink-2) 50%), linear-gradient(-45deg, transparent 50%, var(--ink-2) 50%) !important;
+    background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50% !important;
+    background-size: 5px 5px !important; background-repeat: no-repeat !important;
+    padding-right: 30px !important;
+  }
+  .form-row label { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; }
 
   /* Modal */
-  .modal-backdrop { background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px); }
-  .modal { background: var(--paper-solid) !important; border: 1px solid var(--line); box-shadow: 0 30px 90px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,184,77,0.1); color: var(--ink); }
-  .modal-header { background: linear-gradient(180deg, rgba(255,184,77,0.06), transparent); border-bottom: 1px solid var(--line); color: var(--ink); }
+  .modal-backdrop { background: rgba(26, 47, 40, 0.45); backdrop-filter: blur(4px); }
+  .modal { background: var(--paper) !important; border: 1px solid var(--line); box-shadow: 0 30px 90px rgba(26,47,40,0.25); color: var(--ink); border-radius: 14px; overflow: hidden; }
+  .modal-header {
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+    padding: 20px 24px;
+  }
+  .modal-header > div > div:first-child {
+    font-family: 'Playfair Display', 'Noto Serif TC', serif !important;
+    font-weight: 600 !important;
+    font-size: 20px !important;
+    letter-spacing: -0.3px;
+    color: var(--ink) !important;
+  }
   .modal-close { color: var(--muted); }
-  .modal-close:hover { color: var(--gold); }
-  .seat-code-lg { color: var(--gold) !important; font-family: 'JetBrains Mono', monospace; text-shadow: 0 0 8px rgba(255,184,77,0.5); }
-  .zone-name { color: var(--muted); }
+  .modal-close:hover { color: var(--ink); }
+  .seat-code-lg { color: var(--ink) !important; font-family: 'Playfair Display', serif !important; font-weight: 600; text-shadow: none !important; }
+  .zone-name { color: var(--gold); font-family: 'Noto Sans TC', sans-serif; letter-spacing: 1px; font-size: 11px; text-transform: uppercase; font-weight: 600; }
 
-  /* Seat cards */
-  .seat { background: rgba(20, 35, 55, 0.4); border: 1px solid var(--line-dim); backdrop-filter: blur(4px); }
-  .seat.avail { background: rgba(74, 222, 128, 0.05); border-color: rgba(74, 222, 128, 0.2); }
-  .seat.seated { background: linear-gradient(135deg, rgba(100, 200, 255, 0.15), rgba(100, 200, 255, 0.08)); border-color: rgba(100, 200, 255, 0.4); box-shadow: inset 0 0 12px rgba(100, 200, 255, 0.05); }
-  .seat.dirty { background: rgba(247, 167, 106, 0.12); border-color: rgba(247, 167, 106, 0.4); }
-  .seat.cleaning { background: rgba(255, 184, 77, 0.12); border-color: rgba(255, 184, 77, 0.4); }
-  .seat.blocked { background: rgba(0, 0, 0, 0.25); border-color: rgba(255, 255, 255, 0.05); opacity: 0.55; }
-  .seat.selected { border-color: var(--gold) !important; box-shadow: 0 0 0 2px var(--gold), 0 0 24px rgba(255,184,77,0.4) !important; }
-  .seat.pre-selected { border-color: var(--gold) !important; box-shadow: 0 0 0 2px rgba(255,184,77,0.6), inset 0 0 16px rgba(255,184,77,0.15) !important; background: linear-gradient(135deg, rgba(255,184,77,0.15), rgba(255,184,77,0.08)) !important; }
-  .seat.pre-selected::before { color: var(--gold); text-shadow: 0 0 6px rgba(255,184,77,0.7); }
-  .seat .seat-code { color: var(--gold); font-family: 'JetBrains Mono', monospace; font-weight: 700; text-shadow: 0 0 4px rgba(255,184,77,0.3); }
-  .seat.seated .seat-code { color: var(--seated); text-shadow: 0 0 6px rgba(100,200,255,0.5); }
-  .seat.dirty .seat-code { color: var(--dirty); }
-  .seat.cleaning .seat-code { color: var(--cleaning); }
-  .seat.blocked .seat-code { color: var(--muted); text-shadow: none; }
-  .seat-info .name { color: var(--ink); }
-  .seat-info .flight { color: var(--muted); font-family: 'JetBrains Mono', monospace; }
-  .zone-title { color: var(--muted); font-family: 'JetBrains Mono', monospace; }
-  .zone-title .count { color: var(--gold); font-weight: 700; text-shadow: 0 0 6px rgba(255,184,77,0.4); }
+  /* Seat cards — clean & serif */
+  .seat {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    backdrop-filter: none;
+    border-top: 3px solid var(--avail);
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(26,47,40,0.04);
+  }
+  .seat.avail { background: var(--avail-bg); border-color: #d5e0ce; border-top-color: var(--avail); }
+  .seat.seated { background: var(--seated-bg); border-color: #cfd8e6; border-top-color: var(--seated); box-shadow: 0 2px 6px rgba(74,111,165,0.1); }
+  .seat.dirty { background: var(--dirty-bg); border-color: #e8dab0; border-top-color: var(--dirty); }
+  .seat.cleaning { background: var(--cleaning-bg); border-color: #e8c6b0; border-top-color: var(--cleaning); }
+  .seat.blocked { background: var(--blocked-bg); border-color: #ded9c8; border-top-color: var(--blocked); opacity: 0.6; }
+  .seat.selected { border-color: var(--gold) !important; box-shadow: 0 0 0 2px var(--gold), 0 4px 16px rgba(201,166,107,0.3) !important; }
+  .seat.pre-selected { border-color: var(--gold) !important; box-shadow: 0 0 0 2px rgba(201,166,107,0.7), 0 4px 12px rgba(201,166,107,0.2) !important; background: linear-gradient(135deg, #fdf5e5, #fbeed4) !important; border-top-color: var(--gold) !important; }
+  .seat.pre-selected::before { color: var(--gold); text-shadow: none; }
+  .seat .seat-code { color: var(--ink); font-family: 'JetBrains Mono', monospace; font-weight: 700; text-shadow: none; letter-spacing: 0.5px; }
+  .seat.seated .seat-code { color: var(--seated); text-shadow: none; }
+  .seat.dirty .seat-code { color: var(--gold-dark); }
+  .seat.cleaning .seat-code { color: #a05d28; }
+  .seat.blocked .seat-code { color: var(--muted); }
+  .seat-info .name { color: var(--ink); font-weight: 500; }
+  .seat-info .flight { color: var(--ink-3); font-family: 'JetBrains Mono', monospace; }
+
+  /* Zone titles — magazine style */
+  .zone-title {
+    color: var(--ink) !important;
+    font-family: 'Playfair Display', 'Noto Serif TC', serif !important;
+    font-weight: 600 !important;
+    font-size: 17px !important;
+    text-transform: none !important;
+    letter-spacing: -0.2px !important;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 14px;
+  }
+  .zone-title .count {
+    color: var(--gold) !important;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-shadow: none !important;
+    text-transform: uppercase;
+  }
 
   /* KPI / Stat cards */
-  .stat-card, .kpi-card { background: var(--paper) !important; border: 1px solid var(--line); position: relative; }
-  .stat-card::before, .kpi-card::before { content: ''; position: absolute; top: 8px; right: 10px; width: 6px; height: 6px; border-radius: 50%; background: var(--avail); box-shadow: 0 0 8px var(--avail); animation: fmsPulse 1.8s infinite; }
-  @keyframes fmsPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
-  .stat-card .label, .kpi-card .label { color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; font-size: 11px; font-weight: 600; }
-  .stat-card .value, .kpi-card .value { color: var(--gold); font-family: 'JetBrains Mono', monospace; text-shadow: 0 0 10px rgba(255,184,77,0.35); font-weight: 700; }
+  .stat-card, .kpi-card {
+    background: var(--paper) !important;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    position: relative;
+    padding-top: 16px;
+  }
+  .stat-card::before, .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 18px; right: 18px;
+    height: 2px;
+    background: var(--gold);
+    border-radius: 0 0 2px 2px;
+    animation: none;
+    box-shadow: none;
+    width: auto;
+  }
+  .stat-card .label, .kpi-card .label {
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'Inter', 'Noto Sans TC', sans-serif;
+  }
+  .stat-card .value, .kpi-card .value {
+    color: var(--ink);
+    font-family: 'Playfair Display', 'Noto Serif TC', serif;
+    text-shadow: none;
+    font-weight: 500;
+    letter-spacing: -1px;
+  }
 
   /* Queue panel */
-  .queue-panel { background: rgba(10, 20, 32, 0.9) !important; border-left: 1px solid var(--line); backdrop-filter: blur(14px); }
-  .queue-fab { background: linear-gradient(135deg, var(--gold), var(--gold-dark)) !important; color: var(--navy-900) !important; box-shadow: 0 0 24px rgba(255,184,77,0.45); }
-  .right-tab { color: var(--muted); }
-  .right-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
-  .queue-item { background: rgba(30, 50, 75, 0.4); border: 1px solid var(--line-dim); border-left: 3px solid var(--seated); border-radius: 8px; }
-  .queue-item.overdue { border-left-color: #ff6b6b; animation: fmsAlert 1.5s infinite; }
-  .queue-item.imminent { border-left-color: var(--dirty); }
-  @keyframes fmsAlert { 0%,100% { background: rgba(30,50,75,0.4); } 50% { background: rgba(255,80,80,0.15); } }
+  .queue-panel { background: var(--paper) !important; border-left: 1px solid var(--line); backdrop-filter: none; }
+  .queue-fab {
+    background: var(--ink) !important;
+    color: var(--gold) !important;
+    box-shadow: 0 4px 16px rgba(26,47,40,0.25);
+    border: 1px solid var(--gold);
+  }
+  .right-tab { color: var(--muted); font-family: 'Noto Sans TC', sans-serif; }
+  .right-tab.active { color: var(--ink); border-bottom-color: var(--gold); }
+  .queue-item {
+    background: var(--ivory);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--seated);
+    border-radius: 8px;
+  }
+  .queue-item.overdue { border-left-color: var(--coral); background: var(--coral-bg); animation: none; }
+  .queue-item.imminent { border-left-color: var(--dirty); background: var(--dirty-bg); }
 
-  /* Login modal (auth) */
-  #loginModal.modal-backdrop { background: radial-gradient(ellipse at top, #1a2b3e 0%, #0a1420 60%, #050b14 100%); backdrop-filter: none; }
-  #loginModal .modal { background: rgba(14, 25, 40, 0.75) !important; backdrop-filter: blur(20px); border: 1px solid var(--line-strong); }
+  /* Login modal — elegant editorial hero */
+  #loginModal.modal-backdrop {
+    background:
+      radial-gradient(ellipse at top, #ffffff 0%, var(--ivory) 60%, var(--ivory-2) 100%);
+    backdrop-filter: none;
+  }
+  #loginModal .modal {
+    background: var(--paper) !important;
+    backdrop-filter: none;
+    border: 1px solid var(--line);
+    box-shadow: 0 30px 90px rgba(26,47,40,0.15);
+  }
 
   /* Terminal choice modal */
-  #terminalChoiceModal .modal { background: var(--paper-solid) !important; }
-  #terminalChoiceModal .modal-body button { background: rgba(30, 50, 75, 0.4) !important; border: 2px solid var(--line) !important; color: var(--ink) !important; }
-  #terminalChoiceModal .modal-body button:hover { border-color: var(--gold) !important; background: rgba(255,184,77,0.08) !important; box-shadow: 0 0 24px rgba(255,184,77,0.25); }
-  #terminalChoiceModal .modal-body button > div:nth-child(2) { color: var(--gold) !important; text-shadow: 0 0 10px rgba(255,184,77,0.5); }
-  #terminalChoiceModal .modal-body button > div { color: var(--ink) !important; }
-  #terminalChoiceModal .modal-body button > div:nth-child(3), #terminalChoiceModal .modal-body button > div:nth-child(4) { color: var(--muted) !important; }
+  #terminalChoiceModal .modal { background: var(--paper) !important; }
+  #terminalChoiceModal .modal-body button {
+    background: var(--ivory) !important;
+    border: 2px solid var(--line) !important;
+    color: var(--ink) !important;
+    border-radius: 12px !important;
+  }
+  #terminalChoiceModal .modal-body button:hover {
+    border-color: var(--gold) !important;
+    background: var(--paper) !important;
+    box-shadow: 0 8px 24px rgba(201,166,107,0.2);
+  }
+  #terminalChoiceModal .modal-body button > div:nth-child(2) {
+    color: var(--ink) !important;
+    font-family: 'Playfair Display', serif !important;
+    text-shadow: none !important;
+  }
+  #terminalChoiceModal .modal-body button > div:nth-child(1) { filter: none; }
 
   /* Admin sub-tabs */
-  .admin-subtabs { background: rgba(20, 35, 55, 0.5); border: 1px solid var(--line-dim); }
-  .admin-subtab { color: var(--muted); }
-  .admin-subtab.active { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: var(--navy-900); box-shadow: 0 0 20px rgba(255,184,77,0.3); }
-  .admin-term-tabs { background: rgba(20, 35, 55, 0.5); border: 1px solid var(--line-dim); }
+  .admin-subtabs { background: var(--ivory) !important; border: 1px solid var(--line); border-radius: 12px; }
+  .admin-subtab { color: var(--muted); font-family: 'Noto Sans TC', sans-serif; }
+  .admin-subtab.active {
+    background: var(--ink) !important; color: var(--gold) !important;
+    box-shadow: 0 2px 8px rgba(26,47,40,0.2);
+  }
+  .admin-term-tabs { background: var(--ivory); border: 1px solid var(--line); }
   .admin-term-tabs button { color: var(--muted); }
-  .admin-term-tabs button.active { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: var(--navy-900); }
+  .admin-term-tabs button.active {
+    background: var(--ink) !important; color: var(--gold) !important;
+  }
 
   /* Tables config list */
-  .tc-zone-header { background: rgba(30, 50, 75, 0.6) !important; color: var(--gold) !important; border-bottom-color: var(--line) !important; text-shadow: 0 0 6px rgba(255,184,77,0.3); }
+  .tc-zone-header {
+    background: var(--ivory) !important;
+    color: var(--ink) !important;
+    font-family: 'Playfair Display', serif !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+    text-transform: none !important;
+    letter-spacing: -0.2px !important;
+    border-bottom-color: var(--line) !important;
+    text-shadow: none !important;
+  }
   .tc-row { border-bottom-color: var(--line-dim) !important; color: var(--ink); }
-  .tc-row:hover { background: rgba(30, 50, 75, 0.3); }
+  .tc-row:hover { background: var(--paper-shade); }
   .tc-row .tc-label { color: var(--ink) !important; }
   .tc-row .tc-shape { color: var(--muted) !important; }
-  .tc-row .tc-cap { color: var(--gold) !important; text-shadow: 0 0 6px rgba(255,184,77,0.3); }
-  .tc-row .tc-actions button { background: rgba(30, 50, 75, 0.5) !important; border-color: var(--line-dim) !important; color: var(--ink-2) !important; }
-  .tc-row .tc-actions button:hover { background: rgba(255,184,77,0.1) !important; color: var(--gold) !important; }
-  .tc-row .tc-actions button.danger { color: #ff6b6b !important; border-color: rgba(239,68,68,0.3) !important; }
+  .tc-row .tc-cap { color: var(--gold-dark) !important; text-shadow: none !important; font-weight: 700; }
+  .tc-row .tc-actions button { background: var(--paper) !important; border-color: var(--line) !important; color: var(--ink-2) !important; }
+  .tc-row .tc-actions button:hover { background: var(--ivory-2) !important; color: var(--ink) !important; border-color: var(--gold) !important; }
+  .tc-row .tc-actions button.danger { color: var(--coral) !important; border-color: var(--coral-light) !important; }
+  .tc-row .tc-actions button.danger:hover { background: var(--coral) !important; color: #fff !important; }
   .tc-row .tc-drag { color: var(--muted); }
-  .tc-row .tc-drag:hover { background: rgba(255,184,77,0.1); color: var(--gold); }
-  .tc-row.dragging { background: rgba(255,184,77,0.05); }
+  .tc-row .tc-drag:hover { background: var(--ivory-2); color: var(--ink); }
+  .tc-row.dragging { background: var(--dirty-bg); }
   .tc-row.drag-over-before { box-shadow: inset 0 3px 0 0 var(--gold); }
   .tc-row.drag-over-after { box-shadow: inset 0 -3px 0 0 var(--gold); }
 
   /* Zones config */
-  .zc-terminal-block { background: var(--paper) !important; border: 1px solid var(--line); }
-  .zc-terminal-block h3 { color: var(--gold) !important; text-shadow: 0 0 6px rgba(255,184,77,0.35); }
+  .zc-terminal-block { background: var(--paper) !important; border: 1px solid var(--line); box-shadow: var(--shadow); border-radius: 14px; }
+  .zc-terminal-block h3 {
+    color: var(--ink) !important;
+    font-family: 'Playfair Display', serif !important;
+    font-weight: 600 !important;
+    text-shadow: none !important;
+    font-size: 18px !important;
+  }
   .zc-row { border-bottom-color: var(--line-dim) !important; }
-  .zc-row .zc-key { color: var(--gold) !important; text-shadow: 0 0 6px rgba(255,184,77,0.3); }
+  .zc-row .zc-key { color: var(--gold) !important; text-shadow: none !important; font-family: 'JetBrains Mono', monospace; }
   .zc-row .zc-label { color: var(--ink) !important; }
   .zc-row .zc-stats { color: var(--muted) !important; }
-  .zc-row button { background: rgba(30, 50, 75, 0.4) !important; border-color: var(--line-dim) !important; color: var(--ink-2) !important; }
+  .zc-row button { background: var(--paper) !important; border-color: var(--line) !important; color: var(--ink-2) !important; }
+  .zc-row button:hover { border-color: var(--gold) !important; color: var(--ink) !important; }
 
   /* Select banner (帶位進行中) */
-  .select-banner { background: rgba(10, 20, 32, 0.92) !important; border: 1px solid var(--line-strong); backdrop-filter: blur(20px); box-shadow: 0 0 40px rgba(255,184,77,0.15), 0 20px 60px rgba(0,0,0,0.5); }
-  .sb-confirm { background: linear-gradient(135deg, var(--avail), #2d9c5f) !important; box-shadow: 0 0 24px rgba(74,222,128,0.4); }
+  .select-banner {
+    background: var(--ink) !important;
+    border: 1px solid var(--ink) !important;
+    backdrop-filter: none;
+    box-shadow: 0 20px 60px rgba(26,47,40,0.3);
+    color: var(--paper) !important;
+    border-radius: 14px;
+  }
+  .select-banner * { color: inherit; }
+  .select-banner .sb-title { color: var(--paper); }
+  .select-banner .sb-title b { color: var(--gold-light); font-weight: 600; }
+  .select-banner .sb-meta { color: rgba(255,255,255,0.65) !important; }
+  .select-banner .sb-progress { color: var(--gold-light) !important; }
+  .select-banner .sb-prompt { color: rgba(255,255,255,0.75) !important; }
+  .select-banner .sb-chip { background: var(--gold) !important; color: var(--ink) !important; }
+  .select-banner .sb-cancel { background: rgba(255,255,255,0.12) !important; color: #fff !important; }
+  .select-banner .sb-back { color: rgba(255,255,255,0.55) !important; }
+  .sb-confirm { background: var(--gold) !important; color: var(--ink) !important; box-shadow: 0 4px 12px rgba(201,166,107,0.4); font-weight: 600; }
 
-  /* Chat / messages */
-  .msg { background: rgba(30, 50, 75, 0.5); border: 1px solid var(--line-dim); color: var(--ink); }
-  .msg.self { background: linear-gradient(135deg, rgba(255,184,77,0.15), rgba(255,184,77,0.08)); border-color: var(--line); color: var(--ink); }
-  .chat-input { background: rgba(10, 20, 32, 0.6); border: 1px solid var(--line); }
+  /* Chat */
+  .msg { background: var(--ivory); border: 1px solid var(--line); color: var(--ink); border-radius: 10px; }
+  .msg.self { background: var(--ink); color: var(--paper); border: 1px solid var(--ink); }
+  .msg.self .msg-meta { color: rgba(255,255,255,0.6) !important; }
+  .chat-input { background: var(--paper); border: 1px solid var(--line); }
 
-  /* Charts / analytics — invert default svg colors softly */
-  .recharts-cartesian-axis-tick text, .chart-axis text { fill: var(--muted) !important; }
+  /* Charts */
+  .recharts-cartesian-axis-tick text, .chart-axis text { fill: var(--ink-3) !important; }
   .recharts-cartesian-grid-horizontal line, .recharts-cartesian-grid-vertical line { stroke: var(--line-dim) !important; }
-  .recharts-tooltip-wrapper .recharts-default-tooltip { background: var(--paper-solid) !important; border: 1px solid var(--line) !important; color: var(--ink) !important; }
+  .recharts-tooltip-wrapper .recharts-default-tooltip {
+    background: var(--paper) !important;
+    border: 1px solid var(--line) !important;
+    color: var(--ink) !important;
+    border-radius: 8px !important;
+    box-shadow: var(--shadow) !important;
+  }
   svg text { fill: var(--ink-2); }
 
   /* User list */
-  .user-list .user-item, .user-item { background: rgba(30, 50, 75, 0.4) !important; border-bottom-color: var(--line-dim) !important; color: var(--ink); }
-  .user-item:hover { background: rgba(255,184,77,0.05) !important; }
-  .user-item .role-badge { background: rgba(255,184,77,0.15) !important; color: var(--gold) !important; border-color: var(--line) !important; }
+  .user-list .user-item, .user-item { background: var(--paper) !important; border-bottom-color: var(--line-dim) !important; color: var(--ink); }
+  .user-item:hover { background: var(--paper-shade) !important; }
+  .user-item .role-badge { background: var(--ivory) !important; color: var(--gold-dark) !important; border-color: var(--line) !important; }
   .user-item .username { color: var(--ink) !important; }
   .user-item .display-name { color: var(--muted) !important; }
 
   /* Monitor (viewer) */
-  .mon-card { background: var(--paper) !important; border: 1px solid var(--line) !important; border-top: 3px solid var(--gold) !important; }
+  .mon-card {
+    background: var(--paper) !important;
+    border: 1px solid var(--line) !important;
+    border-top: 3px solid var(--gold) !important;
+    box-shadow: var(--shadow);
+    border-radius: 14px;
+  }
   .mon-card.terminal-t2 { border-top-color: var(--seated) !important; }
-  .mon-card h3 { color: var(--ink) !important; }
-  .mon-card h3 .mon-badge.ok { background: rgba(74,222,128,0.15) !important; color: var(--avail) !important; }
-  .mon-card h3 .mon-badge.warn { background: rgba(247,167,106,0.15) !important; color: var(--dirty) !important; }
-  .mon-card h3 .mon-badge.danger { background: rgba(239,68,68,0.15) !important; color: #ff6b6b !important; }
-  .mon-big { color: var(--gold) !important; text-shadow: 0 0 10px rgba(255,184,77,0.35); }
+  .mon-card h3 { color: var(--ink) !important; font-family: 'Playfair Display', serif !important; font-weight: 600; }
+  .mon-card h3 .mon-badge.ok { background: var(--avail-bg) !important; color: #3E7A5D !important; }
+  .mon-card h3 .mon-badge.warn { background: var(--dirty-bg) !important; color: var(--gold-dark) !important; }
+  .mon-card h3 .mon-badge.danger { background: var(--coral-bg) !important; color: var(--coral) !important; }
+  .mon-big { color: var(--ink) !important; font-family: 'Playfair Display', serif !important; text-shadow: none; font-weight: 500; }
   .mon-big .unit { color: var(--muted) !important; text-shadow: none; }
-  .mon-util-bar { background: rgba(0,0,0,0.4) !important; }
-  .mon-kpi { background: rgba(30, 50, 75, 0.5) !important; }
+  .mon-util-bar { background: var(--ivory-2) !important; }
+  .mon-kpi { background: var(--ivory) !important; border-radius: 8px; }
   .mon-kpi .k { color: var(--muted) !important; }
-  .mon-kpi .v { color: var(--gold) !important; }
-  .mon-kpi.danger .v { color: #ff6b6b !important; }
-  .mon-kpi.warn .v { color: var(--dirty) !important; }
-  .mon-mini-seatmap { border-top-color: var(--line-dim) !important; }
+  .mon-kpi .v { color: var(--ink) !important; font-family: 'Playfair Display', serif !important; }
+  .mon-kpi.danger .v { color: var(--coral) !important; }
+  .mon-kpi.warn .v { color: var(--gold-dark) !important; }
+  .mon-mini-seatmap { border-top-color: var(--line) !important; }
 
-  /* Forgot password / security question */
-  .fp-tabs { background: rgba(20, 35, 55, 0.5); border: 1px solid var(--line-dim); }
+  /* Forgot password */
+  .fp-tabs { background: var(--ivory); border: 1px solid var(--line); }
   .fp-tab { color: var(--muted); }
-  .fp-tab.active { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: var(--navy-900); }
+  .fp-tab.active { background: var(--ink); color: var(--gold); }
 
   /* Scrollbar */
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(255,184,77,0.2); border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(255,184,77,0.4); }
+  ::-webkit-scrollbar-thumb { background: rgba(26,47,40,0.15); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(26,47,40,0.3); }
 
-  /* ═════════ Inline-style overrides (hardcoded light colors) ═════════ */
+  /* ═════════ Inline-style overrides (hardcoded colors) ═════════ */
   /* Red error message boxes */
   [style*="background:#FFECEC"], [style*="background: #FFECEC"] {
-    background: rgba(239, 68, 68, 0.15) !important;
-    color: #ff8b8b !important;
-    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+    background: var(--coral-bg) !important;
+    color: var(--coral) !important;
+    border: 1px solid var(--coral-light) !important;
   }
-  /* Small danger buttons with pink bg */
+  /* Small danger buttons */
   [style*="background:#FFF3F0"], [style*="background: #FFF3F0"] {
-    background: rgba(239, 68, 68, 0.15) !important;
-    color: #ff8b8b !important;
-    border-color: rgba(239, 68, 68, 0.35) !important;
+    background: var(--coral-bg) !important;
+    color: var(--coral) !important;
+    border-color: var(--coral-light) !important;
   }
   /* Warm-cream warning boxes */
   [style*="background:#F5E9D8"], [style*="background: #F5E9D8"] {
-    background: rgba(247, 167, 106, 0.15) !important;
-    color: #ffcd82 !important;
-    border-color: rgba(247, 167, 106, 0.3) !important;
+    background: var(--dirty-bg) !important;
+    color: var(--gold-dark) !important;
+    border-color: #e8d9b0 !important;
   }
-  /* Warm brown text on warnings → readable gold on dark */
-  [style*="color:#7A5514"], [style*="color: #7A5514"] { color: #ffcd82 !important; }
-  [style*="color:#C53E1D"], [style*="color: #C53E1D"] { color: #ff8b8b !important; }
-  [style*="color:#3E7A5D"], [style*="color: #3E7A5D"] { color: #4ade80 !important; }
+  /* Warm brown text on warnings — keep dark for readability */
+  [style*="color:#7A5514"], [style*="color: #7A5514"] { color: var(--gold-dark) !important; }
+  [style*="color:#C53E1D"], [style*="color: #C53E1D"] { color: var(--coral) !important; }
+  [style*="color:#3E7A5D"], [style*="color: #3E7A5D"] { color: #3E7A5D !important; }
   [style*="color:#7A8A9A"], [style*="color: #7A8A9A"] { color: var(--muted) !important; }
-  /* Chip/pill borders using #F5CFC0 */
-  [style*="border:1px solid #F5CFC0"], [style*="border: 1px solid #F5CFC0"] { border-color: rgba(239, 68, 68, 0.35) !important; }
+  [style*="border:1px solid #F5CFC0"], [style*="border: 1px solid #F5CFC0"] { border-color: var(--coral-light) !important; }
 
 </style>
 </head>
@@ -1002,7 +1246,7 @@
           <div class="stats-header">
             <div>
               <h2 style="font-size: 20px; font-weight: 600;">統計分析</h2>
-              <div id="statsSubtitle" style="font-size: 13px; color: var(--muted); margin-top: 4px;">今日進場歷史紀錄</div>
+              <div id="statsSubtitle" style="font-size: 13px; color: var(--muted); margin-top: 4px;">T1 + T2 同框對比</div>
             </div>
             <div class="stats-controls">
               <div class="period-switch">
@@ -1015,31 +1259,68 @@
             </div>
           </div>
 
+          <div class="stats-legend" style="margin-bottom: 14px;">
+            <span><span class="lg-dot" style="background: linear-gradient(180deg,#4a86f0,#6ba0e6);"></span>T1 · 桃園第一航廈</span>
+            <span><span class="lg-dot" style="background: linear-gradient(180deg,#c9a66b,#d4b88a);"></span>T2 · 桃園第二航廈</span>
+          </div>
+
           <div class="stats-kpis">
-            <div class="stat-card"><div class="label">總進場人次</div><div class="value"><span id="kpiTotal">—</span> <span class="unit">人</span></div><div class="delta" id="kpiTotalSub">—</div></div>
-            <div class="stat-card"><div class="label">平均停留</div><div class="value"><span id="kpiAvgDuration">—</span> <span class="unit">分</span></div><div class="delta" id="kpiAvgSub">—</div></div>
-            <div class="stat-card"><div class="label">尖峰時段</div><div class="value" style="font-size: 24px;"><span id="kpiPeakHour">—</span></div><div class="delta" id="kpiPeakSub">—</div></div>
-            <div class="stat-card accent"><div class="label">VIP 佔比</div><div class="value"><span id="kpiVip">—</span> <span class="unit" style="color:rgba(255,255,255,0.4)">%</span></div><div class="delta" id="kpiVipSub" style="color:var(--gold-light);">—</div></div>
+            <div class="stat-card">
+              <div class="label">總進場人次</div>
+              <div class="stat-total"><span id="kpiTotal_all">—</span><span class="stat-unit">人</span></div>
+              <div class="stat-sub" id="kpiTotalSub_all">—</div>
+              <div class="dual-kpi">
+                <div><div class="dk-term">T1</div><div class="dk-val" id="kpiTotal_T1">—</div><div class="dk-sub" id="kpiTotalSub_T1">—</div></div>
+                <div><div class="dk-term">T2</div><div class="dk-val" id="kpiTotal_T2">—</div><div class="dk-sub" id="kpiTotalSub_T2">—</div></div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="label">平均停留</div>
+              <div class="stat-total"><span id="kpiAvg_all">—</span><span class="stat-unit">分</span></div>
+              <div class="stat-sub" id="kpiAvgSub_all">—</div>
+              <div class="dual-kpi">
+                <div><div class="dk-term">T1</div><div class="dk-val" id="kpiAvg_T1">—</div><div class="dk-sub" id="kpiAvgSub_T1">—</div></div>
+                <div><div class="dk-term">T2</div><div class="dk-val" id="kpiAvg_T2">—</div><div class="dk-sub" id="kpiAvgSub_T2">—</div></div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="label">尖峰時段</div>
+              <div class="stat-total" style="font-size:28px;"><span id="kpiPeak_all">—</span></div>
+              <div class="stat-sub" id="kpiPeakSub_all">—</div>
+              <div class="dual-kpi">
+                <div><div class="dk-term">T1</div><div class="dk-val" style="font-size:18px;" id="kpiPeak_T1">—</div><div class="dk-sub" id="kpiPeakSub_T1">—</div></div>
+                <div><div class="dk-term">T2</div><div class="dk-val" style="font-size:18px;" id="kpiPeak_T2">—</div><div class="dk-sub" id="kpiPeakSub_T2">—</div></div>
+              </div>
+            </div>
+            <div class="stat-card accent">
+              <div class="label">VIP 佔比</div>
+              <div class="stat-total"><span id="kpiVip_all">—</span><span class="stat-unit">%</span></div>
+              <div class="stat-sub" id="kpiVipSub_all">—</div>
+              <div class="dual-kpi">
+                <div><div class="dk-term">T1</div><div class="dk-val" id="kpiVip_T1">—</div><div class="dk-sub" id="kpiVipSub_T1">—</div></div>
+                <div><div class="dk-term">T2</div><div class="dk-val" id="kpiVip_T2">—</div><div class="dk-sub" id="kpiVipSub_T2">—</div></div>
+              </div>
+            </div>
           </div>
 
           <div class="chart-card">
-            <div class="chart-title"><span>分時段進場人次</span><span id="hourChartHint" style="font-size:12px; color:var(--muted); font-weight:400;"></span></div>
+            <div class="chart-title"><span>分時段進場人次 · T1 + T2 堆疊</span><span id="hourChartHint" style="font-size:12px; color:var(--muted); font-weight:400;"></span></div>
             <div class="hour-bars" id="hourBars"></div>
           </div>
 
           <div class="stats-2col">
             <div class="chart-card">
-              <div class="chart-title"><span>目的地 TOP 10</span></div>
+              <div class="chart-title"><span>目的地 TOP 10 · 兩航廈合計</span></div>
               <div id="destBreakdown" class="dest-list"></div>
             </div>
             <div class="chart-card">
-              <div class="chart-title"><span>艙等分布</span></div>
+              <div class="chart-title"><span>艙等分布 · 兩航廈合計</span></div>
               <div id="classBreakdown" class="class-list"></div>
             </div>
           </div>
 
           <div class="chart-card">
-            <div class="chart-title"><span>近期進場紀錄</span><span style="font-size:12px; color:var(--muted); font-weight:400;">最新 20 筆</span></div>
+            <div class="chart-title"><span>近期進場紀錄</span><span style="font-size:12px; color:var(--muted); font-weight:400;">T1+T2 混合 · 最新 20 筆</span></div>
             <div id="recentEntries" class="recent-list"></div>
           </div>
         </section>
@@ -3072,7 +3353,7 @@ function renderSeats() {
       const tid = tableIdOf(s);
       const tint = tableTintFor(tid);
       const el = document.createElement('div');
-      const isPreSelected = isSelecting && pendingSelectedTableIds.includes(tid);
+      const isPreSelected = isSelecting && pendingSelectedTableIds.includes(code);
       el.className = `seat ${s.status}` + (selectedSeat===code?' selected':'') + (isPreSelected ? ' pre-selected' : '');
       el.dataset.table = tid || '';
       if (tint) el.style.borderTopColor = tint;
@@ -3289,21 +3570,19 @@ let pendingSelectedTableIds = [];  // ordered list of selected table_ids (open-e
 function onSeatClick(code) {
   const s = seats[code];
   if (!s) return;  // race condition guard
-  // In pending-intake mode, click means "toggle this seat's table"
+  // In pending-intake mode, click means "toggle THIS seat" (each seat is independent)
   if (pendingIntake) {
-    const t = tableOf(code);
-    if (!t) return;
-    // Only allow selecting a table if all its chairs are avail (nobody there)
-    const tableFree = t.codes.every(c => seats[c]?.status === 'avail');
-    if (!tableFree) return;
-    toggleTableSelection(t.table_id);
+    // Only allow selecting a seat that is currently avail
+    if (s.status !== 'avail') return;
+    toggleSeatSelection(code);
     return;
   }
   // Not in intake mode
   if (s.status === 'blocked') {
-    const t = tableOf(code);
-    if (t) {
-      const occupied = t.codes.find(c => ['seated','dirty','cleaning'].includes(seats[c]?.status));
+    // Legacy: if this blocked seat still shares group_id with a seated one, redirect
+    const table = tableOf(code);
+    if (table) {
+      const occupied = table.codes.find(c => ['seated','dirty','cleaning'].includes(seats[c]?.status));
       if (occupied) { openSeatModal(occupied); return; }
     }
   }
@@ -3328,15 +3607,18 @@ function cancelSelection() {
   renderSeats();
 }
 
-// -------- Toggle table selection (open-ended, no fixed count) ----
-function toggleTableSelection(tableId) {
+// -------- Toggle SEAT selection (each seat is independent) ----
+// pendingSelectedTableIds actually stores seat codes now (variable kept for compat)
+function toggleSeatSelection(code) {
   if (!pendingIntake) return;
-  const idx = pendingSelectedTableIds.indexOf(tableId);
+  const idx = pendingSelectedTableIds.indexOf(code);
   if (idx >= 0) pendingSelectedTableIds.splice(idx, 1);
-  else pendingSelectedTableIds.push(tableId);
+  else pendingSelectedTableIds.push(code);
   updateSelectBanner();
   renderSeats();
 }
+// Keep old name as alias in case anything else calls it
+function toggleTableSelection(code) { toggleSeatSelection(code); }
 
 // -------- Banner UI --------
 function updateSelectBanner() {
@@ -3346,22 +3628,18 @@ function updateSelectBanner() {
   const paxLabel = `<b>${escapeHtml(p.name)}</b>${p.party_size > 1 ? ' 一行 ' + p.party_size + ' 位' : ''}${p.vip?' ★':''}`;
   const flightLabel = `${escapeHtml(p.flight_no || '手動客')} ${p.destination_name ? '→ ' + escapeHtml(p.destination_name) : ''} ${p.std ? '· STD ' + escapeHtml(p.std) : ''}`;
 
-  const chosen = pendingSelectedTableIds;
-  const totalSeats = chosen.reduce((sum, tid) => sum + (tables[tid]?.codes.length || 0), 0);
+  const chosen = pendingSelectedTableIds;  // seat codes
   const hasSelection = chosen.length > 0;
 
   const chipHtml = hasSelection
-    ? chosen.map(tid => {
-        const t = tables[tid];
-        const label = t?.label || tid;
-        const seatCodes = t ? t.codes.join('、') : '';
-        return `<span class="sb-chip">${escapeHtml(label || seatCodes)} · ${t?.codes.length || 0} 席 <span class="sb-chip-x" onclick="toggleTableSelection('${escapeHtml(tid)}')">✕</span></span>`;
+    ? chosen.map(code => {
+        return `<span class="sb-chip">${escapeHtml(code)} <span class="sb-chip-x" onclick="toggleSeatSelection('${escapeHtml(code)}')">✕</span></span>`;
       }).join('')
-    : '<span style="font-size:12px; color:rgba(255,255,255,0.5);">尚未選桌…</span>';
+    : '<span style="font-size:12px; color:rgba(255,255,255,0.5);">尚未選位…</span>';
 
   const actionBtn = hasSelection
-    ? `<button class="sb-confirm" onclick="confirmMultiTableAssign()">✓ 確認帶位 (${chosen.length} 桌 · 共 ${totalSeats} 席)</button>`
-    : `<div class="sb-prompt">👆 點座位圖上要用的桌 · 可一張或多張（同組共坐）</div>`;
+    ? `<button class="sb-confirm" onclick="confirmMultiTableAssign()">✓ 確認帶位 (共 ${chosen.length} 席)</button>`
+    : `<div class="sb-prompt">👆 點座位圖上要用的席位 · 一個編號 = 一個席位（可選多個同組共坐）</div>`;
 
   box.innerHTML = `
     <div class="sb-row">
@@ -3369,7 +3647,7 @@ function updateSelectBanner() {
       <button class="sb-cancel" onclick="cancelSelection()">取消</button>
     </div>
     <div class="sb-row">
-      <div class="sb-progress">已選 ${chosen.length} 桌${totalSeats > 0 ? ' · ' + totalSeats + ' 席' : ''}</div>
+      <div class="sb-progress">已選 ${chosen.length} 席</div>
     </div>
     <div class="sb-chips">${chipHtml}</div>
     <div class="sb-row">${actionBtn}</div>`;
@@ -3387,56 +3665,41 @@ let _seatsHasGroupId = true;
 async function confirmMultiTableAssign() {
   const p = pendingIntake;
   if (!p || !pendingSelectedTableIds.length) return;
-  const chosenTables = pendingSelectedTableIds
-    .map(tid => tables[tid])
-    .filter(Boolean);
-  if (chosenTables.length === 0) { cancelSelection(); return; }
+  // pendingSelectedTableIds now stores seat codes directly
+  const chosenSeats = pendingSelectedTableIds.slice();
+  if (chosenSeats.length === 0) { cancelSelection(); return; }
 
   const partyTotal = p.party_size || 1;
   const nowIso = new Date().toISOString();
-  // Only assign a group_id when >1 tables (single-table keeps old behavior clean)
-  const groupId = chosenTables.length > 1
+  // Assign group_id when >1 seats (multi-seat party)
+  const groupId = chosenSeats.length > 1
     ? 'g-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6)
     : null;
 
-  for (let i = 0; i < chosenTables.length; i++) {
-    const t = chosenTables[i];
-    const primaryCode = t.codes[0];
-    const siblings = t.codes.slice(1);
+  for (let i = 0; i < chosenSeats.length; i++) {
+    const code = chosenSeats[i];
     const isFirst = i === 0;
-    const suffix = chosenTables.length > 1 && !isFirst ? ' · 副桌' : '';
+    const suffix = chosenSeats.length > 1 && !isFirst ? ' · 副位' : '';
 
-    const primaryPatch = {
+    const patch = {
       status: 'seated',
       passenger_name: p.name + suffix,
       flight_no: p.flight_no,
       destination: p.destination,
       destination_name: p.destination_name,
       std: p.std,
-      // Full party_size on all tables so seat card shows "n 位" consistently.
-      // Stats won't double-count because only the primary writes an entries row.
       party_size: partyTotal,
       class: p.class,
       vip: !!p.vip,
       entry_time: nowIso,
     };
-    if (groupId && _seatsHasGroupId) primaryPatch.group_id = groupId;
+    if (groupId && _seatsHasGroupId) patch.group_id = groupId;
 
-    await updateSeatWithGroupFallback(primaryCode, primaryPatch);
+    await updateSeatWithGroupFallback(code, patch);
 
-    if (siblings.length > 0) {
-      const siblingPatch = {
-        status: 'blocked',
-        passenger_name: null, flight_no: null, destination: null, destination_name: null,
-        std: null, party_size: null, class: null, vip: null, entry_time: null,
-      };
-      if (groupId && _seatsHasGroupId) siblingPatch.group_id = groupId;
-      await updateSeatsWithGroupFallback(siblings, siblingPatch);
-    }
-
-    // Only primary logs an entry (avoid double-counting the party)
+    // Only primary seat logs an entry (avoid double-counting the party)
     if (isFirst) {
-      await logEntry(primaryCode, {
+      await logEntry(code, {
         name: p.name,
         flight_no: p.flight_no, destination: p.destination, destination_name: p.destination_name,
         std: p.std, class: p.class, party_size: partyTotal, vip: p.vip,
@@ -3445,10 +3708,9 @@ async function confirmMultiTableAssign() {
   }
 
   if (p.vip) {
-    const tableList = chosenTables.map(t => t.label || t.codes[0]).join('、');
-    const totalSeatsTaken = chosenTables.reduce((s, t) => s + t.codes.length, 0);
+    const seatList = chosenSeats.join('、');
     const msg = `*${p.name}*${partyTotal > 1 ? ' 一行 ' + partyTotal + ' 位' : ''} 已入座 *${currentTerminal}*\n` +
-      `🪑 桌位：${tableList}（共 ${totalSeatsTaken} 席${chosenTables.length > 1 ? '，' + chosenTables.length + ' 桌' : ''}）\n` +
+      `🪑 席位：${seatList}（共 ${chosenSeats.length} 席${chosenSeats.length > 1 ? '，同組' : ''}）\n` +
       `✈️ *${p.flight_no || '—'}* → ${p.destination_name || p.destination || '—'}\n` +
       `🕒 STD ${p.std || '—'} · 艙等 ${p.class || '—'}`;
     notifySlack('vip_checkin', { message: msg, terminal: currentTerminal, sender: currentUser?.display_name });
@@ -3909,24 +4171,30 @@ function periodRange(period) {
   return { start, end };
 }
 
+let statsDataT1 = [], statsDataT2 = [];
+
 async function loadStats() {
   if (!isConfigured) {
     document.getElementById('statsSubtitle').textContent = '本機模式 · 無歷史資料';
-    document.querySelectorAll('#view-stats [id^="kpi"]').forEach(el => el.textContent = '—');
-    renderHourChart([]); renderDestBreakdown([]); renderClassBreakdown([]); renderRecent([]);
+    statsData = []; statsDataT1 = []; statsDataT2 = [];
+    renderStatsAll();
     return;
   }
   const { start, end } = periodRange(statsPeriod);
-  document.getElementById('statsSubtitle').textContent = `${statsPeriod === 'today' ? '今日' : statsPeriod === 'week' ? '近 7 日' : statsPeriod === 'month' ? '本月' : '本年'}進場資料 · ${currentTerminal}`;
+  const periodLabel = statsPeriod === 'today' ? '今日' : statsPeriod === 'week' ? '近 7 日' : statsPeriod === 'month' ? '本月' : '本年';
+  document.getElementById('statsSubtitle').textContent = `${periodLabel} · T1 + T2 同框對比`;
   try {
-    const { data, error } = await sb.from('entries').select('*')
-      .eq('terminal', currentTerminal)
-      .gte('entry_time', start.toISOString())
-      .lte('entry_time', end.toISOString())
-      .order('entry_time', { ascending: false })
-      .limit(5000);
-    if (error) throw error;
-    statsData = data || [];
+    // Fetch both terminals in parallel
+    const [r1, r2] = await Promise.all([
+      sb.from('entries').select('*').eq('terminal', 'T1').gte('entry_time', start.toISOString()).lte('entry_time', end.toISOString()).order('entry_time', { ascending: false }).limit(5000),
+      sb.from('entries').select('*').eq('terminal', 'T2').gte('entry_time', start.toISOString()).lte('entry_time', end.toISOString()).order('entry_time', { ascending: false }).limit(5000),
+    ]);
+    if (r1.error) throw r1.error;
+    if (r2.error) throw r2.error;
+    statsDataT1 = r1.data || [];
+    statsDataT2 = r2.data || [];
+    // Combined for CSV export & recent list
+    statsData = [...statsDataT1, ...statsDataT2].sort((a,b) => new Date(b.entry_time) - new Date(a.entry_time));
     renderStatsAll();
   } catch (e) {
     console.error(e);
@@ -3936,106 +4204,175 @@ async function loadStats() {
 
 function renderStatsAll() {
   renderKPIs();
-  renderHourChart(statsData);
-  renderDestBreakdown(statsData);
-  renderClassBreakdown(statsData);
-  renderRecent(statsData);
+  renderHourChart();
+  renderDestBreakdown();
+  renderClassBreakdown();
+  renderRecent();
 }
 
-function renderKPIs() {
-  const total = statsData.reduce((sum, e) => sum + (e.party_size || 1), 0);
-  const closed = statsData.filter(e => e.duration_minutes != null);
+// Compute per-terminal stats
+function computeTerminalStats(data) {
+  const total = data.reduce((sum, e) => sum + (e.party_size || 1), 0);
+  const groups = data.length;
+  const closed = data.filter(e => e.duration_minutes != null);
   const avgDur = closed.length ? Math.round(closed.reduce((s, e) => s + e.duration_minutes, 0) / closed.length) : 0;
-  const vipCount = statsData.filter(e => e.vip).length;
-  const vipPct = statsData.length ? Math.round((vipCount / statsData.length) * 100) : 0;
-
-  // Hourly histogram to find peak
+  const vipCount = data.filter(e => e.vip).length;
+  const vipPct = data.length ? Math.round((vipCount / data.length) * 100) : 0;
   const hourly = new Array(24).fill(0);
-  statsData.forEach(e => {
+  data.forEach(e => {
     const h = new Date(e.entry_time).getHours();
     hourly[h] += (e.party_size || 1);
   });
   const peakHour = hourly.indexOf(Math.max(...hourly));
   const peakLabel = hourly[peakHour] > 0 ? `${String(peakHour).padStart(2,'0')}:00` : '—';
   const peakCount = hourly[peakHour];
-
-  document.getElementById('kpiTotal').textContent = total;
-  document.getElementById('kpiTotalSub').textContent = statsData.length + ' 組進場';
-  document.getElementById('kpiAvgDuration').textContent = avgDur;
-  document.getElementById('kpiAvgSub').textContent = closed.length + ' 筆已結束';
-  document.getElementById('kpiPeakHour').textContent = peakLabel;
-  document.getElementById('kpiPeakSub').textContent = peakCount > 0 ? peakCount + ' 人進場' : '—';
-  document.getElementById('kpiVip').textContent = vipPct;
-  document.getElementById('kpiVipSub').textContent = vipCount + ' 位 VIP';
+  return { total, groups, avgDur, closedCount: closed.length, vipCount, vipPct, peakLabel, peakCount, hourly };
 }
 
-function renderHourChart(data) {
+function renderKPIs() {
+  const t1 = computeTerminalStats(statsDataT1);
+  const t2 = computeTerminalStats(statsDataT2);
+  const all = computeTerminalStats([...statsDataT1, ...statsDataT2]);
+
+  const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+
+  // Grand total (合計) — hero row
+  setText('kpiTotal_all', all.total || '—');
+  setText('kpiTotalSub_all', all.groups + ' 組進場');
+  setText('kpiAvg_all', all.closedCount ? all.avgDur : '—');
+  setText('kpiAvgSub_all', all.closedCount + ' 筆已結束');
+  setText('kpiPeak_all', all.peakLabel);
+  setText('kpiPeakSub_all', all.peakCount > 0 ? all.peakCount + ' 人進場' : '—');
+  setText('kpiVip_all', all.vipPct);
+  setText('kpiVipSub_all', all.vipCount + ' 位 VIP');
+
+  // T1/T2 breakdown
+  setText('kpiTotal_T1', t1.total || '—');
+  setText('kpiTotal_T2', t2.total || '—');
+  setText('kpiTotalSub_T1', t1.groups + ' 組');
+  setText('kpiTotalSub_T2', t2.groups + ' 組');
+
+  setText('kpiAvg_T1', t1.closedCount ? t1.avgDur + ' 分' : '—');
+  setText('kpiAvg_T2', t2.closedCount ? t2.avgDur + ' 分' : '—');
+  setText('kpiAvgSub_T1', t1.closedCount + ' 筆');
+  setText('kpiAvgSub_T2', t2.closedCount + ' 筆');
+
+  setText('kpiPeak_T1', t1.peakLabel);
+  setText('kpiPeak_T2', t2.peakLabel);
+  setText('kpiPeakSub_T1', t1.peakCount > 0 ? t1.peakCount + ' 人' : '—');
+  setText('kpiPeakSub_T2', t2.peakCount > 0 ? t2.peakCount + ' 人' : '—');
+
+  setText('kpiVip_T1', t1.vipPct + '%');
+  setText('kpiVip_T2', t2.vipPct + '%');
+  setText('kpiVipSub_T1', t1.vipCount + ' 位');
+  setText('kpiVipSub_T2', t2.vipCount + ' 位');
+}
+
+function renderHourChart() {
   const container = document.getElementById('hourBars');
-  const hourly = new Array(24).fill(0); // 00:00 - 23:00 (full day, includes red-eye departures)
-  data.forEach(e => {
-    const h = new Date(e.entry_time).getHours();
-    if (h >= 0 && h <= 23) hourly[h] += (e.party_size || 1);
-  });
-  const max = Math.max(...hourly, 1);
+  const hourlyT1 = new Array(24).fill(0);
+  const hourlyT2 = new Array(24).fill(0);
+  statsDataT1.forEach(e => { const h = new Date(e.entry_time).getHours(); if (h>=0 && h<=23) hourlyT1[h] += (e.party_size || 1); });
+  statsDataT2.forEach(e => { const h = new Date(e.entry_time).getHours(); if (h>=0 && h<=23) hourlyT2[h] += (e.party_size || 1); });
+  const totals = hourlyT1.map((v, i) => v + hourlyT2[i]);
+  const max = Math.max(...totals, 1);
   container.innerHTML = '';
-  hourly.forEach((v, i) => {
+  for (let i = 0; i < 24; i++) {
+    const t1 = hourlyT1[i], t2 = hourlyT2[i], sum = t1 + t2;
     const bar = document.createElement('div');
-    bar.className = 'hour-bar' + (v === 0 ? ' empty' : '');
-    bar.style.height = (v / max * 100) + '%';
-    bar.title = `${i}:00 — ${v} 人`;
-    bar.innerHTML = `${v > 0 ? `<div class="bar-value">${v}</div>` : ''}<div class="bar-label">${i}</div>`;
+    bar.className = 'hour-bar' + (sum === 0 ? ' empty' : '');
+    bar.style.height = (sum / max * 100) + '%';
+    bar.title = `${i}:00 — T1: ${t1} · T2: ${t2} (共 ${sum})`;
+    const t1H = sum ? (t1 / sum * 100) : 0;
+    const t2H = sum ? (t2 / sum * 100) : 0;
+    const parts = [];
+    if (t1 > 0) parts.push(`<div class="bar-t1" style="height:${t1H}%"></div>`);
+    if (t2 > 0) parts.push(`<div class="bar-t2" style="height:${t2H}%"></div>`);
+    bar.innerHTML = `
+      ${sum > 0 ? `<div class="bar-value">${sum}</div>` : ''}
+      ${parts.join('')}
+      <div class="bar-label">${i}</div>`;
     container.appendChild(bar);
-  });
-  document.getElementById('hourChartHint').textContent = data.length > 0 ? `最高峰 ${max} 人` : '尚無資料';
+  }
+  const t1Total = statsDataT1.reduce((s, e) => s + (e.party_size || 1), 0);
+  const t2Total = statsDataT2.reduce((s, e) => s + (e.party_size || 1), 0);
+  const grand = t1Total + t2Total;
+  document.getElementById('hourChartHint').textContent = grand > 0
+    ? `合計 ${grand} 人 · T1 ${t1Total} · T2 ${t2Total} · 最高峰 ${max} 人`
+    : '尚無資料';
 }
 
-function renderDestBreakdown(data) {
-  const counts = {};
-  data.forEach(e => {
-    const key = e.destination || 'UNK';
-    if (!counts[key]) counts[key] = { count: 0, name: e.destination_name || key };
-    counts[key].count += (e.party_size || 1);
-  });
-  const rows = Object.entries(counts).sort((a, b) => b[1].count - a[1].count).slice(0, 10);
-  const max = rows[0]?.[1].count || 1;
+// Dest breakdown — grand total ranking with T1/T2 sub-labels
+function renderDestBreakdown() {
   const container = document.getElementById('destBreakdown');
+  if (!container) return;
+  const counts = {};
+  const addRow = (data, key_kind) => data.forEach(e => {
+    const key = e.destination || 'UNK';
+    if (!counts[key]) counts[key] = { total: 0, t1: 0, t2: 0, name: e.destination_name || key };
+    const n = (e.party_size || 1);
+    counts[key].total += n;
+    counts[key][key_kind] += n;
+  });
+  addRow(statsDataT1, 't1');
+  addRow(statsDataT2, 't2');
+  const rows = Object.entries(counts).sort((a, b) => b[1].total - a[1].total).slice(0, 10);
+  const max = rows[0]?.[1].total || 1;
   if (rows.length === 0) { container.innerHTML = '<div class="empty">尚無資料</div>'; return; }
   container.innerHTML = rows.map(([code, info]) => `
     <div class="dest-row">
       <div class="dest-code">${escapeHtml(code)}<div style="font-family:'Noto Sans TC'; font-size:10px; color:var(--muted); font-weight:400; margin-top:1px;">${escapeHtml(info.name)}</div></div>
-      <div class="dest-bar"><div class="dest-bar-fill" style="width:${(info.count/max*100)}%"></div></div>
-      <div class="dest-count">${info.count}</div>
+      <div class="dest-bar">
+        <div class="dest-bar-fill" style="width:${(info.total/max*100)}%"></div>
+      </div>
+      <div class="dest-count">${info.total}
+        <div class="dest-split"><span class="split-t1">T1·${info.t1}</span><span>/</span><span class="split-t2">T2·${info.t2}</span></div>
+      </div>
     </div>`).join('');
 }
 
-function renderClassBreakdown(data) {
-  const counts = { FST: 0, BUS: 0, ECN: 0 };
-  data.forEach(e => { counts[e.class || 'ECN'] = (counts[e.class || 'ECN'] || 0) + (e.party_size || 1); });
-  const labels = { FST: '頭等艙', BUS: '商務艙', ECN: '經濟艙' };
-  const total = Object.values(counts).reduce((s, v) => s + v, 0);
+// Class breakdown — grand total with T1/T2 sub-labels
+function renderClassBreakdown() {
   const container = document.getElementById('classBreakdown');
+  if (!container) return;
+  const counts = { FST: {t1:0,t2:0,total:0}, BUS: {t1:0,t2:0,total:0}, ECN: {t1:0,t2:0,total:0} };
+  const add = (data, kind) => data.forEach(e => {
+    const cls = e.class || 'ECN';
+    if (!counts[cls]) counts[cls] = {t1:0,t2:0,total:0};
+    const n = (e.party_size || 1);
+    counts[cls][kind] += n;
+    counts[cls].total += n;
+  });
+  add(statsDataT1, 't1');
+  add(statsDataT2, 't2');
+  const labels = { FST: '頭等艙', BUS: '商務艙', ECN: '經濟艙' };
+  const total = Object.values(counts).reduce((s, v) => s + v.total, 0);
   if (total === 0) { container.innerHTML = '<div class="empty">尚無資料</div>'; return; }
   container.innerHTML = ['FST', 'BUS', 'ECN'].map(cls => {
-    const pct = total ? (counts[cls] / total * 100).toFixed(0) : 0;
+    const c = counts[cls];
+    const pct = total ? (c.total / total * 100).toFixed(0) : 0;
     return `<div class="class-row">
       <div class="class-name">${labels[cls]}</div>
       <div class="class-bar"><div class="class-bar-fill" style="width:${pct}%"></div></div>
-      <div class="class-count">${counts[cls]}<div style="font-size:10px; color:var(--muted); font-weight:400;">${pct}%</div></div>
+      <div class="class-count">${c.total}
+        <div class="class-split"><span class="split-t1">T1·${c.t1}</span><span>/</span><span class="split-t2">T2·${c.t2}</span></div>
+      </div>
     </div>`;
   }).join('');
 }
 
-function renderRecent(data) {
+function renderRecent() {
   const container = document.getElementById('recentEntries');
-  const rows = data.slice(0, 20);
+  const rows = statsData.slice(0, 20);  // already merged & sorted desc
   if (rows.length === 0) { container.innerHTML = '<div class="empty">尚無進場紀錄</div>'; return; }
   container.innerHTML = rows.map(e => {
     const t = new Date(e.entry_time);
     const timeStr = `${String(t.getMonth()+1).padStart(2,'0')}/${String(t.getDate()).padStart(2,'0')} ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`;
     const dur = e.duration_minutes != null ? `${e.duration_minutes} 分` : '進場中';
     const isOpen = e.exit_time == null;
+    const termTag = e.terminal === 'T1' ? '<span class="recent-tag t1">T1</span>' : '<span class="recent-tag t2">T2</span>';
     return `<div class="recent-row ${isOpen ? 'open' : ''}">
-      <div class="recent-time">${timeStr}</div>
+      <div class="recent-time">${termTag}${timeStr}</div>
       <div class="recent-name">${escapeHtml(e.passenger_name || '—')} ${e.vip ? '★' : ''}<span style="color:var(--muted); font-size:11px; margin-left:6px;">${escapeHtml(e.seat_code || '')}</span></div>
       <div class="recent-flight">${escapeHtml(e.flight_no || '')} ${escapeHtml(e.destination || '')}</div>
       <div class="recent-duration">${dur}</div>
