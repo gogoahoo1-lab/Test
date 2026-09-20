@@ -1,0 +1,487 @@
+{
+  "last_updated": "2026-09-20T09:44:31.959Z",
+  "source": "TDX FIDS TPE Departure (AirlineID=JX)",
+  "count": 48,
+  "flights": [
+    {
+      "flight_no": "JX12",
+      "destination": "SFO",
+      "destination_name": "SFO",
+      "std": "00:05",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-19T00:05",
+      "gate": "D12",
+      "status": null
+    },
+    {
+      "flight_no": "JX2",
+      "destination": "LAX",
+      "destination_name": "LAX",
+      "std": "00:10",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-19T00:10",
+      "gate": " D2",
+      "status": null
+    },
+    {
+      "flight_no": "JX101",
+      "destination": "PRG",
+      "destination_name": "PRG",
+      "std": "00:10",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-19T00:10",
+      "gate": "D11",
+      "status": null
+    },
+    {
+      "flight_no": "JX781",
+      "destination": "CEB",
+      "destination_name": "CEB",
+      "std": "06:25",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-19T06:25",
+      "gate": "D12",
+      "status": null
+    },
+    {
+      "flight_no": "JX789",
+      "destination": "CRK",
+      "destination_name": "CRK",
+      "std": "06:45",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-19T06:45",
+      "gate": " D9",
+      "status": null
+    },
+    {
+      "flight_no": "JX834",
+      "destination": "UKB",
+      "destination_name": "UKB",
+      "std": "06:50",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-19T06:50",
+      "gate": " B2",
+      "status": null
+    },
+    {
+      "flight_no": "JX761",
+      "destination": "CGK",
+      "destination_name": "CGK",
+      "std": "06:55",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-19T06:55",
+      "gate": "D5R",
+      "status": null
+    },
+    {
+      "flight_no": "JX785",
+      "destination": "MNL",
+      "destination_name": "MNL",
+      "std": "07:10",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-19T07:10",
+      "gate": "D5R",
+      "status": null
+    },
+    {
+      "flight_no": "JX846",
+      "destination": "KMJ",
+      "destination_name": "KMJ",
+      "std": "07:25",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-19T07:25",
+      "gate": "B1R",
+      "status": null
+    },
+    {
+      "flight_no": "JX711",
+      "destination": "SGN",
+      "destination_name": "SGN",
+      "std": "07:40",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-19T07:40",
+      "gate": "D13",
+      "status": null
+    },
+    {
+      "flight_no": "JX201",
+      "destination": "MFM",
+      "destination_name": "MFM",
+      "std": "07:50",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-19T07:50",
+      "gate": " D2",
+      "status": null
+    },
+    {
+      "flight_no": "JX715",
+      "destination": "HAN",
+      "destination_name": "HAN",
+      "std": "07:55",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-21T07:55",
+      "gate": "   ",
+      "status": null
+    },
+    {
+      "flight_no": "JX771",
+      "destination": "SIN",
+      "destination_name": "SIN",
+      "std": "08:00",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-21T08:00",
+      "gate": "   ",
+      "status": null
+    },
+    {
+      "flight_no": "JX233",
+      "destination": "HKG",
+      "destination_name": "HKG",
+      "std": "08:05",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-19T08:05",
+      "gate": " D4",
+      "status": null
+    },
+    {
+      "flight_no": "JX1834",
+      "destination": "UKB",
+      "destination_name": "UKB",
+      "std": "08:05",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-21T08:05",
+      "gate": "   ",
+      "status": null
+    },
+    {
+      "flight_no": "JX900",
+      "destination": "PUS",
+      "destination_name": "PUS",
+      "std": "08:15",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-21T08:15",
+      "gate": "   ",
+      "status": null
+    },
+    {
+      "flight_no": "JX800",
+      "destination": "NRT",
+      "destination_name": "NRT",
+      "std": "08:30",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-19T08:30",
+      "gate": " A4",
+      "status": null
+    },
+    {
+      "flight_no": "JX820",
+      "destination": "KIX",
+      "destination_name": "KIX",
+      "std": "08:30",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-19T08:30",
+      "gate": " B4",
+      "status": null
+    },
+    {
+      "flight_no": "JX741",
+      "destination": "BKK",
+      "destination_name": "BKK",
+      "std": "08:55",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-19T08:55",
+      "gate": "D13",
+      "status": null
+    },
+    {
+      "flight_no": "JX840",
+      "destination": "FUK",
+      "destination_name": "FUK",
+      "std": "09:35",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-19T09:35",
+      "gate": " B5",
+      "status": null
+    },
+    {
+      "flight_no": "JX850",
+      "destination": "CTS",
+      "destination_name": "CTS",
+      "std": "10:10",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-19T10:10",
+      "gate": " A8",
+      "status": null
+    },
+    {
+      "flight_no": "JX822",
+      "destination": "KIX",
+      "destination_name": "KIX",
+      "std": "10:15",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-19T10:15",
+      "gate": " A4",
+      "status": null
+    },
+    {
+      "flight_no": "JX1900",
+      "destination": "PUS",
+      "destination_name": "PUS",
+      "std": "10:15",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-20T10:15",
+      "gate": " B1",
+      "status": null
+    },
+    {
+      "flight_no": "JX802",
+      "destination": "NRT",
+      "destination_name": "NRT",
+      "std": "10:40",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-19T10:40",
+      "gate": " A6",
+      "status": null
+    },
+    {
+      "flight_no": "JX890",
+      "destination": "SHI",
+      "destination_name": "SHI",
+      "std": "10:40",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-19T10:40",
+      "gate": " A1",
+      "status": null
+    },
+    {
+      "flight_no": "JX725",
+      "destination": "KUL",
+      "destination_name": "KUL",
+      "std": "11:15",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-19T11:15",
+      "gate": "D13",
+      "status": null
+    },
+    {
+      "flight_no": "JX862",
+      "destination": "SDJ",
+      "destination_name": "SDJ",
+      "std": "11:35",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-19T11:35",
+      "gate": " A7",
+      "status": null
+    },
+    {
+      "flight_no": "JX860",
+      "destination": "HKD",
+      "destination_name": "HKD",
+      "std": "11:55",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-19T11:55",
+      "gate": " B1",
+      "status": null
+    },
+    {
+      "flight_no": "JX870",
+      "destination": "OKA",
+      "destination_name": "OKA",
+      "std": "12:00",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-19T12:00",
+      "gate": " A4",
+      "status": null
+    },
+    {
+      "flight_no": "JX751",
+      "destination": "CNX",
+      "destination_name": "CNX",
+      "std": "13:10",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-19T13:10",
+      "gate": "D11",
+      "status": null
+    },
+    {
+      "flight_no": "JX745",
+      "destination": "BKK",
+      "destination_name": "BKK",
+      "std": "13:50",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-19T13:50",
+      "gate": "D12",
+      "status": null
+    },
+    {
+      "flight_no": "JX705",
+      "destination": "PQC",
+      "destination_name": "PQC",
+      "std": "14:05",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-21T14:05",
+      "gate": "   ",
+      "status": null
+    },
+    {
+      "flight_no": "JX713",
+      "destination": "SGN",
+      "destination_name": "SGN",
+      "std": "14:15",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-21T14:15",
+      "gate": "   ",
+      "status": null
+    },
+    {
+      "flight_no": "JX717",
+      "destination": "HAN",
+      "destination_name": "HAN",
+      "std": "14:35",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-19T14:35",
+      "gate": " C3",
+      "status": null
+    },
+    {
+      "flight_no": "JX902",
+      "destination": "PUS",
+      "destination_name": "PUS",
+      "std": "14:45",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-20T14:45",
+      "gate": " B4",
+      "status": null
+    },
+    {
+      "flight_no": "JX1902",
+      "destination": "PUS",
+      "destination_name": "PUS",
+      "std": "14:50",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-21T14:50",
+      "gate": "   ",
+      "status": null
+    },
+    {
+      "flight_no": "JX838",
+      "destination": "NGO",
+      "destination_name": "NGO",
+      "std": "14:55",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-21T14:55",
+      "gate": "   ",
+      "status": null
+    },
+    {
+      "flight_no": "JX804",
+      "destination": "NRT",
+      "destination_name": "NRT",
+      "std": "15:00",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-19T15:00",
+      "gate": " B4",
+      "status": null
+    },
+    {
+      "flight_no": "JX1870",
+      "destination": "OKA",
+      "destination_name": "OKA",
+      "std": "15:05",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-19T15:05",
+      "gate": "B1R",
+      "status": null
+    },
+    {
+      "flight_no": "JX703",
+      "destination": "DAD",
+      "destination_name": "DAD",
+      "std": "15:45",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-21T15:45",
+      "gate": "   ",
+      "status": null
+    },
+    {
+      "flight_no": "JX205",
+      "destination": "MFM",
+      "destination_name": "MFM",
+      "std": "16:00",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-21T16:00",
+      "gate": "   ",
+      "status": null
+    },
+    {
+      "flight_no": "JX783",
+      "destination": "CEB",
+      "destination_name": "CEB",
+      "std": "16:15",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-20T16:15",
+      "gate": " B7",
+      "status": null
+    },
+    {
+      "flight_no": "JX235",
+      "destination": "HKG",
+      "destination_name": "HKG",
+      "std": "17:00",
+      "terminal": "T1",
+      "schedule_departure_time": "2026-09-19T17:00",
+      "gate": " A6",
+      "status": null
+    },
+    {
+      "flight_no": "JX791",
+      "destination": "CRK",
+      "destination_name": "CRK",
+      "std": "17:25",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-20T17:25",
+      "gate": "D5R",
+      "status": null
+    },
+    {
+      "flight_no": "JX7301",
+      "destination": "AUH",
+      "destination_name": "AUH",
+      "std": "19:40",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-19T19:40",
+      "gate": " D7",
+      "status": null
+    },
+    {
+      "flight_no": "JX10",
+      "destination": "ONT",
+      "destination_name": "ONT",
+      "std": "20:05",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-19T20:05",
+      "gate": " A8",
+      "status": null
+    },
+    {
+      "flight_no": "JX26",
+      "destination": "PHX",
+      "destination_name": "PHX",
+      "std": "20:10",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-19T20:10",
+      "gate": " A7",
+      "status": null
+    },
+    {
+      "flight_no": "JX32",
+      "destination": "SEA",
+      "destination_name": "SEA",
+      "std": "20:10",
+      "terminal": "T2",
+      "schedule_departure_time": "2026-09-19T20:10",
+      "gate": "D11",
+      "status": null
+    }
+  ]
+}
