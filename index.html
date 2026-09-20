@@ -421,6 +421,10 @@
   .hour-bar .bar-value { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-family: 'JetBrains Mono'; font-size: 10px; color: var(--ink-2); font-weight: 600; }
   .hour-bar .bar-label { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); font-family: 'JetBrains Mono'; font-size: 10px; color: var(--muted); }
   .hour-bar.empty { background: var(--line); border-radius: 4px 4px 0 0; }
+  /* Solid single-color bars for T1/T2 independent charts */
+  .hour-bar.solid-t1 { background: linear-gradient(180deg, #4a86f0, #6ba0e6); border-radius: 4px 4px 0 0; display: block; }
+  .hour-bar.solid-t2 { background: linear-gradient(180deg, #c9a66b, #d4b88a); border-radius: 4px 4px 0 0; display: block; }
+  .hour-bar.solid-t1:hover, .hour-bar.solid-t2:hover { opacity: 0.85; }
 
   /* Stats T1/T2 dual layout */
   .stats-legend { display: flex; gap: 20px; font-size: 12px; color: var(--ink-2); font-weight: 500; align-items: center; }
@@ -457,6 +461,12 @@
   .recent-tag.t1 { background: #eaf0f7; color: #4a6fa5; }
   .recent-tag.t2 { background: #fdf5e5; color: #a67e28; }
 
+  /* TDX sync status + manual trigger */
+  .tdx-sync-box { display: flex; align-items: center; gap: 4px; background: var(--ivory); border: 1px solid var(--line); border-radius: 8px; padding: 4px 4px 4px 12px; }
+  .tdx-sync-label { font-size: 11px; color: var(--ink-2); font-weight: 500; letter-spacing: 0.3px; white-space: nowrap; }
+  .tdx-sync-btn { width: 30px; height: 30px; border-radius: 6px; border: none; background: var(--paper); color: var(--ink-2); cursor: pointer; font-size: 14px; padding: 0; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+  .tdx-sync-btn:hover { background: var(--gold); color: var(--ink); }
+
   /* Quantity stepper — big touch-friendly +/- buttons */
   .qty-stepper { display: flex; align-items: stretch; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--paper); }
   .qty-stepper .qs-btn { width: 56px; height: 52px; background: var(--ivory); color: var(--ink); border: none; font-size: 28px; font-weight: 400; cursor: pointer; user-select: none; transition: background 0.15s, color 0.15s; font-family: 'Inter', sans-serif; line-height: 1; padding: 0; flex-shrink: 0; }
@@ -470,11 +480,60 @@
   .qty-stepper .qs-val::-webkit-outer-spin-button,
   .qty-stepper .qs-val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-  /* Flight number input with JX prefix badge */
-  .flight-input-wrap { position: relative; display: block; }
-  .flight-input-wrap .flight-prefix { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--gold-dark); font-size: 15px; letter-spacing: 2px; pointer-events: none; z-index: 1; user-select: none; }
-  .flight-input-wrap input { padding-left: 46px !important; font-family: 'JetBrains Mono', monospace !important; font-weight: 700 !important; letter-spacing: 2px !important; font-size: 15px !important; }
-  .flight-input-wrap input::placeholder { font-weight: 400; letter-spacing: 1px; opacity: 0.5; }
+  /* Flight number input with JX prefix badge (flex layout, no overlap) */
+  .flight-input-wrap {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--paper);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .flight-input-wrap:focus-within {
+    border-color: var(--gold) !important;
+    box-shadow: 0 0 0 3px rgba(201,166,107,0.15);
+  }
+  .flight-input-wrap .flight-prefix {
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    background: var(--ivory);
+    color: var(--gold-dark);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 2px;
+    border-right: 1px solid var(--line);
+    user-select: none;
+    pointer-events: none;
+    flex-shrink: 0;
+  }
+  .flight-input-wrap input,
+  .flight-input-wrap input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    padding: 10px 14px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-weight: 700 !important;
+    letter-spacing: 2px !important;
+    font-size: 16px !important;
+    color: var(--ink) !important;
+  }
+  .flight-input-wrap input:focus,
+  .flight-input-wrap input[type="text"]:focus {
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+  .flight-input-wrap input::placeholder {
+    font-weight: 400;
+    letter-spacing: 1px;
+    opacity: 0.4;
+  }
 
   .dest-list, .class-list { display: flex; flex-direction: column; gap: 8px; }
   .dest-row, .class-row { display: grid; grid-template-columns: 60px 1fr 40px; gap: 12px; align-items: center; font-size: 13px; }
@@ -1324,8 +1383,19 @@
           </div>
 
           <div class="chart-card">
-            <div class="chart-title"><span>分時段進場人次 · T1 + T2 堆疊</span><span id="hourChartHint" style="font-size:12px; color:var(--muted); font-weight:400;"></span></div>
-            <div class="hour-bars" id="hourBars"></div>
+            <div class="chart-title">
+              <span><span class="lg-dot" style="background: linear-gradient(180deg,#4a86f0,#6ba0e6);"></span>分時段進場人次 · T1</span>
+              <span id="hourChartHint_T1" style="font-size:12px; color:var(--muted); font-weight:400;"></span>
+            </div>
+            <div class="hour-bars" id="hourBars_T1"></div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-title">
+              <span><span class="lg-dot" style="background: linear-gradient(180deg,#c9a66b,#d4b88a);"></span>分時段進場人次 · T2</span>
+              <span id="hourChartHint_T2" style="font-size:12px; color:var(--muted); font-weight:400;"></span>
+            </div>
+            <div class="hour-bars" id="hourBars_T2"></div>
           </div>
 
           <div class="stats-2col">
@@ -1435,6 +1505,12 @@
               <div id="fcSubtitle" style="font-size: 13px; color: var(--muted); margin-top: 4px;">預估旅客到場人數，計算 T1/T2 是否會客滿溢流</div>
             </div>
             <div class="stats-controls">
+              <div class="tdx-sync-box">
+                <span class="tdx-sync-label">TDX 同步：載入中…</span>
+                <button class="tdx-sync-btn" onclick="refreshFlightsFromGithub()" title="重新從 GitHub 讀取最新的 flights.json">🔄</button>
+                <button class="tdx-sync-btn" onclick="openTDXSyncPage()" title="開啟 GitHub Actions 手動觸發 TDX 同步（跨 App 集中管理，避免多 App 各自打 TDX）">⚡</button>
+                <button class="tdx-sync-btn" onclick="configureTDXSource()" title="設定 GitHub 帳號與 repo（決定從哪讀 flights.json）">⚙️</button>
+              </div>
               <div class="period-switch">
                 <button class="active" data-fcperiod="today">今日</button>
                 <button data-fcperiod="tomorrow">明日</button>
@@ -3121,11 +3197,142 @@ function sortCodesByTableOrder(codes) {
     return a.localeCompare(b);
   });
 }
+// TDX flights source: synced by a GitHub Actions job into data/flights.json in the repo.
+// Owner / repo can be reconfigured by the user (⚙️ button) — stored in localStorage.
+// Defaults are placeholders — override via the settings gear on the 客量預估 page.
+const DEFAULT_GH_OWNER = 'gogoahoo1-lab';
+const DEFAULT_GH_REPO  = 'gogoahoo1-lab.github.io';
+
+function getGithubOwner() { return (localStorage.getItem('tdx_github_owner') || DEFAULT_GH_OWNER).trim(); }
+function getGithubRepo()  { return (localStorage.getItem('tdx_github_repo')  || DEFAULT_GH_REPO).trim(); }
+
+function getFlightsJSONUrl() {
+  const owner = getGithubOwner();
+  const repo = getGithubRepo();
+  // User/organization page (username.github.io) serves at root — no repo path
+  if (repo.toLowerCase() === (owner + '.github.io').toLowerCase()) {
+    return `https://${owner}.github.io/data/flights.json`;
+  }
+  // Project page — repo name is part of the path
+  return `https://${owner}.github.io/${repo}/data/flights.json`;
+}
+
+function getActionsUrl() {
+  const owner = getGithubOwner();
+  const repo = getGithubRepo();
+  return `https://github.com/${owner}/${repo}/actions/workflows/sync-tdx-flights.yml`;
+}
+
+// User-facing settings: prompt for owner + repo, save to localStorage
+function configureTDXSource() {
+  const curOwner = getGithubOwner();
+  const curRepo = getGithubRepo();
+  const owner = prompt(
+    'GitHub 帳號 (owner)：\n\n'
+    + '例如：gogoahoo1-lab',
+    curOwner
+  );
+  if (owner === null) return;  // Cancel
+  const cleanOwner = owner.trim();
+  if (!cleanOwner) { alert('帳號不能是空的'); return; }
+
+  const repo = prompt(
+    'GitHub repo 名稱：\n\n'
+    + '• 若是 user page (放在 <帳號>.github.io) 填「' + cleanOwner + '.github.io」\n'
+    + '• 若是 project repo 就填該 repo 的名字\n\n'
+    + '目前 flights.json URL 會變成：\n'
+    + '  ' + ((`${cleanOwner}.github.io`).toLowerCase() === curRepo.toLowerCase()
+        ? `https://${cleanOwner}.github.io/data/flights.json`
+        : `https://${cleanOwner}.github.io/<repo>/data/flights.json`),
+    curRepo
+  );
+  if (repo === null) return;
+  const cleanRepo = repo.trim();
+  if (!cleanRepo) { alert('repo 名稱不能是空的'); return; }
+
+  localStorage.setItem('tdx_github_owner', cleanOwner);
+  localStorage.setItem('tdx_github_repo', cleanRepo);
+
+  const newJsonUrl = getFlightsJSONUrl();
+  if (confirm(
+    '已儲存 TDX 來源設定：\n\n'
+    + '• JSON URL：' + newJsonUrl + '\n'
+    + '• Actions：' + getActionsUrl() + '\n\n'
+    + '要立即重新載入航班嗎？'
+  )) {
+    refreshFlightsFromGithub();
+  }
+}
+
+let flightsLastUpdated = null;
+let flightsSource = 'unknown';
+
 async function loadFlights() {
-  const { data, error } = await sb.from('flights').select('*');
-  if (error) throw error;
-  flights = {};
-  data.forEach(f => flights[f.flight_no] = f);
+  // 1. Primary: GitHub-published JSON (cache-busted per load)
+  try {
+    const url = getFlightsJSONUrl() + '?_=' + Date.now();
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const payload = await resp.json();
+    const list = payload.flights || [];
+    flights = {};
+    list.forEach(f => { flights[f.flight_no] = f; });
+    flightsLastUpdated = payload.last_updated || null;
+    flightsSource = 'github';
+    console.log(`✓ Loaded ${list.length} flights from GitHub (last sync: ${flightsLastUpdated})`);
+    return;
+  } catch (e) {
+    console.warn('GitHub flights fetch failed, falling back to Supabase:', e.message);
+  }
+  // 2. Fallback: Supabase (legacy — may be stale/empty)
+  try {
+    const { data, error } = await sb.from('flights').select('*');
+    if (error) throw error;
+    flights = {};
+    (data || []).forEach(f => flights[f.flight_no] = f);
+    flightsLastUpdated = null;
+    flightsSource = 'supabase-fallback';
+    console.log(`⚠ Loaded ${data?.length || 0} flights from Supabase fallback`);
+  } catch (e) {
+    flights = {};
+    flightsLastUpdated = null;
+    flightsSource = 'error';
+    console.error('Both flight sources failed:', e);
+  }
+}
+
+// Format "5 分鐘前" / "2 小時前" for last-sync display
+function flightsSyncAgo() {
+  if (!flightsLastUpdated) return '未知';
+  const ms = Date.now() - new Date(flightsLastUpdated).getTime();
+  if (ms < 0) return '剛剛';
+  const min = Math.floor(ms / 60000);
+  if (min < 1) return '剛剛';
+  if (min < 60) return `${min} 分鐘前`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr} 小時前`;
+  return `${Math.floor(hr / 24)} 天前`;
+}
+
+// Manual trigger — opens GitHub Actions page so the user can "Run workflow"
+function openTDXSyncPage() {
+  window.open(getActionsUrl(), '_blank', 'noopener');
+}
+
+// Force a re-fetch of the JSON (useful right after a manual GitHub Actions run)
+async function refreshFlightsFromGithub() {
+  await loadFlights();
+  const active = document.querySelector('.view.active')?.id;
+  if (active === 'view-forecast') renderForecast();
+  // Also refresh any open intake dropdown
+  if (document.getElementById('intakeModal')?.classList.contains('active')) {
+    const flFnoEl = document.getElementById('flFno');
+    if (flFnoEl && flFnoEl.value.trim()) onFnoInput();
+  }
+  // Update any UI showing last-sync label
+  document.querySelectorAll('.tdx-sync-label').forEach(el => {
+    el.textContent = `TDX 同步：${flightsSyncAgo()}`;
+  });
 }
 
 let seatSub = null, flightSub = null;
@@ -3157,21 +3364,10 @@ function subscribeRealtime() {
     renderAll();
   }).subscribe();
   if (flightSub) sb.removeChannel(flightSub);
-  flightSub = sb.channel('rt-flights').on('postgres_changes', { event: '*', schema: 'public', table: 'flights' }, (payload) => {
-    if (payload.eventType === 'DELETE') {
-      const old = payload.old; if (old && old.flight_no) delete flights[old.flight_no];
-    } else {
-      const f = payload.new; if (f && f.flight_no) flights[f.flight_no] = f;
-    }
-    // Refresh whichever view is currently showing flight data
-    const active = document.querySelector('.view.active')?.id;
-    if (active === 'view-forecast') renderForecast();
-    // Refresh intake flight search dropdown if open
-    if (document.getElementById('intakeModal')?.classList.contains('active')) {
-      const flFnoEl = document.getElementById('flFno');
-      if (flFnoEl && flFnoEl.value.trim()) onFnoInput();
-    }
-  }).subscribe();
+  // NOTE: flights realtime subscription removed — flight data now comes from GitHub Actions
+  // (data/flights.json), not from Supabase 'flights' table. Users trigger a re-fetch by
+  // opening the intake modal or by pressing the manual "重新同步" button.
+  flightSub = null;
 }
 
 function loadLocalFallback() {
@@ -4338,38 +4534,33 @@ function renderKPIs() {
   setText('kpiVipSub_T2', t2.vipCount + ' 位');
 }
 
-function renderHourChart() {
-  const container = document.getElementById('hourBars');
-  const hourlyT1 = new Array(24).fill(0);
-  const hourlyT2 = new Array(24).fill(0);
-  statsDataT1.forEach(e => { const h = new Date(e.entry_time).getHours(); if (h>=0 && h<=23) hourlyT1[h] += (e.party_size || 1); });
-  statsDataT2.forEach(e => { const h = new Date(e.entry_time).getHours(); if (h>=0 && h<=23) hourlyT2[h] += (e.party_size || 1); });
-  const totals = hourlyT1.map((v, i) => v + hourlyT2[i]);
-  const max = Math.max(...totals, 1);
+function renderHourChartOne(data, containerId, hintId, colorClass) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const hourly = new Array(24).fill(0);
+  data.forEach(e => {
+    const h = new Date(e.entry_time).getHours();
+    if (h >= 0 && h <= 23) hourly[h] += (e.party_size || 1);
+  });
+  const max = Math.max(...hourly, 1);
   container.innerHTML = '';
   for (let i = 0; i < 24; i++) {
-    const t1 = hourlyT1[i], t2 = hourlyT2[i], sum = t1 + t2;
+    const v = hourly[i];
     const bar = document.createElement('div');
-    bar.className = 'hour-bar' + (sum === 0 ? ' empty' : '');
-    bar.style.height = (sum / max * 100) + '%';
-    bar.title = `${i}:00 — T1: ${t1} · T2: ${t2} (共 ${sum})`;
-    const t1H = sum ? (t1 / sum * 100) : 0;
-    const t2H = sum ? (t2 / sum * 100) : 0;
-    const parts = [];
-    if (t1 > 0) parts.push(`<div class="bar-t1" style="height:${t1H}%"></div>`);
-    if (t2 > 0) parts.push(`<div class="bar-t2" style="height:${t2H}%"></div>`);
-    bar.innerHTML = `
-      ${sum > 0 ? `<div class="bar-value">${sum}</div>` : ''}
-      ${parts.join('')}
-      <div class="bar-label">${i}</div>`;
+    bar.className = 'hour-bar' + (v === 0 ? ' empty' : ' ' + colorClass);
+    bar.style.height = (v / max * 100) + '%';
+    bar.title = `${i}:00 — ${v} 人`;
+    bar.innerHTML = `${v > 0 ? `<div class="bar-value">${v}</div>` : ''}<div class="bar-label">${i}</div>`;
     container.appendChild(bar);
   }
-  const t1Total = statsDataT1.reduce((s, e) => s + (e.party_size || 1), 0);
-  const t2Total = statsDataT2.reduce((s, e) => s + (e.party_size || 1), 0);
-  const grand = t1Total + t2Total;
-  document.getElementById('hourChartHint').textContent = grand > 0
-    ? `合計 ${grand} 人 · T1 ${t1Total} · T2 ${t2Total} · 最高峰 ${max} 人`
-    : '尚無資料';
+  const total = data.reduce((s, e) => s + (e.party_size || 1), 0);
+  const hintEl = document.getElementById(hintId);
+  if (hintEl) hintEl.textContent = total > 0 ? `共 ${total} 人 · 最高峰 ${max} 人` : '尚無資料';
+}
+
+function renderHourChart() {
+  renderHourChartOne(statsDataT1, 'hourBars_T1', 'hourChartHint_T1', 'solid-t1');
+  renderHourChartOne(statsDataT2, 'hourBars_T2', 'hourChartHint_T2', 'solid-t2');
 }
 
 // Dest breakdown — grand total ranking with T1/T2 sub-labels
@@ -4655,6 +4846,10 @@ function hourlyOccupancy(terminal) {
 }
 
 function renderForecast() {
+  // Update TDX sync label
+  document.querySelectorAll('.tdx-sync-label').forEach(el => {
+    el.textContent = `TDX 同步：${flightsSyncAgo()}`;
+  });
   // Terminal summary cards
   ['T1', 'T2'].forEach(term => {
     const hourly = hourlyOccupancy(term);
