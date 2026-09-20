@@ -47,9 +47,74 @@
 
   .main { display: grid; grid-template-rows: 64px 1fr; overflow: hidden; }
   .topbar { display: flex; align-items: center; padding: 0 20px; background: var(--paper); border-bottom: 1px solid var(--line); gap: 16px; }
-  .terminal-switch { display: flex; background: var(--cream); border-radius: 10px; padding: 3px; font-family: 'Inter'; font-weight: 600; }
-  .terminal-switch button { padding: 6px 16px; border: none; background: transparent; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 13px; color: var(--ink-2); }
-  .terminal-switch button.active { background: var(--navy-900); color: var(--gold); }
+  .terminal-badge { display: flex; align-items: center; background: var(--cream); border-radius: 10px; padding: 6px 12px; font-family: 'Inter'; }
+  /* Admin sub-tabs */
+  .admin-subtabs { display: flex; gap: 4px; background: var(--cream); border-radius: 12px; padding: 4px; margin-bottom: 20px; }
+  .admin-subtab { flex: 1; padding: 10px 14px; border: none; background: transparent; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--ink-2); transition: all 0.15s; }
+  .admin-subtab.active { background: var(--navy-900); color: var(--gold); }
+  .admin-panel { display: none; }
+  .admin-panel.active { display: block; }
+  .admin-term-tabs { display: flex; background: var(--cream); border-radius: 8px; padding: 3px; }
+  .admin-term-tabs button { padding: 6px 14px; border: none; background: transparent; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+  .admin-term-tabs button.active { background: var(--navy-900); color: var(--gold); }
+  /* Tables config list */
+  .tables-config-list { max-height: 68vh; overflow-y: auto; }
+  .tc-zone-header { padding: 10px 14px; background: var(--cream-2); font-size: 12px; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
+  .tc-row { display: grid; grid-template-columns: 24px 2fr 1fr 60px 100px auto; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); align-items: center; font-size: 13px; transition: background 0.15s; }
+  .tc-row.inactive { opacity: 0.55; }
+  .tc-row .tc-drag { cursor: grab; color: var(--muted); user-select: none; text-align: center; font-size: 16px; line-height: 1; padding: 4px; border-radius: 4px; }
+  .tc-row .tc-drag:hover { color: var(--ink); background: var(--cream); }
+  .tc-row .tc-drag:active { cursor: grabbing; }
+  .tc-row.dragging { opacity: 0.4; background: var(--cream-2); }
+  .tc-row.drag-over-before { box-shadow: inset 0 3px 0 0 var(--gold); }
+  .tc-row.drag-over-after { box-shadow: inset 0 -3px 0 0 var(--gold); }
+  .tc-row .tc-label { font-weight: 500; }
+  .tc-row .tc-shape { color: var(--muted); font-size: 12px; font-family: 'JetBrains Mono'; }
+  .tc-row .tc-cap { font-family: 'JetBrains Mono'; color: var(--gold); font-weight: 600; text-align: right; }
+  .tc-row .tc-state { text-align: center; font-size: 11px; }
+  .tc-row .tc-state.on { color: #3E7A5D; }
+  .tc-row .tc-state.off { color: var(--muted); }
+  .tc-row .tc-actions { display: flex; gap: 4px; justify-content: flex-end; }
+  .tc-row .tc-actions button { padding: 4px 10px; border: 1px solid var(--line); background: var(--paper); border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 11px; }
+  .tc-row .tc-actions button.danger { color: #C53E1D; border-color: #F5CFC0; }
+  /* Zones config */
+  .zc-terminal-block { background: var(--paper); border-radius: 12px; padding: 16px; margin-bottom: 14px; box-shadow: var(--shadow); }
+  .zc-terminal-block h3 { font-size: 15px; font-weight: 600; margin-bottom: 12px; color: var(--gold); font-family: 'JetBrains Mono'; }
+  .zc-row { display: grid; grid-template-columns: 40px 1fr 120px 80px; gap: 12px; padding: 10px 12px; align-items: center; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .zc-row:last-child { border-bottom: none; }
+  .zc-row .zc-key { font-family: 'JetBrains Mono'; font-weight: 600; color: var(--gold); font-size: 15px; }
+  .zc-row .zc-label { color: var(--ink); }
+  .zc-row .zc-stats { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono'; text-align: right; }
+  .zc-row button { padding: 4px 10px; border: 1px solid var(--line); background: var(--paper); border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 11px; }
+  /* Remote monitor dashboard */
+  .mon-card { background: var(--paper); border-radius: 12px; padding: 18px; box-shadow: var(--shadow); border-top: 4px solid var(--gold); }
+  .mon-card.terminal-t2 { border-top-color: var(--navy-500); }
+  .mon-card h3 { font-size: 22px; font-weight: 600; margin-bottom: 12px; color: var(--ink); display: flex; align-items: center; justify-content: space-between; }
+  .mon-card h3 .mon-badge { font-size: 11px; padding: 3px 10px; border-radius: 999px; font-family: 'Inter'; font-weight: 600; }
+  .mon-card h3 .mon-badge.ok { background: var(--avail-bg); color: #3E7A5D; }
+  .mon-card h3 .mon-badge.warn { background: var(--dirty-bg); color: #7A5514; }
+  .mon-card h3 .mon-badge.danger { background: #FFECEC; color: #C53E1D; }
+  .mon-big { font-size: 40px; font-weight: 300; font-family: 'JetBrains Mono'; line-height: 1; color: var(--ink); }
+  .mon-big .unit { font-size: 14px; color: var(--muted); font-weight: 400; letter-spacing: 0; margin-left: 4px; }
+  .mon-util-bar { height: 8px; background: var(--cream); border-radius: 4px; overflow: hidden; margin: 10px 0; }
+  .mon-util-fill { height: 100%; background: linear-gradient(90deg, var(--avail), var(--dirty), var(--cleaning)); transition: width 0.4s; }
+  .mon-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; }
+  .mon-kpi { background: var(--cream-2); padding: 10px 12px; border-radius: 8px; }
+  .mon-kpi .k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .mon-kpi .v { font-size: 18px; font-weight: 600; margin-top: 3px; font-family: 'JetBrains Mono'; }
+  .mon-kpi.danger .v { color: #C53E1D; }
+  .mon-kpi.warn .v { color: var(--cleaning); }
+  .mon-kpi.ok .v { color: #3E7A5D; }
+  .mon-mini-seatmap { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); }
+  .mon-mini-seat { aspect-ratio: 1; border-radius: 4px; }
+  .mon-mini-seat.avail { background: var(--avail-bg); }
+  .mon-mini-seat.seated { background: var(--seated-bg); }
+  .mon-mini-seat.dirty { background: var(--dirty-bg); }
+  .mon-mini-seat.cleaning { background: var(--cleaning-bg); }
+  .mon-mini-seat.blocked { background: var(--blocked-bg); }
+  @media (max-width: 900px) {
+    #monitorTwinPane { grid-template-columns: 1fr !important; }
+  }
   .top-title { font-family: 'Inter', 'Noto Sans TC'; font-weight: 500; font-size: 15px; letter-spacing: 0.2px; }
   .top-title .sub { color: var(--muted); font-size: 12px; font-weight: 400; }
   .top-clock { font-family: 'JetBrains Mono'; font-size: 15px; color: var(--ink); letter-spacing: 0.5px; }
@@ -144,12 +209,26 @@
   .band-later { background: var(--avail); }
   .seat-icon { position: absolute; top: 4px; right: 5px; font-size: 12px; opacity: 0.5; }
 
-  .select-banner { position: fixed; top: 76px; left: 50%; transform: translateX(-50%); background: var(--navy-900); color: #fff; padding: 12px 20px; border-radius: 999px; display: none; align-items: center; gap: 14px; box-shadow: var(--shadow-lg); z-index: 90; max-width: 90vw; }
-  .select-banner.active { display: flex; }
-  .select-banner .sb-icon { font-size: 18px; }
-  .select-banner .sb-name { font-weight: 600; }
-  .select-banner .sb-meta { font-family: 'JetBrains Mono'; font-size: 12px; color: rgba(255,255,255,0.7); }
-  .select-banner .sb-cancel { background: rgba(255,255,255,0.15); color: #fff; border: none; padding: 4px 10px; border-radius: 999px; cursor: pointer; font-family: inherit; font-size: 12px; }
+  .select-banner { position: fixed; top: 76px; left: 50%; transform: translateX(-50%); background: var(--navy-900); color: #fff; padding: 12px 20px; border-radius: 16px; display: none; box-shadow: var(--shadow-lg); z-index: 90; max-width: 640px; width: calc(100% - 40px); }
+  .select-banner.active { display: block; }
+  .sb-content { display: flex; flex-direction: column; gap: 10px; }
+  .sb-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .sb-title { font-weight: 600; display: flex; align-items: center; gap: 8px; font-size: 14px; flex: 1; min-width: 0; }
+  .sb-title .sb-meta { font-family: 'JetBrains Mono'; font-size: 11px; color: rgba(255,255,255,0.65); font-weight: 400; }
+  .sb-prompt { font-size: 12px; color: rgba(255,255,255,0.75); }
+  .sb-tables-count { display: flex; gap: 6px; flex-wrap: wrap; }
+  .sb-tables-count button { padding: 8px 14px; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600; transition: all 0.15s; }
+  .sb-tables-count button:hover { background: var(--gold); color: var(--navy-900); border-color: var(--gold); }
+  .sb-progress { font-size: 12px; color: var(--gold); font-weight: 600; }
+  .sb-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .sb-chip { background: var(--gold); color: var(--navy-900); padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+  .sb-chip .sb-chip-x { cursor: pointer; opacity: 0.7; font-weight: 400; }
+  .sb-chip .sb-chip-x:hover { opacity: 1; }
+  .sb-cancel { background: rgba(255,255,255,0.15); color: #fff; border: none; padding: 6px 14px; border-radius: 999px; cursor: pointer; font-family: inherit; font-size: 12px; }
+  .sb-confirm { background: var(--avail); color: #fff; border: none; padding: 6px 16px; border-radius: 999px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600; }
+  .sb-back { background: transparent; color: rgba(255,255,255,0.6); border: none; cursor: pointer; font-family: inherit; font-size: 11px; text-decoration: underline; padding: 4px; }
+  .seat.pre-selected { border-color: var(--gold) !important; border-width: 2px !important; box-shadow: 0 0 0 3px rgba(201,166,107,0.35); background: linear-gradient(135deg, var(--avail-bg), rgba(201,166,107,0.25)); }
+  .seat.pre-selected::before { content: "✓"; position: absolute; top: 4px; left: 6px; font-size: 12px; color: var(--gold); font-weight: 700; }
 
   .right-tabs { display: flex; padding: 12px 16px 0; gap: 4px; border-bottom: 1px solid var(--line); }
   .right-tab { padding: 10px 14px; border: none; background: transparent; font-family: inherit; font-size: 14px; color: var(--muted); font-weight: 500; cursor: pointer; border-radius: 8px 8px 0 0; border-bottom: 2px solid transparent; display: flex; align-items: center; gap: 6px; }
@@ -510,7 +589,9 @@
       min-height: 56px;
       flex-wrap: wrap;
     }
-    .terminal-switch button { padding: 5px 10px; font-size: 12px; }
+    .terminal-badge { padding: 4px 8px; }
+    .terminal-badge span { display: none; }
+    #switchTerminalBtn { padding: 3px 8px; font-size: 10px; }
     .conn-pill { font-size: 10px; padding: 3px 8px; }
     .conn-pill .pill-text { display: none; }
     .conn-pill::after { content: attr(data-short); }
@@ -583,11 +664,12 @@
 
     .select-banner {
       top: auto; bottom: calc(76px + var(--safe-bottom));
-      left: 10px; right: 10px; transform: none; max-width: none;
-      padding: 10px 14px; font-size: 12px;
+      left: 10px; right: 10px; transform: none; max-width: none; width: auto;
+      padding: 12px 14px; font-size: 12px;
       border-radius: 12px;
     }
-    .select-banner .sb-meta { font-size: 10px; }
+    .sb-title { font-size: 13px; }
+    .sb-tables-count button { padding: 6px 10px; font-size: 12px; }
 
     .queue-fab { bottom: calc(76px + var(--safe-bottom)); right: 12px; width: 52px; height: 52px; }
   }
@@ -599,6 +681,7 @@
   <aside class="sidebar">
     <div class="brand-mark">JX</div>
     <button class="nav-btn active" data-view="lounge" title="貴賓室"><span>🪑</span><span class="nav-label">座位</span></button>
+    <button class="nav-btn" data-view="monitor" title="遠端監控" id="navMonitor" style="display:none;"><span>📺</span><span class="nav-label">監控</span></button>
     <button class="nav-btn" data-view="stats" title="統計"><span>📊</span><span class="nav-label">統計</span></button>
     <button class="nav-btn" data-view="forecast" title="容量預估"><span>📈</span><span class="nav-label">預估</span></button>
     <button class="nav-btn" data-view="chat" title="聊天"><span>💬</span><span class="nav-label">聊天</span><span class="badge" id="chatBadge" style="display:none;"></span></button>
@@ -610,9 +693,10 @@
 
   <main class="main">
     <header class="topbar">
-      <div class="terminal-switch">
-        <button class="active" data-terminal="T1">T1</button>
-        <button data-terminal="T2">T2</button>
+      <div class="terminal-badge" id="terminalBadge">
+        <span style="font-size:11px; color:var(--muted); margin-right:6px;">當前航廈</span>
+        <b id="currentTerminalBadge" style="font-size:14px; color:var(--gold);">T1</b>
+        <button id="switchTerminalBtn" onclick="promptSwitchTerminal()" style="margin-left:10px; background:var(--cream); border:1px solid var(--line); border-radius:8px; padding:5px 10px; font-family:inherit; font-size:11px; cursor:pointer; color:var(--ink-2);">🔄 切換</button>
       </div>
       <div class="top-title"><span class="sub" id="terminalSubtitle">桃園第一航廈 · 出境層</span></div>
       <span class="conn-pill local" id="connPill" data-short="設定" onclick="showIdentityModal()" style="cursor:pointer;">本機模式 · 點設定連線</span>
@@ -648,10 +732,10 @@
               </div>
             </div>
             <div class="zone-grid">
-              <div class="zone zone-a"><div class="zone-title"><span>A · 沙發休憩區</span><span class="count" id="countA"></span></div><div class="seat-grid" id="grid-A"></div></div>
-              <div class="zone zone-b"><div class="zone-title"><span>B · 用餐區</span><span class="count" id="countB"></span></div><div class="seat-grid" id="grid-B"></div></div>
-              <div class="zone zone-c"><div class="zone-title"><span>C · 商務工作區</span><span class="count" id="countC"></span></div><div class="seat-grid" id="grid-C"></div></div>
-              <div class="zone zone-d"><div class="zone-title"><span>D · 吧檯 & 淋浴間</span><span class="count" id="countD"></span></div><div class="seat-grid" id="grid-D"></div></div>
+              <div class="zone zone-a"><div class="zone-title"><span><span id="zoneLabelA">A · 沙發休憩區</span></span><span class="count" id="countA"></span></div><div class="seat-grid" id="grid-A"></div></div>
+              <div class="zone zone-b"><div class="zone-title"><span><span id="zoneLabelB">B · 用餐區</span></span><span class="count" id="countB"></span></div><div class="seat-grid" id="grid-B"></div></div>
+              <div class="zone zone-c"><div class="zone-title"><span><span id="zoneLabelC">C · 商務工作區</span></span><span class="count" id="countC"></span></div><div class="seat-grid" id="grid-C"></div></div>
+              <div class="zone zone-d"><div class="zone-title"><span><span id="zoneLabelD">D · 吧檯 & 淋浴間</span></span><span class="count" id="countD"></span></div><div class="seat-grid" id="grid-D"></div></div>
             </div>
           </div>
         </section>
@@ -730,22 +814,84 @@
         </section>
         <section class="view" id="view-inventory"><div class="empty">備品盤點（下一版做）</div></section>
 
-        <!-- ADMIN: USER MANAGEMENT VIEW -->
-        <section class="view" id="view-admin">
+        <!-- REMOTE MONITOR VIEW (viewers) -->
+        <section class="view" id="view-monitor">
           <div class="stats-header">
             <div>
-              <h2 style="font-size: 20px; font-weight: 600;">使用者管理</h2>
-              <div style="font-size: 13px; color: var(--muted); margin-top: 4px;">建立、重設密碼、停用帳號</div>
+              <h2 style="font-size:20px; font-weight:600;">📺 遠端監控</h2>
+              <div style="font-size:13px; color:var(--muted); margin-top:4px;">T1 + T2 即時態勢 · 只讀模式 · 每 30 秒更新</div>
             </div>
-            <button class="primary-btn large" onclick="openCreateUserModal()">＋ 新增使用者</button>
+            <div id="monitorClock" style="font-family:'JetBrains Mono'; font-size:14px; color:var(--muted);">—</div>
           </div>
 
-          <div style="background: var(--dirty-bg); color: #7A5514; padding: 10px 14px; border-radius: 10px; font-size: 12px; margin-bottom: 16px; line-height: 1.5;">
-            <b>密碼安全提醒：</b>密碼使用 bcrypt 單向雜湊儲存，管理員<b>無法查看</b>任何人的原始密碼，只能「重設」為新密碼。重設後使用者下次登入需再改回自己的。
+          <!-- Twin dashboard: T1 + T2 side by side -->
+          <div id="monitorTwinPane" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+            <!-- generated by renderMonitor() -->
           </div>
 
-          <div class="chart-card" style="padding: 0;">
-            <div id="userList" class="user-list"></div>
+          <!-- Footer info -->
+          <div style="font-size:11px; color:var(--muted); text-align:center; padding:12px;">
+            🔒 為保護旅客隱私，遠端監控不顯示旅客姓名、PNR 或掃描資料 · 若需操作請由現場帶位員登入
+          </div>
+        </section>
+
+        <!-- ADMIN: USER + TABLES + ZONES MANAGEMENT VIEW -->
+        <section class="view" id="view-admin">
+          <!-- Sub-tabs -->
+          <div class="admin-subtabs">
+            <button class="admin-subtab active" data-atab="users">👥 使用者</button>
+            <button class="admin-subtab" data-atab="tables">🪑 桌位配置</button>
+            <button class="admin-subtab" data-atab="zones">🏢 區域名稱</button>
+          </div>
+
+          <!-- USERS PANEL -->
+          <div class="admin-panel active" id="admin-users">
+            <div class="stats-header">
+              <div>
+                <h2 style="font-size: 20px; font-weight: 600;">使用者管理</h2>
+                <div style="font-size: 13px; color: var(--muted); margin-top: 4px;">建立、重設密碼、停用帳號</div>
+              </div>
+              <button class="primary-btn large" onclick="openCreateUserModal()">＋ 新增使用者</button>
+            </div>
+
+            <div style="background: var(--dirty-bg); color: #7A5514; padding: 10px 14px; border-radius: 10px; font-size: 12px; margin-bottom: 16px; line-height: 1.5;">
+              <b>密碼安全提醒：</b>密碼使用 bcrypt 單向雜湊儲存，管理員<b>無法查看</b>任何人的原始密碼，只能「重設」為新密碼。重設後使用者下次登入需再改回自己的。
+            </div>
+
+            <div class="chart-card" style="padding: 0;">
+              <div id="userList" class="user-list"></div>
+            </div>
+          </div>
+
+          <!-- TABLES PANEL -->
+          <div class="admin-panel" id="admin-tables">
+            <div class="stats-header">
+              <div>
+                <h2 style="font-size: 20px; font-weight: 600;">桌位配置</h2>
+                <div style="font-size: 13px; color: var(--muted); margin-top: 4px;">新增、改名、停用或刪除桌位。有人使用中的桌不能刪除</div>
+              </div>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <div class="admin-term-tabs">
+                  <button class="admin-term-tab active" data-term="T1">T1</button>
+                  <button class="admin-term-tab" data-term="T2">T2</button>
+                </div>
+                <button class="primary-btn large" onclick="openAddTableModal()">＋ 新增桌</button>
+              </div>
+            </div>
+            <div class="chart-card" style="padding: 0;">
+              <div id="tablesConfigList" class="tables-config-list"></div>
+            </div>
+          </div>
+
+          <!-- ZONES PANEL -->
+          <div class="admin-panel" id="admin-zones">
+            <div class="stats-header">
+              <div>
+                <h2 style="font-size: 20px; font-weight: 600;">區域名稱</h2>
+                <div style="font-size: 13px; color: var(--muted); margin-top: 4px;">A/B/C/D 四區的顯示名稱，T1、T2 各自獨立</div>
+              </div>
+            </div>
+            <div id="zonesConfigList"></div>
           </div>
         </section>
 
@@ -855,9 +1001,7 @@
 </button>
 
 <div class="select-banner" id="selectBanner">
-  <span class="sb-icon">🪑</span>
-  <div><div class="sb-name" id="sbName">-</div><div class="sb-meta" id="sbMeta">-</div></div>
-  <button class="sb-cancel" onclick="cancelSelection()">取消</button>
+  <div class="sb-content" id="sbContent"></div>
 </div>
 
 <div class="modal-backdrop" id="modal">
@@ -1047,6 +1191,57 @@
   </div>
 </div>
 
+<!-- ============ TERMINAL CHOICE MODAL (post-login) ============ -->
+<div class="modal-backdrop" id="terminalChoiceModal">
+  <div class="modal" style="width: 480px;">
+    <div class="modal-header">
+      <div>
+        <div style="font-size:16px; font-weight:600;">🛫 選擇今日上班航廈</div>
+        <div style="font-size:12px; color:rgba(255,255,255,0.6); margin-top:2px;">選定後這個 session 就會鎖定該航廈</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px; color:var(--muted); margin-bottom:16px; line-height:1.5;">
+        為避免同時操作兩航廈導致資料混亂，每次登入需指定今日負責的航廈。<br/>
+        之後可以透過右上「🔄 切換」按鈕更改。
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <button onclick="chooseWorkingTerminal('T1')" style="padding:24px; border:2px solid var(--line); background:var(--paper); border-radius:12px; cursor:pointer; font-family:inherit; font-size:15px; font-weight:600; transition:all 0.15s; color:var(--ink);" onmouseover="this.style.borderColor='var(--gold)'; this.style.background='var(--cream-2)'" onmouseout="this.style.borderColor='var(--line)'; this.style.background='var(--paper)'">
+          <div style="font-size:32px; margin-bottom:8px;">🅰️</div>
+          <div style="font-size:20px; color:var(--gold); margin-bottom:4px;">T1</div>
+          <div style="font-size:12px; color:var(--muted); font-weight:400;">桃園第一航廈</div>
+          <div style="font-size:11px; color:var(--muted); font-weight:400; margin-top:2px;">出境層貴賓室</div>
+        </button>
+        <button onclick="chooseWorkingTerminal('T2')" style="padding:24px; border:2px solid var(--line); background:var(--paper); border-radius:12px; cursor:pointer; font-family:inherit; font-size:15px; font-weight:600; transition:all 0.15s; color:var(--ink);" onmouseover="this.style.borderColor='var(--gold)'; this.style.background='var(--cream-2)'" onmouseout="this.style.borderColor='var(--line)'; this.style.background='var(--paper)'">
+          <div style="font-size:32px; margin-bottom:8px;">🅱️</div>
+          <div style="font-size:20px; color:var(--gold); margin-bottom:4px;">T2</div>
+          <div style="font-size:12px; color:var(--muted); font-weight:400;">桃園第二航廈</div>
+          <div style="font-size:11px; color:var(--muted); font-weight:400; margin-top:2px;">出境層貴賓室</div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SWITCH TERMINAL CONFIRM MODAL ============ -->
+<div class="modal-backdrop" id="switchTerminalModal">
+  <div class="modal" style="width: 460px;">
+    <div class="modal-header">
+      <div>
+        <div style="font-size:16px; font-weight:600;">⚠️ 切換航廈確認</div>
+      </div>
+      <button class="modal-close" onclick="closeSwitchTerminalModal()">✕</button>
+    </div>
+    <div class="modal-body" id="switchTerminalBody">
+      <!-- Dynamic content -->
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeSwitchTerminalModal()">取消</button>
+      <button class="danger" id="confirmSwitchBtn" onclick="doSwitchTerminal()">確認切換</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ FORGOT PASSWORD MODAL ============ -->
 <div class="modal-backdrop" id="forgotPasswordModal">
   <div class="modal" style="width: 440px;">
@@ -1221,6 +1416,75 @@ UPDATE users
   </div>
 </div>
 
+<!-- ============ ADD/EDIT TABLE MODAL ============ -->
+<div class="modal-backdrop" id="tableModal">
+  <div class="modal" style="width: 460px;">
+    <div class="modal-header">
+      <div><div style="font-size:16px; font-weight:600;" id="tableModalTitle">新增桌位</div></div>
+      <button class="modal-close" onclick="closeTableModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="tableModalError" style="display:none; background:#FFECEC; color:#C53E1D; padding:8px 12px; border-radius:8px; font-size:12px; margin-bottom:12px;"></div>
+      <div class="form-row"><label>航廈</label>
+        <select id="tmTerminal">
+          <option value="T1">T1 · 桃園第一航廈</option>
+          <option value="T2">T2 · 桃園第二航廈</option>
+        </select>
+      </div>
+      <div class="form-row"><label>區域</label>
+        <select id="tmZone">
+          <option value="A">A</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="D">D</option>
+        </select>
+      </div>
+      <div class="form-row"><label>桌名</label><input type="text" id="tmLabel" placeholder="例：沙發 5、4 人餐桌"/></div>
+      <div class="form-row"><label>席數</label>
+        <input type="number" id="tmCapacity" value="1" min="1" max="20"/>
+      </div>
+      <div class="form-row"><label>形狀</label>
+        <select id="tmShape">
+          <option value="round">🟠 圓桌</option>
+          <option value="rectangular">▭ 方桌 / 長桌</option>
+          <option value="sofa">🛋 沙發</option>
+          <option value="bar">🍸 吧檯</option>
+          <option value="shower">🚿 淋浴間</option>
+          <option value="solo">💺 獨立位</option>
+        </select>
+      </div>
+      <div style="font-size:11px; color:var(--muted); margin-top:6px; line-height:1.5;">
+        📌 新增後系統會自動建立對應席位（如 A-13、A-14…）。<br/>
+        📌 修改席數需先「刪除桌後重建」，避免有人使用中造成混亂。
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeTableModal()">取消</button>
+      <button class="primary" onclick="submitTableModal()" id="tableModalSubmit">建立</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ EDIT ZONE MODAL ============ -->
+<div class="modal-backdrop" id="zoneModal">
+  <div class="modal" style="width: 400px;">
+    <div class="modal-header">
+      <div><div style="font-size:16px; font-weight:600;">編輯區域名稱</div></div>
+      <button class="modal-close" onclick="closeZoneModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="zoneModalError" style="display:none; background:#FFECEC; color:#C53E1D; padding:8px 12px; border-radius:8px; font-size:12px; margin-bottom:12px;"></div>
+      <div class="form-row"><label>航廈</label><div id="zmTerminal" style="font-family:'JetBrains Mono'; font-weight:600;">—</div></div>
+      <div class="form-row"><label>區代碼</label><div id="zmZoneKey" style="font-family:'JetBrains Mono'; font-weight:600;">—</div></div>
+      <div class="form-row"><label>顯示名稱</label><input type="text" id="zmLabel" placeholder="例：沙發休憩區"/></div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeZoneModal()">取消</button>
+      <button class="primary" onclick="submitZoneModal()">儲存</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ ADMIN: USER MODAL (新增/編輯/重設) ============ -->
 <div class="modal-backdrop" id="userModal">
   <div class="modal" style="width: 440px;">
@@ -1239,6 +1503,7 @@ UPDATE users
       <div class="form-row"><label>身份</label><select id="umRole">
         <option value="櫃檯">劃位櫃檯</option><option value="帶位員" selected>貴賓室帶位員</option>
         <option value="清潔">清潔人員</option><option value="餐飲">餐飲組</option><option value="主管">值班主管</option>
+        <option value="viewer">📺 遠端觀看者（只讀）</option>
       </select></div>
       <div class="form-row"><label>初始密碼</label><input type="text" id="umPassword" placeholder="使用者登入後強制改" autocomplete="off"/></div>
       <div class="form-row"><label></label><label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--ink);"><input type="checkbox" id="umIsAdmin"/> 管理員權限</label></div>
@@ -1305,7 +1570,7 @@ async function bootstrapAuth() {
       return;
     }
     const u = data[0];
-    setCurrentUser({
+    await setCurrentUser({
       id: u.user_id,
       username: u.username,
       display_name: u.display_name,
@@ -1322,16 +1587,301 @@ async function bootstrapAuth() {
   }
 }
 
-function setCurrentUser(user) {
+async function setCurrentUser(user) {
   currentUser = user;
   localStorage.setItem('lounge_session', JSON.stringify({
     session_token: user.session_token, username: user.username,
   }));
   renderIdentity();
   document.getElementById('navAdmin').style.display = user.is_admin ? 'flex' : 'none';
-  // Initialize data now that we're authenticated
-  initData();
-  loadSlackConfig();
+
+  // Viewer role: read-only remote monitor. Hide operational nav items.
+  const isViewer = (user.role || '').toLowerCase() === 'viewer';
+  document.getElementById('navMonitor').style.display = isViewer ? 'flex' : 'none';
+  if (isViewer) {
+    // Hide operational-only nav items
+    document.querySelector('.nav-btn[data-view="lounge"]').style.display = 'none';
+    document.querySelector('.nav-btn[data-view="chat"]').style.display = 'none';
+    document.querySelector('.nav-btn[data-view="inventory"]').style.display = 'none';
+    document.querySelector('.nav-btn[data-view="forecast"]').style.display = 'none';
+    document.getElementById('switchTerminalBtn').style.display = 'none';
+    // Landing page: monitor
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('navMonitor').classList.add('active');
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-monitor').classList.add('active');
+    // Viewers see BOTH terminals; no working_terminal needed
+    currentUser.is_viewer = true;
+  } else {
+    // Restore visibility (in case someone switches accounts)
+    ['lounge','chat','inventory','forecast'].forEach(v => {
+      const el = document.querySelector('.nav-btn[data-view="'+v+'"]');
+      if (el) el.style.display = '';
+    });
+    const btn = document.getElementById('switchTerminalBtn'); if (btn) btn.style.display = '';
+  }
+
+  if (isViewer) {
+    // Skip terminal choice for viewers; go straight to monitor with both terminals
+    currentTerminal = 'T1';  // dummy, monitor loads both anyway
+    if (isConfigured) startMonitorTicker();
+    else renderMonitor();
+    loadSlackConfig();
+    return;
+  }
+
+  // Regular operators: ensure a working_terminal is chosen before loading data
+  await ensureWorkingTerminal();
+}
+
+// Check server + localStorage for saved terminal choice; if none → prompt.
+// Only when a terminal is confirmed do we actually load data.
+async function ensureWorkingTerminal() {
+  const badge = document.getElementById('currentTerminalBadge');
+  if (!isConfigured) {
+    // Local mode: skip server check, default to T1
+    currentTerminal = 'T1';
+    if (badge) badge.textContent = 'T1';
+    initData(); loadSlackConfig();
+    return;
+  }
+  let wt = null;
+  try {
+    const { data } = await sb.rpc('get_working_terminal', { p_token: currentUser.session_token });
+    wt = data;
+  } catch(e) {
+    // RPC may not exist yet if migration hasn't run — fall back to localStorage
+    console.warn('get_working_terminal missing, falling back to localStorage');
+    wt = localStorage.getItem('lounge_working_terminal');
+  }
+  if (wt === 'T1' || wt === 'T2') {
+    applyWorkingTerminal(wt);
+    initData(); loadSlackConfig();
+  } else {
+    // Show choice modal — data loads after user picks
+    document.getElementById('terminalChoiceModal').classList.add('active');
+  }
+}
+
+function applyWorkingTerminal(t) {
+  currentTerminal = t;
+  currentUser && (currentUser.working_terminal = t);
+  localStorage.setItem('lounge_working_terminal', t);
+  const badge = document.getElementById('currentTerminalBadge');
+  if (badge) badge.textContent = t;
+  const sub = document.getElementById('terminalSubtitle');
+  if (sub) sub.textContent = t === 'T1' ? '桃園第一航廈 · 出境層' : '桃園第二航廈 · 出境層';
+  applyZoneLabels();  // Re-apply zone titles for new terminal
+}
+
+async function chooseWorkingTerminal(terminal) {
+  if (!isConfigured) {
+    applyWorkingTerminal(terminal);
+    document.getElementById('terminalChoiceModal').classList.remove('active');
+    initData(); loadSlackConfig();
+    return;
+  }
+  try {
+    const { data, error } = await sb.rpc('set_working_terminal', {
+      p_token: currentUser.session_token, p_terminal: terminal,
+    });
+    if (error) throw error;
+    if (!data) throw new Error('儲存航廈選擇失敗');
+    applyWorkingTerminal(terminal);
+    document.getElementById('terminalChoiceModal').classList.remove('active');
+    initData(); loadSlackConfig();
+  } catch(e) {
+    alert('設定航廈失敗:' + e.message + '\n若 RPC 尚未建立，請跑 working-terminal-migration.sql');
+    // Fall back: apply locally anyway so operator can start working
+    applyWorkingTerminal(terminal);
+    document.getElementById('terminalChoiceModal').classList.remove('active');
+    initData(); loadSlackConfig();
+  }
+}
+
+function promptSwitchTerminal() {
+  if (!currentTerminal) return;
+  const current = currentTerminal;
+  const other = current === 'T1' ? 'T2' : 'T1';
+  document.getElementById('switchTerminalBody').innerHTML = `
+    <div style="text-align:center; padding:10px 0;">
+      <div style="font-size:36px;">🔄</div>
+      <div style="font-size:15px; margin-top:12px;">
+        確定要從 <b style="color:var(--gold);">${current}</b> 切換到 <b style="color:var(--gold);">${other}</b>？
+      </div>
+    </div>
+    <div style="background:var(--dirty-bg); color:#7A5514; padding:12px 14px; border-radius:8px; margin-top:14px; font-size:12px; line-height:1.6;">
+      <b>⚠️ 切換提醒</b>
+      <ul style="margin:8px 0 0 18px; padding:0;">
+        <li>切換後只會看到 <b>${other}</b> 的座位、統計、預估、隊列</li>
+        <li>若正在進行帶位，未確認的操作會被自動取消</li>
+        <li>請確保 <b>${current}</b> 的工作已交接完成再切換</li>
+        <li>Slack 推播、聊天訊息也會標記為 <b>${other}</b></li>
+      </ul>
+    </div>
+  `;
+  document.getElementById('confirmSwitchBtn').dataset.target = other;
+  document.getElementById('confirmSwitchBtn').textContent = `確認切換到 ${other}`;
+  document.getElementById('switchTerminalModal').classList.add('active');
+}
+
+function closeSwitchTerminalModal() {
+  document.getElementById('switchTerminalModal').classList.remove('active');
+}
+
+async function doSwitchTerminal() {
+  const target = document.getElementById('confirmSwitchBtn').dataset.target;
+  if (!target) return;
+  // Cancel any pending intake first
+  if (pendingIntake) cancelSelection();
+  if (isConfigured) {
+    try {
+      const { data, error } = await sb.rpc('set_working_terminal', {
+        p_token: currentUser.session_token, p_terminal: target,
+      });
+      if (error) throw error;
+      if (!data) throw new Error('更新 session 失敗');
+    } catch(e) {
+      // Keep going locally even if server fails
+      console.warn('set_working_terminal failed:', e);
+    }
+  }
+  applyWorkingTerminal(target);
+  closeSwitchTerminalModal();
+  // Reload data for the new terminal
+  if (isConfigured) await loadSeats(); else loadLocalFallback();
+  const activeView = document.querySelector('.view.active')?.id;
+  if (activeView === 'view-stats') loadStats();
+  if (activeView === 'view-forecast') loadForecast();
+  _todayCountCache = { key: null, value: 0, at: 0 };
+}
+
+/* ============================================================
+   REMOTE MONITOR (viewer role)
+   ============================================================ */
+let _monitorTicker = null;
+let _monitorData = { T1: null, T2: null };
+
+async function loadMonitorData() {
+  if (!isConfigured) {
+    // Local fallback: just show current in-memory state for one terminal
+    _monitorData.T1 = summariseSeatsForMonitor(Object.values(seats), 'T1');
+    _monitorData.T2 = { tables: [], seats: [], stats: null };
+    renderMonitor();
+    return;
+  }
+  try {
+    const [{ data: s1 }, { data: s2 }] = await Promise.all([
+      sb.from('seats').select('*').eq('terminal', 'T1'),
+      sb.from('seats').select('*').eq('terminal', 'T2'),
+    ]);
+    _monitorData.T1 = summariseSeatsForMonitor(s1 || [], 'T1');
+    _monitorData.T2 = summariseSeatsForMonitor(s2 || [], 'T2');
+    // Today's counts
+    const start = new Date(); start.setHours(0,0,0,0);
+    const end = new Date(); end.setHours(23,59,59,999);
+    for (const term of ['T1','T2']) {
+      try {
+        const { count } = await sb.from('entries')
+          .select('id', { count: 'exact', head: true })
+          .eq('terminal', term)
+          .gte('entry_time', start.toISOString())
+          .lte('entry_time', end.toISOString());
+        if (_monitorData[term]) _monitorData[term].todayCount = count || 0;
+      } catch(e) { /* ignore */ }
+    }
+    renderMonitor();
+  } catch(e) {
+    console.error('loadMonitorData failed:', e);
+  }
+}
+
+function summariseSeatsForMonitor(rows, term) {
+  const tblMap = {};
+  let usedSeats = 0, availSeats = 0, dirtySeats = 0, blockedSeats = 0;
+  let seatedCount = 0, overdue = 0, imminent = 0, vipCount = 0;
+  const seatCodes = [];
+  rows.forEach(s => {
+    const tid = s.table_id || ('solo-' + s.code);
+    if (!tblMap[tid]) tblMap[tid] = { any_used: false };
+    if (['seated','dirty','cleaning','blocked'].includes(s.status)) tblMap[tid].any_used = true;
+    if (s.status === 'avail') availSeats++;
+    if (s.status === 'seated') { usedSeats++; seatedCount++; if (s.vip) vipCount++; }
+    if (s.status === 'dirty') dirtySeats++;
+    if (s.status === 'blocked') blockedSeats++;
+    if (s.status === 'seated' && s.std) {
+      const m = minsUntilDep(s.std);
+      if (m < 0) overdue++;
+      else if (m < 30) imminent++;
+    }
+    seatCodes.push({ code: s.code, status: s.status });
+  });
+  const totalTables = Object.keys(tblMap).length;
+  const usedTables = Object.values(tblMap).filter(t => t.any_used).length;
+  return {
+    term, totalTables, usedTables, availTables: totalTables - usedTables,
+    totalSeats: rows.length, usedSeats, availSeats, dirtySeats, blockedSeats,
+    seatedCount, overdue, imminent, vipCount,
+    utilPct: totalTables > 0 ? Math.round(usedTables / totalTables * 100) : 0,
+    seatCodes: seatCodes.sort((a,b) => a.code.localeCompare(b.code)),
+    todayCount: 0,
+  };
+}
+
+function renderMonitor() {
+  const pane = document.getElementById('monitorTwinPane');
+  if (!pane) return;
+  const clockEl = document.getElementById('monitorClock');
+  if (clockEl) clockEl.textContent = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+  const cards = ['T1', 'T2'].map(term => {
+    const d = _monitorData[term];
+    if (!d) return `<div class="mon-card ${term==='T2'?'terminal-t2':''}"><h3>${term} 貴賓室</h3><div style="color:var(--muted); padding:20px 0; text-align:center;">載入中…</div></div>`;
+
+    const badgeClass = d.overdue > 0 ? 'danger' : d.utilPct >= 80 ? 'warn' : 'ok';
+    const badgeText = d.overdue > 0 ? `⚠️ ${d.overdue} 超時`
+      : d.utilPct >= 80 ? '⚠ 接近客滿' : '✓ 正常';
+
+    const miniSeats = d.seatCodes.map(s =>
+      `<div class="mon-mini-seat ${s.status}" title="${s.code} · ${s.status}"></div>`
+    ).join('');
+
+    return `
+      <div class="mon-card ${term==='T2'?'terminal-t2':''}">
+        <h3>${term} 貴賓室 <span class="mon-badge ${badgeClass}">${badgeText}</span></h3>
+        <div style="display:flex; align-items:baseline; gap:12px;">
+          <div class="mon-big">${d.usedTables}<span class="unit">/ ${d.totalTables} 桌</span></div>
+          <div style="font-size:20px; color:var(--muted); font-weight:300;">${d.utilPct}%</div>
+        </div>
+        <div class="mon-util-bar"><div class="mon-util-fill" style="width:${d.utilPct}%"></div></div>
+        <div style="font-size:11px; color:var(--muted); font-family:'JetBrains Mono';">
+          席位 ${d.usedSeats}/${d.totalSeats} · 空桌 ${d.availTables} · 待清潔 ${d.dirtySeats} 席
+        </div>
+
+        <div class="mon-kpis">
+          <div class="mon-kpi ${d.overdue > 0 ? 'danger' : ''}"><div class="k">已超時</div><div class="v">${d.overdue}</div></div>
+          <div class="mon-kpi ${d.imminent > 0 ? 'warn' : ''}"><div class="k">30 分內離場</div><div class="v">${d.imminent}</div></div>
+          <div class="mon-kpi"><div class="k">今日進場</div><div class="v">${d.todayCount || 0}</div></div>
+          <div class="mon-kpi ${d.vipCount > 0 ? 'warn' : ''}"><div class="k">★ VIP 使用中</div><div class="v">${d.vipCount}</div></div>
+        </div>
+
+        <div class="mon-mini-seatmap" title="即時席位狀態（未顯示旅客資料）">
+          ${miniSeats}
+        </div>
+      </div>`;
+  }).join('');
+
+  pane.innerHTML = cards;
+}
+
+function startMonitorTicker() {
+  if (_monitorTicker) clearInterval(_monitorTicker);
+  loadMonitorData();
+  _monitorTicker = setInterval(loadMonitorData, 30000);  // refresh every 30s
+}
+
+function stopMonitorTicker() {
+  if (_monitorTicker) { clearInterval(_monitorTicker); _monitorTicker = null; }
 }
 
 function showLoginModal() {
@@ -1360,7 +1910,7 @@ async function doLogin() {
       errEl.style.display = 'block'; return;
     }
     const u = data[0];
-    setCurrentUser({
+    await setCurrentUser({
       id: u.user_id,
       username: u.username,
       display_name: u.display_name,
@@ -1384,8 +1934,11 @@ async function doLogout() {
   if (isConfigured && currentUser?.session_token) {
     try { await sb.rpc('logout_user', { p_token: currentUser.session_token }); } catch(e){}
   }
+  stopMonitorTicker();
   localStorage.removeItem('lounge_session');
+  localStorage.removeItem('lounge_working_terminal');
   currentUser = null;
+  currentTerminal = 'T1';
   document.getElementById('identityModal').classList.remove('active');
   document.getElementById('navAdmin').style.display = 'none';
   showLoginModal();
@@ -1879,20 +2432,66 @@ function setConnStatus(state, text, short) {
 
 let seats = {}, flights = {};
 let tables = {};  // table_id → { table_id, zone, codes: [...], label }
+let loungeTableConfigs = {};  // terminal → array of lounge_tables rows (for admin panel + label lookup)
+let loungeZoneLabels = {};    // terminal → { A: '...', B: '...', ... }
 let currentTerminal = 'T1';
 let selectedSeat = null;
 let currentQTab = 'upcoming';
+const SHAPE_LABELS = { round:'🟠 圓桌', rectangular:'▭ 方桌', sofa:'🛋 沙發', bar:'🍸 吧檯', shower:'🚿 淋浴', solo:'💺 獨立位' };
 const zones = { A: { label: 'A · 沙發休憩區', codes: [] }, B: { label: 'B · 用餐區', codes: [] }, C: { label: 'C · 商務工作區', codes: [] }, D: { label: 'D · 吧檯 & 淋浴間', codes: [] } };
+
+// ---- Zone label loading ------------------------------------------------
+async function loadZoneLabels() {
+  if (!isConfigured) return;
+  try {
+    const { data } = await sb.from('lounge_zones').select('*');
+    loungeZoneLabels = { T1: {}, T2: {} };
+    (data || []).forEach(z => {
+      if (!loungeZoneLabels[z.terminal]) loungeZoneLabels[z.terminal] = {};
+      loungeZoneLabels[z.terminal][z.zone_key] = z.label;
+    });
+    applyZoneLabels();
+  } catch(e) { /* table may not exist yet; keep defaults */ }
+}
+function applyZoneLabels() {
+  const perTerm = loungeZoneLabels[currentTerminal] || {};
+  ['A','B','C','D'].forEach(k => {
+    const label = perTerm[k];
+    if (label) {
+      zones[k].label = `${k} · ${label}`;
+      const el = document.getElementById('zoneLabel' + k);
+      if (el) el.textContent = zones[k].label;
+    }
+  });
+}
+
+// ---- Lounge tables (for label lookup + admin panel) -------------------
+async function loadLoungeTables() {
+  if (!isConfigured) return;
+  try {
+    const { data } = await sb.from('lounge_tables').select('*').order('terminal').order('zone').order('sort_order');
+    loungeTableConfigs = { T1: [], T2: [] };
+    (data || []).forEach(t => {
+      if (!loungeTableConfigs[t.terminal]) loungeTableConfigs[t.terminal] = [];
+      loungeTableConfigs[t.terminal].push(t);
+    });
+  } catch(e) { /* table may not exist yet */ }
+}
 
 // ---- Table helpers -----------------------------------------------------
 function tableLabelFor(tid) {
   if (!tid) return '';
+  // Prefer lounge_tables label if available
+  const tbl = (loungeTableConfigs[currentTerminal] || []).find(t => t.table_id === tid);
+  if (tbl && tbl.label) return tbl.label;
+  // Fallback to old naming heuristic
   if (tid.startsWith('sofa-'))   return '沙發 ' + tid.slice(5);
   if (tid.startsWith('dining-')) return '餐桌 ' + tid.slice(7);
-  if (tid.startsWith('desk-'))   return '';  // solo, no label
+  if (tid.startsWith('desk-'))   return '';
   if (tid.startsWith('bar-'))    return '';
   if (tid.startsWith('shower-')) return '';
   if (tid.startsWith('solo-'))   return '';
+  if (tid.startsWith('custom-')) return tid.replace(/^custom-\w+-/, '桌 ');
   return tid;
 }
 function tableIdOf(codeOrSeat) {
@@ -1938,16 +2537,40 @@ async function initData() {
 }
 
 async function loadSeats() {
+  // Load lounge_tables and zone labels first (so tableLabelFor works during render)
+  await loadLoungeTables();
+  await loadZoneLabels();
+
+  // Only pull active seats (inactive ones are deactivated table's chairs)
   const { data, error } = await sb.from('seats').select('*').eq('terminal', currentTerminal);
   if (error) throw error;
   seats = {}; Object.keys(zones).forEach(z => zones[z].codes = []);
-  data.forEach(row => {
+  (data || []).forEach(row => {
+    // Skip inactive seats — the admin turned off that table
+    if (row.is_active === false) return;
     seats[row.code] = row;
     if (zones[row.zone]) zones[row.zone].codes.push(row.code);
   });
-  Object.keys(zones).forEach(z => zones[z].codes.sort());
+  // Sort each zone's codes by table sort_order (then by code within same table)
+  Object.keys(zones).forEach(z => zones[z].codes = sortCodesByTableOrder(zones[z].codes));
   rebuildTablesIndex();
   renderAll();
+}
+
+function tableSortOrderFor(tid) {
+  if (!tid) return 999999;
+  const tbl = (loungeTableConfigs[currentTerminal] || []).find(t => t.table_id === tid);
+  return tbl ? (tbl.sort_order || 100) : 999999;
+}
+function sortCodesByTableOrder(codes) {
+  return codes.slice().sort((a, b) => {
+    const sa = seats[a], sb = seats[b];
+    if (!sa || !sb) return a.localeCompare(b);
+    const ta = tableSortOrderFor(sa.table_id);
+    const tb = tableSortOrderFor(sb.table_id);
+    if (ta !== tb) return ta - tb;
+    return a.localeCompare(b);
+  });
 }
 async function loadFlights() {
   const { data, error } = await sb.from('flights').select('*');
@@ -1963,8 +2586,24 @@ function subscribeRealtime() {
     // DELETE payload.new is `{}` (truthy empty), so we can't use `|| payload.old` — pick by eventType.
     const row = payload.eventType === 'DELETE' ? payload.old : payload.new;
     if (!row || row.terminal !== currentTerminal) return;
-    if (payload.eventType === 'DELETE') delete seats[row.code];
-    else seats[row.code] = row;
+    const zk = row.zone;
+    if (payload.eventType === 'DELETE') {
+      delete seats[row.code];
+      if (zones[zk]) zones[zk].codes = zones[zk].codes.filter(c => c !== row.code);
+    } else {
+      // INSERT or UPDATE — respect is_active
+      if (row.is_active === false) {
+        delete seats[row.code];
+        if (zones[zk]) zones[zk].codes = zones[zk].codes.filter(c => c !== row.code);
+      } else {
+        const wasNew = !seats[row.code];
+        seats[row.code] = row;
+        if (wasNew && zones[zk] && !zones[zk].codes.includes(row.code)) {
+          zones[zk].codes.push(row.code);
+          zones[zk].codes = sortCodesByTableOrder(zones[zk].codes);
+        }
+      }
+    }
     rebuildTablesIndex();
     renderAll();
   }).subscribe();
@@ -2100,8 +2739,27 @@ async function logExit(code, seatBefore) {
 
 async function releaseSeat(code) {
   const before = { ...seats[code] };
+  // Multi-table group: release all tables in the group at once
+  if (before.group_id) {
+    const gid = before.group_id;
+    const groupSeatsAll = Object.values(seats).filter(s => s.group_id === gid);
+    const dirtyCodes = groupSeatsAll.filter(s => s.status === 'seated').map(s => s.code);
+    const availCodes = groupSeatsAll.filter(s => s.status === 'blocked').map(s => s.code);
+    if (dirtyCodes.length > 0) {
+      const p = { status: 'dirty', passenger_name: null, flight_no: null, destination: null, destination_name: null, std: null, party_size: null, class: null, vip: null, entry_time: null };
+      if (_seatsHasGroupId) p.group_id = null;
+      await updateSeatsWithGroupFallback(dirtyCodes, p);
+    }
+    if (availCodes.length > 0) {
+      const p = { status: 'avail' };
+      if (_seatsHasGroupId) p.group_id = null;
+      await updateSeatsWithGroupFallback(availCodes, p);
+    }
+    await logExit(code, before);
+    return;
+  }
+  // Single-table release (original behavior)
   await updateSeat(code, { status: 'dirty', passenger_name: null, flight_no: null, destination: null, destination_name: null, std: null, party_size: null, class: null, vip: null, entry_time: null });
-  // Unblock siblings: they were 'blocked' while this table was occupied, now free again
   const table = tableOf(code);
   if (table && table.codes.length > 1) {
     const blocked = table.codes.filter(c => c !== code && seats[c]?.status === 'blocked');
@@ -2157,11 +2815,12 @@ function minsUntilDep(s) { return minsUntilSTD(s) - 30; }
 function timeBand(s) { const m = minsUntilSTD(s); if (m<30) return 'band-imminent'; if (m<60) return 'band-soon'; return 'band-later'; }
 
 function renderSeats() {
+  const isSelecting = !!pendingIntake;
   Object.entries(zones).forEach(([zk, z]) => {
     const grid = document.getElementById(`grid-${zk}`); if (!grid) return;
     grid.innerHTML = '';
     // Track table-level and seat-level counts for zone header
-    const zoneTables = {};       // tid → { total, availSeats, tableUsed }
+    const zoneTables = {};
     z.codes.forEach(code => {
       const s = seats[code]; if (!s) return;
       const tid = tableIdOf(s);
@@ -2182,7 +2841,8 @@ function renderSeats() {
       const tid = tableIdOf(s);
       const tint = tableTintFor(tid);
       const el = document.createElement('div');
-      el.className = `seat ${s.status}` + (selectedSeat===code?' selected':'');
+      const isPreSelected = isSelecting && pendingSelectedTableIds.includes(tid);
+      el.className = `seat ${s.status}` + (selectedSeat===code?' selected':'') + (isPreSelected ? ' pre-selected' : '');
       el.dataset.table = tid || '';
       if (tint) el.style.borderTopColor = tint;
       const iconMap = { avail:'', seated:'●', dirty:'🧹', cleaning:'✨', blocked:'🔒' };
@@ -2393,12 +3053,24 @@ function renderQueue() {
 }
 
 let pendingIntake = null;
+let pendingTableCount = null;      // number of tables the operator wants
+let pendingSelectedTableIds = [];  // ordered list of selected table_ids
+
 function onSeatClick(code) {
   const s = seats[code];
-  if (!s) return;  // race condition guard (realtime DELETE / terminal switch)
-  if (pendingIntake && s.status === 'avail') { assignSeatToPending(code); return; }
-  if (pendingIntake) return;
-  // Blocked chair: redirect to the occupied chair at same table
+  if (!s) return;  // race condition guard
+  // In pending-intake mode, click means "select this seat's table"
+  if (pendingIntake) {
+    if (pendingTableCount == null) return;  // still on step 1 (choosing count)
+    const t = tableOf(code);
+    if (!t) return;
+    // Only allow selecting a table if all its chairs are avail (nobody there)
+    const tableFree = t.codes.every(c => seats[c]?.status === 'avail');
+    if (!tableFree) return;
+    toggleTableSelection(t.table_id);
+    return;
+  }
+  // Not in intake mode
   if (s.status === 'blocked') {
     const t = tableOf(code);
     if (t) {
@@ -2407,6 +3079,222 @@ function onSeatClick(code) {
     }
   }
   openSeatModal(code);
+}
+
+function enterSeatSelection() {
+  if (!pendingIntake) return;
+  pendingTableCount = null;
+  pendingSelectedTableIds = [];
+  document.getElementById('selectBanner').classList.add('active');
+  document.body.classList.add('seat-select');
+  document.querySelector('.nav-btn[data-view="lounge"]')?.click();
+  updateSelectBanner();
+  renderSeats();  // apply .seat-select body class effects
+}
+
+function cancelSelection() {
+  pendingIntake = null;
+  pendingTableCount = null;
+  pendingSelectedTableIds = [];
+  document.body.classList.remove('seat-select');
+  document.getElementById('selectBanner').classList.remove('active');
+  renderSeats();
+}
+
+// -------- Stage 1: choose how many tables ---------
+function chooseTableCount(n) {
+  if (!pendingIntake) return;
+  pendingTableCount = n;
+  pendingSelectedTableIds = [];
+  updateSelectBanner();
+  renderSeats();
+}
+
+// -------- Stage 2: toggle table selection ---------
+function toggleTableSelection(tableId) {
+  if (!pendingIntake || pendingTableCount == null) return;
+  const idx = pendingSelectedTableIds.indexOf(tableId);
+  if (idx >= 0) {
+    pendingSelectedTableIds.splice(idx, 1);
+  } else {
+    if (pendingSelectedTableIds.length >= pendingTableCount) {
+      // Full — replace the first-selected (FIFO), or ignore. Simpler: ignore.
+      alert(`已選滿 ${pendingTableCount} 桌，要改請先取消已選的桌`);
+      return;
+    }
+    pendingSelectedTableIds.push(tableId);
+  }
+  updateSelectBanner();
+  renderSeats();
+}
+
+function goBackToChooseCount() {
+  pendingTableCount = null;
+  pendingSelectedTableIds = [];
+  updateSelectBanner();
+  renderSeats();
+}
+
+// -------- Banner UI --------
+function updateSelectBanner() {
+  const box = document.getElementById('sbContent');
+  if (!pendingIntake) { box.innerHTML = ''; return; }
+  const p = pendingIntake;
+  const paxLabel = `<b>${escapeHtml(p.name)}</b>${p.party_size > 1 ? ' 一行 ' + p.party_size + ' 位' : ''}${p.vip?' ★':''}`;
+  const flightLabel = `${escapeHtml(p.flight_no || '手動客')} ${p.destination_name ? '→ ' + escapeHtml(p.destination_name) : ''} ${p.std ? '· STD ' + escapeHtml(p.std) : ''}`;
+
+  // STAGE 1: choose table count
+  if (pendingTableCount == null) {
+    // Max reasonable table count: party_size or 4, whichever bigger; capped at 4
+    const maxCount = Math.min(4, Math.max(p.party_size || 1, 2));
+    const btns = [];
+    for (let i = 1; i <= maxCount; i++) btns.push(`<button onclick="chooseTableCount(${i})">${i} 桌</button>`);
+    box.innerHTML = `
+      <div class="sb-row">
+        <div class="sb-title">🪑 帶位：${paxLabel} <span class="sb-meta">${flightLabel}</span></div>
+        <button class="sb-cancel" onclick="cancelSelection()">取消</button>
+      </div>
+      <div class="sb-row">
+        <div class="sb-prompt">需要幾張桌？</div>
+        <div class="sb-tables-count">${btns.join('')}</div>
+      </div>`;
+    return;
+  }
+
+  // STAGE 2/3: selecting tables (or all selected)
+  const need = pendingTableCount;
+  const chosen = pendingSelectedTableIds;
+  const done = chosen.length >= need;
+  const totalSeats = chosen.reduce((sum, tid) => sum + (tables[tid]?.codes.length || 0), 0);
+  const chipHtml = chosen.length > 0
+    ? chosen.map(tid => {
+        const t = tables[tid];
+        const label = t?.label || tid;
+        const seatCodes = t ? t.codes.join('、') : '';
+        return `<span class="sb-chip">${escapeHtml(label || seatCodes)} · ${t?.codes.length || 0} 席 <span class="sb-chip-x" onclick="toggleTableSelection('${escapeHtml(tid)}')">✕</span></span>`;
+      }).join('')
+    : '<span style="font-size:12px; color:rgba(255,255,255,0.5);">尚未選桌…</span>';
+
+  const actionBtn = done
+    ? `<button class="sb-confirm" onclick="confirmMultiTableAssign()">✓ 確認帶位 (共 ${totalSeats} 席)</button>`
+    : `<div class="sb-prompt">👆 點座位圖上的空桌</div>`;
+
+  box.innerHTML = `
+    <div class="sb-row">
+      <div class="sb-title">🪑 帶位：${paxLabel} <span class="sb-meta">${flightLabel}</span></div>
+      <button class="sb-cancel" onclick="cancelSelection()">取消</button>
+    </div>
+    <div class="sb-row">
+      <div class="sb-progress">選桌進度 ${chosen.length} / ${need} 桌${totalSeats > 0 ? ' · ' + totalSeats + ' 席' : ''}</div>
+      <button class="sb-back" onclick="goBackToChooseCount()">← 改桌數</button>
+    </div>
+    <div class="sb-chips">${chipHtml}</div>
+    <div class="sb-row">${actionBtn}</div>`;
+}
+
+// -------- Stage 3: confirm and write to DB ---------
+// A group_id ties all chairs (primary + secondary tables) together.
+// Primary table records the full party_size and gets one entries row.
+// Secondary tables record the same passenger info but party_size = 0
+// (so SUM(party_size) in stats doesn't double-count the group).
+// Fallback: if seats.group_id column doesn't exist yet, we still succeed
+// (just without cross-table release convenience).
+let _seatsHasGroupId = true;
+
+async function confirmMultiTableAssign() {
+  const p = pendingIntake;
+  if (!p || !pendingSelectedTableIds.length) return;
+  const chosenTables = pendingSelectedTableIds
+    .map(tid => tables[tid])
+    .filter(Boolean);
+  if (chosenTables.length === 0) { cancelSelection(); return; }
+
+  const partyTotal = p.party_size || 1;
+  const nowIso = new Date().toISOString();
+  // Only assign a group_id when >1 tables (single-table keeps old behavior clean)
+  const groupId = chosenTables.length > 1
+    ? 'g-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6)
+    : null;
+
+  for (let i = 0; i < chosenTables.length; i++) {
+    const t = chosenTables[i];
+    const primaryCode = t.codes[0];
+    const siblings = t.codes.slice(1);
+    const isFirst = i === 0;
+    const suffix = chosenTables.length > 1 && !isFirst ? ' · 副桌' : '';
+
+    const primaryPatch = {
+      status: 'seated',
+      passenger_name: p.name + suffix,
+      flight_no: p.flight_no,
+      destination: p.destination,
+      destination_name: p.destination_name,
+      std: p.std,
+      // Full party_size on all tables so seat card shows "n 位" consistently.
+      // Stats won't double-count because only the primary writes an entries row.
+      party_size: partyTotal,
+      class: p.class,
+      vip: !!p.vip,
+      entry_time: nowIso,
+    };
+    if (groupId && _seatsHasGroupId) primaryPatch.group_id = groupId;
+
+    await updateSeatWithGroupFallback(primaryCode, primaryPatch);
+
+    if (siblings.length > 0) {
+      const siblingPatch = {
+        status: 'blocked',
+        passenger_name: null, flight_no: null, destination: null, destination_name: null,
+        std: null, party_size: null, class: null, vip: null, entry_time: null,
+      };
+      if (groupId && _seatsHasGroupId) siblingPatch.group_id = groupId;
+      await updateSeatsWithGroupFallback(siblings, siblingPatch);
+    }
+
+    // Only primary logs an entry (avoid double-counting the party)
+    if (isFirst) {
+      await logEntry(primaryCode, {
+        name: p.name,
+        flight_no: p.flight_no, destination: p.destination, destination_name: p.destination_name,
+        std: p.std, class: p.class, party_size: partyTotal, vip: p.vip,
+      });
+    }
+  }
+
+  if (p.vip) {
+    const tableList = chosenTables.map(t => t.label || t.codes[0]).join('、');
+    const totalSeatsTaken = chosenTables.reduce((s, t) => s + t.codes.length, 0);
+    const msg = `*${p.name}*${partyTotal > 1 ? ' 一行 ' + partyTotal + ' 位' : ''} 已入座 *${currentTerminal}*\n` +
+      `🪑 桌位：${tableList}（共 ${totalSeatsTaken} 席${chosenTables.length > 1 ? '，' + chosenTables.length + ' 桌' : ''}）\n` +
+      `✈️ *${p.flight_no || '—'}* → ${p.destination_name || p.destination || '—'}\n` +
+      `🕒 STD ${p.std || '—'} · 艙等 ${p.class || '—'}`;
+    notifySlack('vip_checkin', { message: msg, terminal: currentTerminal, sender: currentUser?.display_name });
+  }
+  cancelSelection();
+}
+
+// Wrappers that gracefully drop group_id if the column doesn't exist yet
+async function updateSeatWithGroupFallback(code, patch) {
+  try {
+    await updateSeat(code, patch);
+  } catch(e) {
+    if (patch.group_id && /group_id/i.test(e.message || '')) {
+      _seatsHasGroupId = false;
+      const p2 = { ...patch }; delete p2.group_id;
+      await updateSeat(code, p2);
+    } else { throw e; }
+  }
+}
+async function updateSeatsWithGroupFallback(codes, patch) {
+  try {
+    await updateSeats(codes, patch);
+  } catch(e) {
+    if (patch.group_id && /group_id/i.test(e.message || '')) {
+      _seatsHasGroupId = false;
+      const p2 = { ...patch }; delete p2.group_id;
+      await updateSeats(codes, p2);
+    } else { throw e; }
+  }
 }
 
 function openSeatModal(code) {
@@ -2420,6 +3308,24 @@ function openSeatModal(code) {
          <div style="margin-top:2px; color:var(--muted); font-size:11px;">同桌其他座位帶位期間無法接待其他組別</div>
        </div>`
     : '';
+
+  // Multi-table group: show sister tables
+  let groupInfo = '';
+  if (s.group_id) {
+    const groupSeats = Object.values(seats).filter(x => x.group_id === s.group_id && x.status === 'seated');
+    const groupTableIds = [...new Set(groupSeats.map(x => tableIdOf(x)))];
+    const groupTableLabels = groupTableIds.map(tid => {
+      const t = tables[tid];
+      return t ? (t.label || t.codes[0]) : tid;
+    });
+    if (groupTableIds.length > 1) {
+      groupInfo = `<div style="background:#F5E9D8; border-left:3px solid var(--cleaning); padding:8px 12px; margin-bottom:12px; font-size:12px; color:#7A5514; border-radius:6px;">
+         👥 <b>同組共 ${groupTableIds.length} 桌</b>：${escapeHtml(groupTableLabels.join('、'))}
+         <div style="margin-top:2px; font-size:11px; opacity:0.85;">按「旅客已離開」會整組一起釋出</div>
+       </div>`;
+    }
+  }
+
   document.getElementById('modalSeat').textContent = code;
   document.getElementById('modalZone').textContent = zn;
   const body = document.getElementById('modalBody');
@@ -2430,6 +3336,7 @@ function openSeatModal(code) {
     const paxInitial = s.passenger_name ? escapeHtml(s.passenger_name.charAt(0)) : '?';
     body.innerHTML = `
       ${tableInfo}
+      ${groupInfo}
       <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
         <div style="width:44px; height:44px; border-radius:50%; background:var(--navy-700); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:600;">${paxInitial}</div>
         <div><div style="font-size:16px; font-weight:600;">${escapeHtml(s.passenger_name)} ${s.vip?'★ VIP':''}</div><div style="font-size:12px; color:var(--muted);">${s.class==='FST'?'頭等艙':s.class==='BUS'?'商務艙':'經濟艙'} · ${s.party_size||1} 位</div></div>
@@ -2438,7 +3345,8 @@ function openSeatModal(code) {
       <div class="form-row"><label>STD</label><div style="font-family:'JetBrains Mono';">${escapeHtml(s.std||'-')} <span style="color:var(--muted); margin-left:8px;">(${min} 分後)</span></div></div>
       <div class="form-row"><label>入場</label><div style="font-family:'JetBrains Mono';">${s.entry_time ? new Date(s.entry_time).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}) : '-'}</div></div>
       <div class="form-row"><label>預估離開</label><div style="font-family:'JetBrains Mono'; color:${minDep<15?'#E5674C':'var(--ink)'}; font-weight:600;">${minDep>=0?minDep+' 分鐘後':'應已離開'}</div></div>`;
-    footer.innerHTML = `<button class="danger" onclick="releaseSeat('${code}').then(closeModal)">旅客已離開</button><button class="primary" onclick="closeModal()">關閉</button>`;
+    const releaseLabel = s.group_id ? '整組旅客已離開' : '旅客已離開';
+    footer.innerHTML = `<button class="danger" onclick="releaseSeat('${code}').then(closeModal)">${releaseLabel}</button><button class="primary" onclick="closeModal()">關閉</button>`;
   } else if (s.status === 'blocked') {
     body.innerHTML = `${tableInfo}<div style="text-align:center; padding:20px 0;"><div style="font-size:36px;">🔒</div><div style="font-size:15px; font-weight:600; margin-top:8px;">同桌被佔用</div><div style="font-size:12px; color:var(--muted); margin-top:6px;">此位置為 ${table?.label || '同桌'} 的一部份<br/>需等同桌旅客離開才會釋出</div></div>`;
     footer.innerHTML = `<button class="primary" onclick="closeModal()">了解</button>`;
@@ -2595,50 +3503,7 @@ async function confirmIntake() {
   closeIntake();
   enterSeatSelection();
 }
-function enterSeatSelection() {
-  document.body.classList.add('seat-select');
-  const banner = document.getElementById('selectBanner');
-  banner.classList.add('active');
-  document.getElementById('sbName').textContent = `為 ${pendingIntake.name} 帶位`;
-  document.getElementById('sbMeta').textContent = `${pendingIntake.flight_no || '手動'} · ${pendingIntake.std || '無班機'} · 點空位`;
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector('.nav-btn[data-view="lounge"]').classList.add('active');
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById('view-lounge').classList.add('active');
-  closeQueue();
-}
-function cancelSelection() { pendingIntake = null; document.body.classList.remove('seat-select'); document.getElementById('selectBanner').classList.remove('active'); }
-async function assignSeatToPending(code) {
-  const p = pendingIntake;
-  const seat = seats[code];
-  if (!seat) { cancelSelection(); return; }
 
-  // 1) Seat the pax at the clicked chair
-  await updateSeat(code, { status: 'seated', passenger_name: p.name, flight_no: p.flight_no, destination: p.destination, destination_name: p.destination_name, std: p.std, party_size: p.party_size, class: p.class, vip: !!p.vip, entry_time: new Date().toISOString() });
-
-  // 2) Block the sibling chairs at the same table (can't be given to another group)
-  const table = tableOf(code);
-  if (table && table.codes.length > 1) {
-    const siblings = table.codes.filter(c => c !== code && seats[c]?.status === 'avail');
-    if (siblings.length > 0) {
-      await updateSeats(siblings, {
-        status: 'blocked',
-        passenger_name: null, flight_no: null, destination: null, destination_name: null,
-        std: null, party_size: null, class: null, vip: null, entry_time: null,
-      });
-    }
-  }
-
-  await logEntry(code, p);
-  // Slack push: VIP check-in
-  if (p.vip) {
-    const msg = `*${p.name}*${p.party_size > 1 ? ' 一行 ' + p.party_size + ' 位' : ''} 已入座 *${currentTerminal}-${code}*\n` +
-      `✈️ *${p.flight_no || '—'}* → ${p.destination_name || p.destination || '—'}\n` +
-      `🕒 STD ${p.std || '—'} · 艙等 ${p.class || '—'}`;
-    notifySlack('vip_checkin', { message: msg, terminal: currentTerminal, sender: currentUser?.display_name });
-  }
-  cancelSelection();
-}
 
 /* Queue toggle (mobile) */
 function toggleQueue() { document.body.classList.toggle('queue-open'); }
@@ -2661,25 +3526,71 @@ document.querySelectorAll('.nav-btn[data-view]').forEach(btn => btn.addEventList
   if (btn.dataset.view === 'chat') document.getElementById('chatBadge').style.display = 'none';
   if (btn.dataset.view === 'stats') loadStats();
   if (btn.dataset.view === 'forecast') loadForecast();
-  if (btn.dataset.view === 'admin') loadUsers();
+  if (btn.dataset.view === 'admin') {
+    switchAdminTab(currentAdminTab || 'users');
+  }
+  if (btn.dataset.view === 'monitor') startMonitorTicker();
+  else stopMonitorTicker();
   closeQueue();
 }));
-document.querySelectorAll('[data-terminal]').forEach(b => b.addEventListener('click', async () => {
-  document.querySelectorAll('[data-terminal]').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active');
-  currentTerminal = b.dataset.terminal;
-  document.getElementById('terminalSubtitle').textContent = currentTerminal==='T1'?'桃園第一航廈 · 出境層':'桃園第二航廈 · 出境層';
-  cancelSelection();
-  if (isConfigured) { await loadSeats(); } else { loadLocalFallback(); }
-  if (document.getElementById('view-stats').classList.contains('active')) loadStats();
-  if (document.getElementById('view-forecast').classList.contains('active')) loadForecast();
-  // Reset today's count cache for the new terminal
-  _todayCountCache = { key: null, value: 0, at: 0 };
-}));
+// Terminal switching now goes through promptSwitchTerminal() + doSwitchTerminal()
+// (see modal in HTML above). The old [data-terminal] tabs are gone.
 document.querySelectorAll('.right-tab').forEach(t => t.addEventListener('click', () => {
   document.querySelectorAll('.right-tab').forEach(x=>x.classList.remove('active'));
   t.classList.add('active'); currentQTab = t.dataset.qtab; renderQueue();
 }));
+
+// Admin sub-tabs
+document.querySelectorAll('.admin-subtab').forEach(b => b.addEventListener('click', () => switchAdminTab(b.dataset.atab)));
+document.querySelectorAll('.admin-term-tab').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.admin-term-tab').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  tablesConfigTerm = b.dataset.term;
+  renderTablesConfig();
+}));
+
+// Drag & drop for reordering tables (event delegation on container)
+(function wireTablesDragDrop() {
+  const container = document.getElementById('tablesConfigList');
+  if (!container) return;
+  container.addEventListener('dragstart', (e) => {
+    const row = e.target.closest('.tc-row');
+    if (!row) return;
+    row.classList.add('dragging');
+    e.dataTransfer.setData('text/plain', row.dataset.tableId);
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  container.addEventListener('dragend', () => {
+    document.querySelectorAll('.tc-row.dragging').forEach(x => x.classList.remove('dragging'));
+    document.querySelectorAll('.tc-row.drag-over-before, .tc-row.drag-over-after')
+      .forEach(x => x.classList.remove('drag-over-before', 'drag-over-after'));
+  });
+  container.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const target = e.target.closest('.tc-row');
+    if (!target || target.classList.contains('dragging')) return;
+    const dragging = document.querySelector('.tc-row.dragging');
+    if (!dragging || dragging.dataset.zone !== target.dataset.zone) return;
+    document.querySelectorAll('.tc-row.drag-over-before, .tc-row.drag-over-after')
+      .forEach(x => x.classList.remove('drag-over-before', 'drag-over-after'));
+    const rect = target.getBoundingClientRect();
+    const isBefore = e.clientY < rect.top + rect.height / 2;
+    target.classList.add(isBefore ? 'drag-over-before' : 'drag-over-after');
+    e.dataTransfer.dropEffect = 'move';
+  });
+  container.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const target = e.target.closest('.tc-row');
+    if (!target) return;
+    const draggingId = e.dataTransfer.getData('text/plain');
+    const targetId = target.dataset.tableId;
+    if (!draggingId || draggingId === targetId) return;
+    const dragging = document.querySelector('.tc-row.dragging');
+    if (!dragging || dragging.dataset.zone !== target.dataset.zone) return;
+    const isBefore = target.classList.contains('drag-over-before');
+    reorderTables(draggingId, targetId, isBefore);
+  });
+})();
 
 /* Chat */
 let channels = [], currentChannelId = null, messagesByChannel = {}, channelSub = null;
@@ -3259,6 +4170,294 @@ document.querySelectorAll('[data-fcterm]').forEach(b => b.addEventListener('clic
 let userList = [];
 let userModalMode = 'create';  // 'create' | 'edit' | 'reset'
 let userModalTargetUsername = null;
+
+/* ============================================================
+   ADMIN: SUB-TAB SWITCHING + TABLES + ZONES MANAGEMENT
+   ============================================================ */
+let currentAdminTab = 'users';
+let tablesConfigTerm = 'T1';  // which terminal is being viewed in tables panel
+let tableModalMode = 'create';  // 'create' | 'edit'
+let tableModalEditingId = null;
+
+function switchAdminTab(tab) {
+  currentAdminTab = tab;
+  document.querySelectorAll('.admin-subtab').forEach(b => b.classList.toggle('active', b.dataset.atab === tab));
+  document.querySelectorAll('.admin-panel').forEach(p => p.classList.toggle('active', p.id === 'admin-' + tab));
+  if (tab === 'users')  loadUsers();
+  if (tab === 'tables') loadTablesConfig();
+  if (tab === 'zones')  loadZonesConfig();
+}
+
+// ---- Tables Config ----
+async function loadTablesConfig() {
+  if (!currentUser?.is_admin || !isConfigured) {
+    document.getElementById('tablesConfigList').innerHTML = '<div class="empty">需要管理員權限與 Supabase 連線</div>';
+    return;
+  }
+  try {
+    await loadLoungeTables();
+    renderTablesConfig();
+  } catch(e) {
+    document.getElementById('tablesConfigList').innerHTML = `<div class="empty">載入失敗：${escapeHtml(e.message)}</div>`;
+  }
+}
+function renderTablesConfig() {
+  const container = document.getElementById('tablesConfigList');
+  const list = (loungeTableConfigs[tablesConfigTerm] || []).slice()
+    .sort((a,b) => {
+      if (a.zone !== b.zone) return a.zone.localeCompare(b.zone);
+      return (a.sort_order || 100) - (b.sort_order || 100);
+    });
+  if (list.length === 0) {
+    container.innerHTML = `<div class="empty">${tablesConfigTerm} 尚無桌位配置 · 跑一次 tables-zones-admin-migration.sql 會自動從既有座位回填</div>`;
+    return;
+  }
+  let html = '';
+  let lastZone = null;
+  const perZoneLabels = loungeZoneLabels[tablesConfigTerm] || {};
+  list.forEach(t => {
+    if (t.zone !== lastZone) {
+      const zLabel = perZoneLabels[t.zone] || zones[t.zone]?.label?.split('·').pop().trim() || t.zone;
+      html += `<div class="tc-zone-header">${escapeHtml(t.zone)} 區 · ${escapeHtml(zLabel)} <span style="font-weight:400; color:var(--muted); text-transform:none; letter-spacing:0; margin-left:8px;">拖曳 ☰ 調整順序</span></div>`;
+      lastZone = t.zone;
+    }
+    const isActive = t.is_active !== false;
+    html += `<div class="tc-row ${isActive ? '' : 'inactive'}" draggable="true" data-table-id="${escapeHtml(t.table_id)}" data-zone="${escapeHtml(t.zone)}">
+      <span class="tc-drag" title="拖曳排序">☰</span>
+      <div class="tc-label">${escapeHtml(t.label || t.table_id)} <span style="font-size:11px; color:var(--muted); font-family:'JetBrains Mono';">${escapeHtml(t.table_id)}</span></div>
+      <div class="tc-shape">${SHAPE_LABELS[t.shape] || t.shape || '—'}</div>
+      <div class="tc-cap">${t.capacity} 席</div>
+      <div class="tc-state ${isActive?'on':'off'}">${isActive ? '✓ 啟用' : '⊗ 停用'}</div>
+      <div class="tc-actions">
+        <button onclick="openEditTableModal('${escapeHtml(t.table_id)}')">改名</button>
+        <button onclick="toggleTableActive('${escapeHtml(t.table_id)}', ${!isActive})">${isActive ? '停用' : '啟用'}</button>
+        <button class="danger" onclick="deleteTableConfig('${escapeHtml(t.table_id)}')">刪除</button>
+      </div>
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+function openAddTableModal() {
+  tableModalMode = 'create';
+  tableModalEditingId = null;
+  document.getElementById('tableModalTitle').textContent = '新增桌位';
+  document.getElementById('tableModalSubmit').textContent = '建立';
+  document.getElementById('tmTerminal').value = tablesConfigTerm;
+  document.getElementById('tmTerminal').disabled = false;
+  document.getElementById('tmZone').value = 'A';
+  document.getElementById('tmZone').disabled = false;
+  document.getElementById('tmLabel').value = '';
+  document.getElementById('tmCapacity').value = '1';
+  document.getElementById('tmCapacity').disabled = false;
+  document.getElementById('tmShape').value = 'round';
+  document.getElementById('tmShape').disabled = false;
+  document.getElementById('tableModalError').style.display = 'none';
+  document.getElementById('tableModal').classList.add('active');
+  setTimeout(() => document.getElementById('tmLabel').focus(), 100);
+}
+function openEditTableModal(tableId) {
+  const t = (loungeTableConfigs[tablesConfigTerm] || []).find(x => x.table_id === tableId);
+  if (!t) return;
+  tableModalMode = 'edit';
+  tableModalEditingId = tableId;
+  document.getElementById('tableModalTitle').textContent = '編輯桌位';
+  document.getElementById('tableModalSubmit').textContent = '儲存';
+  document.getElementById('tmTerminal').value = t.terminal;
+  document.getElementById('tmTerminal').disabled = true;
+  document.getElementById('tmZone').value = t.zone;
+  document.getElementById('tmZone').disabled = true;
+  document.getElementById('tmLabel').value = t.label || '';
+  document.getElementById('tmCapacity').value = t.capacity;
+  document.getElementById('tmCapacity').disabled = true;  // capacity can't change (would need to add/remove seats)
+  document.getElementById('tmShape').value = t.shape || 'round';
+  document.getElementById('tmShape').disabled = true;
+  document.getElementById('tableModalError').style.display = 'none';
+  document.getElementById('tableModal').classList.add('active');
+  setTimeout(() => document.getElementById('tmLabel').focus(), 100);
+}
+function closeTableModal() {
+  document.getElementById('tableModal').classList.remove('active');
+}
+async function submitTableModal() {
+  const errEl = document.getElementById('tableModalError');
+  errEl.style.display = 'none';
+  const terminal = document.getElementById('tmTerminal').value;
+  const zone = document.getElementById('tmZone').value;
+  const label = document.getElementById('tmLabel').value.trim();
+  const capacity = parseInt(document.getElementById('tmCapacity').value, 10);
+  const shape = document.getElementById('tmShape').value;
+  if (!label) { errEl.textContent = '請填入桌名'; errEl.style.display = 'block'; return; }
+
+  try {
+    if (tableModalMode === 'create') {
+      if (!Number.isFinite(capacity) || capacity < 1 || capacity > 20) {
+        errEl.textContent = '席數需為 1–20'; errEl.style.display = 'block'; return;
+      }
+      const { data, error } = await sb.rpc('admin_add_table', {
+        p_token: currentUser.session_token, p_terminal: terminal,
+        p_zone: zone, p_label: label, p_capacity: capacity, p_shape: shape,
+      });
+      if (error) throw error;
+      if (!data) throw new Error('建立失敗（權限不足或參數錯誤）');
+    } else {
+      const { data, error } = await sb.rpc('admin_update_table', {
+        p_token: currentUser.session_token, p_terminal: terminal,
+        p_table_id: tableModalEditingId, p_label: label, p_is_active: null,
+      });
+      if (error) throw error;
+      if (!data) throw new Error('更新失敗');
+    }
+    closeTableModal();
+    await loadTablesConfig();
+    // Also refresh seat map if it's the current working terminal
+    if (terminal === currentTerminal && isConfigured) await loadSeats();
+  } catch(e) {
+    errEl.textContent = '失敗:' + e.message;
+    errEl.style.display = 'block';
+  }
+}
+async function toggleTableActive(tableId, newActive) {
+  if (!confirm(newActive ? '確定啟用這張桌？' : '確定停用這張桌？停用後座位圖不會顯示，該桌若有人使用中請先釋出')) return;
+  try {
+    const { data, error } = await sb.rpc('admin_update_table', {
+      p_token: currentUser.session_token, p_terminal: tablesConfigTerm,
+      p_table_id: tableId, p_label: null, p_is_active: newActive,
+    });
+    if (error) throw error;
+    if (!data) throw new Error('更新失敗');
+    await loadTablesConfig();
+    if (tablesConfigTerm === currentTerminal && isConfigured) await loadSeats();
+  } catch(e) { alert('失敗:' + e.message); }
+}
+async function deleteTableConfig(tableId) {
+  if (!confirm(`確定刪除桌「${tableId}」？此動作會移除該桌所有席位，不能還原。\n（有人使用中的桌無法刪除）`)) return;
+  try {
+    const { data, error } = await sb.rpc('admin_delete_table', {
+      p_token: currentUser.session_token, p_terminal: tablesConfigTerm, p_table_id: tableId,
+    });
+    if (error) throw error;
+    if (!data) throw new Error('刪除失敗（可能有人使用中）');
+    await loadTablesConfig();
+    if (tablesConfigTerm === currentTerminal && isConfigured) await loadSeats();
+  } catch(e) { alert('失敗:' + e.message); }
+}
+
+// ---- Drag & drop reordering ----
+async function reorderTables(draggingId, targetId, isBefore) {
+  const term = tablesConfigTerm;
+  const configs = loungeTableConfigs[term] || [];
+  const dragging = configs.find(t => t.table_id === draggingId);
+  const target = configs.find(t => t.table_id === targetId);
+  if (!dragging || !target || dragging.zone !== target.zone) return;
+
+  // Build new order for the zone
+  const zoneTables = configs.filter(t => t.zone === dragging.zone).slice()
+    .sort((a, b) => (a.sort_order || 100) - (b.sort_order || 100));
+  const newOrder = zoneTables.filter(t => t.table_id !== draggingId);
+  const targetIdx = newOrder.findIndex(t => t.table_id === targetId);
+  if (targetIdx < 0) return;
+  newOrder.splice(isBefore ? targetIdx : targetIdx + 1, 0, dragging);
+
+  // Update sort_order locally for instant UI feedback
+  newOrder.forEach((t, i) => { t.sort_order = (i + 1) * 10; });
+  renderTablesConfig();
+
+  if (!isConfigured) return;
+
+  // Persist to server (parallel updates)
+  try {
+    const updates = newOrder.map((t, i) =>
+      sb.from('lounge_tables')
+        .update({ sort_order: (i + 1) * 10, updated_at: new Date().toISOString() })
+        .eq('terminal', term).eq('table_id', t.table_id)
+    );
+    const results = await Promise.all(updates);
+    const failed = results.find(r => r.error);
+    if (failed) throw failed.error;
+    // Refresh seat map if this affects the current working terminal
+    if (term === currentTerminal) await loadSeats();
+  } catch(e) {
+    alert('排序儲存失敗:' + e.message);
+    // Re-sync from server
+    await loadTablesConfig();
+  }
+}
+
+// ---- Zones Config ----
+async function loadZonesConfig() {
+  if (!currentUser?.is_admin || !isConfigured) {
+    document.getElementById('zonesConfigList').innerHTML = '<div class="empty">需要管理員權限與 Supabase 連線</div>';
+    return;
+  }
+  await loadZoneLabels();
+  await loadLoungeTables();
+  renderZonesConfig();
+}
+function renderZonesConfig() {
+  const container = document.getElementById('zonesConfigList');
+  let html = '';
+  ['T1','T2'].forEach(term => {
+    const perZone = loungeZoneLabels[term] || {};
+    // Compute seat/table counts per zone
+    const counts = { A: {t:0,s:0}, B: {t:0,s:0}, C: {t:0,s:0}, D: {t:0,s:0} };
+    (loungeTableConfigs[term] || []).forEach(t => {
+      if (!counts[t.zone]) counts[t.zone] = {t:0,s:0};
+      counts[t.zone].t++;
+      counts[t.zone].s += (t.capacity || 0);
+    });
+    html += `<div class="zc-terminal-block"><h3>${term}</h3>`;
+    ['A','B','C','D'].forEach(k => {
+      const label = perZone[k] || '（未設定）';
+      const c = counts[k];
+      html += `<div class="zc-row">
+        <div class="zc-key">${k}</div>
+        <div class="zc-label">${escapeHtml(label)}</div>
+        <div class="zc-stats">${c.t} 桌 · ${c.s} 席</div>
+        <div><button onclick="openEditZoneModal('${term}','${k}')">改名</button></div>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  container.innerHTML = html;
+}
+function openEditZoneModal(terminal, zoneKey) {
+  const current = (loungeZoneLabels[terminal] || {})[zoneKey] || '';
+  document.getElementById('zmTerminal').textContent = terminal;
+  document.getElementById('zmZoneKey').textContent = zoneKey;
+  document.getElementById('zmLabel').value = current;
+  document.getElementById('zmLabel').dataset.terminal = terminal;
+  document.getElementById('zmLabel').dataset.zoneKey = zoneKey;
+  document.getElementById('zoneModalError').style.display = 'none';
+  document.getElementById('zoneModal').classList.add('active');
+  setTimeout(() => document.getElementById('zmLabel').focus(), 100);
+}
+function closeZoneModal() {
+  document.getElementById('zoneModal').classList.remove('active');
+}
+async function submitZoneModal() {
+  const errEl = document.getElementById('zoneModalError');
+  errEl.style.display = 'none';
+  const label = document.getElementById('zmLabel').value.trim();
+  const terminal = document.getElementById('zmLabel').dataset.terminal;
+  const zoneKey = document.getElementById('zmLabel').dataset.zoneKey;
+  if (!label) { errEl.textContent = '請填入名稱'; errEl.style.display = 'block'; return; }
+  try {
+    const { data, error } = await sb.rpc('admin_update_zone', {
+      p_token: currentUser.session_token, p_terminal: terminal, p_zone_key: zoneKey, p_label: label,
+    });
+    if (error) throw error;
+    if (!data) throw new Error('更新失敗');
+    closeZoneModal();
+    await loadZoneLabels();
+    renderZonesConfig();
+    // If we changed the current terminal's zone, re-render the seat map header too
+    if (terminal === currentTerminal) applyZoneLabels();
+  } catch(e) {
+    errEl.textContent = '失敗:' + e.message;
+    errEl.style.display = 'block';
+  }
+}
 
 async function loadUsers() {
   if (!currentUser?.is_admin || !isConfigured) {
