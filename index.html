@@ -3053,15 +3053,13 @@ function renderQueue() {
 }
 
 let pendingIntake = null;
-let pendingTableCount = null;      // number of tables the operator wants
-let pendingSelectedTableIds = [];  // ordered list of selected table_ids
+let pendingSelectedTableIds = [];  // ordered list of selected table_ids (open-ended: pick as you go)
 
 function onSeatClick(code) {
   const s = seats[code];
   if (!s) return;  // race condition guard
-  // In pending-intake mode, click means "select this seat's table"
+  // In pending-intake mode, click means "toggle this seat's table"
   if (pendingIntake) {
-    if (pendingTableCount == null) return;  // still on step 1 (choosing count)
     const t = tableOf(code);
     if (!t) return;
     // Only allow selecting a table if all its chairs are avail (nobody there)
@@ -3083,54 +3081,28 @@ function onSeatClick(code) {
 
 function enterSeatSelection() {
   if (!pendingIntake) return;
-  pendingTableCount = null;
   pendingSelectedTableIds = [];
   document.getElementById('selectBanner').classList.add('active');
   document.body.classList.add('seat-select');
   document.querySelector('.nav-btn[data-view="lounge"]')?.click();
   updateSelectBanner();
-  renderSeats();  // apply .seat-select body class effects
+  renderSeats();
 }
 
 function cancelSelection() {
   pendingIntake = null;
-  pendingTableCount = null;
   pendingSelectedTableIds = [];
   document.body.classList.remove('seat-select');
   document.getElementById('selectBanner').classList.remove('active');
   renderSeats();
 }
 
-// -------- Stage 1: choose how many tables ---------
-function chooseTableCount(n) {
-  if (!pendingIntake) return;
-  pendingTableCount = n;
-  pendingSelectedTableIds = [];
-  updateSelectBanner();
-  renderSeats();
-}
-
-// -------- Stage 2: toggle table selection ---------
+// -------- Toggle table selection (open-ended, no fixed count) ----
 function toggleTableSelection(tableId) {
-  if (!pendingIntake || pendingTableCount == null) return;
+  if (!pendingIntake) return;
   const idx = pendingSelectedTableIds.indexOf(tableId);
-  if (idx >= 0) {
-    pendingSelectedTableIds.splice(idx, 1);
-  } else {
-    if (pendingSelectedTableIds.length >= pendingTableCount) {
-      // Full — replace the first-selected (FIFO), or ignore. Simpler: ignore.
-      alert(`已選滿 ${pendingTableCount} 桌，要改請先取消已選的桌`);
-      return;
-    }
-    pendingSelectedTableIds.push(tableId);
-  }
-  updateSelectBanner();
-  renderSeats();
-}
-
-function goBackToChooseCount() {
-  pendingTableCount = null;
-  pendingSelectedTableIds = [];
+  if (idx >= 0) pendingSelectedTableIds.splice(idx, 1);
+  else pendingSelectedTableIds.push(tableId);
   updateSelectBanner();
   renderSeats();
 }
@@ -3143,30 +3115,11 @@ function updateSelectBanner() {
   const paxLabel = `<b>${escapeHtml(p.name)}</b>${p.party_size > 1 ? ' 一行 ' + p.party_size + ' 位' : ''}${p.vip?' ★':''}`;
   const flightLabel = `${escapeHtml(p.flight_no || '手動客')} ${p.destination_name ? '→ ' + escapeHtml(p.destination_name) : ''} ${p.std ? '· STD ' + escapeHtml(p.std) : ''}`;
 
-  // STAGE 1: choose table count
-  if (pendingTableCount == null) {
-    // Max reasonable table count: party_size or 4, whichever bigger; capped at 4
-    const maxCount = Math.min(4, Math.max(p.party_size || 1, 2));
-    const btns = [];
-    for (let i = 1; i <= maxCount; i++) btns.push(`<button onclick="chooseTableCount(${i})">${i} 桌</button>`);
-    box.innerHTML = `
-      <div class="sb-row">
-        <div class="sb-title">🪑 帶位：${paxLabel} <span class="sb-meta">${flightLabel}</span></div>
-        <button class="sb-cancel" onclick="cancelSelection()">取消</button>
-      </div>
-      <div class="sb-row">
-        <div class="sb-prompt">需要幾張桌？</div>
-        <div class="sb-tables-count">${btns.join('')}</div>
-      </div>`;
-    return;
-  }
-
-  // STAGE 2/3: selecting tables (or all selected)
-  const need = pendingTableCount;
   const chosen = pendingSelectedTableIds;
-  const done = chosen.length >= need;
   const totalSeats = chosen.reduce((sum, tid) => sum + (tables[tid]?.codes.length || 0), 0);
-  const chipHtml = chosen.length > 0
+  const hasSelection = chosen.length > 0;
+
+  const chipHtml = hasSelection
     ? chosen.map(tid => {
         const t = tables[tid];
         const label = t?.label || tid;
@@ -3175,9 +3128,9 @@ function updateSelectBanner() {
       }).join('')
     : '<span style="font-size:12px; color:rgba(255,255,255,0.5);">尚未選桌…</span>';
 
-  const actionBtn = done
-    ? `<button class="sb-confirm" onclick="confirmMultiTableAssign()">✓ 確認帶位 (共 ${totalSeats} 席)</button>`
-    : `<div class="sb-prompt">👆 點座位圖上的空桌</div>`;
+  const actionBtn = hasSelection
+    ? `<button class="sb-confirm" onclick="confirmMultiTableAssign()">✓ 確認帶位 (${chosen.length} 桌 · 共 ${totalSeats} 席)</button>`
+    : `<div class="sb-prompt">👆 點座位圖上要用的桌 · 可一張或多張（同組共坐）</div>`;
 
   box.innerHTML = `
     <div class="sb-row">
@@ -3185,8 +3138,7 @@ function updateSelectBanner() {
       <button class="sb-cancel" onclick="cancelSelection()">取消</button>
     </div>
     <div class="sb-row">
-      <div class="sb-progress">選桌進度 ${chosen.length} / ${need} 桌${totalSeats > 0 ? ' · ' + totalSeats + ' 席' : ''}</div>
-      <button class="sb-back" onclick="goBackToChooseCount()">← 改桌數</button>
+      <div class="sb-progress">已選 ${chosen.length} 桌${totalSeats > 0 ? ' · ' + totalSeats + ' 席' : ''}</div>
     </div>
     <div class="sb-chips">${chipHtml}</div>
     <div class="sb-row">${actionBtn}</div>`;
