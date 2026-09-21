@@ -3556,6 +3556,18 @@ async function loadFlights() {
   } catch (e) {
     console.warn('Failed to load manual flights:', e);
   }
+  // Filter out codeshare-only destinations — TDX lists them under JX but they are
+  // actually operated by partner airlines and don't use our lounge staff/tables.
+  // (These passengers use the OPERATING airline's lounge, not ours.)
+  const CODESHARE_ONLY_DESTS = new Set([
+    'AUH',  // Abu Dhabi — operated by Etihad
+  ]);
+  let removed = 0;
+  Object.keys(flights).forEach(fno => {
+    const d = (flights[fno].destination || '').toUpperCase();
+    if (CODESHARE_ONLY_DESTS.has(d)) { delete flights[fno]; removed++; }
+  });
+  if (removed > 0) console.log(`✓ Filtered out ${removed} codeshare-only flight(s)`);
   // Flight set changed → invalidate competitor-count cache used by auto-estimate
   if (typeof invalidateHourlyCache === 'function') invalidateHourlyCache();
 }
@@ -5454,16 +5466,34 @@ function renderForecast() {
       const isPeak = hourInfo && hourInfo.count > cap * 0.8;
       const rowCls = isOverflow ? 'overflow' : (isPeak ? 'peak' : '');
       const comp = competitorsForFlight(f);
-      const compBadge = comp > 0 ? `<span class="tier-badge comp-c${Math.min(comp, 6)}" title="同時段最多 ${comp} 班同航廈航班競爭">×${comp}</span>` : '';
+      const capPerHour = (fcCapacity[f.terminal] || 25) * AVG_PAX_PER_TABLE;
+      const perFlight = comp > 0 ? Math.floor(capPerHour / comp) : 0;
+      const compTooltip = `【×${comp} 同時段競爭】
+此航班進場窗口內（STD 前 ${LOUNGE_ARRIVAL_BEFORE_STD}—${LOUNGE_DEPART_BEFORE_STD} 分），
+${f.terminal} 最擠的一個小時同時有 ${comp} 班航班在貴賓室。
+
+推估邏輯：
+  ${f.terminal} 每小時容量 = ${fcCapacity[f.terminal]||25} 桌 × ${AVG_PAX_PER_TABLE} = ${capPerHour} 人
+  ${capPerHour} ÷ ${comp} 班 ≈ 每班 ${perFlight} 人
+
+數字越高 → 越擠，每班能分到的越少。`;
+      const compBadge = comp > 0 ? `<span class="tier-badge comp-c${Math.min(comp, 6)}" title="${escapeHtml(compTooltip)}">×${comp}</span>` : '';
+      const inputTooltip = `推估旅客人數（可用 +/- 微調，即時儲存並同步給團隊）
+
+此數字由「倒推分配」自動算出：
+  ${f.terminal} 每小時容量 ${capPerHour} 人 ÷ ${comp||1} 班競爭 ≈ ${perFlight} 人
+
+若實際觀察與此有落差，可到頁面右上「⚙️ 校準」調整
+「每桌平均人數」等參數，讓推估越用越貼近實際。`;
       return `<div class="fc-flight-row ${rowCls} ${f._manual ? 'manual' : ''}">
         <div class="fc-f-fno">${escapeHtml(f.flight_no)}${f._manual ? '<span class="manual-badge" title="' + escapeHtml(f._note || '手動新增') + '">手動</span>' : ''}</div>
         <div class="fc-f-dest"><span class="name">${escapeHtml(f.destination_name || '')}</span><span class="code">${escapeHtml(f.destination || '')}</span>${compBadge}</div>
         <div class="fc-f-std">${escapeHtml(f.std || '')}</div>
         <div class="fc-f-term ${f.terminal === 'T1' ? 't1' : 't2'}">${escapeHtml(f.terminal || '?')}</div>
-        <div class="fc-f-input">
+        <div class="fc-f-input" title="${escapeHtml(inputTooltip)}">
           <div class="qs-mini">
             <button type="button" class="qs-mini-btn" onclick="adjustFcInput('${escapeHtml(f.flight_no)}', -1)" aria-label="減少人數">−</button>
-            <input type="number" min="0" max="300" value="${users}" class="qs-mini-val" data-fno="${escapeHtml(f.flight_no)}" onchange="saveFcInput('${escapeHtml(f.flight_no)}', parseInt(this.value)||0); renderForecast();" inputmode="numeric"/>
+            <input type="number" min="0" max="300" value="${users}" class="qs-mini-val" data-fno="${escapeHtml(f.flight_no)}" onchange="saveFcInput('${escapeHtml(f.flight_no)}', parseInt(this.value)||0); renderForecast();" inputmode="numeric" title="${escapeHtml(inputTooltip)}"/>
             <button type="button" class="qs-mini-btn" onclick="adjustFcInput('${escapeHtml(f.flight_no)}', 1)" aria-label="增加人數">+</button>
           </div>
           <span class="lbl">人</span>
