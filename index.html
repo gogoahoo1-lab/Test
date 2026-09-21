@@ -251,7 +251,7 @@
     left: 50%;
     right: auto;
     transform: translate(-50%, -50%);
-    font-size: 24px;
+    font-size: 48px;
     opacity: 0.55;
     pointer-events: none;
     line-height: 1;
@@ -545,6 +545,40 @@
   .fc-flight-row.manual { border-left: 3px solid var(--gold); }
   .btn-del-flight { background: transparent; border: none; color: var(--muted); font-size: 14px; cursor: pointer; padding: 4px 6px; border-radius: 4px; }
   .btn-del-flight:hover { background: var(--coral-bg); color: var(--coral); }
+
+  /* Competitor count badge — shows how many flights share this hour */
+  .tier-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 8px; vertical-align: middle; cursor: help; font-family: 'JetBrains Mono', monospace; }
+  .tier-badge.comp-c1 { background: #dfe8dc; color: #4a6b3d; }
+  .tier-badge.comp-c2 { background: #dfe8dc; color: #4a6b3d; }
+  .tier-badge.comp-c3 { background: #efe6d1; color: #7d5b1e; }
+  .tier-badge.comp-c4 { background: #f4dfc8; color: #8a4f22; }
+  .tier-badge.comp-c5 { background: #f6d4bd; color: #a64025; }
+  .tier-badge.comp-c6 { background: #f4c1b0; color: #b83a20; }
+
+  /* Calibration modal */
+  .cal-row { display: flex; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .cal-row:last-of-type { border-bottom: none; }
+  .cal-label { flex: 1; }
+  .cal-name { font-weight: 600; color: var(--ink); font-size: 14px; margin-bottom: 3px; }
+  .cal-hint { font-size: 11px; color: var(--muted); line-height: 1.4; }
+  .cal-input-wrap { display: flex; align-items: stretch; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--paper); height: 40px; }
+  .cal-btn { width: 36px; background: var(--ivory); color: var(--ink); border: none; font-size: 18px; cursor: pointer; padding: 0; font-family: 'Inter', sans-serif; transition: background 0.15s; }
+  .cal-btn:hover { background: var(--gold); }
+  .cal-btn:first-child { border-right: 1px solid var(--line); }
+  .cal-btn:last-child { border-left: 1px solid var(--line); }
+  .cal-input-wrap input { width: 60px; border: none !important; background: transparent !important; text-align: center !important; font-family: 'Playfair Display', serif !important; font-weight: 500 !important; font-size: 18px !important; color: var(--ink) !important; padding: 0 !important; border-radius: 0 !important; box-shadow: none !important; -moz-appearance: textfield; }
+  .cal-input-wrap input:focus { outline: none !important; }
+  .cal-input-wrap input::-webkit-outer-spin-button,
+  .cal-input-wrap input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .cal-unit { display: flex; align-items: center; padding: 0 12px; color: var(--muted); font-size: 12px; border-left: 1px solid var(--line); background: var(--ivory); }
+  .cal-preview { margin-top: 16px; padding: 14px; background: var(--ivory); border-radius: 10px; border: 1px solid var(--line); }
+  .cal-preview-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; font-weight: 600; }
+  .cal-preview-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; font-size: 13px; }
+  .cal-preview-row span { color: var(--ink-2); flex: 1; }
+  .cal-preview-row b { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--ink); font-weight: 500; }
+  .cal-preview-row .cp-sub { flex: none; color: var(--muted); font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+  .cal-preview-row.example { padding-top: 6px; margin-top: 6px; border-top: 1px dashed var(--line); }
+  .cal-preview-row.example b { color: var(--gold-dark); }
 
   /* Quantity stepper — big touch-friendly +/- buttons */
   .qty-stepper { display: flex; align-items: stretch; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--paper); }
@@ -1594,7 +1628,8 @@
                 <button class="active" data-fcperiod="today">今日</button>
                 <button data-fcperiod="tomorrow">明日</button>
               </div>
-              <button class="icon-btn" onclick="autoEstimateAll()" style="width:auto; padding:0 14px; gap:6px;" title="按艙等佔比自動估算">✨ 自動估算</button>
+              <button class="icon-btn" onclick="autoEstimateAll()" style="width:auto; padding:0 14px; gap:6px;" title="用倒推分配為每個航班自動估算">✨ 自動估算</button>
+              <button class="icon-btn" onclick="openCalibrate()" style="width:auto; padding:0 12px; gap:6px;" title="微調推算參數，讓推估貼近實際">⚙️ 校準</button>
             </div>
           </div>
 
@@ -1608,8 +1643,8 @@
                 <div>
                   <div class="fc-model-h">🕘 佔用計算</div>
                   <ul>
-                    <li>每位旅客典型於 STD 前 <b>90 分鐘</b>進場，STD 前 <b>30 分鐘</b>離場</li>
-                    <li>典型停留時間約 <b>60 分鐘</b></li>
+                    <li>每位旅客典型於 STD 前 <b id="fcModelArrival">90</b> 分鐘進場，STD 前 <b id="fcModelDepart">30</b> 分鐘離場</li>
+                    <li>典型停留時間約 <b id="fcModelStay">60</b> 分鐘</li>
                     <li>某小時的佔用人數 = 所有停留窗口涵蓋該小時的航班預估人數加總</li>
                   </ul>
                 </div>
@@ -1617,7 +1652,7 @@
                   <div class="fc-model-h">⚠️ 溢流判定</div>
                   <ul>
                     <li>桌位總數由座位表分桌計算（現況 T1 <b id="fcModelCapT1">25</b> 桌、T2 <b id="fcModelCapT2">25</b> 桌）</li>
-                    <li>預估旅客人數會除以 <b>1.6</b>（平均每桌人數）轉為桌位需求</li>
+                    <li>預估旅客人數會除以 <b id="fcModelAvg">1.6</b>（平均每桌人數）轉為桌位需求</li>
                     <li>溢流桌數 = <code>max(0, 該小時桌位需求 − 桌位總數)</code></li>
                     <li>當預估溢流時，建議提早調度或引導至其他航廈貴賓室</li>
                   </ul>
@@ -1626,7 +1661,8 @@
                   <div class="fc-model-h">🎯 使用方式</div>
                   <ul>
                     <li>點右方數字輸入框直接改預估人數，變更即時儲存並同步給團隊</li>
-                    <li>「✨ 自動估算」以每航班 <b>15 人</b>為基準快速填入，之後可再逐一微調</li>
+                    <li>「✨ 自動估算」用<b>倒推分配</b>：每小時容量 ÷ 該時段航班數，取最小</li>
+                    <li>「⚙️ 校準」可調 3 個核心參數，讓推估越用越貼近實際</li>
                     <li>今日 / 明日的預估人數分開儲存，不會互相覆蓋</li>
                   </ul>
                 </div>
@@ -1714,6 +1750,65 @@
     </div>
     <div class="modal-body" id="modalBody"></div>
     <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="calibrateModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <div>
+        <div style="font-size:16px; font-weight:600;">⚙️ 校準推算參數</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:2px;">依實務觀察微調，讓推算逐漸接近實際</div>
+      </div>
+      <button class="modal-close" onclick="closeCalibrate()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="cal-row">
+        <div class="cal-label">
+          <div class="cal-name">每桌平均人數</div>
+          <div class="cal-hint">1 桌能坐幾人（觀察：常帶 1 位 → 調低；常帶 2 位 → 調高）</div>
+        </div>
+        <div class="cal-input-wrap">
+          <button type="button" class="cal-btn" onclick="stepCal('cpAvg', -0.1)">−</button>
+          <input type="number" id="cpAvg" step="0.1" min="1.0" max="3.0" onchange="updateCalPreview()"/>
+          <button type="button" class="cal-btn" onclick="stepCal('cpAvg', 0.1)">+</button>
+          <span class="cal-unit">位</span>
+        </div>
+      </div>
+      <div class="cal-row">
+        <div class="cal-label">
+          <div class="cal-name">進場提早</div>
+          <div class="cal-hint">STD 前多少分鐘旅客就會抵達貴賓室</div>
+        </div>
+        <div class="cal-input-wrap">
+          <button type="button" class="cal-btn" onclick="stepCal('cpArrival', -5)">−</button>
+          <input type="number" id="cpArrival" step="5" min="30" max="180" onchange="updateCalPreview()"/>
+          <button type="button" class="cal-btn" onclick="stepCal('cpArrival', 5)">+</button>
+          <span class="cal-unit">分</span>
+        </div>
+      </div>
+      <div class="cal-row">
+        <div class="cal-label">
+          <div class="cal-name">離場提早</div>
+          <div class="cal-hint">STD 前多少分鐘旅客會離開去登機</div>
+        </div>
+        <div class="cal-input-wrap">
+          <button type="button" class="cal-btn" onclick="stepCal('cpDepart', -5)">−</button>
+          <input type="number" id="cpDepart" step="5" min="10" max="60" onchange="updateCalPreview()"/>
+          <button type="button" class="cal-btn" onclick="stepCal('cpDepart', 5)">+</button>
+          <span class="cal-unit">分</span>
+        </div>
+      </div>
+      <div class="cal-preview" id="calPreview"></div>
+      <div id="calError" style="display:none; margin-top:8px; padding:10px 12px; background:#FFECEC; color:#C53E1D; border-radius:8px; font-size:13px;"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <button onclick="resetCalibrate()" style="background:transparent; color:var(--muted); font-size:12px;">還原預設 (1.6 / 90 / 30)</button>
+      <div style="display:flex; gap:8px;">
+        <button onclick="closeCalibrate()">取消</button>
+        <button class="primary-btn" onclick="saveCalibrate()">✓ 儲存並重算</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2550,12 +2645,13 @@ async function loadMonitorData() {
     const end = new Date(); end.setHours(23,59,59,999);
     for (const term of ['T1','T2']) {
       try {
-        const { count } = await sb.from('entries')
-          .select('id', { count: 'exact', head: true })
+        const { data } = await sb.from('entries')
+          .select('party_size')
           .eq('terminal', term)
           .gte('entry_time', start.toISOString())
           .lte('entry_time', end.toISOString());
-        if (_monitorData[term]) _monitorData[term].todayCount = count || 0;
+        const count = (data || []).reduce((sum, e) => sum + (e.party_size || 1), 0);
+        if (_monitorData[term]) _monitorData[term].todayCount = count;
       } catch(e) { /* ignore */ }
     }
     renderMonitor();
@@ -3290,10 +3386,10 @@ function tableTintFor(tid) {
 }
 
 async function initData() {
-  if (!isConfigured) { setConnStatus('local', '本機模式 · 點設定連線', '設定'); loadLocalFallback(); return; }
+  if (!isConfigured) { setConnStatus('local', '本機模式 · 點設定連線', '設定'); loadLocalFallback(); await loadEstimateParams(); return; }
   setConnStatus('connecting', '連線中…', '⋯');
   try {
-    await Promise.all([loadSeats(), loadFlights()]);
+    await Promise.all([loadSeats(), loadFlights(), loadEstimateParams()]);
     subscribeRealtime();
     setConnStatus('connected', 'Realtime', '●');
     initChat();
@@ -3460,6 +3556,8 @@ async function loadFlights() {
   } catch (e) {
     console.warn('Failed to load manual flights:', e);
   }
+  // Flight set changed → invalidate competitor-count cache used by auto-estimate
+  if (typeof invalidateHourlyCache === 'function') invalidateHourlyCache();
 }
 
 // Format "5 分鐘前" / "2 小時前" for last-sync display
@@ -3694,12 +3792,13 @@ async function refreshTodayCount() {
     const now = new Date();
     const start = new Date(now); start.setHours(0,0,0,0);
     const end = new Date(now); end.setHours(23,59,59,999);
-    const { count } = await sb.from('entries')
-      .select('id', { count: 'exact', head: true })
+    // SUM party_size (not row count) — each entry may have multiple pax
+    const { data } = await sb.from('entries')
+      .select('party_size')
       .eq('terminal', currentTerminal)
       .gte('entry_time', start.toISOString())
       .lte('entry_time', end.toISOString());
-    const c = count || 0;
+    const c = (data || []).reduce((sum, e) => sum + (e.party_size || 1), 0);
     _todayCountCache = { key, value: c, at: Date.now() };
     todayEl.textContent = c;
     if (deltaEl) deltaEl.textContent = c > 0 ? `${currentTerminal} 今日進場` : '尚無進場';
@@ -4918,11 +5017,56 @@ let fcInputs = {};            // { 'JX121': 12, ... } for current period
 let fcCapacity = { T1: 25, T2: 25 };  // table count (was seat count)
 let fcCurrent = { T1: { used: 0, avail: 25 }, T2: { used: 0, avail: 25 } };
 
-const LOUNGE_ARRIVAL_BEFORE_STD = 90; // min
-const LOUNGE_DEPART_BEFORE_STD = 30;  // min
+// Estimate params — tunable via ⚙️ calibration modal, synced to Supabase app_settings
+let LOUNGE_ARRIVAL_BEFORE_STD = 90; // min — passenger enters lounge this many min before STD
+let LOUNGE_DEPART_BEFORE_STD = 30;  // min — passenger leaves lounge this many min before STD
 // Average number of pax per occupied table (used to convert head-count → table-count)
-// Conservative estimate: solo travellers dominant, small groups share tables.
-const AVG_PAX_PER_TABLE = 1.6;
+// Conservative default: solo travellers dominant, small groups share tables.
+let AVG_PAX_PER_TABLE = 1.6;
+
+// Load params from Supabase (falls back to defaults if not set)
+async function loadEstimateParams() {
+  if (!isConfigured) {
+    // Try localStorage as fallback
+    try {
+      const raw = localStorage.getItem('estimate_params_v1');
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (p.avg_pax_per_table > 0) AVG_PAX_PER_TABLE = p.avg_pax_per_table;
+        if (p.arrival_before_std > 0) LOUNGE_ARRIVAL_BEFORE_STD = p.arrival_before_std;
+        if (p.depart_before_std > 0) LOUNGE_DEPART_BEFORE_STD = p.depart_before_std;
+      }
+    } catch(e) {}
+    return;
+  }
+  try {
+    const { data, error } = await sb.from('app_settings').select('value').eq('key', 'estimate_params').maybeSingle();
+    if (!error && data?.value) {
+      const p = data.value;
+      if (p.avg_pax_per_table > 0) AVG_PAX_PER_TABLE = p.avg_pax_per_table;
+      if (p.arrival_before_std > 0) LOUNGE_ARRIVAL_BEFORE_STD = p.arrival_before_std;
+      if (p.depart_before_std > 0) LOUNGE_DEPART_BEFORE_STD = p.depart_before_std;
+      localStorage.setItem('estimate_params_v1', JSON.stringify(p));
+    }
+  } catch(e) { /* silent */ }
+}
+
+async function saveEstimateParams(newParams) {
+  AVG_PAX_PER_TABLE = newParams.avg_pax_per_table;
+  LOUNGE_ARRIVAL_BEFORE_STD = newParams.arrival_before_std;
+  LOUNGE_DEPART_BEFORE_STD = newParams.depart_before_std;
+  localStorage.setItem('estimate_params_v1', JSON.stringify(newParams));
+  if (isConfigured) {
+    const { error } = await sb.from('app_settings').upsert({
+      key: 'estimate_params',
+      value: newParams,
+      updated_at: new Date().toISOString(),
+      updated_by: currentUser?.display_name || currentUser?.username || 'unknown',
+    }, { onConflict: 'key' });
+    if (error) throw new Error(error.message);
+  }
+  if (typeof invalidateHourlyCache === 'function') invalidateHourlyCache();
+}
 
 function fcGetDate() {
   const d = new Date();
@@ -4978,6 +5122,12 @@ async function loadForecast() {
     const capT2El = document.getElementById('fcModelCapT2');
     if (capT1El) capT1El.textContent = fcCapacity.T1 || 25;
     if (capT2El) capT2El.textContent = fcCapacity.T2 || 25;
+    // Also reflect the tunable estimate params (kept in sync when 校準 modal saves)
+    const setModelText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    setModelText('fcModelArrival', LOUNGE_ARRIVAL_BEFORE_STD);
+    setModelText('fcModelDepart', LOUNGE_DEPART_BEFORE_STD);
+    setModelText('fcModelStay', LOUNGE_ARRIVAL_BEFORE_STD - LOUNGE_DEPART_BEFORE_STD);
+    setModelText('fcModelAvg', AVG_PAX_PER_TABLE);
 
     // 2. Load saved forecast inputs for this date
     const { data: fcData } = await sb.from('capacity_forecast').select('*').eq('flight_date', dateStr);
@@ -5010,23 +5160,168 @@ async function saveFcInput(flightNo, users) {
   }
 }
 
-// 自動估算：依艙等佔比與機型座位數估算
-// 頭等艙 100%、商務艙 80%、經濟艙 5% 進貴賓室
-// 各機型座位分布（粗估，實務可依實際機型細分）：
-//   Wide body (A330-900neo)：F 4、J 30、Y 260 (總 294)  → 4×1 + 30×0.8 + 260×0.05 = 41
-//   Narrow body (A321-neo)：J 8、Y 180 (總 188)         → 8×0.8 + 180×0.05 = 15
-// 目的地簡易判斷：亞洲短程用 narrow body 15 人，長程 (SFO/LAX/SEA/JFK/YVR/CDG/LHR/FRA/SYD/MEL) 用 wide body 41 人
-const LONG_HAUL_DESTS = new Set(['SFO','LAX','SEA','JFK','LAS','ONT','YVR','YYZ','CDG','LHR','FRA','MUC','SYD','MEL','BNE']);
-function estimateForFlight(f) {
-  if (!f) return 15;
-  const isLongHaul = LONG_HAUL_DESTS.has((f.destination || '').toUpperCase());
-  return isLongHaul ? 41 : 15;
+// ═══ Calibration modal handlers ═══
+function openCalibrate() {
+  document.getElementById('cpAvg').value = AVG_PAX_PER_TABLE.toFixed(1);
+  document.getElementById('cpArrival').value = LOUNGE_ARRIVAL_BEFORE_STD;
+  document.getElementById('cpDepart').value = LOUNGE_DEPART_BEFORE_STD;
+  document.getElementById('calError').style.display = 'none';
+  updateCalPreview();
+  document.getElementById('calibrateModal').classList.add('active');
 }
+function closeCalibrate() { document.getElementById('calibrateModal').classList.remove('active'); }
+function resetCalibrate() {
+  document.getElementById('cpAvg').value = '1.6';
+  document.getElementById('cpArrival').value = '90';
+  document.getElementById('cpDepart').value = '30';
+  updateCalPreview();
+}
+function stepCal(id, delta) {
+  const el = document.getElementById(id);
+  const cur = parseFloat(el.value) || 0;
+  const next = Math.round((cur + delta) * 10) / 10;
+  const min = parseFloat(el.min), max = parseFloat(el.max);
+  el.value = Math.max(min, Math.min(max, next));
+  updateCalPreview();
+}
+function updateCalPreview() {
+  const avg = parseFloat(document.getElementById('cpAvg').value) || 0;
+  const arr = parseInt(document.getElementById('cpArrival').value) || 0;
+  const dep = parseInt(document.getElementById('cpDepart').value) || 0;
+  const window = arr - dep;
+  const capT1 = (fcCapacity.T1 || 25) * avg;
+  const capT2 = (fcCapacity.T2 || 25) * avg;
+  document.getElementById('calPreview').innerHTML = `
+    <div class="cal-preview-title">即時預覽</div>
+    <div class="cal-preview-row"><span>停留窗口</span><b>${window} 分</b><span class="cp-sub">(STD 前 ${arr} → STD 前 ${dep})</span></div>
+    <div class="cal-preview-row"><span>T1 每小時容量</span><b>${capT1.toFixed(0)} 人</b><span class="cp-sub">${fcCapacity.T1||25} 桌 × ${avg}</span></div>
+    <div class="cal-preview-row"><span>T2 每小時容量</span><b>${capT2.toFixed(0)} 人</b><span class="cp-sub">${fcCapacity.T2||25} 桌 × ${avg}</span></div>
+    <div class="cal-preview-row example"><span>例：某時段 5 班競爭</span><b>${Math.floor(capT1/5)} 人/班</b></div>
+    <div class="cal-preview-row example"><span>例：某時段 2 班競爭</span><b>${Math.floor(capT1/2)} 人/班</b></div>
+  `;
+}
+async function saveCalibrate() {
+  const avg = parseFloat(document.getElementById('cpAvg').value);
+  const arr = parseInt(document.getElementById('cpArrival').value);
+  const dep = parseInt(document.getElementById('cpDepart').value);
+  const errEl = document.getElementById('calError');
+  const err = (m) => { errEl.textContent = m; errEl.style.display = 'block'; };
+  if (!(avg >= 1.0 && avg <= 3.0)) return err('每桌平均人數需在 1.0-3.0 之間');
+  if (!(arr >= 30 && arr <= 180)) return err('進場提早需在 30-180 分之間');
+  if (!(dep >= 10 && dep <= 60)) return err('離場提早需在 10-60 分之間');
+  if (dep >= arr) return err('離場提早應小於進場提早（否則停留時間為負）');
+  try {
+    await saveEstimateParams({
+      avg_pax_per_table: avg,
+      arrival_before_std: arr,
+      depart_before_std: dep,
+    });
+    closeCalibrate();
+    // Re-render forecast with new params
+    if (document.querySelector('.view.active')?.id === 'view-forecast') renderForecast();
+  } catch (e) {
+    err('儲存失敗：' + e.message);
+  }
+}
+
+
+// 「反正貴賓室桌數就這麼多，每小時容量固定，同時段的航班共用」
+// 每小時容量 = 桌數 × AVG_PAX_PER_TABLE（例：25 桌 × 1.6 = 40 人/hr）
+// 每班航班能收 = 該航班經過的每個時段中「每小時容量 / 該時段航班數」的最小值
+//   取最小值 = 由最擠時段決定該航班的實際上限（比取平均更保守實用）
+
+// 計算某航廈每小時有多少航班在該小時的貴賓室內
+function computeHourlyFlightCount(term) {
+  const hourCount = new Array(24).fill(0);
+  Object.values(flights).forEach(f => {
+    if (f.terminal !== term || !f.std) return;
+    const std = stdToMin(f.std);
+    if (std >= 9999) return;
+    const enter = std - LOUNGE_ARRIVAL_BEFORE_STD;
+    const leave = std - LOUNGE_DEPART_BEFORE_STD;
+    const startH = Math.floor(enter / 60);
+    const endH = Math.ceil(leave / 60);
+    for (let h = startH; h < endH; h++) {
+      const hh = ((h % 24) + 24) % 24;
+      hourCount[hh]++;
+    }
+  });
+  return hourCount;
+}
+
+let _hourlyCountCache = null;
+function getHourlyCounts() {
+  if (_hourlyCountCache) return _hourlyCountCache;
+  _hourlyCountCache = { T1: computeHourlyFlightCount('T1'), T2: computeHourlyFlightCount('T2') };
+  return _hourlyCountCache;
+}
+function invalidateHourlyCache() { _hourlyCountCache = null; }
+
+// Return the max number of competing same-terminal flights during this flight's window
+function competitorsForFlight(f) {
+  if (!f || !f.std) return 0;
+  const std = stdToMin(f.std);
+  if (std >= 9999) return 0;
+  const enter = std - LOUNGE_ARRIVAL_BEFORE_STD;
+  const leave = std - LOUNGE_DEPART_BEFORE_STD;
+  const startH = Math.floor(enter / 60);
+  const endH = Math.ceil(leave / 60);
+  const counts = getHourlyCounts()[f.terminal] || [];
+  let maxCompetitors = 0;
+  for (let h = startH; h < endH; h++) {
+    const hh = ((h % 24) + 24) % 24;
+    maxCompetitors = Math.max(maxCompetitors, counts[hh] || 0);
+  }
+  return maxCompetitors;
+}
+
+function estimateForFlight(f) {
+  if (!f || !f.std) return 0;
+  const capPerHour = (fcCapacity[f.terminal] || 25) * AVG_PAX_PER_TABLE;  // e.g. 25 × 1.6 = 40
+  const std = stdToMin(f.std);
+  if (std >= 9999) return 0;
+  const enter = std - LOUNGE_ARRIVAL_BEFORE_STD;
+  const leave = std - LOUNGE_DEPART_BEFORE_STD;
+  const startH = Math.floor(enter / 60);
+  const endH = Math.ceil(leave / 60);
+  const counts = getHourlyCounts()[f.terminal] || [];
+  let minShare = Infinity;
+  for (let h = startH; h < endH; h++) {
+    const hh = ((h % 24) + 24) % 24;
+    const competitors = counts[hh] || 0;
+    if (competitors > 0) {
+      minShare = Math.min(minShare, capPerHour / competitors);
+    }
+  }
+  return minShare === Infinity ? 0 : Math.floor(minShare);
+}
+
 function autoEstimateAll() {
   const flightArr = Object.values(flights);
   if (flightArr.length === 0) { alert('尚無航班資料 · 請先跑 TDX Edge Function 同步班表'); return; }
-  if (!confirm(`依艙等佔比自動估算 ${flightArr.length} 個航班（長程 41 人、短程 15 人，可再手動調整），確定？`)) return;
-  // Update local state for all flights first (avoid N re-renders), then batch upsert
+
+  invalidateHourlyCache();
+
+  const capT1 = (fcCapacity.T1 || 25) * AVG_PAX_PER_TABLE;
+  const capT2 = (fcCapacity.T2 || 25) * AVG_PAX_PER_TABLE;
+  const totalPax = flightArr.reduce((s, f) => s + estimateForFlight(f), 0);
+  const t1Count = flightArr.filter(f => f.terminal === 'T1').length;
+  const t2Count = flightArr.filter(f => f.terminal === 'T2').length;
+
+  const msg =
+`倒推分配：由貴賓室容量倒推每班能收多少人
+
+  T1 每小時容量 = ${fcCapacity.T1||25} 桌 × 1.6 = ${capT1} 人 (共 ${t1Count} 班)
+  T2 每小時容量 = ${fcCapacity.T2||25} 桌 × 1.6 = ${capT2} 人 (共 ${t2Count} 班)
+
+每班預估 = 其進場窗口內「該時段容量 ÷ 該時段航班數」取最小
+若某時段有 5 班同時競爭 → 每班分 ${Math.floor(capT1/5)} 人；只有 2 班 → 每班 ${Math.floor(capT1/2)} 人
+
+合計預估約 ${totalPax} 人
+
+填入後可在航班明細用 +/- 逐班微調，確定？`;
+
+  if (!confirm(msg)) return;
   flightArr.forEach(f => { fcInputs[f.flight_no] = estimateForFlight(f); });
   renderForecast();
   if (!isConfigured) { alert('已估算 ' + flightArr.length + ' 個航班（本機模式）'); return; }
@@ -5042,7 +5337,7 @@ function autoEstimateAll() {
     .upsert(rows, { onConflict: 'flight_no,flight_date' })
     .then(({ error }) => {
     if (error) alert('儲存失敗：' + error.message);
-    else alert('已自動估算並儲存 ' + rows.length + ' 個航班');
+    else alert(`✓ 已為 ${rows.length} 個航班填入預估\n總量約 ${totalPax} 人`);
   });
 }
 
@@ -5158,9 +5453,11 @@ function renderForecast() {
       const isOverflow = hourInfo && hourInfo.count > cap;
       const isPeak = hourInfo && hourInfo.count > cap * 0.8;
       const rowCls = isOverflow ? 'overflow' : (isPeak ? 'peak' : '');
+      const comp = competitorsForFlight(f);
+      const compBadge = comp > 0 ? `<span class="tier-badge comp-c${Math.min(comp, 6)}" title="同時段最多 ${comp} 班同航廈航班競爭">×${comp}</span>` : '';
       return `<div class="fc-flight-row ${rowCls} ${f._manual ? 'manual' : ''}">
         <div class="fc-f-fno">${escapeHtml(f.flight_no)}${f._manual ? '<span class="manual-badge" title="' + escapeHtml(f._note || '手動新增') + '">手動</span>' : ''}</div>
-        <div class="fc-f-dest"><span class="name">${escapeHtml(f.destination_name || '')}</span><span class="code">${escapeHtml(f.destination || '')}</span></div>
+        <div class="fc-f-dest"><span class="name">${escapeHtml(f.destination_name || '')}</span><span class="code">${escapeHtml(f.destination || '')}</span>${compBadge}</div>
         <div class="fc-f-std">${escapeHtml(f.std || '')}</div>
         <div class="fc-f-term ${f.terminal === 'T1' ? 't1' : 't2'}">${escapeHtml(f.terminal || '?')}</div>
         <div class="fc-f-input">
