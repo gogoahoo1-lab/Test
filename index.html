@@ -467,6 +467,15 @@
   .tdx-sync-btn { width: 30px; height: 30px; border-radius: 6px; border: none; background: var(--paper); color: var(--ink-2); cursor: pointer; font-size: 14px; padding: 0; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
   .tdx-sync-btn:hover { background: var(--gold); color: var(--ink); }
 
+  /* Flight list filters (航廈 + 區域) */
+  .fc-filter-row { display: flex; flex-direction: column; gap: 10px; padding: 12px 0 14px; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+  .fc-filter-group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .fc-filter-label { font-size: 10px; color: var(--muted); font-weight: 700; letter-spacing: 1.5px; margin-right: 8px; min-width: 40px; }
+  .fc-filter-btn { padding: 5px 12px; background: var(--paper); border: 1px solid var(--line); border-radius: 999px; font-size: 12px; color: var(--ink-2); cursor: pointer; transition: all 0.15s; font-family: inherit; white-space: nowrap; }
+  .fc-filter-btn:hover { background: var(--ivory); border-color: var(--gold); color: var(--ink); }
+  .fc-filter-btn.active { background: var(--ink); color: var(--gold); border-color: var(--ink); font-weight: 600; }
+  .fc-filter-btn .count { opacity: 0.55; font-size: 10px; margin-left: 4px; font-family: 'JetBrains Mono', monospace; }
+
   /* Quantity stepper — big touch-friendly +/- buttons */
   .qty-stepper { display: flex; align-items: stretch; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--paper); }
   .qty-stepper .qs-btn { width: 56px; height: 52px; background: var(--ivory); color: var(--ink); border: none; font-size: 28px; font-weight: 400; cursor: pointer; user-select: none; transition: background 0.15s, color 0.15s; font-family: 'Inter', sans-serif; line-height: 1; padding: 0; flex-shrink: 0; }
@@ -1586,6 +1595,18 @@
             <div class="chart-title">
               <span>航班明細</span>
               <span style="font-size:12px; color:var(--muted); font-weight:400;" id="fcFlightCount">—</span>
+            </div>
+            <div class="fc-filter-row">
+              <div class="fc-filter-group">
+                <span class="fc-filter-label">航廈</span>
+                <button class="fc-filter-btn active" data-fcflightterm="all">全部</button>
+                <button class="fc-filter-btn" data-fcflightterm="T1">T1</button>
+                <button class="fc-filter-btn" data-fcflightterm="T2">T2</button>
+              </div>
+              <div class="fc-filter-group">
+                <span class="fc-filter-label">區域</span>
+                <div id="fcRegionFilters" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+              </div>
             </div>
             <div id="fcFlightList" class="fc-flight-list"></div>
           </div>
@@ -4903,10 +4924,23 @@ function renderForecast() {
 
   // Flight list
   const flightList = document.getElementById('fcFlightList');
-  const sortedFlights = Object.values(flights).sort((a, b) => stdToMin(a.std) - stdToMin(b.std));
-  document.getElementById('fcFlightCount').textContent = sortedFlights.length + ' 個航班';
+  renderFcRegionFilters();
+  const allFlights = Object.values(flights);
+  const sortedFlights = allFlights
+    .filter(f => {
+      if (fcFilterTerm !== 'all' && f.terminal !== fcFilterTerm) return false;
+      if (fcFilterRegion !== 'all' && regionOf(f.destination) !== fcFilterRegion) return false;
+      return true;
+    })
+    .sort((a, b) => stdToMin(a.std) - stdToMin(b.std));
+  const filterActive = (fcFilterTerm !== 'all' || fcFilterRegion !== 'all');
+  document.getElementById('fcFlightCount').textContent = filterActive
+    ? `${sortedFlights.length} / ${allFlights.length} 個航班`
+    : `${sortedFlights.length} 個航班`;
   if (sortedFlights.length === 0) {
-    flightList.innerHTML = '<div class="empty">尚無航班資料 · 請先跑 TDX Edge Function 同步班表</div>';
+    flightList.innerHTML = allFlights.length === 0
+      ? '<div class="empty">尚無航班資料 · 請先跑 TDX Edge Function 同步班表</div>'
+      : '<div class="empty">此篩選條件下沒有航班</div>';
   } else {
     flightList.innerHTML = sortedFlights.map(f => {
       const users = fcInputs[f.flight_no] || 0;
@@ -4932,6 +4966,131 @@ function renderForecast() {
     }).join('');
   }
 }
+
+// Flight destination → region mapping based on STARLUX actual route network (Sep 2026)
+// Kept broader than current network to accommodate future expansion (per FIDS data)
+const REGION_MAP = {
+  // ─── 港澳 (現有 2) ──────────────────────
+  HKG: '港澳', MFM: '港澳',
+
+  // ─── 日本 (現有 12: NRT, KIX, NGO, CTS, FUK, OKA, KMJ, SDJ, UKB, HKD, SHI, TAK) ──
+  NRT: '日本', HND: '日本', TYO: '日本',
+  KIX: '日本', ITM: '日本',
+  NGO: '日本', CTS: '日本', FUK: '日本', OKA: '日本',
+  KMJ: '日本', SDJ: '日本',
+  UKB: '日本',  // 神戶
+  HKD: '日本',  // 函館
+  SHI: '日本',  // 下地島
+  TAK: '日本',  // 高松
+  // Future expansion candidates
+  HIJ: '日本', KMQ: '日本', TOY: '日本', KOJ: '日本', ISG: '日本', NGS: '日本',
+  KKJ: '日本', MYJ: '日本', OKJ: '日本', KIJ: '日本', HSG: '日本',
+
+  // ─── 韓國 (現有 1: PUS) ────────────────
+  PUS: '韓國',
+  // Future
+  ICN: '韓國', GMP: '韓國', CJU: '韓國', TAE: '韓國', SEL: '韓國',
+
+  // ─── 東南亞 (現有 13) ──────────────────
+  // 泰國
+  BKK: '東南亞', DMK: '東南亞',
+  CNX: '東南亞',  // 清邁
+  HKT: '東南亞',
+  // 越南
+  HAN: '東南亞', SGN: '東南亞', DAD: '東南亞',
+  PQC: '東南亞',  // 富國島
+  CXR: '東南亞',
+  // 新加坡
+  SIN: '東南亞',
+  // 馬來西亞
+  KUL: '東南亞', PEN: '東南亞', LGK: '東南亞', KCH: '東南亞', BKI: '東南亞',
+  // 菲律賓
+  MNL: '東南亞', CEB: '東南亞', CRK: '東南亞', KLO: '東南亞',
+  // 印尼 (現有 DPS, CGK)
+  DPS: '東南亞', CGK: '東南亞', JOG: '東南亞', SUB: '東南亞',
+  // 柬埔寨、寮國、緬甸
+  PNH: '東南亞', REP: '東南亞', RGN: '東南亞', VTE: '東南亞',
+
+  // ─── 中國大陸 (現無, 保留 for future) ──
+  PVG: '中國', SHA: '中國', PEK: '中國', PKX: '中國', CAN: '中國',
+  CTU: '中國', TFU: '中國', SZX: '中國', XIY: '中國', HGH: '中國',
+  NKG: '中國', WUH: '中國', CKG: '中國', TAO: '中國', KMG: '中國',
+  DLC: '中國', TSN: '中國', SHE: '中國', HRB: '中國', XMN: '中國',
+
+  // ─── 北美 (現有 5) ─────────────────────
+  LAX: '北美', ONT: '北美', SFO: '北美', SEA: '北美', PHX: '北美',
+  // Future
+  BUR: '北美', LGB: '北美', SJC: '北美', OAK: '北美',
+  LAS: '北美', PDX: '北美', SAN: '北美',
+  DFW: '北美', IAH: '北美', ORD: '北美', DEN: '北美', MSP: '北美',
+  JFK: '北美', EWR: '北美', LGA: '北美', BOS: '北美', IAD: '北美',
+  ATL: '北美', MCO: '北美', MIA: '北美',
+  YVR: '北美', YYZ: '北美', YUL: '北美', YYC: '北美',
+
+  // ─── 歐洲 (現有 1: PRG) ────────────────
+  PRG: '歐洲',  // 布拉格 (2026 新開)
+  // Future
+  LHR: '歐洲', LGW: '歐洲', STN: '歐洲', MAN: '歐洲',
+  CDG: '歐洲', ORY: '歐洲', NCE: '歐洲',
+  FRA: '歐洲', MUC: '歐洲', BER: '歐洲', HAM: '歐洲',
+  FCO: '歐洲', MXP: '歐洲', VCE: '歐洲',
+  AMS: '歐洲', ZRH: '歐洲', GVA: '歐洲', VIE: '歐洲', BRU: '歐洲',
+  MAD: '歐洲', BCN: '歐洲', LIS: '歐洲', ATH: '歐洲',
+  CPH: '歐洲', ARN: '歐洲', OSL: '歐洲', HEL: '歐洲', WAW: '歐洲',
+
+  // ─── 中東 (現無, 保留 for AUH-類資料異常/包機) ─
+  AUH: '中東', DXB: '中東', DOH: '中東', DWC: '中東', RUH: '中東', JED: '中東',
+
+  // ─── 大洋洲 (現無) ─────────────────────
+  MEL: '大洋洲', SYD: '大洋洲', BNE: '大洋洲', PER: '大洋洲', ADL: '大洋洲',
+  AKL: '大洋洲', CHC: '大洋洲', WLG: '大洋洲',
+
+  // ─── 印度 (現無) ──────────────────────
+  DEL: '印度', BOM: '印度', BLR: '印度', MAA: '印度', HYD: '印度', CCU: '印度',
+
+  // ─── 台灣國內 (若 FIDS 有回程資料) ────
+  TPE: '台灣', KHH: '台灣', RMQ: '台灣',
+};
+const REGION_ORDER = ['港澳', '日本', '韓國', '東南亞', '中國', '中東', '歐洲', '北美', '大洋洲', '印度', '台灣', '其他'];
+function regionOf(destCode) {
+  if (!destCode) return '其他';
+  return REGION_MAP[String(destCode).toUpperCase().trim()] || '其他';
+}
+
+let fcFilterTerm = 'all';    // 'all' | 'T1' | 'T2'
+let fcFilterRegion = 'all';  // 'all' | 港澳 | 日本 | ...
+
+function renderFcRegionFilters() {
+  const container = document.getElementById('fcRegionFilters');
+  if (!container) return;
+  // Count flights by region — only render region buttons that actually have flights
+  const counts = {};
+  Object.values(flights).forEach(f => {
+    const r = regionOf(f.destination);
+    counts[r] = (counts[r] || 0) + 1;
+  });
+  const regionsPresent = REGION_ORDER.filter(r => counts[r] > 0);
+  const total = Object.values(flights).length;
+  const btns = [`<button class="fc-filter-btn ${fcFilterRegion === 'all' ? 'active' : ''}" data-fcregion="all">全部<span class="count">${total}</span></button>`];
+  regionsPresent.forEach(r => {
+    btns.push(`<button class="fc-filter-btn ${fcFilterRegion === r ? 'active' : ''}" data-fcregion="${r}">${r}<span class="count">${counts[r]}</span></button>`);
+  });
+  container.innerHTML = btns.join('');
+  container.querySelectorAll('[data-fcregion]').forEach(b => {
+    b.addEventListener('click', () => {
+      fcFilterRegion = b.dataset.fcregion;
+      renderForecast();
+    });
+  });
+}
+
+// Terminal filter buttons for flight list — static, wired once on page load
+document.querySelectorAll('[data-fcflightterm]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-fcflightterm]').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  fcFilterTerm = b.dataset.fcflightterm;
+  renderForecast();
+}));
 
 // Period switch (today / tomorrow)
 document.querySelectorAll('[data-fcperiod]').forEach(b => b.addEventListener('click', () => {
