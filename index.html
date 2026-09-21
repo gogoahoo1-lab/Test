@@ -476,6 +476,28 @@
   .fc-filter-btn.active { background: var(--ink); color: var(--gold); border-color: var(--ink); font-weight: 600; }
   .fc-filter-btn .count { opacity: 0.55; font-size: 10px; margin-left: 4px; font-family: 'JetBrains Mono', monospace; }
 
+  /* Add flight button (chart-title) */
+  .btn-add-flight { background: var(--ink); color: var(--gold); border: 1px solid var(--ink); padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; letter-spacing: 0.3px; transition: all 0.15s; font-family: inherit; }
+  .btn-add-flight:hover { background: var(--gold); color: var(--ink); }
+
+  /* Mini quantity stepper for flight list rows */
+  .qs-mini { display: inline-flex; align-items: stretch; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--paper); height: 36px; vertical-align: middle; }
+  .qs-mini-btn { width: 36px; background: var(--ivory); color: var(--ink); border: none; font-size: 18px; font-weight: 400; cursor: pointer; user-select: none; padding: 0; line-height: 1; transition: background 0.15s; font-family: 'Inter', sans-serif; }
+  .qs-mini-btn:hover { background: var(--gold); color: var(--ink); }
+  .qs-mini-btn:active { background: var(--gold-dark); color: #fff; }
+  .qs-mini-btn:first-child { border-right: 1px solid var(--line); }
+  .qs-mini-btn:last-child { border-left: 1px solid var(--line); }
+  .qs-mini-val { width: 40px; border: none !important; background: transparent !important; text-align: center !important; font-family: 'Playfair Display', 'Noto Serif TC', serif !important; font-weight: 500 !important; font-size: 16px !important; color: var(--ink) !important; padding: 0 !important; border-radius: 0 !important; box-shadow: none !important; -moz-appearance: textfield; height: 34px; letter-spacing: -0.3px; }
+  .qs-mini-val:focus { outline: none !important; border: none !important; box-shadow: none !important; }
+  .qs-mini-val::-webkit-outer-spin-button,
+  .qs-mini-val::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+  /* Manual flight badge & delete button */
+  .manual-badge { background: var(--ink); color: var(--gold); font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; letter-spacing: 1px; margin-left: 6px; }
+  .fc-flight-row.manual { border-left: 3px solid var(--gold); }
+  .btn-del-flight { background: transparent; border: none; color: var(--muted); font-size: 14px; cursor: pointer; padding: 4px 6px; border-radius: 4px; }
+  .btn-del-flight:hover { background: var(--coral-bg); color: var(--coral); }
+
   /* Quantity stepper — big touch-friendly +/- buttons */
   .qty-stepper { display: flex; align-items: stretch; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--paper); }
   .qty-stepper .qs-btn { width: 56px; height: 52px; background: var(--ivory); color: var(--ink); border: none; font-size: 28px; font-weight: 400; cursor: pointer; user-select: none; transition: background 0.15s, color 0.15s; font-family: 'Inter', sans-serif; line-height: 1; padding: 0; flex-shrink: 0; }
@@ -644,7 +666,7 @@
   .fc-hour-row .fc-h-count.over { color: #C53E1D; }
 
   .fc-flight-list { display: flex; flex-direction: column; gap: 6px; max-height: 500px; overflow-y: auto; }
-  .fc-flight-row { display: grid; grid-template-columns: 70px 1fr 60px 40px 100px; gap: 12px; align-items: center; padding: 10px 12px; background: var(--cream-2); border-radius: 10px; font-size: 13px; }
+  .fc-flight-row { display: grid; grid-template-columns: 70px 1fr 60px 40px 155px 32px; gap: 12px; align-items: center; padding: 10px 12px; background: var(--cream-2); border-radius: 10px; font-size: 13px; }
   .fc-flight-row.peak { background: #FFF6E8; border-left: 3px solid var(--dirty); }
   .fc-flight-row.overflow { background: #FFECEC; border-left: 3px solid #E5674C; }
   .fc-flight-row .fc-f-fno { font-family: 'JetBrains Mono'; font-weight: 700; color: var(--navy-900); font-size: 14px; }
@@ -1594,7 +1616,10 @@
           <div class="chart-card">
             <div class="chart-title">
               <span>航班明細</span>
-              <span style="font-size:12px; color:var(--muted); font-weight:400;" id="fcFlightCount">—</span>
+              <div style="display:flex; align-items:center; gap:12px;">
+                <span style="font-size:12px; color:var(--muted); font-weight:400;" id="fcFlightCount">—</span>
+                <button class="btn-add-flight" onclick="openAddFlight()" title="TDX 未同步的加班機/包機/臨時航班">＋ 加航班</button>
+              </div>
             </div>
             <div class="fc-filter-row">
               <div class="fc-filter-group">
@@ -1641,6 +1666,55 @@
     </div>
     <div class="modal-body" id="modalBody"></div>
     <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="addFlightModal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <div>
+        <div style="font-size:16px; font-weight:600;">＋ 手動新增航班</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:2px;">用於 TDX 尚未同步的加班機、包機、替代機</div>
+      </div>
+      <button class="modal-close" onclick="closeAddFlight()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>航班</label>
+        <div class="flight-input-wrap">
+          <span class="flight-prefix">JX</span>
+          <input type="text" id="mfFno" placeholder="8888" inputmode="numeric" autocomplete="off"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>目的地代碼</label>
+        <input type="text" id="mfDest" placeholder="HKG (3 碼 IATA)" maxlength="3" style="text-transform:uppercase" autocomplete="off"/>
+      </div>
+      <div class="form-row">
+        <label>目的地名稱</label>
+        <input type="text" id="mfDestName" placeholder="香港" autocomplete="off"/>
+      </div>
+      <div class="form-row">
+        <label>STD</label>
+        <input type="time" id="mfStd" value="12:00"/>
+      </div>
+      <div class="form-row">
+        <label>航廈</label>
+        <select id="mfTerminal">
+          <option value="T1">T1</option>
+          <option value="T2" selected>T2</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>備註</label>
+        <input type="text" id="mfNote" placeholder="加班機 / 包機 / 替代機（選填）" autocomplete="off"/>
+      </div>
+      <div id="mfError" style="display:none; margin-top:8px; padding:10px 12px; background:#FFECEC; color:#C53E1D; border-radius:8px; font-size:13px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeAddFlight()">取消</button>
+      <button class="primary-btn" onclick="saveManualFlight()">✓ 儲存航班</button>
+    </div>
   </div>
 </div>
 
@@ -2456,7 +2530,7 @@ function summariseSeatsForMonitor(rows, term) {
     if (s.status === 'dirty') dirtySeats++;
     if (s.status === 'blocked') blockedSeats++;
     if (s.status === 'seated' && s.std) {
-      const m = minsUntilDep(s.std);
+      const m = minsUntilDep(s.std, s.entry_time);
       if (m < 0) overdue++;
       else if (m < 30) imminent++;
     }
@@ -3301,24 +3375,42 @@ async function loadFlights() {
     flightsLastUpdated = payload.last_updated || null;
     flightsSource = 'github';
     console.log(`✓ Loaded ${list.length} flights from GitHub (last sync: ${flightsLastUpdated})`);
-    return;
   } catch (e) {
     console.warn('GitHub flights fetch failed, falling back to Supabase:', e.message);
+    // 2. Fallback: Supabase (legacy — may be stale/empty)
+    try {
+      const { data, error } = await sb.from('flights').select('*');
+      if (error) throw error;
+      flights = {};
+      (data || []).forEach(f => flights[f.flight_no] = f);
+      flightsLastUpdated = null;
+      flightsSource = 'supabase-fallback';
+    } catch (e2) {
+      flights = {};
+      flightsLastUpdated = null;
+      flightsSource = 'error';
+    }
   }
-  // 2. Fallback: Supabase (legacy — may be stale/empty)
+  // 3. Merge manual flights (加班機/包機/替代機) — these override TDX if flight_no clashes
   try {
-    const { data, error } = await sb.from('flights').select('*');
-    if (error) throw error;
-    flights = {};
-    (data || []).forEach(f => flights[f.flight_no] = f);
-    flightsLastUpdated = null;
-    flightsSource = 'supabase-fallback';
-    console.log(`⚠ Loaded ${data?.length || 0} flights from Supabase fallback`);
+    const { data, error } = await sb.from('manual_flights').select('*');
+    if (!error && data) {
+      data.forEach(f => {
+        flights[f.flight_no] = {
+          flight_no: f.flight_no,
+          destination: f.destination,
+          destination_name: f.destination_name,
+          std: f.std,
+          terminal: f.terminal,
+          _manual: true,
+          _note: f.note,
+          _added_by: f.added_by,
+        };
+      });
+      console.log(`✓ Merged ${data.length} manual flights`);
+    }
   } catch (e) {
-    flights = {};
-    flightsLastUpdated = null;
-    flightsSource = 'error';
-    console.error('Both flight sources failed:', e);
+    console.warn('Failed to load manual flights:', e);
   }
 }
 
@@ -3389,6 +3481,9 @@ function subscribeRealtime() {
   // (data/flights.json), not from Supabase 'flights' table. Users trigger a re-fetch by
   // opening the intake modal or by pressing the manual "重新同步" button.
   flightSub = null;
+  // Subscribe to manual_flights (加班機/包機/替代機) so any device seeing an add/delete
+  // sees the update instantly.
+  subscribeManualFlights();
 }
 
 function loadLocalFallback() {
@@ -3576,9 +3671,38 @@ async function refreshTodayCount() {
 
 function stdToMin(s) { if (!s) return 9999; const [h,m] = s.split(':').map(Number); return h*60+m; }
 function nowMin() { const d = new Date(); return d.getHours()*60+d.getMinutes(); }
-function minsUntilSTD(s) { return stdToMin(s) - nowMin(); }
-function minsUntilDep(s) { return minsUntilSTD(s) - 30; }
-function timeBand(s) { const m = minsUntilSTD(s); if (m<30) return 'band-imminent'; if (m<60) return 'band-soon'; return 'band-later'; }
+// Return minutes from now to STD.
+// If entryTime is provided (seated passenger), use it as anchor — STD must be >= entry_time
+// (a passenger can't check in AFTER the flight departs), so we pick the first STD instance
+// on/after entry_time. This is 100% robust for ANY early check-in (even 24h+).
+// Without entryTime, fall back to picking the STD candidate closest to now (robust within 12h).
+function minsUntilSTD(s, entryTime) {
+  if (!s) return 9999;
+  const [h, m] = s.split(':').map(Number);
+  if (isNaN(h) || isNaN(m)) return 9999;
+  const now = new Date();
+  if (entryTime) {
+    const entry = new Date(entryTime);
+    if (!isNaN(entry.getTime())) {
+      const std = new Date(entry); std.setHours(h, m, 0, 0);
+      // STD must be >= entry time; if not, it's the next day
+      if (std < entry) std.setDate(std.getDate() + 1);
+      return Math.round((std - now) / 60000);
+    }
+  }
+  // Fallback: nearest STD candidate to now
+  const today = new Date(now); today.setHours(h, m, 0, 0);
+  const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+  const tomorrow  = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+  let best = today, bestDist = Math.abs(today - now);
+  [yesterday, tomorrow].forEach(cand => {
+    const d = Math.abs(cand - now);
+    if (d < bestDist) { best = cand; bestDist = d; }
+  });
+  return Math.round((best - now) / 60000);
+}
+function minsUntilDep(s, entryTime) { return minsUntilSTD(s, entryTime) - 30; }
+function timeBand(s, entryTime) { const m = minsUntilSTD(s, entryTime); if (m<30) return 'band-imminent'; if (m<60) return 'band-soon'; return 'band-later'; }
 
 function renderSeats() {
   const isSelecting = !!pendingIntake;
@@ -3615,7 +3739,7 @@ function renderSeats() {
       let inner = `<div class="seat-code">${escapeHtml(code)} <span class="seat-icon">${iconMap[s.status]||''}</span></div>`;
       if (s.status === 'seated' && s.passenger_name) {
         inner += `<div class="seat-info"><div class="name">${escapeHtml(s.passenger_name)}${s.vip?' ★':''}</div><div class="flight">${escapeHtml(s.flight_no||'')} ${escapeHtml(s.std||'')}</div></div>`;
-        if (s.std) inner += `<div class="seat-time-band ${timeBand(s.std)}"></div>`;
+        if (s.std) inner += `<div class="seat-time-band ${timeBand(s.std, s.entry_time)}"></div>`;
       } else if (s.status !== 'blocked') {
         const t = { avail:'空位', dirty:'待清潔', cleaning:'清潔中' }[s.status] || '';
         inner += `<div class="seat-info"><div style="color:var(--muted);font-size:9px;">${t}</div></div>`;
@@ -3634,7 +3758,7 @@ function renderStats() {
   const totalSeats = Object.keys(seats).length;
   let usedSeats=0, dirtySeats=0, imm=0, availSeats=0;
   Object.values(seats).forEach(s => {
-    if (s.status === 'seated') { usedSeats++; if (s.std && minsUntilSTD(s.std) < 30) imm++; }
+    if (s.status === 'seated') { usedSeats++; if (s.std && minsUntilSTD(s.std, s.entry_time) < 30) imm++; }
     if (s.status === 'dirty') dirtySeats++;
     if (s.status === 'avail') availSeats++;
   });
@@ -3718,7 +3842,7 @@ function renderQueue() {
   Object.entries(seats).forEach(([code,s]) => {
     if (s.status==='seated' && s.passenger_name) {
       const hasStd = !!s.std;
-      const dep = hasStd ? minsUntilDep(s.std) : 9999;
+      const dep = hasStd ? minsUntilDep(s.std, s.entry_time) : 9999;
       all.push({ code, name: s.passenger_name, vip: s.vip, fno: s.flight_no, destName: s.destination_name, std: s.std, status: 'seated', departMin: dep, hasStd });
     }
     else if (s.status==='dirty') all.push({ code, status: 'dirty', std: '—', name: '待清潔', departMin: 9999, hasStd: false });
@@ -4030,8 +4154,8 @@ function openSeatModal(code) {
   const body = document.getElementById('modalBody');
   const footer = document.getElementById('modalFooter');
   if (s.status === 'seated' && s.passenger_name) {
-    const min = s.std ? minsUntilSTD(s.std) : 0;
-    const minDep = s.std ? minsUntilDep(s.std) : 0;
+    const min = s.std ? minsUntilSTD(s.std, s.entry_time) : 0;
+    const minDep = s.std ? minsUntilDep(s.std, s.entry_time) : 0;
     const paxInitial = s.passenger_name ? escapeHtml(s.passenger_name.charAt(0)) : '?';
     body.innerHTML = `
       ${tableInfo}
@@ -4953,15 +5077,20 @@ function renderForecast() {
       const isOverflow = hourInfo && hourInfo.count > cap;
       const isPeak = hourInfo && hourInfo.count > cap * 0.8;
       const rowCls = isOverflow ? 'overflow' : (isPeak ? 'peak' : '');
-      return `<div class="fc-flight-row ${rowCls}">
-        <div class="fc-f-fno">${escapeHtml(f.flight_no)}</div>
+      return `<div class="fc-flight-row ${rowCls} ${f._manual ? 'manual' : ''}">
+        <div class="fc-f-fno">${escapeHtml(f.flight_no)}${f._manual ? '<span class="manual-badge" title="' + escapeHtml(f._note || '手動新增') + '">手動</span>' : ''}</div>
         <div class="fc-f-dest"><span class="name">${escapeHtml(f.destination_name || '')}</span><span class="code">${escapeHtml(f.destination || '')}</span></div>
         <div class="fc-f-std">${escapeHtml(f.std || '')}</div>
         <div class="fc-f-term ${f.terminal === 'T1' ? 't1' : 't2'}">${escapeHtml(f.terminal || '?')}</div>
         <div class="fc-f-input">
-          <input type="number" min="0" max="300" value="${users}" onchange="saveFcInput('${escapeHtml(f.flight_no)}', parseInt(this.value)||0)" />
+          <div class="qs-mini">
+            <button type="button" class="qs-mini-btn" onclick="adjustFcInput('${escapeHtml(f.flight_no)}', -1)" aria-label="減少人數">−</button>
+            <input type="number" min="0" max="300" value="${users}" class="qs-mini-val" data-fno="${escapeHtml(f.flight_no)}" onchange="saveFcInput('${escapeHtml(f.flight_no)}', parseInt(this.value)||0); renderForecast();" inputmode="numeric"/>
+            <button type="button" class="qs-mini-btn" onclick="adjustFcInput('${escapeHtml(f.flight_no)}', 1)" aria-label="增加人數">+</button>
+          </div>
           <span class="lbl">人</span>
         </div>
+        <div>${f._manual ? `<button class="btn-del-flight" onclick="deleteManualFlight('${escapeHtml(f.flight_no)}')" title="刪除手動航班">🗑</button>` : ''}</div>
       </div>`;
     }).join('');
   }
@@ -5082,6 +5211,94 @@ function renderFcRegionFilters() {
       renderForecast();
     });
   });
+}
+
+// Manual flight CRUD (加班機/包機/替代機)
+function openAddFlight() {
+  if (!currentUser) { showIdentityModal(); return; }
+  ['mfFno','mfDest','mfDestName','mfNote'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('mfStd').value = '12:00';
+  document.getElementById('mfTerminal').value = currentTerminal || 'T2';
+  document.getElementById('mfError').style.display = 'none';
+  document.getElementById('addFlightModal').classList.add('active');
+}
+function closeAddFlight() { document.getElementById('addFlightModal').classList.remove('active'); }
+
+function showMfError(msg) {
+  const el = document.getElementById('mfError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+async function saveManualFlight() {
+  const rawFno = document.getElementById('mfFno').value.trim().toUpperCase().replace(/^JX/i, '');
+  if (!rawFno) return showMfError('請輸入航班號');
+  const fno = 'JX' + rawFno;
+  const dest = document.getElementById('mfDest').value.trim().toUpperCase();
+  const destName = document.getElementById('mfDestName').value.trim();
+  const std = document.getElementById('mfStd').value.trim();
+  const terminal = document.getElementById('mfTerminal').value;
+  const note = document.getElementById('mfNote').value.trim();
+
+  if (!dest || dest.length !== 3) return showMfError('請輸入 3 碼 IATA 目的地代碼');
+  if (!std) return showMfError('請輸入 STD');
+
+  if (!isConfigured) return showMfError('本機模式：無法儲存手動航班');
+
+  try {
+    const { error } = await sb.from('manual_flights').upsert({
+      flight_no: fno,
+      destination: dest,
+      destination_name: destName || dest,
+      std, terminal, note,
+      added_by: currentUser?.display_name || currentUser?.username || 'unknown',
+      added_at: new Date().toISOString(),
+    });
+    if (error) return showMfError('儲存失敗：' + error.message);
+    closeAddFlight();
+    await loadFlights();
+    renderForecast();
+  } catch (e) {
+    showMfError('儲存失敗：' + e.message);
+  }
+}
+
+async function deleteManualFlight(fno) {
+  if (!confirm(`確定刪除手動航班 ${fno}？\n\n（若這是 TDX 已同步的加班機，下次同步後仍會出現）`)) return;
+  try {
+    const { error } = await sb.from('manual_flights').delete().eq('flight_no', fno);
+    if (error) { alert('刪除失敗：' + error.message); return; }
+    await loadFlights();
+    renderForecast();
+  } catch (e) {
+    alert('刪除失敗：' + e.message);
+  }
+}
+
+// Mini stepper +/- for flight forecast input
+function adjustFcInput(fno, delta) {
+  const cur = parseInt(fcInputs[fno] || 0, 10) || 0;
+  const next = Math.max(0, Math.min(300, cur + delta));
+  fcInputs[fno] = next;
+  const input = document.querySelector(`.qs-mini-val[data-fno="${CSS.escape(fno)}"]`);
+  if (input) input.value = next;
+  saveFcInput(fno, next);
+  // Also refresh the hourly heatmap since user count changed
+  renderForecast();
+}
+
+// Realtime subscription for manual flights
+let manualFlightsSub = null;
+function subscribeManualFlights() {
+  if (!isConfigured) return;
+  if (manualFlightsSub) sb.removeChannel(manualFlightsSub);
+  manualFlightsSub = sb.channel('rt-manual-flights').on('postgres_changes',
+    { event: '*', schema: 'public', table: 'manual_flights' },
+    async () => {
+      await loadFlights();
+      if (document.querySelector('.view.active')?.id === 'view-forecast') renderForecast();
+    }
+  ).subscribe();
 }
 
 // Terminal filter buttons for flight list — static, wired once on page load
@@ -5795,12 +6012,12 @@ function checkOvertimeAlert() {
   Object.entries(seats).forEach(([code, s]) => {
     if (s.status !== 'seated' || !s.std) return;
     nowSeated.add(code);
-    const dep = minsUntilDep(s.std);
+    const dep = minsUntilDep(s.std, s.entry_time);
     if (dep < 0 && dep > -60) {  // between just-overdue and 1hr past (avoid noisy long-dwell)
       const key = code + ':' + (s.entry_time || '');
       if (!_overtimeNotified.has(key)) {
         _overtimeNotified.add(key);
-        overdueList.push({ code, name: s.passenger_name, fno: s.flight_no, std: s.std, vip: s.vip });
+        overdueList.push({ code, name: s.passenger_name, fno: s.flight_no, std: s.std, vip: s.vip, entry_time: s.entry_time });
       }
     }
   });
@@ -5812,7 +6029,7 @@ function checkOvertimeAlert() {
   // Fire (batched into one Slack message if multiple overdue at once)
   if (overdueList.length > 0 && slackConfig?.webhook_url) {
     const lines = overdueList.map(o =>
-      `• *${currentTerminal}-${o.code}* ${escapeHtml(o.name || '訪客')}${o.vip?' ★':''} · ${o.fno || '手動'} STD ${o.std} (${Math.abs(minsUntilDep(o.std))} 分前已達離場時間)`
+      `• *${currentTerminal}-${o.code}* ${escapeHtml(o.name || '訪客')}${o.vip?' ★':''} · ${o.fno || '手動'} STD ${o.std} (${Math.abs(minsUntilDep(o.std, o.entry_time))} 分前已達離場時間)`
     ).join('\n');
     notifySlack('overflow', {
       message: `⚠️ *以下旅客已超過建議離場時間*\n${lines}\n請儘速確認是否已前往登機門`,
