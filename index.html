@@ -244,6 +244,18 @@
   .band-soon { background: var(--gold); }
   .band-later { background: var(--avail); }
   .seat-icon { position: absolute; top: 4px; right: 5px; font-size: 12px; opacity: 0.5; }
+  /* Enlarged cleaning icon so it's visible from across the room */
+  .seat.dirty .seat-icon,
+  .seat.cleaning .seat-icon {
+    top: 50%;
+    left: 50%;
+    right: auto;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    opacity: 0.55;
+    pointer-events: none;
+    line-height: 1;
+  }
 
   .select-banner { position: fixed; top: 76px; left: 50%; transform: translateX(-50%); background: var(--navy-900); color: #fff; padding: 12px 20px; border-radius: 16px; display: none; box-shadow: var(--shadow-lg); z-index: 90; max-width: 640px; width: calc(100% - 40px); }
   .select-banner.active { display: block; }
@@ -460,6 +472,42 @@
   .recent-tag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-right: 6px; letter-spacing: 0.5px; }
   .recent-tag.t1 { background: #eaf0f7; color: #4a6fa5; }
   .recent-tag.t2 { background: #fdf5e5; color: #a67e28; }
+
+  /* Group indicator — same-party seat visual grouping */
+  .seat.grouped {
+    border-left: 4px solid var(--group-color, transparent) !important;
+    padding-left: 8px;
+  }
+  .seat .group-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-left: 6px;
+    vertical-align: middle;
+    box-shadow: 0 0 0 1.5px var(--paper), 0 0 0 2.5px rgba(0,0,0,0.08);
+  }
+  /* Hover any seat in a group → outline all */
+  .seat.grouped.group-hover {
+    box-shadow: 0 0 0 2px var(--group-color, transparent), 0 4px 16px rgba(0,0,0,0.12) !important;
+    z-index: 2;
+    position: relative;
+  }
+  /* Queue item group indicator */
+  .q-group-dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+    box-shadow: 0 0 0 1.5px var(--paper), 0 0 0 2.5px rgba(0,0,0,0.1);
+  }
+  .queue-item.group-hover {
+    background: rgba(0,0,0,0.03) !important;
+    outline: 1px solid var(--gold);
+    outline-offset: -1px;
+  }
 
   /* TDX sync status + manual trigger */
   .tdx-sync-box { display: flex; align-items: center; gap: 4px; background: var(--ivory); border: 1px solid var(--line); border-radius: 8px; padding: 4px 4px 4px 12px; }
@@ -3600,27 +3648,16 @@ async function logExit(code, seatBefore) {
 
 async function releaseSeat(code) {
   const before = { ...seats[code] };
-  // Multi-table group: release all tables in the group at once
-  if (before.group_id) {
-    const gid = before.group_id;
-    const groupSeatsAll = Object.values(seats).filter(s => s.group_id === gid);
-    const dirtyCodes = groupSeatsAll.filter(s => s.status === 'seated').map(s => s.code);
-    const availCodes = groupSeatsAll.filter(s => s.status === 'blocked').map(s => s.code);
-    if (dirtyCodes.length > 0) {
-      const p = { status: 'dirty', passenger_name: null, flight_no: null, destination: null, destination_name: null, std: null, party_size: null, class: null, vip: null, entry_time: null };
-      if (_seatsHasGroupId) p.group_id = null;
-      await updateSeatsWithGroupFallback(dirtyCodes, p);
-    }
-    if (availCodes.length > 0) {
-      const p = { status: 'avail' };
-      if (_seatsHasGroupId) p.group_id = null;
-      await updateSeatsWithGroupFallback(availCodes, p);
-    }
-    await logExit(code, before);
-    return;
-  }
-  // Single-table release (original behavior)
-  await updateSeat(code, { status: 'dirty', passenger_name: null, flight_no: null, destination: null, destination_name: null, std: null, party_size: null, class: null, vip: null, entry_time: null });
+  // Release ONLY this seat, even if it belongs to a group.
+  // Same-group seats depart independently (they may leave at different times).
+  // Group visual (color coding) stays intact — it just tells you they came together.
+  await updateSeat(code, {
+    status: 'dirty',
+    passenger_name: null, flight_no: null, destination: null, destination_name: null,
+    std: null, party_size: null, class: null, vip: null, entry_time: null,
+  });
+  // Legacy: unblock same-table siblings (only affects old data from before the
+  // "one code = one table" refactor; new data won't have blocked seats)
   const table = tableOf(code);
   if (table && table.codes.length > 1) {
     const blocked = table.codes.filter(c => c !== code && seats[c]?.status === 'blocked');
@@ -3670,6 +3707,29 @@ async function refreshTodayCount() {
 }
 
 function stdToMin(s) { if (!s) return 9999; const [h,m] = s.split(':').map(Number); return h*60+m; }
+
+// ═══ Group color palette ═══
+// Same group_id → same color, always. Uses simple deterministic hash → 8-color cycle.
+const GROUP_COLORS = [
+  '#d97757',  // 珊瑚橘
+  '#5e88b3',  // 深藍
+  '#7a9e6a',  // 橄欖綠
+  '#b062b8',  // 紫
+  '#d4a53c',  // 琥珀金
+  '#4faaa7',  // 青
+  '#c76f7c',  // 玫瑰粉
+  '#7d6fbc',  // 淡紫
+];
+function colorForGroup(groupId) {
+  if (!groupId) return null;
+  let hash = 0;
+  for (let i = 0; i < groupId.length; i++) {
+    hash = ((hash << 5) - hash) + groupId.charCodeAt(i);
+    hash |= 0;
+  }
+  return GROUP_COLORS[Math.abs(hash) % GROUP_COLORS.length];
+}
+
 function nowMin() { const d = new Date(); return d.getHours()*60+d.getMinutes(); }
 // Return minutes from now to STD.
 // If entryTime is provided (seated passenger), use it as anchor — STD must be >= entry_time
@@ -3732,11 +3792,14 @@ function renderSeats() {
       const tint = tableTintFor(tid);
       const el = document.createElement('div');
       const isPreSelected = isSelecting && pendingSelectedTableIds.includes(code);
-      el.className = `seat ${s.status}` + (selectedSeat===code?' selected':'') + (isPreSelected ? ' pre-selected' : '');
+      const groupColor = s.status === 'seated' && s.group_id ? colorForGroup(s.group_id) : null;
+      el.className = `seat ${s.status}` + (selectedSeat===code?' selected':'') + (isPreSelected ? ' pre-selected' : '') + (groupColor ? ' grouped' : '');
       el.dataset.table = tid || '';
+      if (groupColor) el.dataset.group = s.group_id;
       if (tint) el.style.borderTopColor = tint;
+      if (groupColor) el.style.setProperty('--group-color', groupColor);
       const iconMap = { avail:'', seated:'●', dirty:'🧹', cleaning:'✨', blocked:'🔒' };
-      let inner = `<div class="seat-code">${escapeHtml(code)} <span class="seat-icon">${iconMap[s.status]||''}</span></div>`;
+      let inner = `<div class="seat-code">${escapeHtml(code)} <span class="seat-icon">${iconMap[s.status]||''}</span>${groupColor ? `<span class="group-dot" style="background:${groupColor};" title="同組"></span>` : ''}</div>`;
       if (s.status === 'seated' && s.passenger_name) {
         inner += `<div class="seat-info"><div class="name">${escapeHtml(s.passenger_name)}${s.vip?' ★':''}</div><div class="flight">${escapeHtml(s.flight_no||'')} ${escapeHtml(s.std||'')}</div></div>`;
         if (s.std) inner += `<div class="seat-time-band ${timeBand(s.std, s.entry_time)}"></div>`;
@@ -3746,6 +3809,15 @@ function renderSeats() {
       }
       el.innerHTML = inner;
       el.addEventListener('click', () => onSeatClick(code));
+      // Hover: highlight all seats in the same group
+      if (groupColor) {
+        el.addEventListener('mouseenter', () => {
+          document.querySelectorAll(`.seat.grouped[data-group="${CSS.escape(s.group_id)}"]`).forEach(e => e.classList.add('group-hover'));
+        });
+        el.addEventListener('mouseleave', () => {
+          document.querySelectorAll('.seat.group-hover').forEach(e => e.classList.remove('group-hover'));
+        });
+      }
       grid.appendChild(el);
     });
     const el = document.getElementById(`count${zk}`);
@@ -3843,7 +3915,7 @@ function renderQueue() {
     if (s.status==='seated' && s.passenger_name) {
       const hasStd = !!s.std;
       const dep = hasStd ? minsUntilDep(s.std, s.entry_time) : 9999;
-      all.push({ code, name: s.passenger_name, vip: s.vip, fno: s.flight_no, destName: s.destination_name, std: s.std, status: 'seated', departMin: dep, hasStd });
+      all.push({ code, name: s.passenger_name, vip: s.vip, fno: s.flight_no, destName: s.destination_name, std: s.std, status: 'seated', departMin: dep, hasStd, group_id: s.group_id });
     }
     else if (s.status==='dirty') all.push({ code, status: 'dirty', std: '—', name: '待清潔', departMin: 9999, hasStd: false });
   });
@@ -3927,9 +3999,13 @@ function renderQueue() {
         </div>`;
     }
 
+    const groupColor = item.group_id ? colorForGroup(item.group_id) : null;
+    const groupDot = groupColor ? `<span class="q-group-dot" style="background:${groupColor};" title="同組"></span>` : '';
+    if (groupColor) el.dataset.group = item.group_id;
+
     el.innerHTML = `<div class="queue-avatar">${initial}<span class="status-dot ${statusClass}"></span></div>
       <div class="queue-meta">
-        <div class="name">${escapeHtml(item.name||'—')}${item.vip?' ★':''}</div>
+        <div class="name">${groupDot}${escapeHtml(item.name||'—')}${item.vip?' ★':''}</div>
         <div class="flight-line">${flightLine}</div>
       </div>
       <div class="queue-right">
@@ -3938,6 +4014,15 @@ function renderQueue() {
         ${cdHtml}
       </div>`;
     el.addEventListener('click', () => { openSeatModal(item.code); if (window.innerWidth <= 1024) closeQueue(); });
+    // Hover: highlight all queue items + seats in the same group
+    if (groupColor) {
+      el.addEventListener('mouseenter', () => {
+        document.querySelectorAll(`[data-group="${CSS.escape(item.group_id)}"]`).forEach(e => e.classList.add('group-hover'));
+      });
+      el.addEventListener('mouseleave', () => {
+        document.querySelectorAll('.group-hover').forEach(e => e.classList.remove('group-hover'));
+      });
+    }
     list.appendChild(el);
   });
 }
@@ -4132,19 +4217,16 @@ function openSeatModal(code) {
        </div>`
     : '';
 
-  // Multi-table group: show sister tables
+  // Group indicator: show sister seats but make it clear they depart independently
   let groupInfo = '';
   if (s.group_id) {
     const groupSeats = Object.values(seats).filter(x => x.group_id === s.group_id && x.status === 'seated');
-    const groupTableIds = [...new Set(groupSeats.map(x => tableIdOf(x)))];
-    const groupTableLabels = groupTableIds.map(tid => {
-      const t = tables[tid];
-      return t ? (t.label || t.codes[0]) : tid;
-    });
-    if (groupTableIds.length > 1) {
-      groupInfo = `<div style="background:#F5E9D8; border-left:3px solid var(--cleaning); padding:8px 12px; margin-bottom:12px; font-size:12px; color:#7A5514; border-radius:6px;">
-         👥 <b>同組共 ${groupTableIds.length} 桌</b>：${escapeHtml(groupTableLabels.join('、'))}
-         <div style="margin-top:2px; font-size:11px; opacity:0.85;">按「旅客已離開」會整組一起釋出</div>
+    const otherCodes = groupSeats.filter(x => x.code !== code).map(x => x.code);
+    if (otherCodes.length > 0) {
+      const gColor = colorForGroup(s.group_id);
+      groupInfo = `<div style="background:var(--cream-2); border-left:3px solid ${gColor}; padding:8px 12px; margin-bottom:12px; font-size:12px; color:var(--ink-2); border-radius:6px;">
+         <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${gColor}; vertical-align:middle; margin-right:6px;"></span><b>同組共 ${groupSeats.length} 席</b>：${escapeHtml(groupSeats.map(x=>x.code).join('、'))}
+         <div style="margin-top:2px; font-size:11px; color:var(--muted);">此座位獨立釋出，不會影響同組其他座位</div>
        </div>`;
     }
   }
@@ -4168,8 +4250,7 @@ function openSeatModal(code) {
       <div class="form-row"><label>STD</label><div style="font-family:'JetBrains Mono';">${escapeHtml(s.std||'-')} <span style="color:var(--muted); margin-left:8px;">(${min} 分後)</span></div></div>
       <div class="form-row"><label>入場</label><div style="font-family:'JetBrains Mono';">${s.entry_time ? new Date(s.entry_time).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}) : '-'}</div></div>
       <div class="form-row"><label>預估離開</label><div style="font-family:'JetBrains Mono'; color:${minDep<15?'#E5674C':'var(--ink)'}; font-weight:600;">${minDep>=0?minDep+' 分鐘後':'應已離開'}</div></div>`;
-    const releaseLabel = s.group_id ? '整組旅客已離開' : '旅客已離開';
-    footer.innerHTML = `<button class="danger" onclick="releaseSeat('${code}').then(closeModal)">${releaseLabel}</button><button class="primary" onclick="closeModal()">關閉</button>`;
+    footer.innerHTML = `<button class="danger" onclick="releaseSeat('${code}').then(closeModal)">旅客已離開</button><button class="primary" onclick="closeModal()">關閉</button>`;
   } else if (s.status === 'blocked') {
     body.innerHTML = `${tableInfo}<div style="text-align:center; padding:20px 0;"><div style="font-size:36px;">🔒</div><div style="font-size:15px; font-weight:600; margin-top:8px;">同桌被佔用</div><div style="font-size:12px; color:var(--muted); margin-top:6px;">此位置為 ${table?.label || '同桌'} 的一部份<br/>需等同桌旅客離開才會釋出</div></div>`;
     footer.innerHTML = `<button class="primary" onclick="closeModal()">了解</button>`;
