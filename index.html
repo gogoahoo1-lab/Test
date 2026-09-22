@@ -3427,6 +3427,8 @@ async function loadSeats() {
   Object.keys(zones).forEach(z => zones[z].codes = sortCodesByTableOrder(zones[z].codes));
   rebuildTablesIndex();
   renderAll();
+  // Once seats are on screen, silently sweep any strand seats past STD+6h
+  if (typeof autoReleaseZombies === 'function') autoReleaseZombies();
 }
 
 function tableSortOrderFor(tid) {
@@ -3744,7 +3746,7 @@ async function logEntry(code, pax) {
 }
 
 // Log exit when someone leaves (find open entry for this seat)
-async function logExit(code, seatBefore) {
+async function logExit(code, seatBefore, releasedByLabel) {
   if (!isConfigured || !seatBefore || !seatBefore.entry_time) return;
   try {
     const exitTime = new Date();
@@ -3758,7 +3760,7 @@ async function logExit(code, seatBefore) {
       await sb.from('entries').update({
         exit_time: exitTime.toISOString(),
         duration_minutes: durationMin,
-        released_by: currentUser?.name || 'anon',
+        released_by: releasedByLabel || currentUser?.name || 'anon',
       }).eq('id', openEntries[0].id);
     }
   } catch (e) { console.warn('logExit failed:', e); }
@@ -3784,6 +3786,42 @@ async function releaseSeat(code) {
   await logExit(code, before);
 }
 async function markCleaning(code) { await updateSeat(code, { status: 'cleaning' }); }
+
+// ═══ Auto-release: strand-seat garbage collector ═══
+// Force-release any seated seat where STD is > 6h in the past.
+// These are almost always "operator forgot to press 旅客已離開" cases
+// (real passengers left long ago). Keeps the queue clean automatically.
+const AUTO_RELEASE_HOURS = 6;
+let _autoReleaseRunning = false;
+async function autoReleaseZombies() {
+  if (_autoReleaseRunning || !isConfigured) return;
+  _autoReleaseRunning = true;
+  try {
+    const threshold = -AUTO_RELEASE_HOURS * 60;
+    const zombies = Object.values(seats).filter(s =>
+      s.status === 'seated' && s.std && minsUntilSTD(s.std, s.entry_time) < threshold
+    );
+    if (zombies.length === 0) return;
+    console.log(`[auto-release] Releasing ${zombies.length} stranded seats past STD+${AUTO_RELEASE_HOURS}h:`,
+      zombies.map(z => `${z.code}(${z.flight_no||'?'} ${z.std||'?'})`).join(', '));
+    for (const z of zombies) {
+      try {
+        const before = { ...z };
+        await updateSeat(z.code, {
+          status: 'dirty',
+          passenger_name: null, flight_no: null, destination: null, destination_name: null,
+          std: null, party_size: null, class: null, vip: null, entry_time: null,
+        });
+        await logExit(z.code, before, 'system-auto');
+      } catch (e) { console.warn(`[auto-release] failed for ${z.code}:`, e); }
+    }
+  } finally {
+    _autoReleaseRunning = false;
+  }
+}
+// Run on page load (after seats loaded), then every 10 minutes
+setInterval(autoReleaseZombies, 10 * 60 * 1000);
+
 async function markAvail(code) {
   const before = { ...seats[code] };
   await updateSeat(code, { status: 'avail', passenger_name: null, flight_no: null, destination: null, destination_name: null, std: null, party_size: null, class: null, vip: null, entry_time: null });
