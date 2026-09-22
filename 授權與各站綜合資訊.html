@@ -62,6 +62,14 @@ body{
 }
 .pill:hover{border-color:rgba(11,11,12,.4)}
 .pill[aria-selected="true"]{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:500}
+.topbar-updated{margin-left:auto;padding-left:12px;font-size:12px;color:var(--muted);letter-spacing:.03em;white-space:nowrap;flex:0 0 auto}
+.topbar-updated b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.04em}
+@media(max-width:520px){
+  .topbar{flex-wrap:wrap;padding-top:8px}
+  .topbar .pills{order:2;flex:1 1 100%}
+  .topbar-updated{order:1;flex:1 1 100%;margin:0 0 8px 0;padding:0;font-size:11px;text-align:right}
+  .topbar-updated .lab{opacity:.7}
+}
 .pill:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 
 /* ---- Hero ---- */
@@ -253,10 +261,10 @@ table.m2 tr.u-m{display:table-row}
 .calc-sum-row .mul{color:var(--muted);font-size:12px}
 .calc-sum-row .sub{font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink)}
 .calc-total{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px;padding-top:12px;border-top:2px solid var(--ink);font-size:14px}
-.calc-total .tv{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;font-style:italic;color:#e4552b}
-.calc-total .cur{font-size:13px;color:var(--muted);margin-left:6px;font-style:normal}
+.calc-total .tv{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;font-style:italic;color:#e4552b}
+.calc-total .cur{font-size:14px;color:var(--muted);margin-left:6px;font-style:normal}
 .calc-total-twd{text-align:right;font-size:12.5px;color:var(--muted);margin:6px 6px 0;font-variant-numeric:tabular-nums;letter-spacing:.02em}
-.calc-total-twd b{color:#e4552b;font-weight:700;font-size:14px}
+.calc-total-twd b{color:#e4552b;font-weight:700;font-size:18px}
 @media(max-width:520px){
   .calc-row{flex-direction:column;align-items:stretch;gap:8px}
   .calc-cabins,.calc-cabins.four{grid-template-columns:repeat(2,1fr)}
@@ -425,6 +433,7 @@ td.n,th.n,td.c{white-space:nowrap}
       <button class="pill" role="tab" aria-selected="false" data-tab="p3">各站貴賓室</button>
       <button class="pill" role="tab" aria-selected="false" data-tab="p4">各站綜合資訊</button>
     </div>
+    <div class="topbar-updated"><span class="lab">資料更新　</span><b>22 SEP 2026</b></div>
   </div>
 
   <!-- ============ 一線授權 ============ -->
@@ -3904,7 +3913,7 @@ SHI 暫無貴賓室服務，改以餐券 JPY 2,300 替代。
   </div>
   <div class="panel">
     <h4>Ground Handling Service Provider</h4>
-    <table class="kv"><tbody><tr><td class="lab">Passenger Handling (Above-wing)</td><td class="val">Hallmark</td></tr><tr><td class="lab">Ramp Handling (Below-wing)</td><td class="val">Samsic</td></tr><tr><td class="lab">Cargo</td><td class="val">Menzies</td></tr><tr><td class="lab">Maintenance</td><td class="val">Delta</td></tr><tr><td class="lab">Catering · Local Catering</td><td class="val">Yes</td></tr><tr><td class="lab">GHSP</td><td class="val">FFG</td></tr><tr><td class="lab">Fuel Provider</td><td class="val">CHEVRON</td></tr><tr><td class="lab">Fuel Into-plane</td><td class="val">Primeflight</td></tr><tr><td class="lab">Lounge</td><td class="val">Alaska Lounge</td></tr></tbody></table>
+    <table class="kv"><tbody><tr><td class="lab">Passenger Handling (Above-wing)</td><td class="val">Hallmark</td></tr><tr><td class="lab">Ramp Handling (Below-wing)</td><td class="val">Samsic</td></tr><tr><td class="lab">Security</td><td class="val">Primeflight</td></tr><tr><td class="lab">Cabin Cleaning</td><td class="val">Departures, LLC</td></tr><tr><td class="lab">Cargo</td><td class="val">Menzies</td></tr><tr><td class="lab">Maintenance</td><td class="val">Delta</td></tr><tr><td class="lab">Catering · Local Catering</td><td class="val">Yes</td></tr><tr><td class="lab">GHSP</td><td class="val">FFG</td></tr><tr><td class="lab">Fuel Provider</td><td class="val">CHEVRON</td></tr><tr><td class="lab">Fuel Into-plane</td><td class="val">Primeflight</td></tr><tr><td class="lab">Lounge</td><td class="val">Alaska Lounge</td></tr></tbody></table>
   </div>
   <div class="panel">
     <h4>Airport</h4>
@@ -3971,7 +3980,7 @@ SHI 暫無貴賓室服務，改以餐券 JPY 2,300 替代。
   </div>
   <div class="panel">
     <h4>Ground Handling Service Provider</h4>
-    <table class="kv"><tbody><tr><td class="lab">Passenger Handling (Above-wing)</td><td class="val">SWISSPORT</td></tr><tr><td class="lab">Ramp Handling (Below-wing)</td><td class="val">AGI</td></tr><tr><td class="lab">Cargo</td><td class="val">WFS</td></tr><tr><td class="lab">Maintenance</td><td class="val">Delta</td></tr><tr><td class="lab">Catering · Local Catering</td><td class="val">YES</td></tr><tr><td class="lab">GHSP</td><td class="val">FFG</td></tr><tr><td class="lab">Fuel Provider</td><td class="val">BP</td></tr><tr><td class="lab">Fuel Into-plane</td><td class="val">SWISSPORT</td></tr><tr><td class="lab">Lounge</td><td class="val">The Club SEA (Concourse S or A)</td></tr></tbody></table>
+    <table class="kv"><tbody><tr><td class="lab">Passenger Handling (Above-wing)</td><td class="val">SWISSPORT</td></tr><tr><td class="lab">Ramp Handling (Below-wing)</td><td class="val">AGI</td></tr><tr><td class="lab">Security</td><td class="val">Huntleigh</td></tr><tr><td class="lab">Cabin Cleaning</td><td class="val">AGI(Sub-contract to Huntleigh)</td></tr><tr><td class="lab">Cargo</td><td class="val">WFS</td></tr><tr><td class="lab">Maintenance</td><td class="val">Delta</td></tr><tr><td class="lab">Catering · Local Catering</td><td class="val">YES</td></tr><tr><td class="lab">GHSP</td><td class="val">FFG</td></tr><tr><td class="lab">Fuel Provider</td><td class="val">BP</td></tr><tr><td class="lab">Fuel Into-plane</td><td class="val">SWISSPORT</td></tr><tr><td class="lab">Lounge</td><td class="val">The Club SEA (Concourse S or A)</td></tr></tbody></table>
   </div>
   <div class="panel">
     <h4>Airport</h4>
@@ -4038,7 +4047,7 @@ SHI 暫無貴賓室服務，改以餐券 JPY 2,300 替代。
   </div>
   <div class="panel">
     <h4>Ground Handling Service Provider</h4>
-    <table class="kv"><tbody><tr><td class="lab">Passenger Handling (Above-wing)</td><td class="val">Hallmark</td></tr><tr><td class="lab">Ramp Handling (Below-wing)</td><td class="val">ATS</td></tr><tr><td class="lab">Cargo</td><td class="val">WFS</td></tr><tr><td class="lab">Maintenance</td><td class="val">Delta</td></tr><tr><td class="lab">Catering · Local Catering</td><td class="val">Yes</td></tr><tr><td class="lab">GHSP</td><td class="val">FFG</td></tr><tr><td class="lab">Fuel Provider</td><td class="val">CAOUSA</td></tr><tr><td class="lab">Fuel Into-plane</td><td class="val">Menzies</td></tr><tr><td class="lab">Lounge</td><td class="val">Qantas</td></tr></tbody></table>
+    <table class="kv"><tbody><tr><td class="lab">Passenger Handling (Above-wing)</td><td class="val">Hallmark</td></tr><tr><td class="lab">Ramp Handling (Below-wing)</td><td class="val">ATS</td></tr><tr><td class="lab">Security</td><td class="val">CALOP</td></tr><tr><td class="lab">Cabin Cleaning</td><td class="val">SIERRA</td></tr><tr><td class="lab">Cargo</td><td class="val">WFS</td></tr><tr><td class="lab">Maintenance</td><td class="val">Delta</td></tr><tr><td class="lab">Catering · Local Catering</td><td class="val">Yes</td></tr><tr><td class="lab">GHSP</td><td class="val">FFG</td></tr><tr><td class="lab">Fuel Provider</td><td class="val">CAOUSA</td></tr><tr><td class="lab">Fuel Into-plane</td><td class="val">Menzies</td></tr><tr><td class="lab">Lounge</td><td class="val">Qantas</td></tr></tbody></table>
   </div>
   <div class="panel">
     <h4>Airport</h4>
@@ -4105,7 +4114,7 @@ SHI 暫無貴賓室服務，改以餐券 JPY 2,300 替代。
   </div>
   <div class="panel">
     <h4>Ground Handling Service Provider</h4>
-    <table class="kv"><tbody><tr><td class="lab">Passenger Handling (Above-wing)</td><td class="val">Hallmark</td></tr><tr><td class="lab">Ramp Handling (Below-wing)</td><td class="val">PrimeFlight</td></tr><tr><td class="lab">Cargo</td><td class="val">Menzies (From LAX)</td></tr><tr><td class="lab">Maintenance</td><td class="val">SIA</td></tr><tr><td class="lab">Catering · Local Catering</td><td class="val">Yes</td></tr><tr><td class="lab">GHSP</td><td class="val">FFG (From LAX)</td></tr><tr><td class="lab">Fuel Provider</td><td class="val">Menzies</td></tr><tr><td class="lab">Fuel Into-plane</td><td class="val">Menzies</td></tr><tr><td class="lab">Lounge</td><td class="val">Aspire Lounge</td></tr></tbody></table>
+    <table class="kv"><tbody><tr><td class="lab">Passenger Handling (Above-wing)</td><td class="val">Hallmark</td></tr><tr><td class="lab">Ramp Handling (Below-wing)</td><td class="val">PrimeFlight</td></tr><tr><td class="lab">Security</td><td class="val">PrimeFlight</td></tr><tr><td class="lab">Cabin Cleaning</td><td class="val">PrimeFlight</td></tr><tr><td class="lab">Cargo</td><td class="val">Menzies (From LAX)</td></tr><tr><td class="lab">Maintenance</td><td class="val">SIA</td></tr><tr><td class="lab">Catering · Local Catering</td><td class="val">Yes</td></tr><tr><td class="lab">GHSP</td><td class="val">FFG (From LAX)</td></tr><tr><td class="lab">Fuel Provider</td><td class="val">Menzies</td></tr><tr><td class="lab">Fuel Into-plane</td><td class="val">Menzies</td></tr><tr><td class="lab">Lounge</td><td class="val">Aspire Lounge</td></tr></tbody></table>
   </div>
   <div class="panel">
     <h4>Airport</h4>
@@ -4172,7 +4181,7 @@ SHI 暫無貴賓室服務，改以餐券 JPY 2,300 替代。
   </div>
   <div class="panel">
     <h4>Ground Handling Service Provider</h4>
-    <table class="kv"><tbody><tr><td class="lab">Passenger Handling (Above-wing)</td><td class="val">AGI</td></tr><tr><td class="lab">Ramp Handling (Below-wing)</td><td class="val">AGI</td></tr><tr><td class="lab">Cargo</td><td class="val">Swissport</td></tr><tr><td class="lab">Maintenance</td><td class="val">Delta</td></tr><tr><td class="lab">Catering · Local Catering</td><td class="val">Yes</td></tr><tr><td class="lab">GHSP</td><td class="val">LSG SKY Chefs</td></tr><tr><td class="lab">Fuel Provider</td><td class="val">AIR Bp</td></tr><tr><td class="lab">Fuel Into-plane</td><td class="val">Swissport</td></tr><tr><td class="lab">Lounge</td><td class="val">Escape Lounge</td></tr></tbody></table>
+    <table class="kv"><tbody><tr><td class="lab">Passenger Handling (Above-wing)</td><td class="val">AGI</td></tr><tr><td class="lab">Ramp Handling (Below-wing)</td><td class="val">AGI</td></tr><tr><td class="lab">Security</td><td class="val">Prospect</td></tr><tr><td class="lab">Cabin Cleaning</td><td class="val">AGI</td></tr><tr><td class="lab">Cargo</td><td class="val">Swissport</td></tr><tr><td class="lab">Maintenance</td><td class="val">Delta</td></tr><tr><td class="lab">Catering · Local Catering</td><td class="val">Yes</td></tr><tr><td class="lab">GHSP</td><td class="val">LSG SKY Chefs</td></tr><tr><td class="lab">Fuel Provider</td><td class="val">AIR Bp</td></tr><tr><td class="lab">Fuel Into-plane</td><td class="val">Swissport</td></tr><tr><td class="lab">Lounge</td><td class="val">Escape Lounge</td></tr></tbody></table>
   </div>
   <div class="panel">
     <h4>Airport</h4>
@@ -4239,7 +4248,7 @@ SHI 暫無貴賓室服務，改以餐券 JPY 2,300 替代。
   </div>
   <div class="panel">
     <h4>Ground Handling Service Provider</h4>
-    <table class="kv"><tbody><tr><td class="lab">Passenger Handling (Above-wing)</td><td class="val">Czech Airlines Handling</td></tr><tr><td class="lab">Ramp Handling (Below-wing)</td><td class="val">Czech Airlines Handling</td></tr><tr><td class="lab">Cargo</td><td class="val">Menzies Aviation</td></tr><tr><td class="lab">Maintenance</td><td class="val">Czech Airlines Technics</td></tr><tr><td class="lab">Catering · Local Catering</td><td class="val">Yes</td></tr><tr><td class="lab">GHSP</td><td class="val">Alpha a.s</td></tr><tr><td class="lab">Fuel Provider</td><td class="val">ORLEN</td></tr><tr><td class="lab">Fuel Into-plane</td><td class="val">ORLEN Aviation Sp. z o.o.</td></tr><tr><td class="lab">Lounge</td><td class="val">(F-CLS)Continental Lounge (J-CLS)Erste Premier Lounge</td></tr></tbody></table>
+    <table class="kv"><tbody><tr><td class="lab">Passenger Handling (Above-wing)</td><td class="val">Czech Airlines Handling</td></tr><tr><td class="lab">Ramp Handling (Below-wing)</td><td class="val">Czech Airlines Handling</td></tr><tr><td class="lab">Security</td><td class="val">Václav Havel Airport Prague(Airport Security Department)</td></tr><tr><td class="lab">Cabin Cleaning</td><td class="val">SaJ ( sub contract with Czech Airlines Handling)</td></tr><tr><td class="lab">Cargo</td><td class="val">Menzies Aviation</td></tr><tr><td class="lab">Maintenance</td><td class="val">Czech Airlines Technics</td></tr><tr><td class="lab">Catering · Local Catering</td><td class="val">Yes</td></tr><tr><td class="lab">GHSP</td><td class="val">Alpha a.s</td></tr><tr><td class="lab">Fuel Provider</td><td class="val">ORLEN</td></tr><tr><td class="lab">Fuel Into-plane</td><td class="val">ORLEN Aviation Sp. z o.o.</td></tr><tr><td class="lab">Lounge</td><td class="val">(F-CLS)Continental Lounge (J-CLS)Erste Premier Lounge</td></tr></tbody></table>
   </div>
   <div class="panel">
     <h4>Airport</h4>
@@ -4296,6 +4305,18 @@ SHI 暫無貴賓室服務，改以餐券 JPY 2,300 替代。
   <div class="panel">
     <h4>STCR</h4>
     <table class="kv"><tbody><tr><td class="lab">Acceptance</td><td class="val">Available</td></tr><tr><td class="lab">Special Regulation</td><td class="val">N/A</td></tr></tbody></table>
+  </div>
+</template>
+
+<template id="s-SYD" data-title="SYD" data-sub="紐澳 · Sydney Airport">
+  <div class="panel">
+    <p class="sub" style="margin-top:14px">場站作業資訊建置中，尚待各單位提交及核實（TBC）。</p>
+  </div>
+</template>
+
+<template id="s-AKL" data-title="AKL" data-sub="紐澳 · Auckland Airport">
+  <div class="panel">
+    <p class="sub" style="margin-top:14px">場站作業資訊建置中，尚待各單位提交及核實（TBC）。</p>
   </div>
 </template>
 
