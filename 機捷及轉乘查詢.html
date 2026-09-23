@@ -1,0 +1,1902 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>桃園機捷時刻查詢</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap');
+:root{
+  --bg:#0C0C0E;--card:#18181C;--card2:#222226;
+  --copper:#D4956B;--copper-l:#E8B898;--copper-d:#B87A4F;
+  --copper-g:rgba(212,149,107,.15);--copper-g2:rgba(212,149,107,.08);
+  --text:#F0EBE6;--text2:#8A8488;--text3:#5A5558;--border:#2A2A2E;
+  --express:#D4956B;--commuter:#7A9EC2;
+  --ok:#6BBF7B;--err:#E05A5A;--r:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%;touch-action:manipulation}
+body{font-family:'Noto Sans TC',-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+input,select,textarea{font-size:16px!important;touch-action:manipulation}
+.app{max-width:430px;margin:0 auto;padding-bottom:100px;position:relative}
+
+/* Hero */
+.hero{position:relative;padding:56px 24px 32px;overflow:hidden;
+  background:linear-gradient(180deg,#3D2A1A 0%,#C4794C 35%,#D4956B 50%,#B87A4F 65%,#2A1D14 85%,var(--bg) 100%)}
+.hero::before{content:'';position:absolute;top:30%;left:50%;transform:translate(-50%,-50%);width:280px;height:280px;
+  background:radial-gradient(circle,rgba(255,220,180,.35) 0%,rgba(212,149,107,.15) 40%,transparent 70%);border-radius:50%;pointer-events:none}
+.hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:80px;background:linear-gradient(180deg,transparent,var(--bg));pointer-events:none}
+.hero-top{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1;margin-bottom:24px}
+.hero-brand{display:flex;align-items:center;gap:8px}
+.hero-logo{font-size:22px;opacity:.9}.hero-name{font-size:18px;font-weight:700;letter-spacing:1px}
+.hero-loc{font-size:11px;color:rgba(255,255,255,.7);background:rgba(255,255,255,.12);padding:4px 12px;border-radius:20px;display:flex;align-items:center;gap:6px}
+.hero-status{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.hero-status.live{background:#6BBF7B;box-shadow:0 0 6px #6BBF7B;animation:pulse 2s infinite}
+.hero-status.offline{background:#8A8488}
+.hero-status.err{background:#E05A5A}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.date-strip{display:flex;justify-content:center;gap:6px;position:relative;z-index:1;margin-bottom:28px}
+.date-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
+.date-num{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;
+  background:rgba(255,255,255,.1);color:rgba(255,255,255,.7)}
+.date-item.active .date-num{background:rgba(255,255,255,.25);color:#fff;box-shadow:0 0 20px rgba(255,255,255,.15);font-size:16px;width:46px;height:46px}
+.date-day{font-size:10px;color:rgba(255,255,255,.5);font-weight:500}
+.date-item.active .date-day{color:rgba(255,255,255,.85)}
+
+.hero-time{text-align:center;position:relative;z-index:1;margin-bottom:8px}
+.hero-time .big{font-size:48px;font-weight:300;letter-spacing:4px;color:#fff}
+.hero-time .label{font-size:12px;color:rgba(255,255,255,.5);margin-top:2px}
+
+/* Favs */
+.fav-bar{padding:16px 20px 0;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+.fav-bar::-webkit-scrollbar{display:none}
+.fav-bar:empty{display:none}
+.fav-chip{flex-shrink:0;display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--card);border:1px solid var(--border);border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;color:var(--text2);transition:all .2s}
+.fav-chip:hover{border-color:var(--copper);color:var(--copper)}
+.fav-chip .fs{color:var(--copper);font-size:10px}
+.fav-chip .fa{opacity:.4;font-size:11px}
+.fav-chip .fd{opacity:.3;font-size:13px;margin-left:2px;transition:all .2s}
+.fav-chip:hover .fd{opacity:1;color:var(--err)}
+
+/* Selector */
+.sel-area{padding:16px 20px}
+.sel-card{background:var(--card2);border-radius:var(--r);overflow:hidden;border:1px solid rgba(212,149,107,.15)}
+.stn-row{display:flex;align-items:center;padding:0 18px;height:62px;gap:14px;cursor:pointer;transition:background .15s;position:relative}
+.stn-row:hover{background:var(--copper-g2)}
+.stn-dot{width:12px;height:12px;border-radius:50%;border:2.5px solid var(--copper);flex-shrink:0}
+.stn-dot.dest{background:var(--copper)}
+.stn-line{position:absolute;left:32px;width:2px;background:var(--copper);opacity:.4}
+.ol{top:40px;height:22px}.dl{top:0;height:22px}
+.stn-lbl{font-size:11px;color:var(--copper);font-weight:600;width:32px;flex-shrink:0}
+.stn-disp{flex:1;font-size:15px;font-weight:600}
+.stn-disp.ph{color:var(--text2);font-weight:400}
+.stn-chev{color:var(--text2);font-size:13px}
+
+.swap-zone{display:flex;justify-content:center;position:relative;height:0;z-index:2}
+.swap-btn{position:absolute;top:-19px;width:38px;height:38px;border-radius:50%;border:3px solid var(--card2);background:var(--copper);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 16px rgba(212,149,107,.3);transition:transform .3s,background .2s}
+.swap-btn:hover{background:var(--copper-d)}
+.swap-btn:active{transform:rotate(180deg)}
+.swap-btn svg{width:16px;height:16px}
+
+/* Actions */
+.actions{padding:0 20px;margin-top:14px;display:flex;gap:10px}
+.btn-pri{flex:1;height:50px;border:none;border-radius:25px;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;background:var(--copper);color:#fff;transition:all .2s}
+.btn-pri:hover{background:var(--copper-d)}
+.btn-pri:disabled{background:var(--card2);color:var(--text3);cursor:not-allowed}
+.btn-fav{width:50px;height:50px;border:1.5px solid var(--border);border-radius:50%;background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;color:var(--text3);transition:all .2s}
+.btn-fav:hover{border-color:var(--copper)}
+.btn-fav.is-fav{color:var(--copper);border-color:var(--copper);background:var(--copper-g)}
+
+/* Settings panel */
+.settings{margin:14px 20px 0;background:var(--card);border-radius:var(--r);border:1px solid var(--border);overflow:hidden}
+.set-hd{display:flex;align-items:center;gap:8px;padding:14px 18px;cursor:pointer}
+.set-hd .set-ic{color:var(--copper);font-size:14px}
+.set-hd .set-tt{flex:1;font-size:13px;font-weight:600;color:var(--copper)}
+.set-hd .set-tg{font-size:11px;color:var(--text3);transition:transform .3s}
+.set-hd .set-tg.open{transform:rotate(180deg)}
+.set-bd{display:none;padding:0 18px 16px}
+.set-bd.show{display:block}
+.set-desc{font-size:11px;color:var(--text3);line-height:1.6;margin-bottom:12px}
+.set-desc a{color:var(--copper);text-decoration:none}
+.set-row{margin-bottom:10px}
+.set-row label{display:block;font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:500}
+.set-row input{width:100%;height:44px;border:1px solid var(--border);border-radius:10px;padding:0 14px;font-size:16px;font-family:inherit;background:var(--card2);color:var(--text);outline:none}
+.set-row input:focus{border-color:var(--copper)}
+.set-row input::placeholder{color:var(--text3)}
+.set-actions{display:flex;gap:8px}
+.set-btn{flex:1;height:38px;border:none;border-radius:19px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.set-btn.pri{background:var(--copper);color:#fff}
+.set-btn.pri:hover{background:var(--copper-d)}
+.set-btn.sec{background:var(--card2);color:var(--text2);border:1px solid var(--border)}
+.set-status{margin-top:10px;padding:10px;border-radius:8px;font-size:11px;line-height:1.5;display:none;white-space:pre-wrap;word-break:break-all}
+.set-status.ok{display:block;background:rgba(107,191,123,.1);color:var(--ok)}
+.set-status.err{display:block;background:rgba(224,90,90,.1);color:var(--err)}
+.set-status.info{display:block;background:var(--copper-g2);color:var(--text2)}
+
+/* Results */
+.results-area{padding:16px 20px}
+.res-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.res-title{font-size:16px;font-weight:700}
+.res-route{font-size:11px;color:var(--text2)}
+.ftabs{display:flex;gap:4px;margin-bottom:16px;background:var(--card);padding:3px;border-radius:25px;border:1px solid var(--border)}
+.ftab{flex:1;height:32px;border:none;border-radius:22px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;color:var(--text3);transition:all .2s}
+.ftab.act{background:var(--copper);color:#fff}
+
+.tc{background:var(--card);border-radius:14px;padding:16px 18px;margin-bottom:8px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;border:1px solid var(--border);transition:border-color .2s}
+.tc.nt{border-color:var(--copper)}
+.tc.nt::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--copper),var(--copper-l),var(--copper))}
+.next-lbl{position:absolute;top:6px;right:12px;font-size:9px;font-weight:600;color:var(--copper);letter-spacing:.5px}
+.tc-badge{width:42px;flex-shrink:0;text-align:center}
+.tc-badge .bd{display:inline-block;padding:4px 0;width:42px;border-radius:8px;font-size:10px;font-weight:700}
+.bd.eb{background:var(--copper-g);color:var(--copper)}
+.bd.cb{background:rgba(122,158,194,.12);color:var(--commuter)}
+.tc-times{flex:1;display:flex;align-items:center;gap:8px}
+.tc-t{text-align:center}
+.tc-t .tl{font-size:9px;color:var(--text3);margin-bottom:3px;font-weight:500}
+.tc-t .tv{font-size:20px;font-weight:300;font-variant-numeric:tabular-nums;letter-spacing:1px}
+.tc-arr{color:var(--text3);font-size:14px;flex-shrink:0}
+.tc-dur{text-align:right;flex-shrink:0}
+.tc-dur .dv{font-size:15px;font-weight:600;color:var(--copper)}
+.tc-dur .dl2{font-size:9px;color:var(--text3)}
+.no-res{text-align:center;padding:40px 20px;color:var(--text3)}
+.no-res .nri{font-size:36px;margin-bottom:12px;opacity:.5}
+.empty-st{text-align:center;padding:48px 30px;color:var(--text3)}
+.empty-st .esi{font-size:44px;margin-bottom:16px;opacity:.5}
+.empty-st .est{font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px}
+.empty-st .ess{font-size:12px;line-height:1.7;color:var(--text2)}
+.load-more{text-align:center;padding:12px}
+.load-more button{background:transparent;border:1px solid var(--border);border-radius:20px;padding:8px 28px;font-size:12px;color:var(--copper);cursor:pointer;font-family:inherit;font-weight:500}
+.load-more button:hover{background:var(--copper-g)}
+
+/* ===== LIVE TRACKER ===== */
+.tracker{margin:0 0 16px;background:var(--card);border-radius:var(--r);border:1px solid var(--copper);overflow:hidden;position:relative}
+.tracker::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--copper),var(--copper-l),var(--copper),transparent)}
+.tracker-top{display:flex;align-items:center;padding:18px 20px 0}
+.tracker-badge{display:flex;align-items:center;gap:8px;flex:1}
+.tracker-badge .trkb{font-size:10px;font-weight:700;padding:4px 10px;border-radius:6px}
+.tracker-badge .trk-status{font-size:11px;color:var(--text2);font-weight:500}
+.tracker-countdown{text-align:right}
+.tracker-countdown .cd-num{font-size:72px;font-weight:700;letter-spacing:2px;font-variant-numeric:tabular-nums;color:var(--copper-l);line-height:1}
+.tracker-countdown .cd-lbl{font-size:10px;color:var(--text3);margin-top:-2px}
+
+.tracker-times{display:flex;align-items:center;justify-content:center;gap:16px;padding:12px 20px 0;font-size:13px;color:var(--text2)}
+.tracker-times .tt-dep,.tracker-times .tt-arr{font-weight:600;color:var(--text);font-size:15px;font-variant-numeric:tabular-nums}
+.tracker-times .tt-arrow{color:var(--text3);font-size:12px}
+.tracker-times .tt-dur{font-size:11px;color:var(--copper);font-weight:600;margin-left:4px}
+
+/* Track animation */
+.track-wrap{padding:20px 20px 18px;position:relative}
+.track-line{position:relative;height:40px;display:flex;align-items:center}
+.track-rail{position:absolute;left:16px;right:16px;height:3px;background:var(--border);border-radius:2px;top:50%;transform:translateY(-50%)}
+.track-progress{position:absolute;left:16px;height:3px;background:linear-gradient(90deg,var(--copper),var(--copper-l));border-radius:2px;top:50%;transform:translateY(-50%);transition:width .8s ease}
+.track-train{position:absolute;width:22px;height:22px;border-radius:50%;background:var(--copper);border:3px solid var(--bg);display:flex;align-items:center;justify-content:center;font-size:10px;top:50%;transform:translate(-50%,-50%);transition:left .8s ease;z-index:3;box-shadow:0 0 12px rgba(212,149,107,.5),0 0 24px rgba(212,149,107,.2)}
+.track-train::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(212,149,107,.3);animation:trainPulse 2s infinite}
+@keyframes trainPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0;transform:scale(1.6)}}
+
+.track-stations{position:relative;display:flex;justify-content:space-between;padding:0 10px;margin-top:4px}
+.track-stn{display:flex;flex-direction:column;align-items:center;position:relative;z-index:2}
+.track-stn-dot{width:10px;height:10px;border-radius:50%;background:var(--border);border:2px solid var(--card);margin-bottom:4px;transition:background .3s}
+.track-stn-dot.passed{background:var(--copper)}
+.track-stn-dot.origin,.track-stn-dot.dest{width:12px;height:12px;background:var(--copper)}
+.track-stn-name{font-size:9px;color:var(--text3);white-space:nowrap;max-width:48px;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.track-stn-name.endpoint{color:var(--text);font-weight:600;font-size:10px;max-width:60px}
+
+.tracker-eta{text-align:center;padding:0 20px 16px;font-size:12px;color:var(--text2)}
+.tracker-eta strong{color:var(--copper-l);font-size:14px;font-weight:600}
+.track-stn-dot.prev{width:10px;height:10px;border:2px dashed var(--text3);background:transparent}
+.track-stn-dot.prev.passed{border-style:solid;border-color:var(--copper);background:var(--copper)}
+@keyframes cardFlash{0%{opacity:.4;transform:scale(.97)}100%{opacity:1;transform:scale(1)}}
+
+/* Mini tracker (en-route, shrunk) */
+.tracker-mini{margin:0 0 10px;background:var(--card);border-radius:12px;border:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden}
+.tracker-mini::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--ok)}
+.tm-badge span{display:inline-block;padding:3px 8px;border-radius:5px;font-size:9px;font-weight:700}
+.tm-info{flex:1;display:flex;align-items:center;gap:8px;font-size:12px}
+.tm-info .tm-times{font-weight:600;font-variant-numeric:tabular-nums}
+.tm-info .tm-arrow{color:var(--text3);font-size:10px}
+.tm-info .tm-status{color:var(--ok);font-size:10px;font-weight:600}
+.tm-cd{text-align:right;flex-shrink:0}
+.tm-cd .tm-cd-num{font-size:18px;font-weight:300;color:var(--ok);font-variant-numeric:tabular-nums;letter-spacing:1px}
+.tm-cd .tm-cd-lbl{font-size:9px;color:var(--text3)}
+.tm-progress{position:absolute;bottom:0;left:0;height:2px;background:var(--ok);transition:width .8s ease}
+
+/* Tab bar */
+.tab-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(12,12,14,.88);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-around;z-index:50}
+.tab-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:6px 10px;color:var(--text3);transition:color .2s;-webkit-tap-highlight-color:transparent;user-select:none}
+.tab-item.active{color:var(--copper)}
+.tab-item .tab-ic{font-size:22px;line-height:1}
+.tab-item .tab-lb{font-size:12px;font-weight:600;letter-spacing:.3px}
+.tab-center{width:56px;height:56px;border-radius:50%;background:var(--copper);display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(212,149,107,.35);margin-top:-22px;transition:transform .15s;-webkit-tap-highlight-color:transparent;user-select:none}
+.tab-center:active{transform:scale(.9)}
+
+/* Modal */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px)}
+.modal-ov.show{display:flex}
+.modal{background:var(--card);width:100%;max-width:430px;max-height:85vh;border-radius:24px 24px 0 0;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .3s ease-out}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-hd{padding:20px 20px 14px;display:flex;align-items:center;justify-content:space-between}
+.modal-hd h2{font-size:17px;font-weight:700}
+.modal-cl{width:30px;height:30px;border-radius:50%;border:none;background:var(--card2);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:var(--text2)}
+.modal-sr{padding:0 20px 12px}
+.modal-sr input{width:100%;height:44px;border:1px solid var(--border);border-radius:22px;padding:0 18px;font-size:16px;font-family:inherit;background:var(--card2);color:var(--text);outline:none}
+.modal-sr input:focus{border-color:var(--copper)}
+.modal-sr input::placeholder{color:var(--text3)}
+.stn-list{flex:1;overflow-y:auto;padding:4px 0 28px}
+.stn-item{display:flex;align-items:center;padding:14px 20px;gap:14px;cursor:pointer;transition:background .15s}
+.stn-item:hover{background:var(--copper-g2)}
+.stn-item.sel{background:var(--copper-g)}
+.stn-item.dis{opacity:.25;cursor:not-allowed}
+.stn-code{font-size:11px;font-weight:700;color:var(--bg);background:var(--copper);width:38px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.stn-code.co{background:var(--commuter)}
+.stn-info{flex:1}
+.stn-info .nm{font-size:15px;font-weight:600}
+.stn-info .tgs{display:flex;gap:6px;margin-top:3px}
+.tg{font-size:9px;padding:2px 7px;border-radius:4px;font-weight:600}
+.tg.ex{background:var(--copper-g);color:var(--copper)}
+.tg.cm{background:rgba(122,158,194,.1);color:var(--commuter)}
+.stn-chk{color:var(--copper);font-size:16px;font-weight:700}
+
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--card2);color:var(--text);border:1px solid var(--border);padding:10px 22px;border-radius:25px;font-size:13px;font-weight:500;z-index:200;transition:transform .3s,opacity .3s;pointer-events:none;white-space:nowrap;opacity:0}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.disclaimer{text-align:center;padding:20px 24px;font-size:10px;color:var(--text3);line-height:1.6}
+
+/* 返家按鈕（hero 內） */
+.home-wrap{position:relative;z-index:1;display:none;flex-direction:column;align-items:center;gap:10px;margin-top:18px}
+.home-wrap.show{display:flex}
+.home-seg{display:flex;padding:3px;border-radius:20px;background:rgba(12,12,14,.35);border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.home-seg button{height:32px;padding:0 16px;border:none;border-radius:16px;background:transparent;color:rgba(255,255,255,.65);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.mode-seg button{font-size:12px;padding:0 11px;height:30px;white-space:nowrap}
+.home-seg button.act{background:rgba(255,255,255,.92);color:#2A1D14}
+.home-seg button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.home-when{display:flex;gap:8px;align-items:center}
+.home-when>button,.when-time{height:36px;border-radius:18px;border:1px solid rgba(255,255,255,.2);background:rgba(12,12,14,.35);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:rgba(255,255,255,.7);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.home-when>button{padding:0 16px}
+.home-when>button.act,.when-time.act{background:rgba(255,255,255,.92);color:#2A1D14;border-color:transparent}
+.when-time{display:flex;align-items:center;gap:8px;padding:0 14px}
+.when-time b{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:1px}
+.when-time svg{opacity:.55}
+
+/* 高鐵站 chip（hero）與選擇器 */
+.hsr-chip{display:flex;align-items:center;gap:8px;height:32px;padding:0 6px 0 14px;border-radius:16px;border:1px solid rgba(255,255,255,.2);background:rgba(12,12,14,.35);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.hsr-chip i{width:8px;height:8px;border-radius:50%;background:var(--hsr)}
+.hsr-chip span{font-size:11px;font-weight:500;color:rgba(255,255,255,.7);background:rgba(255,255,255,.12);padding:3px 9px;border-radius:11px}
+.hs-body{padding:0 20px;overflow-y:auto}
+.hs-sec{margin-bottom:14px}
+.hs-tt{font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px}
+.hs-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.hs-st{position:relative;height:44px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--text);font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}
+.hs-st small{font-size:9px;color:var(--text3);font-weight:500;margin-top:2px}
+.hs-st:hover{border-color:var(--hsr)}
+.hs-st.on{background:var(--hsr);border-color:var(--hsr);color:#1A0F08;font-weight:700}
+.hs-st.on small{color:rgba(26,15,8,.7)}
+.hs-hint{font-size:11px;color:var(--text3);padding:0 20px;line-height:1.6}
+/* ===== 滾輪時間選擇 ===== */
+.wh-modal{padding-bottom:calc(18px + env(safe-area-inset-bottom))}
+.wh-grab{width:38px;height:4px;border-radius:2px;background:var(--border);margin:10px auto 0}
+.wh-date{text-align:center;font-size:12px;color:var(--text2);margin:-4px 0 6px}
+.wh-read{text-align:center;font-size:14px;margin-top:-6px;color:var(--copper-l);font-weight:600;min-height:20px;margin-bottom:8px}
+.wh-wrap{position:relative;display:flex;justify-content:center;align-items:center;gap:6px;height:220px;margin:0 24px;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 30%,#000 70%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0,#000 30%,#000 70%,transparent 100%)}
+.wh-band{position:absolute;left:0;right:0;top:88px;height:44px;border-radius:12px;background:var(--copper-g);border:1px solid rgba(212,149,107,.35);pointer-events:none}
+.wh-col{position:relative;width:88px;height:220px;overflow-y:scroll;scroll-snap-type:y mandatory;overscroll-behavior:contain;scrollbar-width:none;perspective:600px;outline:none;-webkit-overflow-scrolling:touch}
+.wh-col::-webkit-scrollbar{display:none}
+.wh-col:focus-visible{box-shadow:inset 0 0 0 2px var(--copper);border-radius:12px}
+.wh-pad{height:88px}
+.wh-it{height:44px;display:flex;align-items:center;justify-content:center;scroll-snap-align:center;font-size:22px;font-weight:300;color:var(--text2);font-variant-numeric:tabular-nums;letter-spacing:1px;cursor:pointer;transform-origin:center;will-change:transform,opacity;user-select:none;-webkit-user-select:none}
+.wh-it.on{color:var(--text);font-weight:500;font-size:28px}
+.wh-colon{font-size:28px;font-weight:300;color:var(--copper);padding-bottom:4px;position:relative;z-index:1}
+.wh-unit{position:absolute;top:100px;font-size:11px;color:var(--text3);pointer-events:none}
+.wh-quick{display:flex;justify-content:center;gap:8px;margin:14px 20px 0;flex-wrap:wrap}
+.wh-quick button{height:30px;padding:0 12px;border-radius:15px;border:1px solid var(--border);background:var(--card2);color:var(--text2);font-family:inherit;font-size:12px;font-weight:500;cursor:pointer}
+.wh-quick button:hover{border-color:var(--copper);color:var(--copper)}
+.wh-act{display:flex;gap:10px;margin:16px 20px 0}
+.wh-act button{flex:1;height:48px;border-radius:24px;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;border:none}
+.wh-now{background:var(--card2)!important;color:var(--text2);border:1px solid var(--border)!important}
+.wh-ok{background:var(--copper);color:#fff}
+.wh-ok:hover{background:var(--copper-d)}
+@media (prefers-reduced-motion:reduce){.wh-it{transform:none!important}}
+.when-lbl{font-size:11px;color:rgba(255,255,255,.6);margin-top:-2px}
+.date-item{-webkit-tap-highlight-color:transparent}
+.date-item:focus-visible .date-num{outline:2px solid #fff;outline-offset:2px}
+.home-btn{position:relative;display:flex;margin:0;height:48px;padding:0 26px;border-radius:24px;border:1px solid rgba(255,255,255,.35);background:rgba(12,12,14,.35);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;font-family:inherit;font-size:16px;font-weight:700;letter-spacing:2px;justify-content:center;min-width:160px;cursor:pointer;align-items:center;gap:10px;-webkit-tap-highlight-color:transparent}
+.home-btn:active{transform:scale(.97)}
+.home-btn small{font-size:11px;font-weight:500;color:rgba(255,255,255,.7)}
+.home-btn:focus-visible{outline:2px solid #fff;outline-offset:3px}
+/* ===== 頁籤可見性 ===== */
+body:not(.tab-xfer) .date-strip,body:not(.tab-xfer) .home-wrap,body:not(.tab-xfer) #xferCont{display:none!important}
+body.tab-xfer .fav-bar,body.tab-xfer .sel-area,body.tab-xfer .actions,body.tab-xfer #resCont{display:none!important}
+body.tab-settings .fav-bar,body.tab-settings .sel-area,body.tab-settings .actions{display:none!important}
+body:not(.tab-xfer) .hero-time{margin-bottom:0}
+/* ===== 轉乘規劃 (機捷 + 高鐵 + 台鐵) ===== */
+:root{--mrt:#A58BE3;--hsr:#FF7A3D;--tra:#6C9DF0;--wait:#3A3A40}
+.xfer{padding:8px 20px 4px}
+.xfer:empty{display:none}
+.xf-hd{display:flex;align-items:baseline;justify-content:space-between;margin:8px 0 12px}
+.xf-title{font-size:16px;font-weight:700}
+.xf-upd{font-size:11px;color:var(--text3);background:none;border:none;font-family:inherit;cursor:pointer;padding:4px 0}
+.xf-upd:hover{color:var(--copper)}
+.xf-ctrl{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.xf-home{display:flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:17px;background:var(--card);border:1px solid var(--border);font-size:12px;color:var(--text);cursor:pointer;font-family:inherit}
+.xf-home i{width:8px;height:8px;border-radius:50%;background:var(--mrt);font-style:normal}
+.xf-home .chev{color:var(--text3)}
+.xf-off{display:flex;background:var(--card);border:1px solid var(--border);border-radius:17px;padding:2px;height:34px}
+.xf-off button{border:none;background:transparent;color:var(--text3);font-family:inherit;font-size:12px;font-weight:600;padding:0 10px;border-radius:15px;cursor:pointer}
+.xf-off button.act{background:var(--copper);color:#fff}
+.xf-alert{font-size:11px;line-height:1.6;color:#F2C46B;background:rgba(242,196,107,.08);border:1px solid rgba(242,196,107,.25);border-radius:10px;padding:8px 12px;margin-bottom:12px}
+
+.xd{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:12px;overflow:hidden}
+.xd-hd{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 0}
+.xd-dir{font-size:13px;font-weight:700}
+.xd-dir small{color:var(--text3);font-weight:500;margin-left:6px;font-size:11px}
+.xd-cd{font-size:11px;color:var(--copper-l);font-variant-numeric:tabular-nums}
+.xd-sum{display:flex;align-items:flex-end;gap:10px;padding:12px 18px 0}
+.xd-big{font-size:34px;font-weight:300;font-variant-numeric:tabular-nums;letter-spacing:1px;line-height:1}
+.xd-big sup{font-size:10px;color:var(--text3);letter-spacing:0;margin-left:2px;vertical-align:top}
+.xd-lbl{font-size:10px;color:var(--text3);margin-bottom:4px}
+.xd-mid{flex:1;text-align:center;padding-bottom:4px}
+.xd-mid .tot{font-size:13px;font-weight:600;color:var(--copper)}
+.xd-mid .xfn{font-size:10px;color:var(--text3)}
+.xd-tags{display:flex;gap:6px;padding:10px 18px 0;flex-wrap:wrap}
+.xtag{font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--copper-g);color:var(--copper)}
+.xtag.g{background:rgba(107,191,123,.12);color:var(--ok)}
+.xtag.r{background:rgba(224,90,90,.12);color:var(--err)}
+
+/* journey strip: time-proportional, one segment per leg, gaps = waiting */
+.xstrip{display:flex;height:8px;margin:14px 18px 0;border-radius:4px;overflow:hidden;background:var(--wait);gap:2px}
+.xstrip b{display:block;height:100%}
+.xstrip .mrt{background:var(--mrt)}.xstrip .hsr{background:var(--hsr)}.xstrip .tra{background:var(--tra)}.xstrip .w{background:var(--wait)}
+
+.xtl{padding:16px 18px 8px}
+.xleg{position:relative}
+.xleg::before{content:'';position:absolute;left:62px;top:11px;bottom:11px;width:3px;border-radius:2px;background:var(--m)}
+.xrow{display:flex;align-items:center;min-height:24px}
+.xt{width:46px;padding-right:11px;text-align:right;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;flex-shrink:0}
+.xt small{display:block;font-size:9px;color:var(--text3);font-weight:500;line-height:1}
+.xdot{width:11px;height:11px;border-radius:50%;border:2.5px solid var(--m);background:var(--card);flex-shrink:0;position:relative;z-index:1;margin-left:1px;margin-right:12px}
+.xs{font-size:13px;font-weight:600}
+.xride{padding:6px 0 8px 82px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--text2)}
+.xb{font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;color:#0C0C0E;background:var(--m)}
+.xdl{font-size:10px;font-weight:600}
+.xdl.ok{color:var(--ok)}.xdl.late{color:var(--err)}
+.xwalk{position:relative;padding:8px 0 8px 82px;font-size:11px;color:var(--text3)}
+.xwalk::before{content:'';position:absolute;left:62px;top:2px;bottom:2px;border-left:3px dotted var(--text3);opacity:.6}
+.xwalk.tight{color:var(--err)}
+
+.xalts{border-top:1px solid var(--border)}
+.xalt{display:flex;align-items:center;gap:12px;padding:12px 18px;cursor:pointer;border-bottom:1px solid var(--border)}
+.xalt:last-child{border-bottom:none}
+.xalt:hover{background:var(--copper-g2)}
+.xa-t{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.xa-strip{flex:1;display:flex;height:5px;border-radius:3px;overflow:hidden;gap:2px;background:var(--wait)}
+.xa-strip b{display:block;height:100%}
+.xa-strip .mrt{background:var(--mrt)}.xa-strip .hsr{background:var(--hsr)}.xa-strip .tra{background:var(--tra)}.xa-strip .w{background:var(--wait)}
+.xa-d{font-size:12px;color:var(--text2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.xalt-body{display:none;border-bottom:1px solid var(--border);background:var(--card2)}
+.xalt-body.show{display:block}
+.xalt-body .xleg::before{}
+.xalt-body .xdot{background:var(--card2)}
+.xd-more{font-size:11px;color:var(--text3);padding:10px 18px}
+.xd-msg{padding:22px 18px;font-size:12px;color:var(--text2);line-height:1.7}
+.xd-msg button{margin-top:10px;height:36px;padding:0 18px;border:none;border-radius:18px;background:var(--copper);color:#fff;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.xd-load{padding:26px 18px;font-size:12px;color:var(--text3);display:flex;align-items:center;gap:10px}
+.xd-load i{width:14px;height:14px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--copper);animation:xspin .8s linear infinite}
+@keyframes xspin{to{transform:rotate(360deg)}}
+.xlegend{display:flex;gap:14px;font-size:10px;color:var(--text3);margin:-4px 0 12px}
+.xlegend span{display:flex;align-items:center;gap:5px}
+.xlegend i{width:10px;height:4px;border-radius:2px}
+.set-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.set-row select{width:100%;height:44px;border:1px solid var(--border);border-radius:10px;padding:0 12px;font-family:inherit;background:var(--card2);color:var(--text);outline:none}
+.pk-list{overflow-y:auto;padding:0 16px calc(20px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px}
+.pk-opt{text-align:left;width:100%;background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;color:var(--text);font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pk-opt:hover,.pk-opt:focus-visible{border-color:var(--copper);outline:none}
+.pk-opt:active{transform:scale(.99)}
+.pk-top{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.pk-no{font-size:12px;font-weight:700;color:var(--text2);margin-right:2px}
+.pk-wait{margin-left:auto;font-size:11px;color:var(--copper-l)}
+.pk-times{display:flex;align-items:baseline;justify-content:space-between;font-size:26px;font-weight:300;font-variant-numeric:tabular-nums;letter-spacing:1px}
+.pk-times sup{font-size:9px;color:var(--text3)}
+.pk-dur{font-size:13px;font-weight:600;color:var(--copper);letter-spacing:0}
+.pk-sub{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:2px}
+.pk-strip{margin:10px 0}
+.pk-legs{display:flex;flex-wrap:wrap;gap:6px}
+.pk-leg{font-size:11px;padding:3px 8px;border-radius:6px;background:rgba(255,255,255,.05);border-left:3px solid var(--text3);font-variant-numeric:tabular-nums}
+.pk-leg.mrt{border-color:var(--mrt)}.pk-leg.hsr{border-color:var(--hsr)}.pk-leg.tra{border-color:var(--tra)}
+@media (prefers-reduced-motion:reduce){.xd-load i{animation:none}}
+</style>
+</head>
+<body class="tab-home">
+<div class="app">
+  <div class="hero">
+    <div class="hero-top">
+      <div class="hero-brand"><span class="hero-logo">✳</span><span class="hero-name">機捷時刻</span></div>
+      <div class="hero-loc"><div class="hero-status offline" id="heroStat"></div>桃園機場捷運</div>
+    </div>
+    <div class="date-strip" id="dateStrip"></div>
+    <div class="hero-time"><div class="big" id="heroTime">--:--</div><div class="label">目前時間</div></div>
+    <div class="home-wrap" id="homeWrap">
+      <div class="home-seg mode-seg" role="radiogroup" aria-label="轉乘方式">
+        <button id="mdfull" role="radio" onclick="setXMode('full')">機捷+高鐵+台鐵</button>
+        <button id="mdmh" role="radio" onclick="setXMode('mh')">機捷+高鐵</button>
+        <button id="mdrail" role="radio" onclick="setXMode('rail')">高鐵+台鐵</button>
+      </div>
+      <button class="hsr-chip" id="hsrChip" onclick="openHsrPicker()"></button>
+      <div class="home-seg" role="radiogroup" aria-label="返家方向">
+        <button id="hdS" role="radio" onclick="setHomeDir('S')">南下</button>
+        <button id="hdN" role="radio" onclick="setHomeDir('N')">北上</button>
+      </div>
+      <div class="home-when">
+        <button id="whenNow" onclick="setXTime(null)">現在</button>
+        <button class="when-time" id="whenBtn" onclick="openWheel()" aria-haspopup="dialog"><span>出發</span><b id="whenVal">--:--</b><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10l4-4 4 4M8 14l4 4 4-4"/></svg></button>
+      </div>
+      <div class="when-lbl" id="whenLbl"></div>
+      <button class="home-btn" id="homeBtn" onclick="goHome()">查詢時刻</button>
+    </div>
+  </div>
+
+  <div class="fav-bar" id="favBar"></div>
+
+  <div class="sel-area">
+    <div class="sel-card">
+      <div class="stn-row" onclick="openPicker('origin')">
+        <div class="stn-dot"></div><div class="stn-line ol"></div>
+        <div class="stn-lbl">起站</div>
+        <div class="stn-disp ph" id="oDisp">選擇出發站</div>
+        <div class="stn-chev">›</div>
+      </div>
+      <div class="swap-zone">
+        <button class="swap-btn" onclick="doSwap()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4l-4 4 4 4"/><path d="M3 8h14"/><path d="M17 20l4-4-4-4"/><path d="M21 16H7"/></svg>
+        </button>
+      </div>
+      <div class="stn-row" onclick="openPicker('dest')">
+        <div class="stn-dot dest"></div><div class="stn-line dl"></div>
+        <div class="stn-lbl">迄站</div>
+        <div class="stn-disp ph" id="dDisp">選擇到達站</div>
+        <div class="stn-chev">›</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-pri" id="goBtn" onclick="search()" disabled>查詢時刻</button>
+    <button class="btn-fav" id="favBtn" onclick="toggleFav()">☆</button>
+  </div>
+
+  <div class="xfer" id="xferCont"></div>
+  <div id="resCont"></div>
+</div>
+
+<div class="tab-bar" id="tabBar">
+  <div class="tab-item active" onclick="tabAction('home')" data-tab="home">
+    <span class="tab-ic">🚈</span><span class="tab-lb">時刻</span>
+  </div>
+  <div class="tab-item" onclick="tabAction('xfer')" data-tab="xfer">
+    <span class="tab-ic">🚄</span><span class="tab-lb">轉乘</span>
+  </div>
+  <div class="tab-item" onclick="tabAction('sync')" data-tab="sync">
+    <span class="tab-ic">↻</span><span class="tab-lb">同步</span>
+  </div>
+  <div class="tab-item" onclick="tabAction('settings')" data-tab="settings">
+    <span class="tab-ic">⚙</span><span class="tab-lb">設定</span>
+  </div>
+</div>
+
+<div class="modal-ov" id="mOv" onclick="closePicker(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hd"><h2 id="mTitle">選擇車站</h2><button class="modal-cl" onclick="closePicker()">✕</button></div>
+    <div class="modal-sr"><input type="text" id="mSearch" placeholder="搜尋站名或代碼⋯" oninput="filterS()"></div>
+    <div class="stn-list" id="sList"></div>
+  </div>
+</div>
+<div class="modal-ov" id="pkOv" onclick="closePlanPicker(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hd"><h2 id="pkTitle">返家方案</h2><button class="modal-cl" onclick="closePlanPicker()">✕</button></div>
+    <div class="pk-list" id="pkList"></div>
+  </div>
+</div>
+<div class="modal-ov" id="whOv" onclick="closeWheel(event)">
+  <div class="modal wh-modal" role="dialog" aria-label="預計出發時間" onclick="event.stopPropagation()">
+    <div class="wh-grab"></div>
+    <div class="modal-hd"><h2>預計出發時間</h2><button class="modal-cl" onclick="closeWheel()" aria-label="關閉">✕</button></div>
+    <div class="wh-read" id="whRead"></div>
+    <div class="wh-wrap">
+      <div class="wh-band"></div>
+      <div class="wh-col" id="whH" tabindex="0" aria-label="小時，用上下鍵調整"></div>
+      <div class="wh-colon">:</div>
+      <div class="wh-col" id="whM" tabindex="0" aria-label="分鐘，用上下鍵調整"></div>
+    </div>
+    <div class="wh-quick">
+      <button onclick="whQuick(360)">06:00</button><button onclick="whQuick(480)">08:00</button><button onclick="whQuick(720)">12:00</button><button onclick="whQuick(1020)">17:00</button><button onclick="whQuick(1200)">20:00</button>
+    </div>
+    <div class="wh-act"><button class="wh-now" id="whNowBtn" onclick="whNow()">現在</button><button class="wh-ok" onclick="whConfirm()">確定</button></div>
+  </div>
+</div>
+<div class="modal-ov" id="hsOv" onclick="closeHsrPicker(event)">
+  <div class="modal wh-modal" role="dialog" aria-label="選擇高鐵站" onclick="event.stopPropagation()">
+    <div class="wh-grab"></div>
+    <div class="modal-hd"><h2>高鐵搭乘站</h2><button class="modal-cl" onclick="closeHsrPicker()" aria-label="關閉">✕</button></div>
+    <div class="wh-read" id="hsRead"></div>
+    <div class="hs-body" id="hsBody"></div>
+    <div class="hs-hint">「機捷」標示可轉乘機捷的站，「台鐵」標示可轉乘台鐵往屏東的站。</div>
+    <div class="wh-act"><button class="wh-now" onclick="hsrReset()">桃園 ⇄ 左營</button><button class="wh-ok" onclick="hsrConfirm()">確定</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ========== EMBEDDED FALLBACK DATA ==========
+const STATIONS=[
+  {c:'A1', n:'台北車站',     ex:true,  cm:0,  em:0},
+  {c:'A2', n:'三重',         ex:false, cm:4,  em:null},
+  {c:'A3', n:'新北產業園區', ex:true,  cm:8,  em:6},
+  {c:'A4', n:'新莊副都心',   ex:false, cm:12, em:null},
+  {c:'A5', n:'泰山',         ex:false, cm:15, em:null},
+  {c:'A6', n:'泰山貴和',     ex:false, cm:18, em:null},
+  {c:'A7', n:'體育大學',     ex:false, cm:21, em:null},
+  {c:'A8', n:'長庚醫院',     ex:true,  cm:25, em:18},
+  {c:'A9', n:'林口',         ex:false, cm:29, em:null},
+  {c:'A10',n:'山鼻',         ex:false, cm:33, em:null},
+  {c:'A11',n:'坑口',         ex:false, cm:36, em:null},
+  {c:'A12',n:'機場第一航廈', ex:true,  cm:40, em:32},
+  {c:'A13',n:'機場第二航廈', ex:true,  cm:43, em:35},
+  {c:'A15',n:'大園',         ex:false, cm:49, em:null},
+  {c:'A16',n:'橫山',         ex:false, cm:52, em:null},
+  {c:'A17',n:'領航',         ex:false, cm:55, em:null},
+  {c:'A18',n:'高鐵桃園',     ex:true,  cm:59, em:49},
+  {c:'A19',n:'桃園體育園區', ex:false, cm:63, em:null},
+  {c:'A20',n:'興南',         ex:false, cm:66, em:null},
+  {c:'A21',n:'環北',         ex:true,  cm:70, em:57},
+];
+const TC=70,TE=57;
+const SC={c:{fA:360,lA:1380,fB:362,lB:1382,iv:15},e:{fA:366,lA:1356,fB:368,lB:1358,iv:15}};
+
+// ========== TDX API ==========
+const TDX_TOKEN_URL='https://tdx.transportdata.tw/auth/realms/TDXConnect/protocol/openid-connect/token';
+const TDX_BASE='https://tdx.transportdata.tw/api/basic/v2/Rail/Metro';
+const TDX_TIMETABLE=`${TDX_BASE}/StationTimeTable/TYMC?$format=JSON`;
+const TDX_TRAVEL=`${TDX_BASE}/S2STravelTime/TYMC?$format=JSON`;
+const TDX_FIRSTLAST=`${TDX_BASE}/FirstLastTripInfo/TYMC?$format=JSON`;
+const TDX_LIVEBOARD=`${TDX_BASE}/LiveBoard/TYMC?$format=JSON`;
+
+let tdxToken=null, tdxExpiry=0;
+let apiTimetable=null; // parsed TDX data when available
+
+// 內建金鑰：設定頁另外輸入的金鑰會優先使用；清除後回到內建金鑰
+const TDX_BUILTIN={id:'aodamp2026-b67b522b-afcd-4cab',secret:'2c3eecd9-5649-4199-b723-bffd288ff1ac'};
+function loadOwnCreds(){
+  try{return{id:localStorage.getItem('tdx_id')||'',secret:localStorage.getItem('tdx_secret')||''}}
+  catch(e){return{id:'',secret:''}}
+}
+function loadCreds(){
+  const o=loadOwnCreds();
+  return (o.id&&o.secret)?o:{...TDX_BUILTIN};
+}
+function saveCreds(id,secret){
+  try{localStorage.setItem('tdx_id',id);localStorage.setItem('tdx_secret',secret)}catch(e){}
+}
+
+async function getToken(id,secret){
+  const res=await fetch(TDX_TOKEN_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:`grant_type=client_credentials&client_id=${encodeURIComponent(id)}&client_secret=${encodeURIComponent(secret)}`
+  });
+  if(!res.ok){
+    let why='';try{const j=await res.json();why=j.error_description||j.error||''}catch(e){}
+    throw new Error(`Auth failed: ${res.status}${why?' ('+why+')':''}`);
+  }
+  const data=await res.json();
+  tdxToken=data.access_token;
+  tdxExpiry=Date.now()+(data.expires_in-60)*1000;
+  return tdxToken;
+}
+
+// TDX 有每秒呼叫上限：所有請求排隊、間隔 400ms；遇到 429 依序等 1.5／3／6 秒重試
+let tdxNext=0;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function tdxGate(){
+  const now=Date.now(),t=Math.max(now,tdxNext);
+  tdxNext=t+400;
+  if(t>now) await sleep(t-now);
+}
+async function tdxFetch(url,attempt=0){
+  const creds=loadCreds();
+  if(!creds.id||!creds.secret) throw new Error('NO_CREDS');
+  if(!tdxToken||Date.now()>tdxExpiry) await getToken(creds.id,creds.secret);
+  await tdxGate();
+  const go=()=>fetch(url,{headers:{Authorization:`Bearer ${tdxToken}`}});
+  let res=await go();
+  if(res.status===401){tdxToken=null;await getToken(creds.id,creds.secret);await tdxGate();res=await go()}
+  if(res.status===429){
+    const waits=[1500,3000,6000];
+    if(attempt<waits.length){
+      const ra=parseInt(res.headers.get('Retry-After'));
+      const w=!isNaN(ra)?ra*1000:waits[attempt];
+      tdxNext=Math.max(tdxNext,Date.now()+w);   // 整條佇列一起暫停
+      await sleep(w);
+      return tdxFetch(url,attempt+1);
+    }
+    throw new Error('RATE_LIMIT');
+  }
+  if(!res.ok) throw new Error(`API ${res.status}`);
+  return res.json();
+}
+
+let tdxStatusMsg=''; // store status message for settings page
+
+async function connectTDX(){
+  setTimeout(updateHomeBtn,0);
+  const dot=document.getElementById('heroStat');
+
+  // Read fields if they exist (settings page open)
+  const idEl=document.getElementById('tdxId');
+  const secEl=document.getElementById('tdxSecret');
+  const clean=v=>(v||'').replace(/[\s\u200B-\u200D\uFEFF\u3000]/g,'').replace(/[\uFF01-\uFF5E]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));
+  if(idEl&&clean(idEl.value)){const i=clean(idEl.value),k=clean(secEl.value);saveCreds(i,k);idEl.value=i;secEl.value=k}
+
+  const creds=loadCreds();
+  if(!creds.id||!creds.secret){
+    dot.className='hero-status offline';
+    tdxStatusMsg='info|請填入 Client ID 與 Client Secret 後按連線測試';
+    tabAction('settings');
+    return;
+  }
+
+  dot.className='hero-status offline';
+  // silent — header dot shows status
+
+  try{
+    await getToken(creds.id, creds.secret);
+    const ttData=await tdxFetch(TDX_TIMETABLE);
+    apiTimetable=ttData;
+    const count=Array.isArray(ttData)?ttData.length:(ttData.StationTimetables?ttData.StationTimetables.length:'?');
+
+    dot.className='hero-status live';
+    tdxStatusMsg=`ok|✓ 連線成功！已取得 ${count} 筆站別時刻表資料。Token 有效至 ${new Date(tdxExpiry).toLocaleTimeString()}`;
+    // silent success — green dot in header is enough
+    updateSetStatus();
+
+  }catch(e){
+    tdxToken=null;apiTimetable=null;
+    dot.className='hero-status err';
+    if(e.message==='NO_CREDS') tdxStatusMsg='info|請先填入 TDX API 金鑰';
+    else if(/Failed to fetch|NetworkError|Load failed/i.test(e.message)) tdxStatusMsg='err|✕ 連不到 TDX 伺服器（網路被擋，不是金鑰錯誤）。請把檔案下載後用手機或電腦的瀏覽器直接開啟；在 Claude 對話裡的預覽畫面無法連外。';
+    else if(/Auth failed: (400|401)/.test(e.message)) tdxStatusMsg=`err|✕ 金鑰驗證失敗：TDX 不接受這組 Client ID／Secret。${/invalid_client|Invalid client/i.test(e.message)?'（TDX 回應：金鑰無效）':''}\n${e.message}`;
+    else tdxStatusMsg=`err|✕ 連線失敗：${e.message}。`;
+    // silent — header dot turns red
+    updateSetStatus();
+  }
+}
+
+function clearTDX(){
+  setTimeout(updateHomeBtn,0);
+  try{localStorage.removeItem('tdx_id');localStorage.removeItem('tdx_secret')}catch(e){}
+  const idEl=document.getElementById('tdxId');
+  const secEl=document.getElementById('tdxSecret');
+  if(idEl){idEl.value='';secEl.value=''}
+  tdxToken=null;apiTimetable=null;
+  tdxStatusMsg='info|已清除自訂金鑰，改用內建金鑰重新連線';
+  updateSetStatus();
+  toast('已改回內建金鑰');
+  connectTDX();
+}
+
+function updateSetStatus(){
+  const el=document.getElementById('setStatus');
+  if(!el||!tdxStatusMsg) return;
+  const [type,msg]=tdxStatusMsg.split('|');
+  el.className=`set-status ${type}`;
+  el.textContent=msg;
+}
+
+// ========== TDX DATA PARSING ==========
+function parseTDXTrains(originCode, destCode){
+  if(!apiTimetable) return null;
+  // TDX StationTimeTable format: array of {StationID, Direction, Timetables:[{DepartureTime, TrainType}]}
+  const data = Array.isArray(apiTimetable) ? apiTimetable : (apiTimetable.StationTimetables || apiTimetable);
+  if(!Array.isArray(data)||!data.length) return null;
+
+  const oIdx=STATIONS.findIndex(s=>s.c===originCode);
+  const dIdx=STATIONS.findIndex(s=>s.c===destCode);
+  if(oIdx<0||dIdx<0) return null;
+  const direction = oIdx < dIdx ? 0 : 1; // 0=south, 1=north
+
+  // Find timetable entries for origin station in the right direction
+  const originEntries = data.filter(e=>{
+    const sid = e.StationID || e.stationID;
+    const dir = e.Direction !== undefined ? e.Direction : e.direction;
+    return sid === originCode && dir === direction;
+  });
+
+  if(!originEntries.length) return null;
+
+  // Collect departure times from origin
+  const results=[];
+  originEntries.forEach(entry=>{
+    // TrainType / TrainTypeName may be at entry level OR inside each timetable item
+    const entryTypeName=(entry.TrainTypeName?.Zh_tw||entry.TrainTypeName?.zh_tw||'');
+    const entryTrainType=entry.TrainType??entry.trainType;
+
+    const tt = entry.Timetables || entry.timetables || [];
+    tt.forEach(t=>{
+      const depTime = t.DepartureTime || t.departureTime;
+      if(!depTime) return;
+      const [hh,mm] = depTime.split(':').map(Number);
+      const depMin = hh*60+mm;
+
+      // Determine type: check timetable-level first, then entry-level
+      const tTypeName=(t.TrainTypeName?.Zh_tw||t.TrainTypeName?.zh_tw||t.trainTypeName?.Zh_tw||'');
+      const tTrainType=t.TrainType??t.trainType??entryTrainType;
+      const combinedName=tTypeName||entryTypeName;
+
+      let isExpress=false;
+      if(combinedName){
+        // Text-based detection (most reliable)
+        isExpress=combinedName.includes('直達')||combinedName.includes('Express');
+      } else if(tTrainType!==undefined&&tTrainType!==null){
+        // Numeric fallback: TYMC uses 1=普通, 2=直達
+        isExpress=(tTrainType===2||tTrainType==='2');
+      }
+      const type = isExpress ? 'e' : 'c';
+
+      // Calculate arrival: use embedded travel times as reference
+      const oS=STATIONS[oIdx], dS=STATIONS[dIdx];
+      let dur;
+      if(isExpress && oS.ex && dS.ex){
+        dur = Math.abs(dS.em - oS.em);
+      } else {
+        dur = Math.abs(dS.cm - oS.cm);
+      }
+      results.push({t:type, dep:depMin, arr:depMin+dur, dur});
+    });
+  });
+
+  // Deduplicate by departure time + type
+  const seen=new Set();
+  const unique=results.filter(r=>{
+    const key=`${r.dep}-${r.t}`;
+    if(seen.has(key)) return false;
+    seen.add(key);return true;
+  });
+  unique.sort((a,b)=>a.dep-b.dep);
+  return unique.length ? unique : null;
+}
+
+// ========== STATE ==========
+let selO=null,selD=null,pm=null,dc=10;
+const hm=m=>`${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(Math.floor(m)%60).padStart(2,'0')}`;
+const nowM=()=>{const d=new Date();return d.getHours()*60+d.getMinutes()+d.getSeconds()/60};
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
+
+function renderDateStrip(){
+  const ds=document.getElementById('dateStrip');const today=new Date();
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let h='';for(let i=0;i<=6;i++){const d=new Date(today);d.setDate(d.getDate()+i);
+    h+=`<div class="date-item${i===xDay?' active':''}" role="button" tabindex="0" aria-pressed="${i===xDay}" onclick="setXDay(${i})" onkeydown="if(event.key==='Enter')setXDay(${i})"><div class="date-num">${d.getDate()}</div><div class="date-day">${i===0?'今天':'週'+'日一二三四五六'[d.getDay()]}</div></div>`}
+  ds.innerHTML=h;
+}
+function updateClock(){tickXfer();if(xTime==null)syncWhen();const d=new Date();document.getElementById('heroTime').textContent=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
+
+// Favs
+function loadF(){try{const d=localStorage.getItem('mrt_fav');if(d)favs=JSON.parse(d)}catch(e){}}
+let favs=[];
+function saveF(){try{localStorage.setItem('mrt_fav',JSON.stringify(favs))}catch(e){}}
+function renderF(){const b=document.getElementById('favBar');b.innerHTML='';favs.forEach((f,i)=>{const c=document.createElement('div');c.className='fav-chip';c.innerHTML=`<span class="fs">★</span>${f.oN}<span class="fa">⇄</span>${f.dN}<span class="fd" onclick="event.stopPropagation();rmF(${i})">✕</span>`;c.onclick=e=>{if(e.target.classList.contains('fd'))return;selO=STATIONS.findIndex(s=>s.c===f.oC);selD=STATIONS.findIndex(s=>s.c===f.dC);upUI();search()};b.appendChild(c)})}
+function rmF(i){favs.splice(i,1);saveF();renderF();upFav();toast('已移除')}
+function toggleFav(){if(selO===null||selD===null)return;const o=STATIONS[selO],d=STATIONS[selD],k=`${o.c}-${d.c}`;const i=favs.findIndex(f=>`${f.oC}-${f.dC}`===k);if(i>=0){favs.splice(i,1);toast('已取消最愛')}else{if(favs.length>=6){toast('最多6組');return}favs.push({oC:o.c,oN:o.n,dC:d.c,dN:d.n});toast('已加入最愛')}saveF();renderF();upFav()}
+function upFav(){const b=document.getElementById('favBtn');if(selO===null||selD===null){b.className='btn-fav';b.innerHTML='☆';return}const k=`${STATIONS[selO].c}-${STATIONS[selD].c}`;const is=favs.some(f=>`${f.oC}-${f.dC}`===k);b.className=is?'btn-fav is-fav':'btn-fav';b.innerHTML=is?'★':'☆'}
+
+// Picker
+function openPicker(m){pm=m;document.getElementById('mTitle').textContent=m==='home'?'轉乘用的機捷站':m==='origin'?'選擇出發站':'選擇到達站';document.getElementById('mSearch').value='';renderSL('');document.getElementById('mOv').classList.add('show');setTimeout(()=>document.getElementById('mSearch').focus(),300)}
+function closePicker(e){if(e&&e.target!==document.getElementById('mOv'))return;document.getElementById('mOv').classList.remove('show')}
+function filterS(){renderSL(document.getElementById('mSearch').value.trim())}
+function renderSL(q){const l=document.getElementById('sList'),di=pm==='home'?null:pm==='origin'?selD:selO,si=pm==='home'?STATIONS.findIndex(x=>x.c===getHome()):pm==='origin'?selO:selD,ql=q.toLowerCase();let h='';STATIONS.forEach((s,i)=>{if(ql&&!s.n.includes(ql)&&!s.c.toLowerCase().includes(ql))return;h+=`<div class="stn-item${i===si?' sel':''}${i===di?' dis':''}" onclick="${i===di?'':`pickS(${i})`}"><div class="stn-code${s.ex?'':' co'}">${s.c}</div><div class="stn-info"><div class="nm">${s.n}</div><div class="tgs">${s.ex?'<span class="tg ex">直達車</span>':''}<span class="tg cm">普通車</span></div></div>${i===si?'<div class="stn-chk">✓</div>':''}</div>`});l.innerHTML=h}
+function pickS(i){if(pm==='home'){setHome(STATIONS[i].c);document.getElementById('mOv').classList.remove('show');runTransfer();return}if(pm==='origin')selO=i;else selD=i;document.getElementById('mOv').classList.remove('show');upUI()}
+function doSwap(){[selO,selD]=[selD,selO];upUI();if(document.getElementById('resCont').innerHTML.includes('tc '))search()}
+function upUI(){document.getElementById('goBtn').disabled=(selO===null||selD===null);const od=document.getElementById('oDisp'),dd=document.getElementById('dDisp');if(selO!==null){od.textContent=`${STATIONS[selO].c} ${STATIONS[selO].n}`;od.classList.remove('ph')}else{od.textContent='選擇出發站';od.classList.add('ph')}if(selD!==null){dd.textContent=`${STATIONS[selD].c} ${STATIONS[selD].n}`;dd.classList.remove('ph')}else{dd.textContent='選擇到達站';dd.classList.add('ph')}upFav()}
+
+// Trains (embedded fallback)
+function genFallback(oi,di){
+  const south=oi<di,res=[];
+  const cs=SC.c;
+  if(south){const ot=STATIONS[oi].cm,dt=STATIONS[di].cm,dur=dt-ot;for(let d=cs.fA;d<=cs.lA;d+=cs.iv)res.push({t:'c',dep:d+ot,arr:d+dt,dur})}
+  else{const ot=TC-STATIONS[oi].cm,dt=TC-STATIONS[di].cm,dur=dt-ot;for(let d=cs.fB;d<=cs.lB;d+=cs.iv)res.push({t:'c',dep:d+ot,arr:d+dt,dur})}
+  if(STATIONS[oi].ex&&STATIONS[di].ex){
+    const es=SC.e;
+    if(south){const ot=STATIONS[oi].em,dt=STATIONS[di].em,dur=dt-ot;for(let d=es.fA;d<=es.lA;d+=es.iv)res.push({t:'e',dep:d+ot,arr:d+dt,dur})}
+    else{const ot=TE-STATIONS[oi].em,dt=TE-STATIONS[di].em,dur=dt-ot;for(let d=es.fB;d<=es.lB;d+=es.iv)res.push({t:'e',dep:d+ot,arr:d+dt,dur})}
+  }
+  res.sort((a,b)=>a.dep-b.dep);return res;
+}
+
+function search(){
+  if(selO===null||selD===null)return;dc=10;render();
+}
+
+// ========== LIVE TRACKER ==========
+let trackerInterval=null;
+let trackerTrain=null;
+let trackerStations=[];
+let allTrackerTrains=[];
+let trackerTrainIdx=0;
+
+function getStationsBetween(oi,di){
+  const start=Math.min(oi,di),end=Math.max(oi,di),stns=[];
+  for(let i=start;i<=end;i++) stns.push({idx:i,code:STATIONS[i].c,name:STATIONS[i].n,ex:STATIONS[i].ex});
+  if(oi>di) stns.reverse();
+  return stns;
+}
+
+function getStationsWithPrev(oi,di){
+  const stns=getStationsBetween(oi,di);
+  const goingSouth=oi<di;
+  const prevIdx=goingSouth?oi-1:oi+1;
+  if(prevIdx>=0&&prevIdx<STATIONS.length){
+    const ps=STATIONS[prevIdx];
+    stns.unshift({idx:prevIdx,code:ps.c,name:ps.n,ex:ps.ex,isPrev:true});
+  }
+  return stns;
+}
+
+function buildTrackerHTML(train,stns){
+  const isExpress=train.t==='e';
+  const badgeCls=isExpress?'eb':'cb';
+  const typeName=isExpress?'直達車':'普通車';
+  const originIdx=stns.findIndex(s=>!s.isPrev);
+
+  let displayStns=stns;
+  if(stns.length>8){
+    const step=Math.max(1,Math.floor((stns.length-2)/6));
+    displayStns=[stns[0]];
+    for(let i=1;i<stns.length-1;i++){if(i===originIdx||i%step===0)displayStns.push(stns[i])}
+    if(displayStns[displayStns.length-1]!==stns[stns.length-1])displayStns.push(stns[stns.length-1]);
+  }
+
+  const stnDotsHTML=displayStns.map((s,i)=>{
+    const isPrev=!!s.isPrev;
+    const isOrig=!isPrev&&i===displayStns.findIndex(x=>!x.isPrev);
+    const isDest=i===displayStns.length-1;
+    const cls=isPrev?'prev':isOrig?'origin':isDest?'dest':'';
+    const showName=isPrev||isOrig||isDest;
+    const nameCls=showName?'endpoint':'';
+    return `<div class="track-stn"><div class="track-stn-dot ${cls}" data-stn="${s.code}"></div><div class="track-stn-name ${nameCls}">${showName?s.name:s.code}</div></div>`;
+  }).join('');
+
+  return `<div class="tracker" id="trackerCard">
+    <div class="tracker-top">
+      <div class="tracker-badge"><span class="trkb bd ${badgeCls}">${typeName}</span><span class="trk-status" id="trkStatus">等待發車</span></div>
+      <div class="tracker-countdown"><div class="cd-num" id="trkCountdown">--</div><div class="cd-lbl" id="trkCdLabel">分鐘後</div></div>
+    </div>
+    <div class="tracker-times">
+      <span class="tt-dep">${hm(train.dep)}</span><span class="tt-arrow">出發 \u2192</span>
+      <span class="tt-arr">${hm(train.arr)}</span><span class="tt-arrow">抵達</span><span class="tt-dur">${train.dur}分</span>
+    </div>
+    <div class="track-wrap">
+      <div class="track-line">
+        <div class="track-rail"></div>
+        <div class="track-progress" id="trkProgress" style="width:0%"></div>
+        <div class="track-train" id="trkTrain" style="left:16px">\ud83d\ude88</div>
+      </div>
+      <div class="track-stations" id="trkStations">${stnDotsHTML}</div>
+    </div>
+    <div class="tracker-eta" id="trkEta">即時追蹤中\u22ef</div>
+  </div>`;
+}
+
+function startTracker(train,stns){
+  trackerTrain=train;trackerStations=stns;
+  if(trackerInterval)clearInterval(trackerInterval);
+  const originStnIdx=stns.findIndex(s=>!s.isPrev);
+  const hasPrev=originStnIdx>0;
+  const originFrac=hasPrev?(originStnIdx/(stns.length-1)):0;
+  const journeyFrac=1-originFrac;
+  let wasDeparted=false; // track if train was already departed when tracker started
+
+  function update(){
+    const d=new Date();
+    const currentMin=d.getHours()*60+d.getMinutes()+d.getSeconds()/60;
+    const countdown=document.getElementById('trkCountdown');
+    if(!countdown)return;
+
+    if(currentMin>=train.dep&&!wasDeparted){
+      // Train just departed from origin → re-render to swap to mini + next
+      wasDeparted=true;
+      clearInterval(trackerInterval);
+      setTimeout(()=>advanceToNextTrain(),500);
+      return;
+    }
+
+    if(currentMin>=train.dep){
+      // Already departed state - should not happen since we re-render above
+      // But as safety: if no next train, show en-route in full card
+      wasDeparted=true;
+    }
+
+    const cdLabel=document.getElementById('trkCdLabel');
+    const status=document.getElementById('trkStatus');
+    const progress=document.getElementById('trkProgress');
+    const trainEl=document.getElementById('trkTrain');
+    const eta=document.getElementById('trkEta');
+    const trackLine=document.querySelector('.track-line');
+    if(!trackLine)return;
+    const railLeft=16,railRight=trackLine.offsetWidth-16,railWidth=railRight-railLeft;
+    const originPos=railLeft+originFrac*railWidth;
+
+    if(currentMin<train.dep){
+      const remain=train.dep-currentMin;
+      const mins=Math.ceil(remain);
+      countdown.textContent=`${mins}`;
+      cdLabel.textContent='分鐘後進站';
+      status.textContent='列車接近中';
+      status.style.color='var(--copper-l)';
+      const approachWindow=3;
+      const approachPct=Math.max(0,Math.min(1,1-remain/approachWindow));
+      let pos=hasPrev?railLeft+approachPct*originFrac*railWidth:railLeft;
+      progress.style.width='0%';
+      trainEl.style.left=pos+'px';
+      const prevName=hasPrev?stns[0].name:'';
+      const origName=stns[originStnIdx].name;
+      if(remain>approachWindow) eta.innerHTML=`列車將於 <strong>${mins} 分鐘</strong>後抵達 ${origName}`;
+      else eta.innerHTML=`列車已從 ${prevName} 出發，<strong>${mins} 分鐘</strong>後進站`;
+      document.querySelectorAll('.track-stn-dot').forEach(dot=>dot.classList.remove('passed'));
+      if(hasPrev&&approachPct>0)document.querySelector('.track-stn-dot.prev')?.classList.add('passed');
+    } else if(currentMin<train.arr){
+      // This branch only runs when there's no next train (safety fallback)
+      const elapsed=currentMin-train.dep;
+      const total=train.arr-train.dep;
+      const pct=Math.min(elapsed/total,1);
+      const remain=train.arr-currentMin;
+      const mins=Math.ceil(remain);
+      countdown.textContent=`${mins}`;
+      cdLabel.textContent='分鐘後抵達';
+      status.textContent='行駛中';
+      status.style.color='var(--ok)';
+      const pos=originPos+pct*journeyFrac*railWidth;
+      progress.style.width=((originFrac+pct*journeyFrac)*100)+'%';
+      trainEl.style.left=pos+'px';
+      const journeyStns=stns.slice(originStnIdx);
+      const jsLen=journeyStns.length;
+      const curIdx=Math.min(Math.floor(pct*(jsLen-1)),jsLen-2);
+      const fromStn=journeyStns[curIdx];
+      const toStn=journeyStns[Math.min(curIdx+1,jsLen-1)];
+      eta.innerHTML=`${fromStn.name} → ${toStn.name}，預計 <strong>${mins} 分鐘</strong>後抵達 ${stns[stns.length-1].name}`;
+      document.querySelectorAll('.track-stn-dot').forEach((dot,i)=>{
+        const allDots=document.querySelectorAll('.track-stn-dot');
+        const stnPct=i/(allDots.length-1);
+        const trainPct=originFrac+pct*journeyFrac;
+        if(stnPct<=trainPct)dot.classList.add('passed');else dot.classList.remove('passed');
+      });
+    } else {
+      countdown.textContent='0';cdLabel.textContent='已抵達';
+      status.textContent='已到站';status.style.color='var(--copper-l)';
+      progress.style.width='100%';trainEl.style.left=railRight+'px';
+      document.querySelectorAll('.track-stn-dot').forEach(d=>d.classList.add('passed'));
+      eta.innerHTML=`已抵達 <strong>${stns[stns.length-1].name}</strong>`;
+      clearInterval(trackerInterval);
+      setTimeout(()=>advanceToNextTrain(),5000);
+    }
+  }
+  // If train already departed when tracker starts, mark it
+  if(nowM()>=train.dep) wasDeparted=true;
+  update();
+  trackerInterval=setInterval(update,1000);
+}
+
+function advanceToNextTrain(){
+  // Re-render to properly swap mini/full cards
+  if(selO!==null&&selD!==null) render(true);
+}
+
+// Build mini tracker for en-route train
+function buildMiniTrackerHTML(train){
+  const isExpress=train.t==='e';
+  return `<div class="tracker-mini" id="miniTracker">
+    <div class="tm-badge"><span class="bd ${isExpress?'eb':'cb'}">${isExpress?'直達':'普通'}</span></div>
+    <div class="tm-info">
+      <span class="tm-times">${hm(train.dep)}</span>
+      <span class="tm-arrow">→</span>
+      <span class="tm-times">${hm(train.arr)}</span>
+      <span class="tm-status" id="miniStatus">行駛中</span>
+    </div>
+    <div class="tm-cd">
+      <div class="tm-cd-num" id="miniCd">--</div>
+      <div class="tm-cd-lbl">分鐘後抵達</div>
+    </div>
+    <div class="tm-progress" id="miniProgress" style="width:0%"></div>
+  </div>`;
+}
+
+let miniInterval=null;
+let miniTrain=null;
+
+function startMiniTracker(train){
+  miniTrain=train;
+  if(miniInterval) clearInterval(miniInterval);
+  function update(){
+    const d=new Date();
+    const cur=d.getHours()*60+d.getMinutes()+d.getSeconds()/60;
+    const cd=document.getElementById('miniCd');
+    const prog=document.getElementById('miniProgress');
+    const st=document.getElementById('miniStatus');
+    if(!cd) return;
+    if(cur<train.arr){
+      const remain=train.arr-cur;
+      const mins=Math.ceil(remain);
+      cd.textContent=`${mins}`;
+      const pct=Math.min((cur-train.dep)/(train.arr-train.dep),1);
+      prog.style.width=(pct*100)+'%';
+      st.textContent='行駛中';
+    } else {
+      cd.textContent='0';
+      st.textContent='已到站';
+      prog.style.width='100%';
+      clearInterval(miniInterval);
+      // Remove mini card after 3s
+      setTimeout(()=>{const el=document.getElementById('miniTracker');if(el)el.style.display='none'},3000);
+    }
+  }
+  update();
+  miniInterval=setInterval(update,1000);
+}
+
+function render(noScroll){
+  if(trackerInterval){clearInterval(trackerInterval);trackerInterval=null}
+  if(miniInterval){clearInterval(miniInterval);miniInterval=null}
+  const ct=document.getElementById('resCont');
+  const oCode=STATIONS[selO].c,dCode=STATIONS[selD].c;
+  let all=parseTDXTrains(oCode,dCode);
+  let source='TDX';
+  if(!all){all=genFallback(selO,selD);source='內建'}
+  const now=nowM();
+  const bothExpress=STATIONS[selO].ex&&STATIONS[selD].ex;
+  if(!bothExpress) all=all.filter(t=>t.t!=='e');
+  let trains=all;
+
+  allTrackerTrains=trains;
+
+  // Find en-route train (already departed, not yet arrived) — strict < now
+  let enRouteTrain=null;
+  for(let i=trains.length-1;i>=0;i--){
+    if(trains[i].dep<now&&trains[i].arr>now){enRouteTrain=trains[i];break}
+  }
+
+  // Find next upcoming train (not yet departed) — >= now
+  let ni=trains.findIndex(t=>t.dep>=now);
+  let upcomingTrain=ni>=0?trains[ni]:null;
+
+  // If upcoming and en-route are the same train (edge case), keep as upcoming only
+  if(enRouteTrain&&upcomingTrain&&enRouteTrain.dep===upcomingTrain.dep){
+    enRouteTrain=null;
+  }
+
+  // Main tracker target: upcoming if exists, otherwise en-route
+  let trackerTarget=upcomingTrain||enRouteTrain;
+  if(trackerTarget) trackerTrainIdx=trains.indexOf(trackerTarget);
+
+  const futureTrains=trains.filter(t=>t.arr>=now);
+  const sh=futureTrains.slice(0,dc),more=futureTrains.length>dc;
+  const stns=getStationsWithPrev(selO,selD);
+
+  // Build HTML: mini card for en-route + full card for upcoming
+  let miniHTML='';
+  let trackerHTML='';
+  if(enRouteTrain&&upcomingTrain){
+    // Train departed → show mini card for it, full card for next train
+    miniHTML=buildMiniTrackerHTML(enRouteTrain);
+    trackerHTML=buildTrackerHTML(upcomingTrain,stns);
+  } else if(enRouteTrain&&!upcomingTrain){
+    // Only en-route, no next → show full card for en-route
+    trackerHTML=buildTrackerHTML(enRouteTrain,stns);
+    trackerTarget=enRouteTrain;
+  } else if(upcomingTrain){
+    // Upcoming train not yet departed → show full card
+    trackerHTML=buildTrackerHTML(upcomingTrain,stns);
+  }
+
+  const nowStr=hm(now);
+  let h=`<div class="results-area">
+    ${miniHTML}
+    ${trackerHTML}
+    <div class="res-hd"><div class="res-title">即將到來班次 <span style="font-size:10px;color:var(--text3);font-weight:400">(${source}・${nowStr} 起)</span></div><div class="res-route">${STATIONS[selO].n} \u2192 ${STATIONS[selD].n}</div></div>`;
+
+  if(!sh.length){h+=`<div class="no-res"><div class="nri">\ud83d\udd0d</div><div>無可用班次</div></div>`}
+  else{sh.forEach((t,i)=>{
+    const isN=t===trackerTarget;
+    h+=`<div class="tc${isN?' nt':''}">
+    ${isN?'<div class="next-lbl">NEXT</div>':''}
+    <div class="tc-badge"><span class="bd ${t.t==='e'?'eb':'cb'}">${t.t==='e'?'直達':'普通'}</span></div>
+    <div class="tc-times"><div class="tc-t"><div class="tl">出發</div><div class="tv">${hm(t.dep)}</div></div>
+    <div class="tc-arr">\u2192</div><div class="tc-t"><div class="tl">抵達</div><div class="tv">${hm(t.arr)}</div></div></div>
+    <div class="tc-dur"><div class="dv">${t.dur} 分</div><div class="dl2">車程</div></div></div>`});
+    if(more)h+=`<div class="load-more"><button onclick="dc+=10;render()">顯示更多班次</button></div>`}
+  h+='</div>';ct.innerHTML=h;
+
+  // Start trackers
+  if(enRouteTrain&&upcomingTrain){
+    setTimeout(()=>{startMiniTracker(enRouteTrain);startTracker(upcomingTrain,stns)},100);
+  } else if(trackerTarget){
+    const target=enRouteTrain||upcomingTrain;
+    if(target) setTimeout(()=>startTracker(target,stns),100);
+  }
+  if(!noScroll) setTimeout(()=>{const el=document.querySelector('.tracker');if(el)el.scrollIntoView({behavior:'smooth',block:'center'})},200);
+}
+
+// ========== TAB BAR ACTIONS ==========
+let currentTab='home';
+
+function tabAction(action){
+  document.querySelectorAll('.tab-item').forEach(el=>el.classList.remove('active'));
+  const clicked=document.querySelector(`.tab-item[data-tab="${action}"]`);
+  if(clicked) clicked.classList.add('active');
+
+  if(action==='home'||action==='xfer'||action==='settings') setPageTab(action);
+  switch(action){
+    case 'xfer':
+      currentTab='xfer';
+      if(!document.getElementById('xferCont').innerHTML.trim()) renderXferIntro();
+      window.scrollTo({top:0,behavior:'smooth'});
+      break;
+
+    case 'home':
+      currentTab='home';
+      if(selO!==null&&selD!==null){render()}
+      else{document.getElementById('resCont').innerHTML=`<div class="empty-st"><div class="esi">🚈</div><div class="est">選擇起訖站開始查詢</div><div class="ess">選好出發站與到達站<br>按下查詢即可查看班次時刻</div></div>`}
+      window.scrollTo({top:0,behavior:'smooth'});
+      break;
+
+    case 'settings':
+      currentTab='settings';
+      showSettingsPage();
+      break;
+
+    case 'search':
+      if(selO===null||selD===null){toast('請先選擇起訖站');window.scrollTo({top:0,behavior:'smooth'})}
+      else{currentTab='home';render()}
+      document.querySelectorAll('.tab-item').forEach(el=>el.classList.remove('active'));
+      document.querySelector('.tab-item[data-tab="home"]').classList.add('active');
+      break;
+
+    case 'sync':
+      connectTDX();
+      setTimeout(()=>{
+        document.querySelectorAll('.tab-item').forEach(el=>el.classList.remove('active'));
+        document.querySelector(`.tab-item[data-tab="${currentTab}"]`).classList.add('active');
+      },500);
+      break;
+  }
+}
+
+function showSettingsPage(){
+  const creds=loadCreds();
+  const isLive=document.getElementById('heroStat').classList.contains('live');
+  const statusDot=isLive?'background:var(--ok)':'background:var(--text3)';
+  const statusText=isLive?'TDX 已連線':'未連線';
+
+  const ct=document.getElementById('resCont');
+  ct.innerHTML=`
+    <div style="padding:20px">
+      <div style="background:var(--card);border-radius:var(--r);padding:24px;border:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <span style="font-size:18px">⚙</span>
+          <span style="font-size:17px;font-weight:700;flex:1">TDX API 設定</span>
+          <span style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)">
+            <span style="width:7px;height:7px;border-radius:50%;${statusDot}"></span>${statusText}
+          </span>
+        </div>
+        <div style="font-size:12px;color:var(--text3);line-height:1.7;margin-bottom:16px">
+          已內建你的 TDX 金鑰，打開即自動連線。<br>若在 <a href="https://tdx.transportdata.tw/" target="_blank" style="color:var(--copper)">TDX 會員中心</a> 重設了金鑰，把新的貼在下面按連線測試即可取代內建值。
+        </div>
+        <div class="set-row">
+          <label>Client ID</label>
+          <input type="text" id="tdxId" placeholder="使用內建金鑰（要換才需填）" value="${loadOwnCreds().id}">
+        </div>
+        <div class="set-row">
+          <label>Client Secret</label>
+          <input type="password" id="tdxSecret" placeholder="使用內建金鑰（要換才需填）" value="${loadOwnCreds().secret}">
+        </div>
+        <div class="set-actions" style="margin-top:4px">
+          <button class="set-btn pri" onclick="connectTDX()">連線測試</button>
+          <button class="set-btn sec" onclick="clearTDX()">改回內建金鑰</button>
+        </div>
+        <div class="set-status" id="setStatus"></div>
+      </div>
+
+      <div style="background:var(--card);border-radius:var(--r);padding:24px;border:1px solid var(--border);margin-top:14px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:6px">轉乘設定</div>
+        <div style="font-size:12px;color:var(--text3);line-height:1.7;margin-bottom:14px">轉乘時間是換車時至少要預留的分鐘數（含步行、進出站、買票）。規劃時不會排入比這更緊的班次。</div>
+        <div class="set-row">
+          <label>我的機捷站（南下起點、北上終點）</label>
+          <select id="xHome" onchange="setHome(this.value)">${STATIONS.filter(x=>x.c!=='A18').map(x=>`<option value="${x.c}"${x.c===getHome()?' selected':''}>${x.c} ${x.n}</option>`).join('')}</select>
+        </div>
+        <div class="set-row">
+          <label>高鐵車程上限（分鐘，桃園⇄左營；其他站別自動只挑快車；0 = 不限）</label>
+          <input type="number" inputmode="numeric" min="0" max="240" value="${getHsrMax()}" onchange="setHsrMax(this.value)">
+        </div>
+        <div class="set-grid">
+          ${[['mh','機捷 → 高鐵（A18／A1）'],['ht','高鐵左營 → 台鐵新左營'],['th','台鐵新左營 → 高鐵左營'],['hm','高鐵 → 機捷（A18／A1）']].map(([k,l])=>`<div class="set-row"><label>${l}</label><input type="number" inputmode="numeric" min="0" max="60" value="${getBuf()[k]}" onchange="setBuf('${k}',this.value)"></div>`).join('')}
+        </div>
+      </div>
+
+      <div style="background:var(--card);border-radius:var(--r);padding:24px;border:1px solid var(--border);margin-top:14px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:12px">關於本 APP</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.8">
+          <p style="margin-bottom:8px">✦ 資料來源：TDX 運輸資料流通服務平臺</p>
+          <p style="margin-bottom:8px">✦ 機捷：v2/Rail/Metro/StationTimeTable/TYMC</p>
+          <p style="margin-bottom:8px">✦ 高鐵：v2/Rail/THSR/DailyTimetable/OD、AlertInfo</p>
+          <p style="margin-bottom:8px">✦ 台鐵：v3/Rail/TRA/DailyTrainTimetable/OD、TrainLiveBoard（誤點）</p>
+          <p style="margin-bottom:8px">✦ 認證方式：OAuth2 Client Credentials</p>
+          <p>機捷若未設定金鑰或連線失敗，自動切換為內建參考時刻表；高鐵與台鐵需連線 TDX 才能規劃。</p>
+        </div>
+      </div>
+
+      <button onclick="tabAction('home')" style="margin-top:16px;width:100%;height:48px;border:none;border-radius:24px;background:var(--copper);color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">返回時刻查詢</button>
+
+      ${apiTimetable?`<div style="margin-top:16px;background:var(--card);border-radius:var(--r);padding:18px;border:1px solid var(--border)">
+        <div style="font-size:14px;font-weight:700;margin-bottom:10px">TDX 原始資料檢查</div>
+        <button onclick="showTDXDebug()" class="set-btn pri" style="width:100%;margin-bottom:10px">檢視 TDX 回傳資料結構</button>
+        <div id="tdxDebug" style="display:none;font-size:11px;color:var(--text2);background:var(--bg);padding:12px;border-radius:8px;max-height:300px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;font-family:monospace"></div>
+      </div>`:''}
+    </div>`;
+
+  updateSetStatus();
+  window.scrollTo({top:document.getElementById('resCont').offsetTop-80,behavior:'smooth'});
+}
+
+function showTDXDebug(){
+  const el=document.getElementById('tdxDebug');
+  if(!el||!apiTimetable) return;
+  el.style.display=el.style.display==='none'?'block':'none';
+  if(el.style.display==='none') return;
+
+  const data=Array.isArray(apiTimetable)?apiTimetable:(apiTimetable.StationTimetables||apiTimetable);
+  if(!Array.isArray(data)){el.textContent='資料格式非陣列';return}
+
+  // Show summary of first few entries with TrainType info
+  let out='共 '+data.length+' 筆 entry\n\n';
+  const sample=data.slice(0,6);
+  sample.forEach((e,i)=>{
+    out+=`--- Entry ${i} ---\n`;
+    out+=`StationID: ${e.StationID||e.stationID}\n`;
+    out+=`Direction: ${e.Direction??e.direction}\n`;
+    out+=`TrainType (entry): ${e.TrainType??e.trainType??'(無)'}\n`;
+    out+=`TrainTypeName (entry): ${JSON.stringify(e.TrainTypeName||e.trainTypeName||'(無)')}\n`;
+    const tt=e.Timetables||e.timetables||[];
+    out+=`Timetables: ${tt.length} 筆\n`;
+    if(tt.length>0){
+      const t0=tt[0];
+      out+=`  [0] DepartureTime=${t0.DepartureTime||t0.departureTime}\n`;
+      out+=`      TrainType=${t0.TrainType??t0.trainType??'(無)'}\n`;
+      out+=`      TrainTypeName=${JSON.stringify(t0.TrainTypeName||t0.trainTypeName||'(無)')}\n`;
+      if(tt.length>1){
+        const t1=tt[1];
+        out+=`  [1] DepartureTime=${t1.DepartureTime||t1.departureTime}\n`;
+        out+=`      TrainType=${t1.TrainType??t1.trainType??'(無)'}\n`;
+      }
+    }
+    out+='\n';
+  });
+
+  // Count express vs commuter
+  let eCnt=0,cCnt=0;
+  data.forEach(e=>{
+    const eType=e.TrainType??e.trainType;
+    const tt=e.Timetables||e.timetables||[];
+    tt.forEach(t=>{
+      const tType=t.TrainType??t.trainType??eType;
+      const name=(t.TrainTypeName?.Zh_tw||e.TrainTypeName?.Zh_tw||'');
+      let isExp=false;
+      if(name) isExp=name.includes('直達');
+      else if(tType!==undefined) isExp=(tType===2||tType==='2');
+      if(isExp) eCnt++; else cCnt++;
+    });
+  });
+  out+=`\n=== 車種統計 ===\n直達車: ${eCnt} 筆\n普通車: ${cCnt} 筆\n`;
+
+  el.textContent=out;
+}
+
+// ========== 轉乘規劃：機捷 ⇄ 高鐵 ⇄ 台鐵 ==========
+const THSR_BASE='https://tdx.transportdata.tw/api/basic/v2/Rail/THSR';
+const TRA_BASE='https://tdx.transportdata.tw/api/basic/v3/Rail/TRA';
+const TRA_V2='https://tdx.transportdata.tw/api/basic/v2/Rail/TRA';
+const HSR_ID={TY:'1020',ZY:'1070'};           // 高鐵桃園、左營（預設）
+// 高鐵全線（北→南）
+const HSR_ST=[['0990','南港'],['1000','台北'],['1010','板橋'],['1020','桃園'],['1030','新竹'],['1035','苗栗'],['1040','台中'],['1043','彰化'],['1047','雲林'],['1050','嘉義'],['1060','台南'],['1070','左營']];
+const HSR_NAME=Object.fromEntries(HSR_ST);
+const HSR_IDX=Object.fromEntries(HSR_ST.map(([id],i)=>[id,i]));
+// 機捷可轉乘的高鐵站：桃園 ↔ A18、台北 ↔ A1
+const MRT_HUB={'1020':{c:'A18',n:'A18 高鐵桃園'},'1000':{c:'A1',n:'A1 台北車站'}};
+function getHsrPair(){
+  try{const j=JSON.parse(localStorage.getItem('xfer_hsr')||'null');if(j&&HSR_NAME[j.n]&&HSR_NAME[j.s]&&HSR_IDX[j.n]<HSR_IDX[j.s])return j}catch(e){}
+  return {n:HSR_ID.TY,s:HSR_ID.ZY};
+}
+function setHsrPair(n,s){try{localStorage.setItem('xfer_hsr',JSON.stringify({n,s}))}catch(e){}updateHomeBtn()}
+const hsrN=id=>'高鐵'+HSR_NAME[id];
+let TRA_ID={XZY:'4350',PT:'5000'};             // 台鐵新左營、屏東（查無資料時會用站名重新解析）
+const MRT_HSR='A18';
+const XFER_DEF={mh:12,ht:8,th:10,hm:10};       // 最少轉乘分鐘
+const HORIZON=360;                             // 規劃往後 6 小時內抵達的方案
+const MAX_PLANS=5;
+
+let xDay=0;             // 出發日：0=今天 … 6
+let xTime=null;         // 預計出發時間（分鐘）；null = 現在
+const WK='日一二三四五六';
+function dayLabel(off){
+  if(off===0) return '今天';if(off===1) return '明天';if(off===2) return '後天';
+  const d=new Date();d.setDate(d.getDate()+off);return `${d.getMonth()+1}/${d.getDate()}（${WK[d.getDay()]}）`;
+}
+function dayFull(off){const d=new Date();d.setDate(d.getDate()+off);return `${d.getMonth()+1}/${d.getDate()}（${WK[d.getDay()]}）`}
+function setXDay(d){
+  xDay=d;
+  if(d>0&&xTime==null) xTime=Math.ceil(nowM()/5)*5%1440;   // 其他天沒有「現在」，先帶入目前時刻
+  renderDateStrip();syncWhen();
+}
+function setXTime(v){xTime=(v===null||v==='')?null:toMin(v);syncWhen()}
+function xT0(){return xDay*1440+(xTime==null?nowM():xTime)}
+function syncWhen(){
+  const nb=document.getElementById('whenNow'),tb=document.getElementById('whenBtn'),lb=document.getElementById('whenLbl');
+  if(!nb) return;
+  nb.style.display=xDay===0?'':'none';
+  nb.classList.toggle('act',xTime==null);
+  tb.classList.toggle('act',xTime!=null);
+  document.getElementById('whenVal').textContent=hm(xTime==null?nowM():xTime);
+  lb.textContent=`${dayFull(xDay)}${xTime==null?' 現在':' '+hm(xTime)} 出發`;
+}
+// ---- 滾輪時間選擇 ----
+const WH=44;
+const WH_H=[...Array(24).keys()],WH_M=[...Array(12).keys()].map(i=>i*5);
+let whSel={h:0,m:0},whBuilt=false,whTimer=null;
+function whBuild(el,vals,key){
+  el.innerHTML='<div class="wh-pad"></div>'+vals.map((v,i)=>`<div class="wh-it" data-i="${i}">${String(v).padStart(2,'0')}</div>`).join('')+'<div class="wh-pad"></div>';
+  el.addEventListener('scroll',()=>{requestAnimationFrame(()=>whPaint(el,key,vals))},{passive:true});
+  el.addEventListener('click',e=>{const it=e.target.closest('.wh-it');if(it)el.scrollTo({top:+it.dataset.i*WH,behavior:'smooth'})});
+  el.addEventListener('keydown',e=>{
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();el.scrollBy({top:e.key==='ArrowDown'?WH:-WH,behavior:'smooth'})}
+    if(e.key==='Enter') whConfirm();
+  });
+}
+function whPaint(el,key,vals){
+  const c=el.scrollTop/WH;
+  el.querySelectorAll('.wh-it').forEach((it,i)=>{
+    const d=i-c,a=Math.min(Math.abs(d),3);
+    it.style.transform=`rotateX(${(-d*22).toFixed(1)}deg) scale(${(1-a*.06).toFixed(3)})`;
+    it.style.opacity=Math.max(.12,1-a*.32).toFixed(2);
+    it.classList.toggle('on',Math.abs(d)<.5);
+  });
+  const idx=Math.max(0,Math.min(vals.length-1,Math.round(c)));
+  whSel[key]=vals[idx];
+  whRead();
+}
+function whRead(){
+  const m=whSel.h*60+whSel.m;
+  document.getElementById('whRead').textContent=`${dayFull(xDay)} ${hm(m)} 出發`;
+}
+function whSetTo(min,smooth){
+  min=((Math.round(min/5)*5)%1440+1440)%1440;
+  const h=Math.floor(min/60),m=min%60;
+  const b=smooth?'smooth':'instant';
+  document.getElementById('whH').scrollTo({top:h*WH,behavior:b});
+  document.getElementById('whM').scrollTo({top:(m/5)*WH,behavior:b});
+  if(!smooth){whPaint(document.getElementById('whH'),'h',WH_H);whPaint(document.getElementById('whM'),'m',WH_M)}
+}
+// ---- 高鐵站選擇 ----
+let hsrDraft=null;
+function openHsrPicker(){
+  hsrDraft={...getHsrPair()};renderHsrPicker();
+  document.getElementById('hsOv').classList.add('show');
+}
+function closeHsrPicker(e){if(e&&e.target!==document.getElementById('hsOv'))return;document.getElementById('hsOv').classList.remove('show')}
+function hsrPick(end,id){
+  hsrDraft[end]=id;
+  // 保持北端在南端之北；衝突時把另一端推開
+  if(HSR_IDX[hsrDraft.n]>=HSR_IDX[hsrDraft.s]){
+    if(end==='n') hsrDraft.s=HSR_ST[Math.min(HSR_IDX[id]+1,11)][0];
+    else hsrDraft.n=HSR_ST[Math.max(HSR_IDX[id]-1,0)][0];
+  }
+  renderHsrPicker();
+}
+function renderHsrPicker(){
+  const dir=getHomeDir();
+  const sec=(end,title)=>`<div class="hs-sec"><div class="hs-tt">${title}</div><div class="hs-grid">${HSR_ST.map(([id,n])=>{
+    const on=hsrDraft[end]===id;
+    const hub=MRT_HUB[id]&&end==='n'?'<small>機捷</small>':'';
+    const tra=id==='1070'&&end==='s'?'<small>台鐵</small>':'';
+    return `<button class="hs-st${on?' on':''}" aria-pressed="${on}" onclick="hsrPick('${end}','${id}')">${n}${hub}${tra}</button>`}).join('')}</div></div>`;
+  // 依方向決定哪一端是上車站
+  document.getElementById('hsBody').innerHTML=dir==='S'
+    ?sec('n','上車站（南下）')+sec('s','下車站（南下）')
+    :sec('s','上車站（北上）')+sec('n','下車站（北上）');
+  const [a,b]=dir==='S'?[hsrDraft.n,hsrDraft.s]:[hsrDraft.s,hsrDraft.n];
+  document.getElementById('hsRead').textContent=`高鐵 ${HSR_NAME[a]} → ${HSR_NAME[b]}`;
+}
+function hsrConfirm(){setHsrPair(hsrDraft.n,hsrDraft.s);document.getElementById('hsOv').classList.remove('show');if(document.getElementById('xferCont').querySelector('.xd'))runTransfer()}
+function hsrReset(){hsrDraft={n:HSR_ID.TY,s:HSR_ID.ZY};renderHsrPicker()}
+
+function openWheel(){
+  const hEl=document.getElementById('whH'),mEl=document.getElementById('whM');
+  if(!whBuilt){whBuild(hEl,WH_H,'h');whBuild(mEl,WH_M,'m');whBuilt=true}
+  document.getElementById('whNowBtn').style.display=xDay===0?'':'none';
+  document.getElementById('whOv').classList.add('show');
+  const start=xTime==null?Math.ceil(nowM()/5)*5:xTime;
+  requestAnimationFrame(()=>whSetTo(start,false));
+  setTimeout(()=>hEl.focus({preventScroll:true}),320);
+}
+function closeWheel(e){if(e&&e.target!==document.getElementById('whOv'))return;document.getElementById('whOv').classList.remove('show')}
+function whConfirm(){setXTime(hm(whSel.h*60+whSel.m));document.getElementById('whOv').classList.remove('show')}
+function whNow(){setXTime(null);document.getElementById('whOv').classList.remove('show')}
+function whQuick(v){whSetTo(v,true)}
+
+let xState={S:null,N:null,alerts:[],upd:null};
+const xCache={};
+
+function getHome(){try{return localStorage.getItem('xfer_home')||'A12'}catch(e){return 'A12'}}
+function setHome(c){try{localStorage.setItem('xfer_home',c)}catch(e){}updateHomeBtn()}
+function getBuf(){try{return Object.assign({},XFER_DEF,JSON.parse(localStorage.getItem('xfer_buf')||'{}'))}catch(e){return {...XFER_DEF}}}
+function setBuf(k,v){const b=getBuf();b[k]=Math.max(0,Math.min(60,parseInt(v)||0));try{localStorage.setItem('xfer_buf',JSON.stringify(b))}catch(e){}}
+
+const toMin=t=>{if(!t)return null;const [h,m]=t.split(':').map(Number);return h*60+m};
+function ymd(off){const d=new Date();d.setDate(d.getDate()+off);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function fmtDur(m){m=Math.round(m);const h=Math.floor(m/60),mm=m%60;return h?`${h}時${mm?mm+'分':''}`:`${mm}分`}
+function hmx(m){return hm(m)+(m>=(xDay+1)*1440?'<sup>翌</sup>':'')}
+
+const xInflight={};
+const persistable=u=>/DailyTimetable\/OD|DailyTrainTimetable\/OD|\/TRA\/Station\?/.test(u);
+async function cfetch(url,ttl){
+  const c=xCache[url];
+  if(c&&Date.now()-c.t<ttl) return c.d;
+  if(persistable(url)){
+    try{const j=JSON.parse(localStorage.getItem('tdxc:'+url)||'null');
+      if(j&&Date.now()-j.t<ttl){xCache[url]=j;return j.d}}catch(e){}
+  }
+  if(xInflight[url]) return xInflight[url];
+  xInflight[url]=(async()=>{
+    try{
+      const d=await tdxFetch(url);
+      xCache[url]={t:Date.now(),d};
+      if(persistable(url)){
+        try{localStorage.setItem('tdxc:'+url,JSON.stringify(xCache[url]))}
+        catch(e){pruneTdxCache(true);try{localStorage.setItem('tdxc:'+url,JSON.stringify(xCache[url]))}catch(e2){}}
+      }
+      return d;
+    }finally{delete xInflight[url]}
+  })();
+  return xInflight[url];
+}
+// 清掉過期（前一天以前）的時刻表快取
+function pruneTdxCache(all){
+  try{
+    const today=ymd(0);
+    Object.keys(localStorage).filter(k=>k.startsWith('tdxc:')).forEach(k=>{
+      const m=k.match(/\/(\d{4}-\d{2}-\d{2})\?/);
+      if(all||(m&&m[1]<today)) localStorage.removeItem(k);
+    });
+  }catch(e){}
+}
+
+// ---- 解析 ----
+function parseTHSR(data,off){
+  const list=Array.isArray(data)?data:(data?.DailyTimetables||data?.TrainTimetables||[]);
+  return list.map(x=>{
+    const no=x.DailyTrainInfo?.TrainNo||x.TrainInfo?.TrainNo||x.TrainNo;
+    const d=toMin(x.OriginStopTime?.DepartureTime||x.OriginStopTime?.ArrivalTime);
+    const a=toMin(x.DestinationStopTime?.ArrivalTime||x.DestinationStopTime?.DepartureTime);
+    if(d==null||a==null) return null;
+    let dep=d+off*1440,arr=a+off*1440;if(arr<dep)arr+=1440;
+    return {mode:'hsr',no,type:'',dep,arr};
+  }).filter(Boolean);
+}
+function traType(n){
+  if(!n) return '台鐵';
+  if(n.includes('普悠瑪')) return '普悠瑪';
+  if(n.includes('太魯閣')) return '太魯閣';
+  if(n.includes('3000')) return '自強3000';
+  if(n.includes('區間快')) return '區間快';
+  return n.split('(')[0].replace('號','')||'台鐵';
+}
+function parseTRA(data,oId,dId,off){
+  const list=data?.TrainTimetables||(Array.isArray(data)?data:[]);
+  return list.map(x=>{
+    const info=x.TrainInfo||x.DailyTrainInfo||{};
+    const st=x.StopTimes||[];
+    const o=st.find(z=>z.StationID===oId)||x.OriginStopTime;
+    const t=st.find(z=>z.StationID===dId)||x.DestinationStopTime;
+    if(!o||!t) return null;
+    const d=toMin(o.DepartureTime||o.ArrivalTime),a=toMin(t.ArrivalTime||t.DepartureTime);
+    if(d==null||a==null) return null;
+    let dep=d+off*1440,arr=a+off*1440;if(arr<dep)arr+=1440;
+    return {mode:'tra',no:String(info.TrainNo||''),type:traType(info.TrainTypeName?.Zh_tw),dep,arr};
+  }).filter(Boolean);
+}
+function mrtTrips(from,to,off){
+  const oi=STATIONS.findIndex(x=>x.c===from),di=STATIONS.findIndex(x=>x.c===to);
+  let all=parseTDXTrains(from,to)||genFallback(oi,di);
+  if(!(STATIONS[oi].ex&&STATIONS[di].ex)) all=all.filter(t=>t.t!=='e');
+  return all.map(t=>({mode:'mrt',no:'',type:t.t==='e'?'直達車':'普通車',dep:t.dep+off*1440,arr:t.arr+off*1440}));
+}
+
+// 台鐵站代碼若查無資料，改用站名比對
+async function resolveTRA(){
+  const d=await cfetch(`${TRA_BASE}/Station?$format=JSON`,864e5);
+  const list=d?.Stations||(Array.isArray(d)?d:[]);
+  const f=n=>list.find(x=>(x.StationName?.Zh_tw||'').replace('臺','台')===n)?.StationID;
+  const a=f('新左營'),b=f('屏東');
+  if(a&&b){TRA_ID={XZY:a,PT:b};return true}
+  return false;
+}
+
+async function loadHSR(o,d,days){
+  let out=[];
+  for(const off of days) out=out.concat(parseTHSR(await cfetch(`${THSR_BASE}/DailyTimetable/OD/${o}/to/${d}/${ymd(off)}?$format=JSON`,216e5),off));
+  return out.sort((a,b)=>a.dep-b.dep);
+}
+async function loadTRA(dir,days,retried){
+  const [o,d]=dir==='S'?[TRA_ID.XZY,TRA_ID.PT]:[TRA_ID.PT,TRA_ID.XZY];
+  let out=[];
+  for(const off of days) out=out.concat(parseTRA(await cfetch(`${TRA_BASE}/DailyTrainTimetable/OD/${o}/to/${d}/${ymd(off)}?$format=JSON`,216e5),o,d,off));
+  if(!out.length&&!retried&&await resolveTRA().catch(()=>false)) return loadTRA(dir,days,true);
+  return out.sort((a,b)=>a.dep-b.dep);
+}
+async function loadDelays(){
+  try{
+    const d=await cfetch(`${TRA_BASE}/TrainLiveBoard?$format=JSON`,3e4);
+    const list=d?.TrainLiveBoards||(Array.isArray(d)?d:[]);
+    const m={};list.forEach(x=>{const no=x.TrainNo||x.TrainInfo?.TrainNo;if(no!=null)m[String(no)]=Number(x.DelayTime)||0});
+    return m;
+  }catch(e){
+    try{
+      const d=await cfetch(`${TRA_V2}/LiveTrainDelay?$format=JSON`,3e4);
+      const m={};(Array.isArray(d)?d:[]).forEach(x=>{m[String(x.TrainNo)]=Number(x.DelayTime)||0});
+      return m;
+    }catch(e2){return {}}
+  }
+}
+async function loadAlerts(){
+  const out=[];
+  const pick=(l,tag)=>l.forEach(a=>{
+    const t=(a.Title||'').trim(),dsc=(a.Description||'').trim(),all=t+dsc;
+    if(!all||/正常/.test(all)) return;
+    if(tag==='台鐵'&&!/屏東|新左營|左營|高雄|西部幹線|西部|全線|南部/.test(all)) return;
+    out.push(`${tag}｜${t||dsc}`);
+  });
+  try{const d=await cfetch(`${THSR_BASE}/AlertInfo?$format=JSON`,6e4);pick(Array.isArray(d)?d:(d?.AlertInfos||[]),'高鐵')}catch(e){}
+  try{const d=await cfetch(`${TRA_BASE}/Alert?$format=JSON`,6e4);pick(d?.Alerts||(Array.isArray(d)?d:[]),'台鐵')}catch(e){}
+  return out;
+}
+
+// ---- 規劃：對每班「最後一段」列車往回找能接上的最晚班次，再取 Pareto 前緣 ----
+function planRoutes(legs,bufs,T0){
+  const n=legs.length;
+  const last=legs[n-1].filter(t=>t.dep>=T0&&t.arr<=T0+HORIZON).sort((a,b)=>a.arr-b.arr);
+  const plans=[];
+  for(const L of last){
+    const chain=[L];let need=L.dep,ok=true;
+    for(let i=n-2;i>=0;i--){
+      const lim=need-bufs[i];let best=null;
+      for(const t of legs[i]){
+        if(t.arr<=lim&&t.dep>=T0&&(!best||t.dep>best.dep||(t.dep===best.dep&&t.arr<best.arr))) best=t;
+      }
+      if(!best){ok=false;break}
+      chain.unshift(best);need=best.dep;
+    }
+    if(ok) plans.push({legs:chain,dep:chain[0].dep,arr:L.arr});
+  }
+  plans.sort((a,b)=>a.arr-b.arr||b.dep-a.dep);
+  const out=[];let maxDep=-Infinity;
+  for(const p of plans){if(p.dep>maxDep){out.push(p);maxDep=p.dep}}
+  return out.slice(0,MAX_PLANS);
+}
+
+function applyDelay(trips,delays){
+  return trips.map(t=>{
+    const dl=t.dep<1440?delays[t.no]:undefined;
+    if(dl===undefined) return {...t,live:null};
+    return {...t,live:dl,sdep:t.dep,dep:t.dep+dl,arr:t.arr+dl};
+  });
+}
+
+// ---- 主流程 ----
+async function runTransfer(){
+  const box=document.getElementById('xferCont');
+  const creds=loadCreds();
+  const home=getHome();
+  renderXferShell();
+  if(!creds.id||!creds.secret){
+    (xOnly?[xOnly]:['S','N']).forEach(k=>document.getElementById('xd'+k).innerHTML=xdHead(k)+`<div class="xd-msg">高鐵與台鐵時刻需要 TDX 金鑰。設定好之後按查詢，就會自動規劃這趟轉乘。<br><button onclick="tabAction('settings')">前往設定</button></div>`);
+    return;
+  }
+  const T0=xT0();
+  const days=(T0+HORIZON>(xDay+1)*1440)?[xDay,xDay+1]:[xDay];
+  const mrtDays=days;
+  const buf=getBuf();
+  const reqId=Date.now();runTransfer.req=reqId;
+
+  let delays={};
+  if(useTra()) try{delays=await loadDelays()}catch(e){}
+
+  const dirs=[
+    {k:'S',build:async()=>{
+      const legs=[],bufs=[],meta=[];
+      if(useMrt()){
+        const hub=mrtHub();
+        let m=[];mrtDays.forEach(o=>m=m.concat(mrtTrips(home,hub.c,o)));
+        legs.push(m.sort((a,b)=>a.dep-b.dep));meta.push(['機捷',stnName(home),hub.n]);bufs.push(buf.mh);
+      }
+      const hp=getHsrPair();
+      const hi=legs.length;legs.push(await loadHSR(hp.n,hp.s,days));meta.push(['高鐵',hsrN(hp.n),hsrN(hp.s)]);
+      if(useTra()){bufs.push(buf.ht);legs.push(applyDelay(await loadTRA('S',days),delays));meta.push(['台鐵','新左營','屏東'])}
+      return {...planPreferFast(legs,hi,bufs,T0),meta,bufs};
+    }},
+    {k:'N',build:async()=>{
+      const legs=[],bufs=[],meta=[];
+      if(useTra()){legs.push(applyDelay(await loadTRA('N',days),delays));meta.push(['台鐵','屏東','新左營']);bufs.push(buf.th)}
+      const hp=getHsrPair();
+      const hi=legs.length;legs.push(await loadHSR(hp.s,hp.n,days));meta.push(['高鐵',hsrN(hp.s),hsrN(hp.n)]);
+      if(useMrt()){
+        bufs.push(buf.hm);
+        const hub=mrtHub();
+        let m=[];mrtDays.forEach(o=>m=m.concat(mrtTrips(hub.c,home,o)));
+        legs.push(m.sort((a,b)=>a.dep-b.dep));meta.push(['機捷',hub.n,stnName(home)]);
+      }
+      return {...planPreferFast(legs,hi,bufs,T0),meta,bufs};
+    }}
+  ];
+  for(const d of dirs.filter(d=>!xOnly||d.k===xOnly)){
+    try{
+      const r=await d.build();
+      if(runTransfer.req!==reqId) return;
+      xState[d.k]={...r,T0};
+      renderDir(d.k,r,T0);
+      if(xPickPending&&xOnly===d.k){xPickPending=false;if(r.plans.length)openPlanPicker(d.k)}
+    }catch(e){
+      if(runTransfer.req!==reqId) return;
+      document.getElementById('xd'+d.k).innerHTML=xdHead(d.k)+`<div class="xd-msg">${e.message==='RATE_LIMIT'?'TDX 暫時限制查詢次數（請求太密集）。等 10 秒左右再按上方「更新」。':e.message==='NO_CREDS'?'尚未設定 TDX 金鑰。':`查詢失敗：${e.message}。按上方「更新」再試一次。`}</div>`;
+    }
+  }
+  xState.upd=new Date();
+  const u=document.getElementById('xUpd');if(u)u.textContent=`${String(xState.upd.getHours()).padStart(2,'0')}:${String(xState.upd.getMinutes()).padStart(2,'0')} 更新`;
+  loadAlerts().then(a=>{
+    if(runTransfer.req!==reqId||!a.length) return;
+    const el=document.getElementById('xAlert');
+    if(el){el.style.display='';el.innerHTML=a.slice(0,3).map(x=>x.replace(/</g,'&lt;')).join('<br>')}
+  });
+}
+
+// 高鐵車程上限：優先只用 ≤ 上限的班次；完全排不出方案時才退回全部班次
+function getHsrMax(){try{const v=parseInt(localStorage.getItem('xfer_hsrmax'));return isNaN(v)?100:v}catch(e){return 100}}
+function setHsrMax(v){const n=Math.max(0,Math.min(240,parseInt(v)||0));try{localStorage.setItem('xfer_hsrmax',String(n))}catch(e){}}
+function planPreferFast(legs,hi,bufs,T0){
+  let max=getHsrMax();
+  if(!max) return {plans:planRoutes(legs,bufs,T0),hsrMax:0,fallback:false};
+  const hp=getHsrPair();
+  if(!(hp.n==='1020'&&hp.s==='1070')&&legs[hi].length){
+    // 其他站別：以當天最快班次 +12 分鐘當上限（等同只挑快車）
+    max=Math.min(...legs[hi].map(t=>t.arr-t.dep))+12;
+  }
+  const fastLegs=legs.slice();fastLegs[hi]=legs[hi].filter(t=>t.arr-t.dep<=max);
+  const plans=planRoutes(fastLegs,bufs,T0);
+  if(plans.length) return {plans,hsrMax:max,fallback:false};
+  return {plans:planRoutes(legs,bufs,T0),hsrMax:max,fallback:true};
+}
+
+// ---- 返家 ----
+let xOnly=null,xPickPending=false;
+// 路線模式：full = 機捷＋高鐵＋台鐵；rail = 只搭高鐵＋台鐵（從高鐵桃園站起訖）
+function getXMode(){try{return localStorage.getItem('xfer_mode')||'full'}catch(e){return 'full'}}
+function setXMode(v){try{localStorage.setItem('xfer_mode',v)}catch(e){}updateHomeBtn()}
+function mrtHub(){return MRT_HUB[getHsrPair().n]||null}
+function wantMrt(){return getXMode()!=='rail'}
+function wantTra(){return getXMode()!=='mh'}
+function useMrt(){const h=mrtHub();return wantMrt()&&!!h&&getHome()!==h.c}
+function useTra(){return wantTra()&&getHsrPair().s==='1070'}
+// 選的轉乘方式與高鐵站搭不起來時的說明
+function xModeNote(){
+  const p=getHsrPair(),out=[];
+  if(wantMrt()&&!mrtHub()) out.push(`機捷只能在高鐵桃園、台北站轉乘，${hsrN(p.n)}這段不含機捷`);
+  if(wantTra()&&p.s!=='1070') out.push(`台鐵往屏東只從高鐵左營轉乘，這次到${hsrN(p.s)}為止`);
+  return out.join('；');
+}
+function getHomeDir(){try{return localStorage.getItem('xfer_homedir')||'S'}catch(e){return 'S'}}
+function setHomeDir(v){try{localStorage.setItem('xfer_homedir',v)}catch(e){}updateHomeBtn()}
+function updateHomeBtn(){
+  const w=document.getElementById('homeWrap');if(!w)return;
+  const c=loadCreds();
+  w.classList.add('show');
+  const d=getHomeDir();
+  ['S','N'].forEach(k=>{const b=document.getElementById('hd'+k);b.classList.toggle('act',k===d);b.setAttribute('aria-checked',k===d)});
+  const hp=getHsrPair(),[a,b]=d==='S'?[hp.n,hp.s]:[hp.s,hp.n];
+  document.getElementById('hsrChip').innerHTML=`<i></i>高鐵 ${HSR_NAME[a]} → ${HSR_NAME[b]}<span>更換</span>`;
+  const md=getXMode();
+  ['full','mh','rail'].forEach(k=>{const b=document.getElementById('md'+k);b.classList.toggle('act',k===md);b.setAttribute('aria-checked',k===md)});
+}
+function setPageTab(t){
+  document.body.classList.remove('tab-home','tab-xfer','tab-settings');
+  document.body.classList.add('tab-'+t);
+}
+function renderXferIntro(){
+  const c=loadCreds(),ok=c.id&&c.secret;
+  document.getElementById('xferCont').innerHTML=`<div class="empty-st"><div class="esi">🚄</div><div class="est">${ok?'規劃高鐵、台鐵轉乘':'先設定 TDX 金鑰'}</div><div class="ess">${ok?'在上方選好轉乘方式、方向、日期與出發時間<br>按查詢時刻，列出 3 個最快的列車方案':'高鐵與台鐵時刻需要 TDX 金鑰才能查詢'}</div>${ok?'':`<button class="btn-pri" style="margin:18px auto 0;max-width:200px" onclick="tabAction('settings')">前往設定</button>`}</div>`;
+}
+function goHome(){
+  const c=loadCreds();
+  if(!c.id||!c.secret){toast('請先完成 TDX 設定');tabAction('settings');return}
+  xOnly=getHomeDir();xPickPending=true;
+  currentTab='xfer';setPageTab('xfer');
+  document.querySelectorAll('.tab-item').forEach(el=>el.classList.toggle('active',el.dataset.tab==='xfer'));
+  runTransfer();
+  setTimeout(()=>{const el=document.getElementById('xferCont');window.scrollTo({top:el.offsetTop-12,behavior:'smooth'})},80);
+}
+
+// ---- 返家方案選擇（前 3 個方案） ----
+function planSummary(p,meta){
+  return p.legs.map((l,i)=>{
+    const nm=l.mode==='mrt'?`機捷${l.type==='直達車'?'直達':'普通'}`:l.mode==='hsr'?`高鐵 ${l.no}`:`${l.type} ${l.no}`;
+    return `<span class="pk-leg ${l.mode}">${hm(l.dep)} ${nm}</span>`;
+  }).join('');
+}
+function openPlanPicker(k){
+  const r=xState[k];if(!r||!r.plans.length) return;
+  const opts=r.plans.slice(0,3);
+  const minDur=Math.min(...r.plans.map(p=>p.arr-p.dep));
+  const now=nowM();
+  const dest=r.meta[r.meta.length-1][2];
+  document.getElementById('pkTitle').textContent=`${k==='S'?'南下':'北上'}返家方案・${dayFull(Math.floor(r.T0/1440))}`;
+  document.getElementById('pkList').innerHTML=opts.map((p,i)=>{
+    const d=p.arr-p.dep,wait=Math.round(p.dep-now);
+    const tags=[];
+    if(i===0) tags.push('<span class="xtag">最早抵達</span>');
+    if(d===minDur) tags.push('<span class="xtag g">最短時間</span>');
+    if(p.legs.some((l,j)=>j<p.legs.length-1&&p.legs[j+1].dep-l.arr-r.bufs[j]<3)) tags.push('<span class="xtag r">轉乘偏緊</span>');
+    return `<button class="pk-opt" onclick="choosePlan('${k}',${i})">
+      <div class="pk-top"><span class="pk-no">方案 ${i+1}</span>${tags.join('')}<span class="pk-wait">${waitLabel(p.dep)}</span></div>
+      <div class="pk-times"><span>${hmx(p.dep)}</span><span class="pk-dur">${fmtDur(d)}</span><span>${hmx(p.arr)}</span></div>
+      <div class="pk-sub"><span>出發</span><span>抵達${dest}</span></div>
+      ${stripHTML(p,'xa-strip pk-strip')}
+      <div class="pk-legs">${planSummary(p,r.meta)}</div>
+    </button>`;
+  }).join('');
+  document.getElementById('pkOv').classList.add('show');
+}
+function closePlanPicker(e){if(e&&e.target!==document.getElementById('pkOv'))return;document.getElementById('pkOv').classList.remove('show')}
+function choosePlan(k,i){
+  document.getElementById('pkOv').classList.remove('show');
+  const r=xState[k];renderDir(k,r,r.T0,i);
+  setTimeout(()=>{const el=document.getElementById('xd'+k);window.scrollTo({top:el.offsetTop-12,behavior:'smooth'})},60);
+}
+
+function stnName(c){const x=STATIONS.find(s=>s.c===c);return x?x.n:c}
+
+function renderXferShell(){
+  const home=getHome();
+  const T0=xT0(),d0=Math.floor(T0/1440);
+  document.getElementById('xferCont').innerHTML=`
+    <div class="xf-hd"><div class="xf-title">${xOnly?'返家路線':'轉乘規劃'}</div><button class="xf-upd" id="xUpd" onclick="runTransfer()">查詢中⋯</button></div>
+    <div class="xf-ctrl">
+      ${useMrt()?`<button class="xf-home" onclick="openPicker('home')"><i></i>${home} ${stnName(home)}<span class="chev">›</span></button>`:''}
+      <button class="xf-home" onclick="openHsrPicker()"><i style="background:var(--hsr)"></i>高鐵 ${HSR_NAME[getHsrPair().n]} ⇄ ${HSR_NAME[getHsrPair().s]}<span class="chev">›</span></button>
+      <button class="xf-home" onclick="window.scrollTo({top:0,behavior:'smooth'})">${dayFull(d0)} ${xTime==null&&d0===0?'現在':hm(T0)} 出發<span class="chev">›</span></button>
+    </div>
+    <div class="xlegend"><span><i style="background:var(--mrt)"></i>機捷</span><span><i style="background:var(--hsr)"></i>高鐵</span><span><i style="background:var(--tra)"></i>台鐵</span><span><i style="background:var(--wait)"></i>等車</span></div>
+    ${xModeNote()?`<div class="xf-alert">${xModeNote()}</div>`:''}
+    <div class="xf-alert" id="xAlert" style="display:none"></div>
+    ${['S','N'].filter(k=>!xOnly||k===xOnly).map(k=>`<div class="xd" id="xd${k}">${xdHead(k)}<div class="xd-load"><i></i>查詢高鐵、台鐵時刻⋯</div></div>`).join('')}
+    ${xOnly?`<button class="xf-upd" style="display:block;margin:0 auto 8px" onclick="xOnly=null;runTransfer()">也看${xOnly==='S'?'北上':'南下'}方向</button>`:''}`;
+}
+
+function xdHead(k,extra=''){
+  const home=getHome();
+  const hp=getHsrPair();
+  const t=k==='S'?`南下<small>往${useTra()?'屏東':hsrN(hp.s)}</small>`:`北上<small>回 ${useMrt()?stnName(home):hsrN(hp.n)}</small>`;
+  return `<div class="xd-hd"><div class="xd-dir">${t}</div><div class="xd-cd">${extra}</div></div>`;
+}
+
+function stripHTML(p,cls){
+  const span=p.arr-p.dep||1;let h='';let cur=p.dep;
+  p.legs.forEach(l=>{
+    if(l.dep>cur) h+=`<b class="w" style="flex:${l.dep-cur}"></b>`;
+    h+=`<b class="${l.mode}" style="flex:${Math.max(l.arr-l.dep,1)}"></b>`;cur=l.arr;
+  });
+  return `<div class="${cls}">${h}</div>`;
+}
+
+function legName(l,label){
+  if(l.mode==='mrt') return `機捷 ${l.type}`;
+  if(l.mode==='hsr') return `高鐵 ${l.no} 車次`;
+  return `${l.type} ${l.no} 車次`;
+}
+
+function timelineHTML(p,meta,bufs){
+  const colors={mrt:'var(--mrt)',hsr:'var(--hsr)',tra:'var(--tra)'};
+  let h='<div class="xtl">';
+  p.legs.forEach((l,i)=>{
+    const [,from,to]=meta[i];
+    let live='';
+    if(l.mode==='tra'){
+      if(l.live>0) live=`<span class="xdl late">晚 ${l.live} 分</span>`;
+      else if(l.live===0) live=`<span class="xdl ok">準點</span>`;
+    }
+    const sched=(l.mode==='tra'&&l.live>0)?`<small><s>${hm(l.sdep)}</s></small>`:'';
+    h+=`<div class="xleg" style="--m:${colors[l.mode]}">
+      <div class="xrow"><div class="xt">${hm(l.dep)}${sched}</div><i class="xdot"></i><div class="xs">${from}</div></div>
+      <div class="xride"><span class="xb">${legName(l)}</span><span${l.mode==='hsr'&&getHsrMax()&&l.arr-l.dep>getHsrMax()?' style="color:var(--err)"':''}>${fmtDur(l.arr-l.dep)}</span>${live}</div>
+      <div class="xrow"><div class="xt">${hm(l.arr)}</div><i class="xdot"></i><div class="xs">${to}</div></div>
+    </div>`;
+    if(i<p.legs.length-1){
+      const gap=p.legs[i+1].dep-l.arr,spare=gap-bufs[i];
+      const tight=spare<3;
+      h+=`<div class="xwalk${tight?' tight':''}">轉乘 ${fmtDur(gap)}（需 ${bufs[i]} 分${tight?'，時間偏緊':''}）</div>`;
+    }
+  });
+  return h+'</div>';
+}
+
+function renderDir(k,r,T0,sel=0){
+  const el=document.getElementById('xd'+k);
+  const {plans,meta,bufs,hsrMax,fallback}=r;
+  if(!plans.length){
+    el.innerHTML=xdHead(k)+`<div class="xd-msg">${dayFull(Math.floor(T0/1440))} ${hm(T0)} 之後 6 小時內沒有接得上的班次。試試調整出發時間，或到設定縮短轉乘時間。</div>`;
+    return;
+  }
+  if(sel>=plans.length) sel=0;
+  const best=plans[sel];
+  const minDur=Math.min(...plans.map(p=>p.arr-p.dep));
+  const tags=[];
+  if(sel===0) tags.push(`<span class="xtag">最早抵達</span>`);
+  if(sel>0) tags.push(`<span class="xtag">你選的方案</span>`);
+  if(hsrMax&&!fallback) tags.push(`<span class="xtag g">高鐵 ${fmtDur(hsrMax)}內</span>`);
+  if(best.arr-best.dep===minDur) tags.push(`<span class="xtag g">最短時間</span>`);
+  const tight=best.legs.some((l,i)=>i<best.legs.length-1&&best.legs[i+1].dep-l.arr-bufs[i]<3);
+  if(tight) tags.push(`<span class="xtag r">轉乘偏緊</span>`);
+  const nX=best.legs.length-1;
+  el.innerHTML=xdHead(k,`<span data-dep="${best.dep}"></span>`)+(xOnly===k&&plans.length>1?`<button class="xf-upd" style="display:block;margin:6px 18px 0;color:var(--copper)" onclick="openPlanPicker('${k}')">換一個方案</button>`:'')+`
+    <div class="xd-sum">
+      <div><div class="xd-lbl">出發</div><div class="xd-big">${hmx(best.dep)}</div></div>
+      <div class="xd-mid"><div class="tot">${fmtDur(best.arr-best.dep)}</div><div class="xfn">轉乘 ${nX} 次</div></div>
+      <div style="text-align:right"><div class="xd-lbl">抵達${meta[meta.length-1][2]}</div><div class="xd-big">${hmx(best.arr)}</div></div>
+    </div>
+    ${stripHTML(best,'xstrip')}
+    <div class="xd-tags">${tags.join('')}</div>
+    ${fallback?`<div class="xd-more" style="color:#F2C46B;padding-bottom:0">6 小時內沒有車程 ${fmtDur(hsrMax)}內的高鐵接得上，以下改列全部班次。</div>`:''}
+    ${timelineHTML(best,meta,bufs)}
+    ${plans.length>1?`<div class="xalts">${plans.filter(p=>p!==best).map((p,i)=>{
+      const d=p.arr-p.dep;
+      return `<div class="xalt" onclick="this.nextElementSibling.classList.toggle('show')">
+        <span class="xa-t">${hm(p.dep)} – ${hm(p.arr)}</span>${stripHTML(p,'xa-strip')}<span class="xa-d">${fmtDur(d)}${d===minDur&&best.arr-best.dep!==minDur?' 最短':''}</span>
+      </div><div class="xalt-body">${timelineHTML(p,meta,bufs)}</div>`}).join('')}</div>`:''}`;
+  tickXfer();
+}
+
+function waitLabel(dep,now=nowM()){
+  const off=Math.floor(dep/1440);
+  if(off>0) return `${dayLabel(off)} ${hm(dep)} 出發`;
+  const r=Math.round(dep-now);
+  return r>0?`${fmtDur(r)}後出發`:(r>-2?'現在出發':'已發車');
+}
+function tickXfer(){
+  const now=nowM();
+  document.querySelectorAll('[data-dep]').forEach(e=>{
+    e.textContent=waitLabel(+e.dataset.dep,now);
+  });
+}
+
+// Init
+async function init(){
+  loadF();renderF();upUI();updateClock();renderDateStrip();
+  setInterval(updateClock,30000);
+  document.getElementById('resCont').innerHTML=`<div class="empty-st"><div class="esi">🚈</div><div class="est">選擇起訖站開始查詢</div><div class="ess">選好出發站與到達站<br>按下查詢即可查看班次時刻</div></div>`;
+
+  // Auto-connect if saved creds exist
+  updateHomeBtn();pruneTdxCache();syncWhen();
+  const creds=loadCreds();
+  const wantHome=/[#?&]home\b/.test(location.hash+location.search);
+  if(creds.id&&creds.secret){
+    await connectTDX();
+    if(wantHome) goHome();
+  } else {
+    document.getElementById('heroStat').className='hero-status offline';
+  }
+}
+init();
+</script>
+</body>
+</html>
