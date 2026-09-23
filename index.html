@@ -415,7 +415,7 @@
   .stats-controls { display: flex; gap: 12px; align-items: center; }
   .period-switch { display: flex; background: var(--paper); border-radius: 10px; padding: 3px; font-weight: 500; box-shadow: var(--shadow); }
   .period-switch button { padding: 8px 16px; border: none; background: transparent; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 13px; color: var(--ink-2); }
-  .period-switch button.active { background: var(--navy-900); color: var(--gold); font-weight: 600; }
+  .period-switch button.active { background: var(--ink); color: #ffffff; font-weight: 700; }
 
   .stats-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
   .stats-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
@@ -522,14 +522,14 @@
   .fc-filter-btn { padding: 5px 12px; background: var(--paper); border: 1px solid var(--line); border-radius: 999px; font-size: 12px; color: var(--ink-2); cursor: pointer; transition: all 0.15s; font-family: inherit; white-space: nowrap; }
   .fc-filter-btn:hover { background: var(--ivory); border-color: var(--gold); color: var(--ink); }
   .fc-filter-btn.active {
-    background: #c1121f;
+    background: var(--ink);
     color: #ffffff;
-    border-color: #8f0d17;
+    border-color: var(--ink);
     font-weight: 700;
-    box-shadow: 0 4px 12px rgba(193, 18, 31, 0.4);
-    transform: translateY(-1px);
+    box-shadow: none;
+    transform: none;
   }
-  .fc-filter-btn.active .count { opacity: 0.85; color: #ffffff; }
+  .fc-filter-btn.active .count { opacity: 0.75; color: #ffffff; }
   .fc-filter-btn .count { opacity: 0.55; font-size: 10px; margin-left: 4px; font-family: 'JetBrains Mono', monospace; }
 
   /* Add flight button (chart-title) */
@@ -858,10 +858,10 @@
     .main { grid-row: 1; grid-template-rows: auto 1fr; overflow: hidden; }
 
     .topbar {
-      padding: 8px 10px;
+      padding: calc(8px + env(safe-area-inset-top, 0px)) 10px 8px;
       gap: 8px;
       height: auto;
-      min-height: 56px;
+      min-height: calc(56px + env(safe-area-inset-top, 0px));
       flex-wrap: wrap;
     }
     .terminal-badge { padding: 4px 8px; }
