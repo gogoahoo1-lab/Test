@@ -109,7 +109,7 @@ input,select,textarea{font-size:16px!important;touch-action:manipulation}
 .set-btn.pri{background:var(--copper);color:#fff}
 .set-btn.pri:hover{background:var(--copper-d)}
 .set-btn.sec{background:var(--card2);color:var(--text2);border:1px solid var(--border)}
-.set-status{margin-top:10px;padding:10px;border-radius:8px;font-size:11px;line-height:1.5;display:none}
+.set-status{margin-top:10px;padding:10px;border-radius:8px;font-size:11px;line-height:1.5;display:none;white-space:pre-wrap;word-break:break-all}
 .set-status.ok{display:block;background:rgba(107,191,123,.1);color:var(--ok)}
 .set-status.err{display:block;background:rgba(224,90,90,.1);color:var(--err)}
 .set-status.info{display:block;background:var(--copper-g2);color:var(--text2)}
@@ -441,7 +441,10 @@ async function getToken(id,secret){
     headers:{'Content-Type':'application/x-www-form-urlencoded'},
     body:`grant_type=client_credentials&client_id=${encodeURIComponent(id)}&client_secret=${encodeURIComponent(secret)}`
   });
-  if(!res.ok) throw new Error(`Auth failed: ${res.status}`);
+  if(!res.ok){
+    let why='';try{const j=await res.json();why=j.error_description||j.error||''}catch(e){}
+    throw new Error(`Auth failed: ${res.status}${why?' ('+why+')':''}`);
+  }
   const data=await res.json();
   tdxToken=data.access_token;
   tdxExpiry=Date.now()+(data.expires_in-60)*1000;
@@ -468,7 +471,8 @@ async function connectTDX(){
   // Read fields if they exist (settings page open)
   const idEl=document.getElementById('tdxId');
   const secEl=document.getElementById('tdxSecret');
-  if(idEl&&idEl.value.trim()) saveCreds(idEl.value.trim(), secEl.value.trim());
+  const clean=v=>(v||'').replace(/[\s\u200B-\u200D\uFEFF\u3000]/g,'').replace(/[\uFF01-\uFF5E]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));
+  if(idEl&&clean(idEl.value)){const i=clean(idEl.value),k=clean(secEl.value);saveCreds(i,k);idEl.value=i;secEl.value=k}
 
   const creds=loadCreds();
   if(!creds.id||!creds.secret){
@@ -497,7 +501,7 @@ async function connectTDX(){
     dot.className='hero-status err';
     if(e.message==='NO_CREDS') tdxStatusMsg='info|請先填入 TDX API 金鑰';
     else if(/Failed to fetch|NetworkError|Load failed/i.test(e.message)) tdxStatusMsg='err|✕ 連不到 TDX 伺服器（網路被擋，不是金鑰錯誤）。請把檔案下載後用手機或電腦的瀏覽器直接開啟；在 Claude 對話裡的預覽畫面無法連外。';
-    else if(/Auth failed: (400|401)/.test(e.message)) tdxStatusMsg='err|✕ 金鑰驗證失敗，請確認 Client ID 與 Client Secret 是否正確。';
+    else if(/Auth failed: (400|401)/.test(e.message)) tdxStatusMsg=`err|✕ 金鑰驗證失敗：TDX 不接受這組 Client ID／Secret。${/invalid_client|Invalid client/i.test(e.message)?'（TDX 回應：金鑰無效）':''}\n${e.message}`;
     else tdxStatusMsg=`err|✕ 連線失敗：${e.message}。`;
     // silent — header dot turns red
     updateSetStatus();
