@@ -458,14 +458,33 @@ async function getToken(id,secret){
   return tdxToken;
 }
 
-async function tdxFetch(url,tries=3){
+// TDX 有每秒呼叫上限：所有請求排隊、間隔 400ms；遇到 429 依序等 1.5／3／6 秒重試
+let tdxNext=0;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function tdxGate(){
+  const now=Date.now(),t=Math.max(now,tdxNext);
+  tdxNext=t+400;
+  if(t>now) await sleep(t-now);
+}
+async function tdxFetch(url,attempt=0){
   const creds=loadCreds();
   if(!creds.id||!creds.secret) throw new Error('NO_CREDS');
   if(!tdxToken||Date.now()>tdxExpiry) await getToken(creds.id,creds.secret);
+  await tdxGate();
   const go=()=>fetch(url,{headers:{Authorization:`Bearer ${tdxToken}`}});
   let res=await go();
-  if(res.status===401){tdxToken=null;await getToken(creds.id,creds.secret);res=await go()}
-  if(res.status===429&&tries>1){await new Promise(r=>setTimeout(r,1200));return tdxFetch(url,tries-1)}
+  if(res.status===401){tdxToken=null;await getToken(creds.id,creds.secret);await tdxGate();res=await go()}
+  if(res.status===429){
+    const waits=[1500,3000,6000];
+    if(attempt<waits.length){
+      const ra=parseInt(res.headers.get('Retry-After'));
+      const w=!isNaN(ra)?ra*1000:waits[attempt];
+      tdxNext=Math.max(tdxNext,Date.now()+w);   // 整條佇列一起暫停
+      await sleep(w);
+      return tdxFetch(url,attempt+1);
+    }
+    throw new Error('RATE_LIMIT');
+  }
   if(!res.ok) throw new Error(`API ${res.status}`);
   return res.json();
 }
@@ -1172,12 +1191,38 @@ function ymd(off){const d=new Date();d.setDate(d.getDate()+off);return `${d.getF
 function fmtDur(m){m=Math.round(m);const h=Math.floor(m/60),mm=m%60;return h?`${h}時${mm?mm+'分':''}`:`${mm}分`}
 function hmx(m){return hm(m)+(m>=1440?'<sup>翌</sup>':'')}
 
+const xInflight={};
+const persistable=u=>/DailyTimetable\/OD|DailyTrainTimetable\/OD|\/TRA\/Station\?/.test(u);
 async function cfetch(url,ttl){
   const c=xCache[url];
   if(c&&Date.now()-c.t<ttl) return c.d;
-  const d=await tdxFetch(url);
-  xCache[url]={t:Date.now(),d};
-  return d;
+  if(persistable(url)){
+    try{const j=JSON.parse(localStorage.getItem('tdxc:'+url)||'null');
+      if(j&&Date.now()-j.t<ttl){xCache[url]=j;return j.d}}catch(e){}
+  }
+  if(xInflight[url]) return xInflight[url];
+  xInflight[url]=(async()=>{
+    try{
+      const d=await tdxFetch(url);
+      xCache[url]={t:Date.now(),d};
+      if(persistable(url)){
+        try{localStorage.setItem('tdxc:'+url,JSON.stringify(xCache[url]))}
+        catch(e){pruneTdxCache(true);try{localStorage.setItem('tdxc:'+url,JSON.stringify(xCache[url]))}catch(e2){}}
+      }
+      return d;
+    }finally{delete xInflight[url]}
+  })();
+  return xInflight[url];
+}
+// 清掉過期（前一天以前）的時刻表快取
+function pruneTdxCache(all){
+  try{
+    const today=ymd(0);
+    Object.keys(localStorage).filter(k=>k.startsWith('tdxc:')).forEach(k=>{
+      const m=k.match(/\/(\d{4}-\d{2}-\d{2})\?/);
+      if(all||(m&&m[1]<today)) localStorage.removeItem(k);
+    });
+  }catch(e){}
 }
 
 // ---- 解析 ----
@@ -1233,13 +1278,13 @@ async function resolveTRA(){
 
 async function loadHSR(o,d,days){
   let out=[];
-  for(const off of days) out=out.concat(parseTHSR(await cfetch(`${THSR_BASE}/DailyTimetable/OD/${o}/to/${d}/${ymd(off)}?$format=JSON`,18e5),off));
+  for(const off of days) out=out.concat(parseTHSR(await cfetch(`${THSR_BASE}/DailyTimetable/OD/${o}/to/${d}/${ymd(off)}?$format=JSON`,216e5),off));
   return out.sort((a,b)=>a.dep-b.dep);
 }
 async function loadTRA(dir,days,retried){
   const [o,d]=dir==='S'?[TRA_ID.XZY,TRA_ID.PT]:[TRA_ID.PT,TRA_ID.XZY];
   let out=[];
-  for(const off of days) out=out.concat(parseTRA(await cfetch(`${TRA_BASE}/DailyTrainTimetable/OD/${o}/to/${d}/${ymd(off)}?$format=JSON`,18e5),o,d,off));
+  for(const off of days) out=out.concat(parseTRA(await cfetch(`${TRA_BASE}/DailyTrainTimetable/OD/${o}/to/${d}/${ymd(off)}?$format=JSON`,216e5),o,d,off));
   if(!out.length&&!retried&&await resolveTRA().catch(()=>false)) return loadTRA(dir,days,true);
   return out.sort((a,b)=>a.dep-b.dep);
 }
@@ -1351,7 +1396,7 @@ async function runTransfer(){
       renderDir(d.k,r,T0);
     }catch(e){
       if(runTransfer.req!==reqId) return;
-      document.getElementById('xd'+d.k).innerHTML=xdHead(d.k)+`<div class="xd-msg">查詢失敗：${e.message==='NO_CREDS'?'尚未設定 TDX 金鑰':e.message}。按「更新」再試一次，或到設定檢查金鑰。</div>`;
+      document.getElementById('xd'+d.k).innerHTML=xdHead(d.k)+`<div class="xd-msg">${e.message==='RATE_LIMIT'?'TDX 暫時限制查詢次數（請求太密集）。等 10 秒左右再按上方「更新」。':e.message==='NO_CREDS'?'尚未設定 TDX 金鑰。':`查詢失敗：${e.message}。按上方「更新」再試一次。`}</div>`;
     }
   }
   xState.upd=new Date();
@@ -1511,7 +1556,7 @@ async function init(){
   document.getElementById('resCont').innerHTML=`<div class="empty-st"><div class="esi">🚈</div><div class="est">按下查詢時刻</div><div class="ess">同時規劃南下屏東與北上回機捷的最快班次<br>選好機捷起訖站，還會列出機捷班次與即時追蹤</div></div>`;
 
   // Auto-connect if saved creds exist
-  updateHomeBtn();
+  updateHomeBtn();pruneTdxCache();
   const creds=loadCreds();
   const wantHome=/[#?&]home\b/.test(location.hash+location.search);
   if(creds.id&&creds.secret){
