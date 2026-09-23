@@ -241,6 +241,12 @@ input,select,textarea{font-size:16px!important;touch-action:manipulation}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 .disclaimer{text-align:center;padding:20px 24px;font-size:10px;color:var(--text3);line-height:1.6}
 
+/* 返家按鈕（hero 內） */
+.home-btn{position:relative;z-index:1;display:none;margin:18px auto 0;height:48px;padding:0 26px;border-radius:24px;border:1px solid rgba(255,255,255,.35);background:rgba(12,12,14,.35);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;align-items:center;gap:10px;-webkit-tap-highlight-color:transparent}
+.home-btn.show{display:flex}
+.home-btn:active{transform:scale(.97)}
+.home-btn small{font-size:11px;font-weight:500;color:rgba(255,255,255,.7)}
+.home-btn:focus-visible{outline:2px solid #fff;outline-offset:3px}
 /* ===== 轉乘規劃 (機捷 + 高鐵 + 台鐵) ===== */
 :root{--mrt:#A58BE3;--hsr:#FF7A3D;--tra:#6C9DF0;--wait:#3A3A40}
 .xfer{padding:8px 20px 4px}
@@ -332,6 +338,7 @@ input,select,textarea{font-size:16px!important;touch-action:manipulation}
     </div>
     <div class="date-strip" id="dateStrip"></div>
     <div class="hero-time"><div class="big" id="heroTime">--:--</div><div class="label">目前時間</div></div>
+    <button class="home-btn" id="homeBtn" onclick="goHome()"><span>🏠 返家</span><small id="homeBtnSub">往屏東最快路線</small></button>
   </div>
 
   <div class="fav-bar" id="favBar"></div>
@@ -466,6 +473,7 @@ async function tdxFetch(url,tries=3){
 let tdxStatusMsg=''; // store status message for settings page
 
 async function connectTDX(){
+  setTimeout(updateHomeBtn,0);
   const dot=document.getElementById('heroStat');
 
   // Read fields if they exist (settings page open)
@@ -509,6 +517,7 @@ async function connectTDX(){
 }
 
 function clearTDX(){
+  setTimeout(updateHomeBtn,0);
   try{localStorage.removeItem('tdx_id');localStorage.removeItem('tdx_secret')}catch(e){}
   const idEl=document.getElementById('tdxId');
   const secEl=document.getElementById('tdxSecret');
@@ -649,7 +658,7 @@ function genFallback(oi,di){
 }
 
 function search(){
-  dc=10;
+  dc=10;xOnly=null;
   if(selO!==null&&selD!==null) render(true);
   else document.getElementById('resCont').innerHTML='';
   document.getElementById('xferCont').style.display='';
@@ -1047,6 +1056,14 @@ function showSettingsPage(){
           <label>我的機捷站（南下起點、北上終點）</label>
           <select id="xHome" onchange="setHome(this.value)">${STATIONS.filter(x=>x.c!=='A18').map(x=>`<option value="${x.c}"${x.c===getHome()?' selected':''}>${x.c} ${x.n}</option>`).join('')}</select>
         </div>
+        <div class="set-row">
+          <label>返家按鈕方向</label>
+          <select onchange="setHomeDir(this.value)"><option value="S"${getHomeDir()==='S'?' selected':''}>南下：機捷 → 高鐵 → 台鐵屏東</option><option value="N"${getHomeDir()==='N'?' selected':''}>北上：台鐵屏東 → 高鐵 → 機捷</option></select>
+        </div>
+        <div class="set-row">
+          <label>高鐵車程上限（分鐘，桃園⇄左營；0 = 不限）</label>
+          <input type="number" inputmode="numeric" min="0" max="240" value="${getHsrMax()}" onchange="setHsrMax(this.value)">
+        </div>
         <div class="set-grid">
           ${[['mh','機捷 A18 → 高鐵桃園'],['ht','高鐵左營 → 台鐵新左營'],['th','台鐵新左營 → 高鐵左營'],['hm','高鐵桃園 → 機捷 A18']].map(([k,l])=>`<div class="set-row"><label>${l}</label><input type="number" inputmode="numeric" min="0" max="60" value="${getBuf()[k]}" onchange="setBuf('${k}',this.value)"></div>`).join('')}
         </div>
@@ -1146,7 +1163,7 @@ let xState={S:null,N:null,alerts:[],upd:null};
 const xCache={};
 
 function getHome(){try{return localStorage.getItem('xfer_home')||'A12'}catch(e){return 'A12'}}
-function setHome(c){try{localStorage.setItem('xfer_home',c)}catch(e){}}
+function setHome(c){try{localStorage.setItem('xfer_home',c)}catch(e){}updateHomeBtn()}
 function getBuf(){try{return Object.assign({},XFER_DEF,JSON.parse(localStorage.getItem('xfer_buf')||'{}'))}catch(e){return {...XFER_DEF}}}
 function setBuf(k,v){const b=getBuf();b[k]=Math.max(0,Math.min(60,parseInt(v)||0));try{localStorage.setItem('xfer_buf',JSON.stringify(b))}catch(e){}}
 
@@ -1291,7 +1308,7 @@ async function runTransfer(){
   const home=getHome();
   renderXferShell();
   if(!creds.id||!creds.secret){
-    ['S','N'].forEach(k=>document.getElementById('xd'+k).innerHTML=xdHead(k)+`<div class="xd-msg">高鐵與台鐵時刻需要 TDX 金鑰。設定好之後按查詢，就會自動規劃這趟轉乘。<br><button onclick="tabAction('settings')">前往設定</button></div>`);
+    (xOnly?[xOnly]:['S','N']).forEach(k=>document.getElementById('xd'+k).innerHTML=xdHead(k)+`<div class="xd-msg">高鐵與台鐵時刻需要 TDX 金鑰。設定好之後按查詢，就會自動規劃這趟轉乘。<br><button onclick="tabAction('settings')">前往設定</button></div>`);
     return;
   }
   const T0=nowM()+xOffset;
@@ -1310,23 +1327,23 @@ async function runTransfer(){
         let m=[];mrtDays.forEach(o=>m=m.concat(mrtTrips(home,MRT_HSR,o)));
         legs.push(m.sort((a,b)=>a.dep-b.dep));meta.push(['機捷',stnName(home),'A18 高鐵桃園']);bufs.push(buf.mh);
       }
-      legs.push(await loadHSR(HSR_ID.TY,HSR_ID.ZY,days));meta.push(['高鐵','高鐵桃園','高鐵左營']);bufs.push(buf.ht);
+      const hi=legs.length;legs.push(await loadHSR(HSR_ID.TY,HSR_ID.ZY,days));meta.push(['高鐵','高鐵桃園','高鐵左營']);bufs.push(buf.ht);
       legs.push(applyDelay(await loadTRA('S',days),delays));meta.push(['台鐵','新左營','屏東']);
-      return {plans:planRoutes(legs,bufs,T0),meta,bufs};
+      return {...planPreferFast(legs,hi,bufs,T0),meta,bufs};
     }},
     {k:'N',build:async()=>{
       const legs=[],bufs=[],meta=[];
       legs.push(applyDelay(await loadTRA('N',days),delays));meta.push(['台鐵','屏東','新左營']);bufs.push(buf.th);
-      legs.push(await loadHSR(HSR_ID.ZY,HSR_ID.TY,days));meta.push(['高鐵','高鐵左營','高鐵桃園']);
+      const hi=legs.length;legs.push(await loadHSR(HSR_ID.ZY,HSR_ID.TY,days));meta.push(['高鐵','高鐵左營','高鐵桃園']);
       if(home!==MRT_HSR){
         bufs.push(buf.hm);
         let m=[];mrtDays.forEach(o=>m=m.concat(mrtTrips(MRT_HSR,home,o)));
         legs.push(m.sort((a,b)=>a.dep-b.dep));meta.push(['機捷','A18 高鐵桃園',stnName(home)]);
       }
-      return {plans:planRoutes(legs,bufs,T0),meta,bufs};
+      return {...planPreferFast(legs,hi,bufs,T0),meta,bufs};
     }}
   ];
-  for(const d of dirs){
+  for(const d of dirs.filter(d=>!xOnly||d.k===xOnly)){
     try{
       const r=await d.build();
       if(runTransfer.req!==reqId) return;
@@ -1346,21 +1363,57 @@ async function runTransfer(){
   });
 }
 
+// 高鐵車程上限：優先只用 ≤ 上限的班次；完全排不出方案時才退回全部班次
+function getHsrMax(){try{const v=parseInt(localStorage.getItem('xfer_hsrmax'));return isNaN(v)?100:v}catch(e){return 100}}
+function setHsrMax(v){const n=Math.max(0,Math.min(240,parseInt(v)||0));try{localStorage.setItem('xfer_hsrmax',String(n))}catch(e){}}
+function planPreferFast(legs,hi,bufs,T0){
+  const max=getHsrMax();
+  if(!max) return {plans:planRoutes(legs,bufs,T0),hsrMax:0,fallback:false};
+  const fastLegs=legs.slice();fastLegs[hi]=legs[hi].filter(t=>t.arr-t.dep<=max);
+  const plans=planRoutes(fastLegs,bufs,T0);
+  if(plans.length) return {plans,hsrMax:max,fallback:false};
+  return {plans:planRoutes(legs,bufs,T0),hsrMax:max,fallback:true};
+}
+
+// ---- 返家 ----
+let xOnly=null;
+function getHomeDir(){try{return localStorage.getItem('xfer_homedir')||'S'}catch(e){return 'S'}}
+function setHomeDir(v){try{localStorage.setItem('xfer_homedir',v)}catch(e){}updateHomeBtn()}
+function updateHomeBtn(){
+  const b=document.getElementById('homeBtn');if(!b)return;
+  const c=loadCreds();
+  b.classList.toggle('show',!!(c.id&&c.secret));
+  document.getElementById('homeBtnSub').textContent=getHomeDir()==='S'?'往屏東最快路線':`回 ${stnName(getHome())} 最快路線`;
+}
+function goHome(){
+  const c=loadCreds();
+  if(!c.id||!c.secret){toast('請先完成 TDX 設定');tabAction('settings');return}
+  xOnly=getHomeDir();xOffset=0;
+  currentTab='home';
+  document.querySelectorAll('.tab-item').forEach(el=>el.classList.toggle('active',el.dataset.tab==='home'));
+  if(trackerInterval){clearInterval(trackerInterval);trackerInterval=null}
+  if(miniInterval){clearInterval(miniInterval);miniInterval=null}
+  document.getElementById('resCont').innerHTML='';
+  document.getElementById('xferCont').style.display='';
+  runTransfer();
+  setTimeout(()=>{const el=document.getElementById('xferCont');window.scrollTo({top:el.offsetTop-12,behavior:'smooth'})},80);
+}
+
 function stnName(c){const x=STATIONS.find(s=>s.c===c);return x?x.n:c}
 
 function renderXferShell(){
   const home=getHome();
   const offs=[[0,'現在'],[30,'+30分'],[60,'+1時'],[120,'+2時']];
   document.getElementById('xferCont').innerHTML=`
-    <div class="xf-hd"><div class="xf-title">轉乘規劃</div><button class="xf-upd" id="xUpd" onclick="runTransfer()">查詢中⋯</button></div>
+    <div class="xf-hd"><div class="xf-title">${xOnly?'返家路線':'轉乘規劃'}</div><button class="xf-upd" id="xUpd" onclick="runTransfer()">查詢中⋯</button></div>
     <div class="xf-ctrl">
       <button class="xf-home" onclick="openPicker('home')"><i></i>${home} ${stnName(home)}<span class="chev">›</span></button>
       <div class="xf-off">${offs.map(([v,l])=>`<button class="${v===xOffset?'act':''}" onclick="setXOff(${v})">${l}</button>`).join('')}</div>
     </div>
     <div class="xlegend"><span><i style="background:var(--mrt)"></i>機捷</span><span><i style="background:var(--hsr)"></i>高鐵</span><span><i style="background:var(--tra)"></i>台鐵</span><span><i style="background:var(--wait)"></i>等車</span></div>
     <div class="xf-alert" id="xAlert" style="display:none"></div>
-    <div class="xd" id="xdS">${xdHead('S')}<div class="xd-load"><i></i>查詢高鐵、台鐵時刻⋯</div></div>
-    <div class="xd" id="xdN">${xdHead('N')}<div class="xd-load"><i></i>查詢高鐵、台鐵時刻⋯</div></div>`;
+    ${['S','N'].filter(k=>!xOnly||k===xOnly).map(k=>`<div class="xd" id="xd${k}">${xdHead(k)}<div class="xd-load"><i></i>查詢高鐵、台鐵時刻⋯</div></div>`).join('')}
+    ${xOnly?`<button class="xf-upd" style="display:block;margin:0 auto 8px" onclick="xOnly=null;runTransfer()">也看${xOnly==='S'?'北上':'南下'}方向</button>`:''}`;
 }
 function setXOff(v){xOffset=v;runTransfer()}
 
@@ -1398,7 +1451,7 @@ function timelineHTML(p,meta,bufs){
     const sched=(l.mode==='tra'&&l.live>0)?`<small><s>${hm(l.sdep)}</s></small>`:'';
     h+=`<div class="xleg" style="--m:${colors[l.mode]}">
       <div class="xrow"><div class="xt">${hm(l.dep)}${sched}</div><i class="xdot"></i><div class="xs">${from}</div></div>
-      <div class="xride"><span class="xb">${legName(l)}</span><span>${fmtDur(l.arr-l.dep)}</span>${live}</div>
+      <div class="xride"><span class="xb">${legName(l)}</span><span${l.mode==='hsr'&&getHsrMax()&&l.arr-l.dep>getHsrMax()?' style="color:var(--err)"':''}>${fmtDur(l.arr-l.dep)}</span>${live}</div>
       <div class="xrow"><div class="xt">${hm(l.arr)}</div><i class="xdot"></i><div class="xs">${to}</div></div>
     </div>`;
     if(i<p.legs.length-1){
@@ -1412,7 +1465,7 @@ function timelineHTML(p,meta,bufs){
 
 function renderDir(k,r,T0){
   const el=document.getElementById('xd'+k);
-  const {plans,meta,bufs}=r;
+  const {plans,meta,bufs,hsrMax,fallback}=r;
   if(!plans.length){
     el.innerHTML=xdHead(k)+`<div class="xd-msg">${hm(T0)} 之後 6 小時內沒有接得上的班次。試試調整出發時間，或到設定縮短轉乘時間。</div>`;
     return;
@@ -1420,6 +1473,7 @@ function renderDir(k,r,T0){
   const best=plans[0];
   const minDur=Math.min(...plans.map(p=>p.arr-p.dep));
   const tags=[`<span class="xtag">最早抵達</span>`];
+  if(hsrMax&&!fallback) tags.push(`<span class="xtag g">高鐵 ${fmtDur(hsrMax)}內</span>`);
   if(best.arr-best.dep===minDur) tags.push(`<span class="xtag g">最短時間</span>`);
   const tight=best.legs.some((l,i)=>i<best.legs.length-1&&best.legs[i+1].dep-l.arr-bufs[i]<3);
   if(tight) tags.push(`<span class="xtag r">轉乘偏緊</span>`);
@@ -1432,6 +1486,7 @@ function renderDir(k,r,T0){
     </div>
     ${stripHTML(best,'xstrip')}
     <div class="xd-tags">${tags.join('')}</div>
+    ${fallback?`<div class="xd-more" style="color:#F2C46B;padding-bottom:0">6 小時內沒有車程 ${fmtDur(hsrMax)}內的高鐵接得上，以下改列全部班次。</div>`:''}
     ${timelineHTML(best,meta,bufs)}
     ${plans.length>1?`<div class="xalts">${plans.slice(1).map((p,i)=>{
       const d=p.arr-p.dep;
@@ -1456,9 +1511,12 @@ async function init(){
   document.getElementById('resCont').innerHTML=`<div class="empty-st"><div class="esi">🚈</div><div class="est">按下查詢時刻</div><div class="ess">同時規劃南下屏東與北上回機捷的最快班次<br>選好機捷起訖站，還會列出機捷班次與即時追蹤</div></div>`;
 
   // Auto-connect if saved creds exist
+  updateHomeBtn();
   const creds=loadCreds();
+  const wantHome=/[#?&]home\b/.test(location.hash+location.search);
   if(creds.id&&creds.secret){
     await connectTDX();
+    if(wantHome) goHome();
   } else {
     document.getElementById('heroStat').className='hero-status offline';
   }
