@@ -3214,10 +3214,11 @@ const Sky = (()=>{
   const cv=wrap.querySelector("canvas"), ctx=cv.getContext("2d");
 
   let tabOn=true, inView=false, pageOn=!document.hidden;
-  let code=null, G=null, tex=null, ovl=null, glow=null;
+  let code=null, G=null, tex=null, ovl=null, glow=null, glowA=null;
   let CW=0,CH=0,dpr=1,s=1,cx=0,cy=0,W=0,k=1, simT=9.2, raf=0, last=0, fmt=null, ltSec=-1, ltStr="";
 
   /* ---- 工具 ---- */
+  const ARR_IN=16;
   const pol=(b,d)=>[d*sin(b*D2R), d*cos(b*D2R)];
   const dirv=h=>[sin(h*D2R), cos(h*D2R)];
   const hs=n=>{n|=0;n=Math.imul(n^n>>>16,0x45d9f3b);n=Math.imul(n^n>>>16,0x45d9f3b);return (n^n>>>16)>>>0;};
@@ -3239,6 +3240,16 @@ const Sky = (()=>{
         ends:[{d:pad2(n1)+sx,T:T0,dir:u},{d:pad2(n2)+sx2,T:T1,dir:[-u[0],-u[1]]}]};
     });
     const tm=(c.t||[]).map(([a,p,L,Wd,H])=>({c:[a*u0[0]+p*r0[0], a*u0[1]+p*r0[1]],u:u0,rt:r0,L,Wd,H:H||.04}));
+    // 航廈與跑道保持距離：航廈邊緣到跑道中心線至少 CLR，滑行中的飛機翼尖才不會切到航廈
+    const CLR=.47;
+    for(let it=0;it<4;it++) tm.forEach(t=>rw.forEach(r=>{
+      const dx=t.c[0]-r.c[0], dy=t.c[1]-r.c[1], al=dx*r.u[0]+dy*r.u[1];
+      const hu=Math.abs(t.u[0]*r.u[0]+t.u[1]*r.u[1])*t.L/2+Math.abs(t.rt[0]*r.u[0]+t.rt[1]*r.u[1])*t.Wd/2;   // 航廈沿跑道方向半長
+      if(Math.abs(al)-hu>r.L/2+.35) return;                                    // 不在跑道範圍旁
+      const pp=dx*r.rt[0]+dy*r.rt[1], hw=Math.abs(t.u[0]*r.rt[0]+t.u[1]*r.rt[1])*t.L/2+Math.abs(t.rt[0]*r.rt[0]+t.rt[1]*r.rt[1])*t.Wd/2;
+      const need=CLR+hw-Math.abs(pp); if(need<=0) return;
+      const sg=Math.sign(pp)||1; t.c=[t.c[0]+r.rt[0]*sg*need, t.c[1]+r.rt[1]*sg*need];
+    }));
     const onField=(x,y)=>rw.some(r=>{const dx=x-r.c[0],dy=y-r.c[1];return Math.abs(dx*r.u[0]+dy*r.u[1])<r.L/2+.5&&Math.abs(dx*r.rt[0]+dy*r.rt[1])<.5;})
       ||tm.some(t=>{const dx=x-t.c[0],dy=y-t.c[1];return Math.abs(dx*t.u[0]+dy*t.u[1])<t.L/2+.35&&Math.abs(dx*t.rt[0]+dy*t.rt[1])<t.Wd/2+.35;});
     let R=3.2;
@@ -3250,6 +3261,78 @@ const Sky = (()=>{
     // 使用中跑道方向：全站共用一個風向，平行跑道同向起降
     const flow=(hs(seed)&1)?1:-1, fv=[u0[0]*flow,u0[1]*flow];
     rw.forEach(r=>{ const dp=r.u[0]*fv[0]+r.u[1]*fv[1]; r.act=(dp>0||(Math.abs(dp)<.2&&flow>0))?0:1; });
+    // 平行滑行道放在「沒有近距平行跑道」的一側，避免滑行道壓到隔壁跑道
+    rw.forEach(r=>{
+      const toC=-(r.c[0]*r.rt[0]+r.c[1]*r.rt[1]);
+      let pref=Math.sign(toC)||0;
+      if(!pref && tm[0]) pref=Math.sign((tm[0].c[0]-r.c[0])*r.rt[0]+(tm[0].c[1]-r.c[1])*r.rt[1]);
+      pref=pref||1;
+      const blocked=sg=>rw.some(o=>{ if(o===r) return false; const dh=((o.h-r.h)%180+180)%180; if(dh>15&&dh<165) return false;
+        const off=((o.c[0]-r.c[0])*r.rt[0]+(o.c[1]-r.c[1])*r.rt[1])*sg; return off>0&&off<.6; });
+      r.side=!blocked(pref)?pref:!blocked(-pref)?-pref:pref;
+    });
+    const cross=rw.some((a,i)=>rw.some((b,j)=>{ if(j<=i) return false; const dh=((a.h-b.h)%180+180)%180; return dh>15&&dh<165; }));
+    const S=rw.length===1?15:cross?12:9;     // 時間槽：單跑道 15 秒、交叉跑道 12 秒、平行跑道 9 秒
+    /* 滑行路線：地面標線與飛機動畫共用同一組幾何（跑道頭座標 al 沿跑道、pp 往右）
+       落地：減速 → 脫離道 → 平行滑行道「朝航廈方向」→ 機坪聯絡道 → 停機位
+       起飛：停機位 → 機坪聯絡道 → 平行滑行道 → 跑道頭聯絡道 → 對正 */
+    const TX=.2, VA=R*1.35/(ARR_IN-1), VX=.1, TD=.3, RAP=TX/Math.tan(Math.PI/6);
+    rw.forEach(r=>{
+      const L=r.L, en=r.ends[r.act], d=en.dir, rE=[d[1],-d[0]], sg=(r.side||1)*(r.act===0?1:-1), T=sg*TX;
+      const W=([a,p])=>[en.T[0]+d[0]*a+rE[0]*p, en.T[1]+d[1]*a+rE[1]*p];
+      const mk=pts=>{ const P=route(pts,.06), cum=[0]; for(let i=1;i<P.length;i++) cum.push(cum[i-1]+Math.hypot(P[i][0]-P[i-1][0],P[i][1]-P[i-1][1])); return {P,cum,len:cum[cum.length-1]}; };
+      // 找滑行道同側、最近的航廈，定出兩個停機位
+      let best=null, bs=1e9;
+      tm.forEach(t=>{ const dx=t.c[0]-en.T[0], dy=t.c[1]-en.T[1], tA=dx*d[0]+dy*d[1], tP=dx*rE[0]+dy*rE[1];
+        if(Math.sign(tP)!==Math.sign(T)||Math.abs(tP)<TX+.15||Math.abs(tP)>1.3||tA<-.2||tA>L+.2) return;
+        const sc=Math.abs(tP)+Math.abs(tA-L/2)*.3; if(sc<bs){bs=sc;
+          const hw=Math.abs(t.u[0]*rE[0]+t.u[1]*rE[1])*t.L/2+Math.abs(t.rt[0]*rE[0]+t.rt[1]*rE[1])*t.Wd/2;
+          const hu=Math.abs(t.u[0]*d[0]+t.u[1]*d[1])*t.L/2+Math.abs(t.rt[0]*d[0]+t.rt[1]*d[1])*t.Wd/2;
+          best={tA,sp:Math.sign(tP)*(Math.abs(tP)-hw-.1),hu}; } });
+      const EF=([x,y])=>{const dx=x-en.T[0], dy=y-en.T[1]; return [dx*d[0]+dy*d[1], dx*rE[0]+dy*rE[1]];};
+      let gates;
+      if(c.tx){   // 有指定聯絡滑行道（如 MFM 跨海滑行道）：走指定路線到機坪
+        gates=c.tx.map(pl=>{ const q=[]; for(let i=0;i<pl.length;i+=2) q.push(EF([pl[i],pl[i+1]]));
+          return {a:q[0][0], path:[[q[0][0],T],...q.slice(1)]}; });
+      } else gates=best?[best.tA-best.hu*.45,best.tA+best.hu*.45].map(a=>({a,path:[[a,T],[a,best.sp]]}))
+                       :[{a:Math.min(L-.1,Math.max(.1,L*.7)),path:[[Math.min(L-.1,Math.max(.1,L*.7)),T]]}];
+      const tail=g=>g.path;
+      // 落地路線：航廈在前方 → 30° 快速脫離道；在後方 → 垂直脫離道後回頭
+      r.arr=[];
+      gates.forEach(g=>{
+        const rap=[.45,.62].map(f=>Math.max(TD+.7,L*f)).filter(e=>e+RAP<=Math.min(L-.12,g.a-.15));
+        if(rap.length) rap.forEach(e=>{ const R0=mk([[TD,0],[e,0],[e+RAP,T],...tail(g)]); R0.Dr=e-TD; r.arr.push(R0); });
+        else { const e=Math.min(L-.06,Math.max(TD+.9,g.a+.3)); const R0=mk([[TD,0],[e,0],[e,T],...tail(g)]); R0.Dr=e-TD-.06; r.arr.push(R0); }
+      });
+      r.arr.forEach(A=>{ A.Tr=2*A.Dr/(VA+VX); A.Te=A.Tr+(A.len-A.Dr)/VX+2.5; A.end=[A.P[A.P.length-1][0]-A.P[A.P.length-2][0], A.P[A.P.length-1][1]-A.P[A.P.length-2][1]]; });
+      // 起飛路線（從停機位出發）
+      r.deps=gates.map(g=>{ const D0=mk([...g.path.slice().reverse(),[.06,T],[.06,0],[.14,0]]);
+        D0.Tt=D0.len/VX+1.2; D0.st=[D0.P[1][0]-D0.P[0][0], D0.P[1][1]-D0.P[0][1]]; return D0; });
+      // 地面標線
+      r.marks=[[[.06,T],[L-.06,T]].map(W),[[.06,0],[.06,T]].map(W),[[L-.06,0],[L-.06,T]].map(W)]
+        .concat(r.arr.map(A=>A.P.map(W)), r.deps.map(D0=>D0.P.map(W)));
+    });
+    // 水域判斷：與貼圖的水域遮罩用同一套形狀與海岸起伏，建物不會蓋在海上
+    const water=(x,y)=>{
+      let wet=false;
+      (c.w||[]).forEach((it,i)=>{
+        const tp=it[0], land="HCI".includes(tp); let inside=false;
+        if(tp==="S") inside=true;
+        else if(tp==="h"||tp==="H"){ const n=dirv(it[1]), t=x*n[1]-y*n[0]; inside=x*n[0]+y*n[1]>it[2]+wob(t,i+seed%7); }
+        else if(tp==="c"||tp==="C"){ const cc=pol(it[1],it[2]), dx=x-cc[0], dy=y-cc[1]; let a=Math.atan2(dx,dy); if(a<0) a+=Math.PI*2;
+          inside=Math.hypot(dx,dy)<it[3]+wob(a*it[3]*1.6,i+3)*1.2; }
+        else if(tp==="I"){ const pts=[];
+          rw.forEach(r=>r.ends.forEach(e=>pts.push([e.T[0]+r.rt[0]*.1,e.T[1]+r.rt[1]*.1],[e.T[0]-r.rt[0]*.1,e.T[1]-r.rt[1]*.1])));
+          if(!it[2]) tm.forEach(t=>[[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([i1,i2])=>pts.push([t.c[0]+t.u[0]*t.L/2*i1+t.rt[0]*t.Wd/2*i2, t.c[1]+t.u[1]*t.L/2*i1+t.rt[1]*t.Wd/2*i2])));
+          let a0=1e9,a1=-1e9,p0=1e9,p1=-1e9;
+          pts.forEach(q=>{const a=q[0]*u0[0]+q[1]*u0[1], p=q[0]*r0[0]+q[1]*r0[1]; a0=Math.min(a0,a);a1=Math.max(a1,a);p0=Math.min(p0,p);p1=Math.max(p1,p);});
+          const a=x*u0[0]+y*u0[1], p=x*r0[0]+y*r0[1]; inside=a>a0-it[1]&&a<a1+it[1]&&p>p0-it[1]&&p<p1+it[1]; }
+        if(inside) wet=!land;
+      });
+      return wet;
+    };
+    // 建物需整塊在陸地上（中心與四周各取一點）
+    const dry=(x,y,m)=>!water(x,y)&&!water(x+m,y)&&!water(x-m,y)&&!water(x,y+m)&&!water(x,y-m);
     const rnd=rng(seed), city=(c.c||[]).map(([b,d,r])=>({c:pol(b,d),r,ga:rnd()*90}));
     // 市區少量高樓（動態立體）
     const boxes=[];
@@ -3261,11 +3344,11 @@ const Sky = (()=>{
       const gu=dirv(ct.ga), gr=[gu[1],-gu[0]];
       for(let i=0;i<n;i++){
         const a=rnd()*Math.PI*2, d=Math.sqrt(rnd())*ct.r*.85, bx=ct.c[0]+sin(a)*d, by=ct.c[1]+cos(a)*d;
-        if(onField(bx,by)) continue;
+        if(onField(bx,by)||!dry(bx,by,.12)) continue;
         boxes.push({c:[ct.c[0]+sin(a)*d, ct.c[1]+cos(a)*d],u:gu,rt:gr,L:.07+rnd()*.1,Wd:.07+rnd()*.08,H:.03+rnd()*rnd()*.12,col:rnd()<.3?MG:CY});
       }
     });
-    return {cfg:c,cd,onField,h0,u0,r0,rw,tm,tw,R,seed,city,boxes,
+    return {cfg:c,cd,onField,dry,S,h0,u0,r0,rw,tm,tw,R,seed,city,boxes,
       mt:(c.m||[]).map(([b,d,r])=>({c:pol(b,d),r})),
       rv:(c.rv||[]).map(a=>{const p=[];for(let i=0;i<a.length;i+=2)p.push(pol(a[i],a[i+1]));return p;})};
   }
@@ -3389,7 +3472,7 @@ const Sky = (()=>{
       const n=Math.min(260, Math.round(ct.r*ct.r*45));
       for(let i=0;i<n;i++){
         const a=rnd()*Math.PI*2, d=Math.sqrt(rnd())*ct.r, x=ct.c[0]+sin(a)*d, y=ct.c[1]+cos(a)*d, bl=.04+rnd()*.09, bw=.04+rnd()*.07;
-        if(G.onField(x,y)) continue;
+        if(G.onField(x,y)||!G.dry(x,y,.08)) continue;
         g.beginPath();
         [[1,1],[1,-1],[-1,-1],[-1,1]].forEach(([i1,i2])=>g.lineTo(x+gu[0]*bl*i1+gr[0]*bw*i2, y+gu[1]*bl*i1+gr[1]*bw*i2));
         g.closePath(); g.fillStyle=`rgba(0,229,255,${.04+rnd()*.08})`; g.fill();
@@ -3411,18 +3494,15 @@ const Sky = (()=>{
       for(let i=-2;i<=2;i++){ const q=[t.c[0]+t.u[0]*i*t.L/5+t.rt[0]*(t.Wd/2+.08), t.c[1]+t.u[1]*i*t.L/5+t.rt[1]*(t.Wd/2+.08)];
         g.fillStyle="rgba(233,240,246,.55)"; g.fillRect(q[0]-px*1.5,q[1]-px*1.5,px*3,px*3); }
     });
-    /* 滑行道 */
+    /* 滑行道（與飛機滑行路線同一組幾何） */
     const rwW=Math.max(.06, 3.4/s);
-    G.rw.forEach(r=>{
-      const toC=-(r.c[0]*r.rt[0]+r.c[1]*r.rt[1]);
-      let side=Math.sign(toC)||1;
-      if(!toC && G.tm[0]) side=Math.sign((G.tm[0].c[0]-r.c[0])*r.rt[0]+(G.tm[0].c[1]-r.c[1])*r.rt[1])||1;
-      const off=side*(rwW/2+.16), tc=[r.c[0]+r.rt[0]*off, r.c[1]+r.rt[1]*off];
-      g.strokeStyle="rgba(240,167,62,.35)"; g.lineWidth=Math.max(.018,1.2*px);
-      g.beginPath(); g.moveTo(tc[0]-r.u[0]*r.L*.48, tc[1]-r.u[1]*r.L*.48); g.lineTo(tc[0]+r.u[0]*r.L*.48, tc[1]+r.u[1]*r.L*.48);
-      [-.48,-.2,.1,.48].forEach(f=>{g.moveTo(tc[0]+r.u[0]*r.L*f, tc[1]+r.u[1]*r.L*f); g.lineTo(r.c[0]+r.u[0]*r.L*f, r.c[1]+r.u[1]*r.L*f);});
-      g.stroke();
-    });
+    g.lineJoin="round"; g.lineCap="round";
+    G.rw.forEach(r=>r.marks.forEach(ln=>{
+      g.beginPath(); ln.forEach((v,i)=>i?g.lineTo(v[0],v[1]):g.moveTo(v[0],v[1]));
+      g.strokeStyle="rgba(12,26,38,.9)"; g.lineWidth=.07; g.stroke();                     // 道面
+      g.strokeStyle="rgba(240,167,62,.6)"; g.lineWidth=Math.max(.012,1.2*px); g.stroke();  // 黃色中心線
+    }));
+    g.lineCap="butt";
     /* 跨海聯絡滑行道（橋面＋黃色中心線＋藍色邊燈） */
     (G.cfg.tx||[]).forEach(pl=>{
       const tw=.11, line=()=>{g.beginPath(); g.moveTo(pl[0],pl[1]); for(let i=2;i<pl.length;i+=2) g.lineTo(pl[i],pl[i+1]);};
@@ -3475,30 +3555,184 @@ const Sky = (()=>{
 
     if(!glow){ glow=mk(32); const gg=glow.getContext("2d"), rg=gg.createRadialGradient(16,16,0,16,16,16);
       rg.addColorStop(0,"rgba(160,250,255,.9)"); rg.addColorStop(.35,"rgba(0,229,255,.35)"); rg.addColorStop(1,"rgba(0,229,255,0)");
-      gg.fillStyle=rg; gg.fillRect(0,0,32,32); }
+      gg.fillStyle=rg; gg.fillRect(0,0,32,32);
+      glowA=mk(32); const ga=glowA.getContext("2d"), ra=ga.createRadialGradient(16,16,0,16,16,16);
+      ra.addColorStop(0,"rgba(255,230,160,.95)"); ra.addColorStop(.4,"rgba(255,150,40,.4)"); ra.addColorStop(1,"rgba(255,120,0,0)");
+      ga.fillStyle=ra; ga.fillRect(0,0,32,32); }
     return true;
   }
 
-  /* ---- 航機：純粹由時間算出位置（定格畫面也能重現） ---- */
-  function path(rw,end,dep,u){
-    const en=rw.ends[end], T=en.T, d=en.dir, L=rw.L, D=G.R*1.35;
-    const at=(al,z,a)=>({x:T[0]+d[0]*al, y:T[1]+d[1]*al, z, d, a});
-    if(!dep){
-      if(u<.55){const q=u/.55, dist=D*(1-q); return at(-dist, dist*.055, Math.min(1,q/.08));}
-      if(u<.78){const q=(u-.55)/.23; return at((1-(1-q)*(1-q))*L*.55, 0, 1);}
-      if(u<.86){const q=(u-.78)/.08; return at(L*.55+q*.05, 0, 1-q);}
-      return null;
-    }
-    if(u<.08) return at(.05,0,u/.08);
-    if(u<.36){const q=(u-.08)/.28; return at(.05+q*q*L*.55, 0, 1);}
-    if(u<.9){const q=(u-.36)/.54, al=L*.6+(q*.6+q*q*.4)*D*1.1; return at(al,(al-L*.6)*.07, Math.min(1,(1-q)/.18));}
-    return null;
+  /* ---- 航機排程：時間槽依序輪用跑道；同一跑道要等前機脫離才放下一架 ----
+     每個時間槽 k 在時刻 τ=k·S 有一架次：進場機 τ 為接地、離場機 τ 為開始起飛滾行。
+     位置全由 (t−τ) 算出，不存狀態。 */
+  const DEP_OUT=17;
+  const SEP=.55;                                           // 最小間隔（km，高度差放大 3 倍計）
+  const span=o=>o.dep?[-(o.rw.deps[o.ex%o.rw.deps.length].Tt+1.5),DEP_OUT]:[-ARR_IN,o.rw.arr[o.ex%o.rw.arr.length].Te];
+  // 第 k 槽的架次：先試預定的進／離場，與前幾架有衝突就改另一種，仍衝突就這槽空著（結果快取）
+  function opAt(k){
+    if(k<-3) return null;
+    const M=G.memo||(G.memo=new Map());
+    if(M.has(k)) return M.get(k);
+    const n=G.rw.length, h=hs(k*7919+G.seed*13), rw=G.rw[((k%n)+n)%n], pref=(h%100)<45;
+    let res=null;
+    const ex=(h>>>11)%12;
+    for(const dep of [pref,!pref]){ const o={k,rw,dep,h,ex}; if(clear(o)){ res=o; break; } }
+    M.set(k,res); return res;
   }
-  function flight(slot,t,du){
-    const Pd=26, off=slot*11.3+3.1, v=t+off, n=Math.floor(v/Pd), u=(v-n*Pd)/Pd-(du||0);
-    if(u<0) return null;
-    const h=hs(n*7+slot*131+G.seed), rw=G.rw[h%G.rw.length];
-    return path(rw,rw.act,(h>>5)&1,u);
+  function clear(o){
+    const S=G.S, ta=o.k*S, [a0,a1]=span(o);
+    for(let j=1;j<=Math.ceil(75/S);j++){
+      const p=opAt(o.k-j); if(!p) continue;
+      const tb=p.k*S, [b0,b1]=span(p), lo=Math.max(ta+a0,tb+b0), hi=Math.min(ta+a1,tb+b1);
+      for(let t=lo;t<=hi;t+=.4){
+        const A=world(o,t-ta), B=world(p,t-tb);
+        if(A.a<.03||B.a<.03) continue;
+        if(Math.hypot(A.x-B.x,A.y-B.y,(A.z-B.z)*3)<SEP) return false;
+      }
+    }
+    return true;
+  }
+  function ops(t){
+    const S=G.S, out=[];
+    for(let k=Math.floor((t-60)/S); k<=Math.ceil((t+45)/S); k++){
+      const o=opAt(k); if(!o) continue;
+      const dt=t-k*S, [a0,a1]=span(o);
+      if(dt<a0||dt>a1) continue;
+      out.push({...o,dt});
+    }
+    return out;
+  }
+  const bez=(p0,p1,p2,p3,q)=>{const m=1-q,a=m*m*m,b=3*m*m*q,c=3*m*q*q,d=q*q*q;return [a*p0[0]+b*p1[0]+c*p2[0]+d*p3[0], a*p0[1]+b*p1[1]+c*p2[1]+d*p3[1]];};
+  const sm=q=>q*q*(3-2*q);
+  // 折線轉圓角路線，每 10 m 取一點
+  function route(pts,rc){
+    const out=[pts[0]];
+    const seg=(a,b)=>{const L=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.max(1,Math.ceil(L/.01)); for(let i=1;i<=n;i++) out.push([a[0]+(b[0]-a[0])*i/n, a[1]+(b[1]-a[1])*i/n]);};
+    let cur=pts[0];
+    for(let i=1;i<pts.length-1;i++){
+      const A=pts[i-1],B=pts[i],C=pts[i+1], l1=Math.hypot(B[0]-A[0],B[1]-A[1]), l2=Math.hypot(C[0]-B[0],C[1]-B[1]), r=Math.min(rc,l1*.45,l2*.45);
+      const p1=[B[0]+(A[0]-B[0])/l1*r, B[1]+(A[1]-B[1])/l1*r], p2=[B[0]+(C[0]-B[0])/l2*r, B[1]+(C[1]-B[1])/l2*r];
+      seg(cur,p1);
+      for(let k=1;k<=8;k++){ const q=k/8,m=1-q; out.push([m*m*p1[0]+2*m*q*B[0]+q*q*p2[0], m*m*p1[1]+2*m*q*B[1]+q*q*p2[1]]); }
+      cur=p2;
+    }
+    seg(cur,pts[pts.length-1]); return out;
+  }
+  function along(Rt,sd){ // 路線上弧長 sd 的位置
+    const c=Rt.cum; if(sd<=0) return Rt.P[0]; if(sd>=Rt.len) return Rt.P[Rt.P.length-1];
+    let lo=0,hi=c.length-1; while(hi-lo>1){const m=(lo+hi)>>1; if(c[m]<=sd) lo=m; else hi=m;}
+    const q=(sd-c[lo])/((c[hi]-c[lo])||1); return [Rt.P[lo][0]+(Rt.P[hi][0]-Rt.P[lo][0])*q, Rt.P[lo][1]+(Rt.P[hi][1]-Rt.P[lo][1])*q];
+  }
+  // 以「跑道頭座標」(al 沿跑道、pp 往右) 描述動作
+  function kin(o,dt){
+    const rw=o.rw, L=rw.L, D=G.R*1.35, TD=.3, VA=D/(ARR_IN-1), VX=.1;
+    if(!o.dep){
+      if(dt<0){                                            // 三度下滑道，最後 450 m 拉平
+        const dist=-dt*VA; let z=dist*.052; if(dist<.45) z=.0234*Math.pow(dist/.45,1.7);
+        return {al:TD-dist,pp:0,z,a:Math.min(1,(ARR_IN+dt)/1.5),ph:"app"};
+      }
+      const A=rw.arr[o.ex%rw.arr.length];                  // 減速滾行 → 脫離道 → 滑行道 → 停機位
+      const sd=dt<A.Tr ? VA*dt-(VA-VX)*dt*dt/(2*A.Tr) : A.Dr+VX*(dt-A.Tr), p=along(A,sd);
+      return {al:p[0],pp:p[1],z:0,a:Math.min(1,(A.Te-dt)/1.5),ph:sd<A.Dr?"roll":sd<A.Dr+.45?"exit":"taxi",hd:sd>=A.len?A.end:null};
+    }
+    const Lr=Math.min(1.9,L*.55), Tr=7, acc=2*Lr/(Tr*Tr), vLO=acc*Tr, Dp=rw.deps[o.ex%rw.deps.length], a0=.14;
+    if(dt<-1.5){ const q=dt+Dp.Tt+1.5, sd=Math.max(0,VX*(q-1.2)), p=along(Dp,sd);   // 停機位→滑行道→聯絡道→轉入跑道
+      return {al:p[0],pp:p[1],z:0,a:Math.min(1,q/1.2),ph:"taxi",hd:sd<=0?Dp.st:null}; }
+    if(dt<0)  return {al:a0,pp:0,z:0,a:1,ph:"hold"};                                     // 對正等待
+    if(dt<Tr) return {al:a0+.5*acc*dt*dt,pp:0,z:0,a:1,ph:"toroll"};                     // 加速滾行
+    const tc=dt-Tr, x=vLO*tc+.12*acc*tc*tc, z=.085*x*x/(x+.25);                          // 抬輪爬升
+    const td=(o.h>>8)&1?1:-1, st0=1.6, rho=3.2; let al=a0+Lr+x, pp=0;
+    if(x>st0){ const ph=Math.min((x-st0)/rho,.7), r=x-st0-rho*ph;                        // 離場轉彎
+      al=a0+Lr+st0+rho*Math.sin(ph)+r*Math.cos(ph); pp=td*(rho*(1-Math.cos(ph))+r*Math.sin(ph)); }
+    return {al,pp,z,a:Math.min(1,(DEP_OUT-dt)/2.5),ph:"air"};
+  }
+  function world(o,dt){
+    const k=kin(o,dt), en=o.rw.ends[o.rw.act], d=en.dir, r=[d[1],-d[0]];
+    let hw=k.hd?[d[0]*k.hd[0]+r[0]*k.hd[1], d[1]*k.hd[0]+r[1]*k.hd[1]]:d; const hn=Math.hypot(hw[0],hw[1])||1; hw=[hw[0]/hn,hw[1]/hn];   // 靜止時的機頭方向
+    return {x:en.T[0]+d[0]*k.al+r[0]*k.pp, y:en.T[1]+d[1]*k.al+r[1]*k.pp, z:k.z, a:Math.max(0,k.a), ph:k.ph, d:hw};
+  }
+
+  /* ---- 機身圖形：x 向機頭、+y 向右翼，套用地面透視 ---- */
+  const GLY=[[8.5,0],[6.5,.9],[2,1.3],[-1.2,5.2],[-3,5.2],[-2,1.3],[-6,1.1],[-7.5,2.8],[-8.7,2.8],[-7.6,0],[-8.7,-2.8],[-7.5,-2.8],[-6,-1.1],[-2,-1.3],[-3,-5.2],[-1.2,-5.2],[2,-1.3],[6.5,-.9]];
+  function glyph(){ ctx.beginPath(); GLY.forEach(v=>ctx.lineTo(v[0],v[1])); ctx.closePath(); }
+  function glyphT(q,hd,sc){
+    const fx=hd[0]*ct-hd[1]*st, fy=-TILT*(hd[0]*st+hd[1]*ct),         // 機頭方向（畫面）
+          rx=hd[1]*ct+hd[0]*st, ry=-TILT*(hd[1]*st-hd[0]*ct);       // 右翼方向（畫面）
+    ctx.setTransform(dpr*sc*fx, dpr*sc*fy, dpr*sc*rx, dpr*sc*ry, dpr*q[0], dpr*q[1]);
+  }
+
+  /* ---- 3D 飛機模型（機長=1，x 向機頭、y 向右翼、z 向上） ---- */
+  const MODEL=(()=>{
+    const M=[], N=8, WHT=[233,244,251], GRY=[202,214,224], ENG=[184,198,210], DRK=[22,34,46], GLD=[220,192,134];
+    const tube=(sec,ref,col,y0=0,capCol)=>{
+      const R=sec.map(([x,r,zc])=>Array.from({length:N},(_,j)=>{const a=j/N*Math.PI*2; return [x, y0+r*cos(a), zc+r*sin(a)];}));
+      for(let i=0;i<sec.length-1;i++) for(let j=0;j<N;j++){ const j2=(j+1)%N;
+        M.push({p:[R[i][j],R[i][j2],R[i+1][j2],R[i+1][j]], ref:[(sec[i][0]+sec[i+1][0])/2,y0,(sec[i][2]+sec[i+1][2])/2], col}); }
+      if(capCol) M.push({p:R[0].slice().reverse(), ref:[sec[0][0]-.05,y0,sec[0][2]], col:capCol});
+      M.push({p:R[R.length-1], ref:[sec[sec.length-1][0]+.05,y0,sec[sec.length-1][2]], col});
+    };
+    // 機身：機鼻→機尾（尾段上翹）
+    tube([[.5,.003,0],[.46,.03,0],[.39,.05,0],[.26,.06,0],[-.22,.06,0],[-.36,.047,.013],[-.46,.028,.027],[-.52,.01,.036]],null,WHT);
+    // 發動機（左右各一，前方進氣口為暗色）
+    [-1,1].forEach(sd=>tube([[.13,.03,-.066],[.11,.034,-.066],[-.02,.03,-.066],[-.04,.022,-.064]],null,ENG,sd*.17,DRK));
+    // 主翼（下單翼、上反角）、水平尾翼、垂直尾翼（金色）
+    [-1,1].forEach(sd=>{
+      M.push({p:[[.13,sd*.05,-.034],[-.17,sd*.4,.008],[-.235,sd*.4,.008],[-.09,sd*.05,-.034]],col:GRY,two:1,edge:1});
+      M.push({p:[[.13,sd*.05,-.044],[-.17,sd*.4,0],[-.235,sd*.4,0],[-.09,sd*.05,-.044]],col:GRY,two:1});
+      M.push({p:[[-.37,sd*.03,.03],[-.45,sd*.16,.04],[-.5,sd*.16,.04],[-.475,sd*.03,.03]],col:GRY,two:1,edge:1});
+    });
+    M.push({p:[[-.3,0,.05],[-.445,0,.235],[-.515,0,.235],[-.5,0,.04]],col:GLD,two:1,edge:1,amb:.62});
+    return M;
+  })();
+  const LGT=(()=>{const v=[-.33,.42,.84], l=Math.hypot(...v); return v.map(x=>x/l);})();
+  function plane3d(f,t){
+    const {o,p,hd}=f, sc=1+p.z*.9, Lp=22*sc/s, CE=Math.sqrt(1-TILT*TILT);
+    // 俯仰：進場約 3°、拉平 6°、抬輪 0→9°、爬升 10°、落地後機鼻放下
+    let pit=0;
+    if(p.ph==="app") pit=3+3*Math.max(0,1-p.z/.0234);
+    else if(p.ph==="roll"&&o.dt<1.2) pit=6*(1-o.dt/1.2);
+    else if(p.ph==="toroll"&&o.dt>6.2) pit=9*(o.dt-6.2)/.8;
+    else if(p.ph==="air") pit=Math.min(10,9+o.dt-7);
+    // 坡度：依航向變化率（僅空中）
+    let bank=0;
+    if(p.z>.01){ const a=world(o,o.dt+.2), b=world(o,o.dt+.5);
+      const h1=[a.x-p.x,a.y-p.y], h2=[b.x-a.x,b.y-a.y], l1=Math.hypot(...h1)||1, l2=Math.hypot(...h2)||1;
+      const cr=(h1[0]*h2[1]-h1[1]*h2[0])/(l1*l2);
+      bank=Math.max(-25,Math.min(25,-cr/.3*115)); }
+    const cp=cos(pit*D2R), sp=sin(pit*D2R), cb=cos(bank*D2R), sb=sin(bank*D2R);
+    const F=[hd[0]*cp,hd[1]*cp,sp], R0=[hd[1],-hd[0],0], U0=[-hd[0]*sp,-hd[1]*sp,cp];
+    const Rt=[R0[0]*cb-U0[0]*sb, R0[1]*cb-U0[1]*sb, -U0[2]*sb], U=[U0[0]*cb+R0[0]*sb, U0[1]*cb+R0[1]*sb, U0[2]*cb];
+    const W=v=>[F[0]*v[0]+Rt[0]*v[1]+U[0]*v[2], F[1]*v[0]+Rt[1]*v[1]+U[1]*v[2], F[2]*v[0]+Rt[2]*v[1]+U[2]*v[2]];
+    const scr=w=>P(p.x+w[0]*Lp, p.y+w[1]*Lp, p.z+w[2]*Lp*CE/ZS);
+    const Vc=[-st*CE,-ct*CE,TILT], list=[];
+    MODEL.forEach(m=>{
+      const wp=m.p.map(W); let nx=0,ny=0,nz=0,cx0=0,cy0=0,cz0=0;
+      for(let i=0;i<wp.length;i++){ const c=wp[i], n=wp[(i+1)%wp.length];
+        nx+=(c[1]-n[1])*(c[2]+n[2]); ny+=(c[2]-n[2])*(c[0]+n[0]); nz+=(c[0]-n[0])*(c[1]+n[1]);
+        cx0+=c[0]; cy0+=c[1]; cz0+=c[2]; }
+      const nl=Math.hypot(nx,ny,nz); if(nl<1e-9) return;
+      nx/=nl; ny/=nl; nz/=nl; cx0/=wp.length; cy0/=wp.length; cz0/=wp.length;
+      if(m.ref){ const r=W(m.ref); if((cx0-r[0])*nx+(cy0-r[1])*ny+(cz0-r[2])*nz<0){nx=-nx;ny=-ny;nz=-nz;}
+        if(nx*Vc[0]+ny*Vc[1]+nz*Vc[2]<=0) return; }                 // 背面剔除
+      else if(nx*Vc[0]+ny*Vc[1]+nz*Vc[2]<0){nx=-nx;ny=-ny;nz=-nz;}
+      const am=m.amb||.36, lum=am+(1-am)*Math.max(0,nx*LGT[0]+ny*LGT[1]+nz*LGT[2]);
+      list.push({q:wp.map(scr), key:(cx0*st+cy0*ct)*CE-cz0*TILT, m, lum});
+    });
+    list.sort((a,b)=>b.key-a.key);
+    ctx.lineJoin="round";
+    list.forEach(({q,m,lum})=>{
+      ctx.beginPath(); q.forEach(v=>ctx.lineTo(v[0],v[1])); ctx.closePath();
+      const c=`rgb(${m.col[0]*lum|0},${m.col[1]*lum|0},${m.col[2]*lum|0})`;
+      ctx.fillStyle=c; ctx.fill(); ctx.strokeStyle=c; ctx.lineWidth=.5; ctx.stroke();
+      if(m.edge){ ctx.strokeStyle="rgba(0,229,255,.55)"; ctx.lineWidth=.6; ctx.stroke(); }
+    });
+    // 燈光：翼尖紅綠（閃爍）、白色頻閃、機背防撞紅燈
+    const dot=(v,col,r)=>{ const q=scr(W(v)); ctx.fillStyle=col; ctx.beginPath(); ctx.arc(q[0],q[1],r,0,Math.PI*2); ctx.fill(); };
+    if(Math.floor(t*2.5+o.k)%2){ dot([-.205,-.4,.008],"#FF3B3B",1.2); dot([-.205,.4,.008],"#39FF6A",1.2); }
+    const sp2=(t+o.k*.37)%1.2;
+    if(p.ph!=="taxi"&&p.ph!=="exit"&&(sp2<.05||(sp2>.14&&sp2<.19))){
+      dot([-.21,-.41,.008],"#fff",1.5); dot([-.21,.41,.008],"#fff",1.5); dot([-.53,0,.036],"#fff",1.3); }
+    if(Math.sin(t*6+o.k)>.6) dot([.05,0,.066],"#FF3030",1.1);
   }
 
   /* ---- 立體方塊：航廈、塔台、市區高樓 ---- */
@@ -3579,26 +3813,46 @@ const Sky = (()=>{
         ctx.fillRect(q[0]-(on?1.6:.9), q[1]-(on?1.6:.9), on?3.2:1.8, on?3.2:1.8); }
     }));
     ctx.globalCompositeOperation="source-over";
-    // 航機影子
-    const fl=[0,1,2].map(i=>flight(i,t)).map((p,i)=>p&&{p,i});
-    fl.forEach(o=>{ if(!o) return; const q=P(o.p.x,o.p.y,0);
-      ctx.fillStyle=`rgba(0,0,0,${.45*o.p.a})`; ctx.beginPath(); ctx.ellipse(q[0],q[1],5,2.2,0,0,Math.PI*2); ctx.fill(); });
+    // 航機：先算好位置與機頭方向，由遠到近排序
+    const fl=ops(t).map(o=>{
+      const p=world(o,o.dt), p2=world(o,o.dt+.08);
+      let hx=p2.x-p.x, hy=p2.y-p.y, hl=Math.hypot(hx,hy);
+      if(hl<1e-5){ hx=p.d[0]; hy=p.d[1]; hl=1; }
+      return {o,p,hd:[hx/hl,hy/hl]};
+    }).filter(f=>f.p.a>.01).sort((m,n)=>depth(n.p.x,n.p.y)-depth(m.p.x,m.p.y));
+    // 影子：貼地、依高度變淡
+    fl.forEach(f=>{ const p=f.p, q=P(p.x,p.y,0);
+      glyphT(q,f.hd,1.0); ctx.fillStyle=`rgba(0,0,0,${.5*p.a*Math.max(.2,1-p.z*2.2)})`; glyph(); ctx.fill();
+      ctx.setTransform(dpr,0,0,dpr,0,0); });
     // 立體建物（由遠到近）
     G.boxes.slice().sort((m,n)=>depth(n.c[0],n.c[1])-depth(m.c[0],m.c[1])).forEach(bx=>box(bx,t));
-    // 航機、尾跡
-    fl.forEach(o=>{ if(!o) return; const p=o.p, q=P(p.x,p.y,p.z);
-      ctx.strokeStyle=`rgba(0,229,255,${.5*p.a})`; ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(q[0],q[1]);
-      for(let j=1;j<=6;j++){ const pp=flight(o.i,t,j*.004); if(!pp) break; const qq=P(pp.x,pp.y,pp.z); ctx.lineTo(qq[0],qq[1]); }
-      ctx.stroke();
-      const q2=P(p.x+p.d[0]*.1, p.y+p.d[1]*.1, p.z), ang=Math.atan2(q2[1]-q[1], q2[0]-q[0]);
-      ctx.globalCompositeOperation="lighter"; ctx.globalAlpha=p.a; ctx.drawImage(glow,q[0]-14,q[1]-14,28,28);
-      ctx.globalCompositeOperation="source-over";
-      ctx.save(); ctx.translate(q[0],q[1]); ctx.rotate(ang);
-      ctx.fillStyle="#EFFFFF"; ctx.beginPath();
-      [[8,0],[2,1.3],[-1,6.5],[-3,6.5],[-2,1.3],[-6,1.1],[-7.5,3.4],[-8.5,3.4],[-7.5,0],[-8.5,-3.4],[-7.5,-3.4],[-6,-1.1],[-2,-1.3],[-3,-6.5],[-1,-6.5],[2,-1.3]].forEach(v=>ctx.lineTo(v[0],v[1]));
-      ctx.closePath(); ctx.fill();
-      if(Math.floor(t*2.5+o.i)%2){ ctx.fillStyle=MG; ctx.fillRect(-2,6,1.6,1.6); ctx.fillRect(-2,-7.6,1.6,1.6); }
-      ctx.restore(); ctx.globalAlpha=1;
+    // 接地輪胎煙
+    fl.forEach(f=>{ const o=f.o; if(o.dep||o.dt<0||o.dt>1.4) return;
+      const q=P(f.p.x,f.p.y,0), k=o.dt/1.4, en=o.rw.ends[o.rw.act], tdp=P(en.T[0]+en.dir[0]*.3, en.T[1]+en.dir[1]*.3, 0);
+      for(let i=0;i<3;i++){ const r=2+k*(7+i*3); ctx.fillStyle=`rgba(210,225,235,${.35*(1-k)/(i+1)})`;
+        ctx.beginPath(); ctx.ellipse(tdp[0]+(q[0]-tdp[0])*.15*i, tdp[1]+(q[1]-tdp[1])*.15*i, r, r*TILT, 0,0,Math.PI*2); ctx.fill(); }
+    });
+    // 航機本體
+    fl.forEach(f=>{
+      const {o,p,hd}=f, q=P(p.x,p.y,p.z), sc=1+p.z*.9, air=p.z>.004;
+      // 空中尾跡
+      if(air){ ctx.lineWidth=1.1; ctx.beginPath(); ctx.moveTo(q[0],q[1]);
+        for(let j=1;j<=10;j++){ const pp=world(o,o.dt-j*.22); if(pp.z<=.002&&!o.dep) break; const qq=P(pp.x,pp.y,pp.z); ctx.lineTo(qq[0],qq[1]); if(pp.z<=.002) break; }
+        ctx.strokeStyle=`rgba(0,229,255,${.4*p.a})`; ctx.stroke(); }
+      ctx.globalCompositeOperation="lighter";
+      // 落地燈：進場、滾行、起飛初段
+      if(p.ph==="app"||p.ph==="roll"||p.ph==="toroll"||(p.ph==="air"&&p.z<.25)){
+        const n=P(p.x+hd[0]*.09, p.y+hd[1]*.09, p.z);
+        ctx.globalAlpha=.85*p.a; ctx.drawImage(glow,n[0]-11,n[1]-11,22,22); }
+      // 起飛推力噴流
+      if(p.ph==="toroll"||(p.ph==="air"&&o.dt<9)){
+        const bq=P(p.x-hd[0]*.06, p.y-hd[1]*.06, p.z);
+        ctx.globalAlpha=.55*p.a; ctx.drawImage(glowA,bq[0]-8,bq[1]-8,16,16); }
+      ctx.globalAlpha=p.a*.5; ctx.drawImage(glow,q[0]-12,q[1]-12,24,24);
+      ctx.globalCompositeOperation="source-over"; ctx.globalAlpha=p.a;
+      // 立體機身（3D 多邊形＋光影＋俯仰／坡度）
+      plane3d(f,t);
+      ctx.globalAlpha=1;
     });
     ctx.setTransform(1,0,0,1,0,0); ctx.drawImage(ovl,0,0);
     ctx.setTransform(dpr,0,0,dpr,0,0); rwyTags();   // 疊在霧化層之上，遠端也清楚
