@@ -403,6 +403,27 @@ body:not(.tab-xfer) .hero-time{margin-bottom:0}
 .pk-legs{display:flex;flex-wrap:wrap;gap:6px}
 .pk-leg{font-size:11px;padding:3px 8px;border-radius:6px;background:rgba(255,255,255,.05);border-left:3px solid var(--text3);font-variant-numeric:tabular-nums}
 .pk-leg.mrt{border-color:var(--mrt)}.pk-leg.hsr{border-color:var(--hsr)}.pk-leg.tra{border-color:var(--tra)}
+.xall{border-top:1px solid var(--border)}
+.xall-hd{width:100%;display:flex;align-items:center;gap:8px;padding:14px 18px;background:none;border:none;color:var(--text);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left}
+.xall-hd span{font-size:11px;color:var(--text3);font-weight:500}
+.xall-hd i{margin-left:auto;font-style:normal;color:var(--text3);transition:transform .2s}
+.xall-hd[aria-expanded="true"] i{transform:rotate(90deg)}
+.xall-body{display:none}
+.xall-body.show{display:block}
+.xh-row{display:flex;gap:14px;padding:11px 18px;border-top:1px solid var(--border);cursor:pointer}
+.xh-row:hover{background:var(--copper-g2)}
+.xh-row.dim{cursor:default}
+.xh-row.dim:hover{background:none}
+.xh-row.dim .xh-t,.xh-row.dim .xh-top{opacity:.45}
+.xh-t{width:46px;flex-shrink:0;font-variant-numeric:tabular-nums;text-align:right}
+.xh-t b{display:block;font-size:15px;font-weight:600}
+.xh-t span{font-size:11px;color:var(--text3)}
+.xh-m{flex:1;min-width:0}
+.xh-top{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;flex-wrap:wrap}
+.xh-top>span:first-child{font-size:11px;color:var(--text3);font-weight:500}
+.xh-sub{font-size:11px;color:var(--text2);margin-top:3px;line-height:1.6}
+.xh-why{color:var(--err)}
+.xh-note{color:var(--text3)}
 @media (prefers-reduced-motion:reduce){.xd-load i{animation:none}}
 </style>
 </head>
@@ -1646,7 +1667,7 @@ async function runTransfer(){
       const hp=getHsrPair();
       const hi=legs.length;legs.push(await loadHSR(hp.n,hp.s,days));meta.push(['高鐵',hsrN(hp.n),hsrN(hp.s)]);
       if(useTra()){bufs.push(buf.ht);legs.push(applyDelay(await loadTRA('S',days),delays));meta.push(['台鐵','新左營','屏東'])}
-      return {...planPreferFast(legs,hi,bufs,T0),meta,bufs,missing:meta.filter((m,i)=>!legs[i].length).map(m=>m[0])};
+      return {...planPreferFast(legs,hi,bufs,T0),meta,bufs,missing:meta.filter((m,i)=>!legs[i].length).map(m=>m[0]),legs,hi};
     }},
     {k:'N',build:async()=>{
       const legs=[],bufs=[],meta=[];
@@ -1659,7 +1680,7 @@ async function runTransfer(){
         let m=[];mrtDays.forEach(o=>m=m.concat(mrtTrips(hub.c,home,o)));
         legs.push(m.sort((a,b)=>a.dep-b.dep));meta.push(['機捷',hub.n,stnName(home)]);
       }
-      return {...planPreferFast(legs,hi,bufs,T0),meta,bufs,missing:meta.filter((m,i)=>!legs[i].length).map(m=>m[0])};
+      return {...planPreferFast(legs,hi,bufs,T0),meta,bufs,missing:meta.filter((m,i)=>!legs[i].length).map(m=>m[0]),legs,hi};
     }}
   ];
   for(const d of dirs.filter(d=>!xOnly||d.k===xOnly)){
@@ -1859,7 +1880,7 @@ function renderDir(k,r,T0,sel=0){
     return;
   }
   if(!plans.length){
-    el.innerHTML=xdHead(k)+`<div class="xd-msg">${dayFull(Math.floor(T0/1440))} ${hm(T0)} 之後 6 小時內沒有接得上的班次。試試調整出發時間，或到設定縮短轉乘時間。</div>`;
+    el.innerHTML=xdHead(k)+`<div class="xd-msg">${dayFull(Math.floor(T0/1440))} ${hm(T0)} 之後 6 小時內沒有接得上的班次。試試調整出發時間，或到設定縮短轉乘時間。</div>`+allHsrHTML(k,r,T0);
     return;
   }
   if(sel>=plans.length) sel=0;
@@ -1887,7 +1908,8 @@ function renderDir(k,r,T0,sel=0){
       const d=p.arr-p.dep;
       return `<div class="xalt" onclick="this.nextElementSibling.classList.toggle('show')">
         <span class="xa-t">${hm(p.dep)} – ${hm(p.arr)}</span>${stripHTML(p,'xa-strip')}<span class="xa-d">${fmtDur(d)}${d===minDur&&best.arr-best.dep!==minDur?' 最短':''}</span>
-      </div><div class="xalt-body">${timelineHTML(p,meta,bufs)}</div>`}).join('')}</div>`:''}`;
+      </div><div class="xalt-body">${timelineHTML(p,meta,bufs)}</div>`}).join('')}</div>`:''}
+    ${allHsrHTML(k,r,T0)}`;
   tickXfer();
 }
 
@@ -1897,6 +1919,64 @@ function waitLabel(dep,now=nowM()){
   const r=Math.round(dep-now);
   return r>0?`${fmtDur(r)}後出發`:(r>-2?'現在出發':'已發車');
 }
+// ---- 全部高鐵班次：每班能不能接、沒列入方案的原因 ----
+function chainAround(legs,hi,bufs,meta,T0,h){
+  const n=legs.length,chain=[];chain[hi]=h;
+  let need=h.dep;
+  for(let i=hi-1;i>=0;i--){
+    const lim=need-bufs[i];let best=null,early=null;
+    for(const t of legs[i]){
+      if(t.dep<T0) continue;
+      if(!early||t.arr<early.arr) early=t;
+      if(t.arr<=lim&&(!best||t.dep>best.dep)) best=t;
+    }
+    if(!best) return {why:early?`${meta[i][0]}最快 ${hm(early.arr)} 才到 ${meta[i][2]}，含轉乘 ${bufs[i]} 分趕不上`:`${hm(T0)} 之後沒有${meta[i][0]}可接`};
+    chain[i]=best;need=best.dep;
+  }
+  let ready=h.arr;
+  for(let i=hi+1;i<n;i++){
+    ready+=bufs[i-1];let best=null;
+    for(const t of legs[i]) if(t.dep>=ready&&(!best||t.arr<best.arr)) best=t;
+    if(!best) return {why:`之後沒有${meta[i][0]}可接`};
+    chain[i]=best;ready=best.arr;
+  }
+  return {plan:{legs:chain,dep:chain[0].dep,arr:chain[n-1].arr}};
+}
+function allHsrHTML(k,r,T0){
+  if(!r.legs||r.hi==null) return '';
+  const {legs,hi,bufs,meta,plans,hsrMax}=r;
+  const trains=legs[hi].filter(h=>h.dep>=T0&&h.dep<=T0+HORIZON).sort((a,b)=>a.dep-b.dep);
+  if(!trains.length) return '';
+  const dest=meta[meta.length-1][2];
+  const rows=trains.map(h=>{
+    const res=chainAround(legs,hi,bufs,meta,T0,h);
+    const dur=h.arr-h.dep,slow=hsrMax&&dur>hsrMax;
+    const pi=plans.findIndex(p=>p.legs[hi]===h);
+    const tags=[];
+    if(pi>=0) tags.push(`<span class="xtag">方案 ${pi+1}</span>`);
+    if(slow) tags.push(`<span class="xtag r">慢車</span>`);
+    let sub,cls='';
+    if(res.why){sub=`<span class="xh-why">${res.why}</span>`;cls=' dim'}
+    else{
+      const p=res.plan;
+      const pre=hi>0?`${meta[0][0]} ${hm(p.dep)} 出發・`:'';
+      sub=`${pre}抵達${dest} ${hmx(p.arr)}`;
+      if(pi<0){
+        const better=plans.find(q=>q.dep>=p.dep&&q.arr<=p.arr);
+        if(better) sub+=`<br><span class="xh-note">${hm(better.dep)} 出發也能 ${hm(better.arr)} 到，所以沒列入方案</span>`;
+        else if(slow) sub+=`<br><span class="xh-note">車程 ${fmtDur(dur)} 超過上限 ${fmtDur(hsrMax)}，所以沒列入方案</span>`;
+        else sub+=`<br><span class="xh-note">排在前 ${MAX_PLANS} 個方案之後</span>`;
+      }
+    }
+    const body=res.plan?`<div class="xalt-body">${timelineHTML(res.plan,meta,bufs)}</div>`:'';
+    return `<div class="xh-row${cls}"${res.plan?` onclick="this.nextElementSibling.classList.toggle('show')"`:''}>
+      <div class="xh-t"><b>${hm(h.dep)}</b><span>${hm(h.arr)}</span></div>
+      <div class="xh-m"><div class="xh-top">高鐵 ${h.no}<span>${fmtDur(dur)}</span>${tags.join('')}</div><div class="xh-sub">${sub}</div></div>
+    </div>${body}`;
+  }).join('');
+  return `<div class="xall"><button class="xall-hd" aria-expanded="false" onclick="const b=this.nextElementSibling;b.classList.toggle('show');this.setAttribute('aria-expanded',b.classList.contains('show'))">全部高鐵班次<span>${trains.length} 班・${meta[hi][1].replace('高鐵','')} → ${meta[hi][2].replace('高鐵','')}</span><i>›</i></button><div class="xall-body">${rows}</div></div>`;
+}
+
 function tickXfer(){
   const now=nowM();
   document.querySelectorAll('[data-dep]').forEach(e=>{
