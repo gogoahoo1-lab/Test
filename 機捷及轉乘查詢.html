@@ -360,6 +360,17 @@ body:not(.tab-xfer) .hero-time{margin-bottom:0}
 .xb{font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;color:#0C0C0E;background:var(--m)}
 .xdl{font-size:10px;font-weight:600}
 .xdl.ok{color:var(--ok)}.xdl.late{color:var(--err)}
+.xopt{margin:0 0 10px 82px;padding:8px 10px 6px;border-radius:10px;background:rgba(108,157,240,.06);border:1px solid rgba(108,157,240,.18)}
+.xopt-tt{font-size:10px;color:var(--text3);margin-bottom:4px}
+.xopt-r{display:grid;grid-template-columns:26px 38px 1fr auto;align-items:center;column-gap:6px;font-size:12px;color:var(--text2);padding:3px 0;font-variant-numeric:tabular-nums}
+.xopt-tr{display:flex;align-items:center;gap:4px;min-width:0;white-space:nowrap;overflow:hidden}
+.xopt-a{text-align:right;white-space:nowrap}
+.xopt-a small{display:block;font-size:9px;color:var(--text3);line-height:1}
+.xopt-r b{font-weight:600;color:var(--text2)}
+.xopt-r.on b,.xopt-r.on .xopt-a{color:var(--text)}
+.xopt-n{font-size:10px;font-weight:700;color:var(--text3);width:30px}
+.xopt-r.on .xopt-n{color:var(--tra)}
+.xopt-no{color:var(--text3);font-size:11px}
 .xwalk{position:relative;padding:8px 0 8px 82px;font-size:11px;color:var(--text3)}
 .xwalk::before{content:'';position:absolute;left:62px;top:2px;bottom:2px;border-left:3px dotted var(--text3);opacity:.6}
 .xwalk.tight{color:var(--err)}
@@ -1851,7 +1862,30 @@ function legName(l,label){
   return `${l.type} ${l.no} 車次`;
 }
 
-function timelineHTML(p,meta,bufs){
+// 台鐵段的前 3 個選擇：南下＝下高鐵後最早到屏東的 3 班；北上＝還接得上這班高鐵、最晚出發的 3 班
+function traOptionsHTML(p,i,meta,bufs,r){
+  if(!r||!r.legs||!r.legs[i]) return '';
+  const l=p.legs[i],n=p.legs.length;
+  let opts,title,after;
+  if(i>0){
+    const prev=p.legs[i-1],ready=prev.arr+bufs[i-1];
+    opts=r.legs[i].filter(t=>t.dep>=ready).sort((a,b)=>a.arr-b.arr||a.dep-b.dep);
+    title=`接${prev.mode==='hsr'?' 高鐵 '+prev.no+' ':'前一段'}可搭的台鐵`;after=true;
+  }else if(n>1){
+    const next=p.legs[1],lim=next.dep-bufs[0],T0=r.T0??-1e9;
+    opts=r.legs[0].filter(t=>t.arr<=lim&&t.dep>=T0).sort((a,b)=>b.dep-a.dep);
+    title=`接得上${next.mode==='hsr'?' 高鐵 '+next.no+' ':'下一段'}的台鐵`;after=false;
+  }else return '';
+  opts=opts.slice(0,3);
+  if(opts.length<2) return '';
+  const rows=opts.map((t,j)=>{
+    const late=t.live>0?`<span class="xdl late">晚 ${t.live} 分</span>`:'';
+    const note=j===0?'':after?`+${t.arr-opts[0].arr}分`:`早${opts[0].dep-t.dep}分`;
+    return `<div class="xopt-r${t===l?' on':''}"><span class="xopt-n">第${j+1}</span><b>${hm(t.dep)}</b><span class="xopt-tr"><span class="xh-type ${traCls(t.type)}">${t.type}</span>${t.type.length<5?`<span class="xopt-no">${t.no}</span>`:''}${late}</span><span class="xopt-a">${hm(t.arr)}${note?`<small>${note}</small>`:''}</span></div>`;
+  }).join('');
+  return `<div class="xopt"><div class="xopt-tt">${title}</div>${rows}</div>`;
+}
+function timelineHTML(p,meta,bufs,r){
   const colors={mrt:'var(--mrt)',hsr:'var(--hsr)',tra:'var(--tra)'};
   let h='<div class="xtl">';
   p.legs.forEach((l,i)=>{
@@ -1865,6 +1899,7 @@ function timelineHTML(p,meta,bufs){
     h+=`<div class="xleg" style="--m:${colors[l.mode]}">
       <div class="xrow"><div class="xt">${hm(l.dep)}${sched}</div><i class="xdot"></i><div class="xs">${from}</div></div>
       <div class="xride"><span class="xb">${legName(l)}</span><span${l.mode==='hsr'&&getHsrMax()&&l.arr-l.dep>getHsrMax()?' style="color:var(--err)"':''}>${fmtDur(l.arr-l.dep)}</span>${live}</div>
+      ${l.mode==='tra'?traOptionsHTML(p,i,meta,bufs,r):''}
       <div class="xrow"><div class="xt">${hm(l.arr)}</div><i class="xdot"></i><div class="xs">${to}</div></div>
     </div>`;
     if(i<p.legs.length-1){
@@ -1877,6 +1912,7 @@ function timelineHTML(p,meta,bufs){
 }
 
 function renderDir(k,r,T0,sel=0){
+  r.T0=T0;
   const el=document.getElementById('xd'+k);
   const {plans,meta,bufs,hsrMax,fallback}=r;
   if(!plans.length&&r.missing&&r.missing.length){
@@ -1907,12 +1943,12 @@ function renderDir(k,r,T0,sel=0){
     ${stripHTML(best,'xstrip')}
     <div class="xd-tags">${tags.join('')}</div>
     ${fallback?`<div class="xd-more" style="color:#F2C46B;padding-bottom:0">6 小時內沒有車程 ${fmtDur(hsrMax)}內的高鐵接得上，以下改列全部班次。</div>`:''}
-    ${timelineHTML(best,meta,bufs)}
+    ${timelineHTML(best,meta,bufs,r)}
     ${plans.length>1?`<div class="xalts">${plans.filter(p=>p!==best).map((p,i)=>{
       const d=p.arr-p.dep;
       return `<div class="xalt" onclick="this.nextElementSibling.classList.toggle('show')">
         <span class="xa-t">${hm(p.dep)} – ${hm(p.arr)}</span>${stripHTML(p,'xa-strip')}<span class="xa-d">${fmtDur(d)}${d===minDur&&best.arr-best.dep!==minDur?' 最短':''}</span>
-      </div><div class="xalt-body">${timelineHTML(p,meta,bufs)}</div>`}).join('')}</div>`:''}
+      </div><div class="xalt-body">${timelineHTML(p,meta,bufs,r)}</div>`}).join('')}</div>`:''}
     ${allHsrHTML(k,r,T0)}`;
   tickXfer();
 }
@@ -1980,7 +2016,7 @@ function allLegHTML(k,r,T0,hi){
         else sub+=`<br><span class="xh-note">排在前 ${MAX_PLANS} 個方案之後</span>`;
       }
     }
-    const body=res.plan?`<div class="xalt-body">${timelineHTML(res.plan,meta,bufs)}</div>`:'';
+    const body=res.plan?`<div class="xalt-body">${timelineHTML(res.plan,meta,bufs,r)}</div>`:'';
     return `<div class="xh-row${cls}"${res.plan?` onclick="this.nextElementSibling.classList.toggle('show')"`:''}>
       <div class="xh-t"><b>${hm(h.dep)}</b><span>${hm(h.arr)}</span></div>
       <div class="xh-m"><div class="xh-top">${isHsr?`高鐵 ${h.no}`:`<span class="xh-type ${traCls(h.type)}">${h.type}</span>${h.no}`}<span class="xh-dur">${fmtDur(dur)}</span>${h.live>0?`<span class="xdl late">晚 ${h.live} 分</span>`:''}${tags.join('')}</div><div class="xh-sub">${sub}</div></div>
