@@ -268,6 +268,7 @@ input,select,textarea{font-size:16px!important;touch-action:manipulation}
 .hs-st{position:relative;height:44px;border-radius:10px;border:1px solid var(--border);background:var(--card2);color:var(--text);font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}
 .hs-st small{font-size:9px;color:var(--text3);font-weight:500;margin-top:2px}
 .hs-st:hover{border-color:var(--hsr)}
+.hs-st:disabled{opacity:.25;cursor:not-allowed;border-color:var(--border)}
 .hs-st.on{background:var(--hsr);border-color:var(--hsr);color:#1A0F08;font-weight:700}
 .hs-st.on small{color:rgba(26,15,8,.7)}
 .hs-hint{font-size:11px;color:var(--text3);padding:0 20px;line-height:1.6}
@@ -691,8 +692,16 @@ function updateSetStatus(){
 }
 
 // ========== TDX DATA PARSING ==========
-function parseTDXTrains(originCode, destCode){
+const SVC_DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+function svcMatch(e,wd){
+  const sd=e.ServiceDay||e.serviceDay;
+  if(!sd) return true;                       // 沒有服務日資訊就視為每天
+  const v=sd[SVC_DAYS[wd]];
+  return v===1||v===true||v==='1';
+}
+function parseTDXTrains(originCode, destCode, dayOff=0){
   if(!apiTimetable) return null;
+  const wd=(()=>{const d=new Date();d.setDate(d.getDate()+dayOff);return d.getDay()})();
   // TDX StationTimeTable format: array of {StationID, Direction, Timetables:[{DepartureTime, TrainType}]}
   const data = Array.isArray(apiTimetable) ? apiTimetable : (apiTimetable.StationTimetables || apiTimetable);
   if(!Array.isArray(data)||!data.length) return null;
@@ -708,6 +717,9 @@ function parseTDXTrains(originCode, destCode){
     const dir = e.Direction !== undefined ? e.Direction : e.direction;
     return sid === originCode && dir === direction;
   });
+  // 只取該日（星期）適用的時刻表；若資料沒標到該日則保留全部
+  const dayEntries=originEntries.filter(e=>svcMatch(e,wd));
+  if(dayEntries.length) originEntries.splice(0,originEntries.length,...dayEntries);
 
   if(!originEntries.length) return null;
 
@@ -776,7 +788,11 @@ function renderDateStrip(){
     h+=`<div class="date-item${i===xDay?' active':''}" role="button" tabindex="0" aria-pressed="${i===xDay}" onclick="setXDay(${i})" onkeydown="if(event.key==='Enter')setXDay(${i})"><div class="date-num">${d.getDate()}</div><div class="date-day">${i===0?'今天':'週'+'日一二三四五六'[d.getDay()]}</div></div>`}
   ds.innerHTML=h;
 }
-function updateClock(){tickXfer();if(xTime==null)syncWhen();const d=new Date();document.getElementById('heroTime').textContent=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
+let lastDay=new Date().getDate();
+function updateClock(){
+  const dnow=new Date().getDate();
+  if(dnow!==lastDay){lastDay=dnow;xDay=Math.max(0,xDay-1);renderDateStrip();syncWhen()}
+  tickXfer();if(xTime==null)syncWhen();const d=new Date();document.getElementById('heroTime').textContent=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
 
 // Favs
 function loadF(){try{const d=localStorage.getItem('mrt_fav');if(d)favs=JSON.parse(d)}catch(e){}}
@@ -1209,7 +1225,7 @@ function showSettingsPage(){
         <div style="font-size:12px;color:var(--text3);line-height:1.7;margin-bottom:14px">轉乘時間是換車時至少要預留的分鐘數（含步行、進出站、買票）。規劃時不會排入比這更緊的班次。</div>
         <div class="set-row">
           <label>我的機捷站（南下起點、北上終點）</label>
-          <select id="xHome" onchange="setHome(this.value);toast('已儲存')">${STATIONS.filter(x=>x.c!=='A18').map(x=>`<option value="${x.c}"${x.c===getHome()?' selected':''}>${x.c} ${x.n}</option>`).join('')}</select>
+          <select id="xHome" onchange="setHome(this.value);toast('已儲存')">${STATIONS.map(x=>`<option value="${x.c}"${x.c===getHome()?' selected':''}>${x.c} ${x.n}</option>`).join('')}</select>
         </div>
         <div class="set-row">
           <label>高鐵車程上限（分鐘，桃園⇄左營；其他站別自動只挑快車；0 = 不限）</label>
@@ -1377,9 +1393,9 @@ function whRead(){
 function whSetTo(min,smooth){
   min=((Math.round(min/5)*5)%1440+1440)%1440;
   const h=Math.floor(min/60),m=min%60;
-  const b=smooth?'smooth':'instant';
-  document.getElementById('whH').scrollTo({top:h*WH,behavior:b});
-  document.getElementById('whM').scrollTo({top:(m/5)*WH,behavior:b});
+  const hE=document.getElementById('whH'),mE=document.getElementById('whM');
+  if(smooth){hE.scrollTo({top:h*WH,behavior:'smooth'});mE.scrollTo({top:(m/5)*WH,behavior:'smooth'})}
+  else{hE.scrollTop=h*WH;mE.scrollTop=(m/5)*WH}
   if(!smooth){whPaint(document.getElementById('whH'),'h',WH_H);whPaint(document.getElementById('whM'),'m',WH_M)}
 }
 // ---- 高鐵站選擇 ----
@@ -1404,7 +1420,8 @@ function renderHsrPicker(){
     const on=hsrDraft[end]===id;
     const hub=MRT_HUB[id]&&end==='n'?'<small>機捷</small>':'';
     const tra=id==='1070'&&end==='s'?'<small>台鐵</small>':'';
-    return `<button class="hs-st${on?' on':''}" aria-pressed="${on}" onclick="hsrPick('${end}','${id}')">${n}${hub}${tra}</button>`}).join('')}</div></div>`;
+    const dis=(end==='n'&&id==='1070')||(end==='s'&&id==='0990');
+    return `<button class="hs-st${on?' on':''}" aria-pressed="${on}" ${dis?'disabled':''} onclick="hsrPick('${end}','${id}')">${n}${hub}${tra}</button>`}).join('')}</div></div>`;
   // 依方向決定哪一端是上車站
   document.getElementById('hsBody').innerHTML=dir==='S'
     ?sec('n','上車站（南下）')+sec('s','下車站（南下）')
@@ -1513,7 +1530,7 @@ function parseTRA(data,oId,dId,off){
 }
 function mrtTrips(from,to,off){
   const oi=STATIONS.findIndex(x=>x.c===from),di=STATIONS.findIndex(x=>x.c===to);
-  let all=parseTDXTrains(from,to)||genFallback(oi,di);
+  let all=parseTDXTrains(from,to,off)||genFallback(oi,di);
   if(!(STATIONS[oi].ex&&STATIONS[di].ex)) all=all.filter(t=>t.t!=='e');
   return all.map(t=>({mode:'mrt',no:'',type:t.t==='e'?'直達車':'普通車',dep:t.dep+off*1440,arr:t.arr+off*1440}));
 }
@@ -1537,7 +1554,7 @@ async function loadTRA(dir,days,retried){
   const [o,d]=dir==='S'?[TRA_ID.XZY,TRA_ID.PT]:[TRA_ID.PT,TRA_ID.XZY];
   let out=[];
   for(const off of days) out=out.concat(parseTRA(await cfetch(`${TRA_BASE}/DailyTrainTimetable/OD/${o}/to/${d}/${ymd(off)}?$format=JSON`,216e5),o,d,off));
-  if(!out.length&&!retried&&await resolveTRA().catch(()=>false)) return loadTRA(dir,days,true);
+  if(!out.length&&!retried&&!loadTRA.resolved){loadTRA.resolved=true;if(await resolveTRA().catch(()=>false)) return loadTRA(dir,days,true)}
   return out.sort((a,b)=>a.dep-b.dep);
 }
 async function loadDelays(){
@@ -1563,7 +1580,7 @@ async function loadAlerts(){
     out.push(`${tag}｜${t||dsc}`);
   });
   try{const d=await cfetch(`${THSR_BASE}/AlertInfo?$format=JSON`,6e4);pick(Array.isArray(d)?d:(d?.AlertInfos||[]),'高鐵')}catch(e){}
-  try{const d=await cfetch(`${TRA_BASE}/Alert?$format=JSON`,6e4);pick(d?.Alerts||(Array.isArray(d)?d:[]),'台鐵')}catch(e){}
+  if(useTra()) try{const d=await cfetch(`${TRA_BASE}/Alert?$format=JSON`,6e4);pick(d?.Alerts||(Array.isArray(d)?d:[]),'台鐵')}catch(e){}
   return out;
 }
 
@@ -1629,7 +1646,7 @@ async function runTransfer(){
       const hp=getHsrPair();
       const hi=legs.length;legs.push(await loadHSR(hp.n,hp.s,days));meta.push(['高鐵',hsrN(hp.n),hsrN(hp.s)]);
       if(useTra()){bufs.push(buf.ht);legs.push(applyDelay(await loadTRA('S',days),delays));meta.push(['台鐵','新左營','屏東'])}
-      return {...planPreferFast(legs,hi,bufs,T0),meta,bufs};
+      return {...planPreferFast(legs,hi,bufs,T0),meta,bufs,missing:meta.filter((m,i)=>!legs[i].length).map(m=>m[0])};
     }},
     {k:'N',build:async()=>{
       const legs=[],bufs=[],meta=[];
@@ -1642,7 +1659,7 @@ async function runTransfer(){
         let m=[];mrtDays.forEach(o=>m=m.concat(mrtTrips(hub.c,home,o)));
         legs.push(m.sort((a,b)=>a.dep-b.dep));meta.push(['機捷',hub.n,stnName(home)]);
       }
-      return {...planPreferFast(legs,hi,bufs,T0),meta,bufs};
+      return {...planPreferFast(legs,hi,bufs,T0),meta,bufs,missing:meta.filter((m,i)=>!legs[i].length).map(m=>m[0])};
     }}
   ];
   for(const d of dirs.filter(d=>!xOnly||d.k===xOnly)){
@@ -1837,6 +1854,10 @@ function timelineHTML(p,meta,bufs){
 function renderDir(k,r,T0,sel=0){
   const el=document.getElementById('xd'+k);
   const {plans,meta,bufs,hsrMax,fallback}=r;
+  if(!plans.length&&r.missing&&r.missing.length){
+    el.innerHTML=xdHead(k)+`<div class="xd-msg">TDX 目前查不到 ${dayFull(Math.floor(T0/1440))} 的${[...new Set(r.missing)].join('、')}時刻（可能還沒公布，或這天停駛）。換個日期試試，或稍後按上方「更新」。</div>`;
+    return;
+  }
   if(!plans.length){
     el.innerHTML=xdHead(k)+`<div class="xd-msg">${dayFull(Math.floor(T0/1440))} ${hm(T0)} 之後 6 小時內沒有接得上的班次。試試調整出發時間，或到設定縮短轉乘時間。</div>`;
     return;
