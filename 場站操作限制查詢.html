@@ -8,7 +8,7 @@
 :root{
   --ink:#0A1420; --panel:#12202E; --panel2:#182C3E; --raise:#20384C;
   --line:rgba(190,215,235,.14); --line2:rgba(190,215,235,.07);
-  --text:#E9F0F6; --muted:#8CA3B8; --dim:#5F7governing;
+  --text:#E9F0F6; --muted:#8CA3B8; --dim:#5F7A8F;
   --gold:#DCC086;
   --ok:#3FC492; --warn:#F0A73E; --no:#F0665C; --na:#7A8DA0;
   --r:14px;
@@ -295,6 +295,10 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
   .note{color:#222 !important}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+/* ---------- 上空環景（賽博俯瞰） ---------- */
+.sky{position:relative;border:1px solid var(--line);border-top:0;border-bottom:0;background:#040a12;overflow:hidden;line-height:0}
+.sky canvas{display:block;width:100%;height:260px}
+@media print{.sky{border-color:#bbb !important}}
 </style>
 </head>
 <body>
@@ -2650,6 +2654,7 @@ document.querySelectorAll('nav.tabs button').forEach(b=>{
   b.onclick = ()=>{
     document.querySelectorAll('nav.tabs button').forEach(x=>x.setAttribute("aria-selected", x===b));
     document.querySelectorAll('section[role=tabpanel]').forEach(p=>p.classList.toggle("hidden", p.id!==b.dataset.panel));
+    Sky.setTab(b.dataset.panel==="p-lookup");
     window.scrollTo({top:0});
   };
 });
@@ -2728,10 +2733,12 @@ function renderDetail(){
         <button class="btn" onclick="window.print()">列印本站</button>
       </div>
     </div>
+    <div id="skySlot"></div>
     <div class="live${liveOn?"":" hidden"}" id="live"></div>
     <div class="strip">${slots}</div>
     <div class="cards">${cards}</div>`;
 
+  Sky.mount(document.getElementById("skySlot"), s.code);
   const lb = document.getElementById("liveBtn");
   lb.onclick = ()=>{
     liveOn = !liveOn;
@@ -3139,6 +3146,516 @@ addEventListener("scroll", ()=>{
   toTop.classList.toggle("show", (window.scrollY||document.documentElement.scrollTop) > 320);
 }, {passive:true});
 toTop.onclick = ()=> window.scrollTo({top:0, behavior:"smooth"});
+
+/* =====================================================================
+   上空環景：共用一套 canvas 引擎，一次只畫一站
+   各站設定（單位 km／公尺；示意用，非導航資料）
+   r  跑道 [真航向(低號端), 長度m, 側移p(km,+為右側), 縱移a(km), 名稱尾碼或覆寫如"6L"]
+   t  航廈 [縱移a, 側移p, 長km, 寬km, 高]（以第一條跑道為座標軸）
+   w  水域 S=全海 / h=半面海[方位,距離] / c=圓形水域[方位,距離,半徑]
+          H=半面陸 / C=圓形陸地 / I=機場填海島[外擴km, 1=僅跑道]
+   m  山 [方位,距離,半徑]   c  市區 [方位,距離,半徑]
+   rv 河 [方位,距離, 方位,距離, …]
+   ===================================================================== */
+const SKY = {
+TPE:{n:"TAOYUAN INTL",ll:[25.08,121.23],r:[[50,3660,-.75,0,"L"],[50,3800,.75,0,"R"]],t:[[-.45,0,.75,.3,.05],[.45,0,.75,.3,.05]],w:[["h",315,2.6]],c:[[140,6,2]],m:[[95,8,3]]},
+TSA:{n:"TAIPEI SONGSHAN",ll:[25.07,121.55],r:[[100,2605,0,0]],t:[[-.4,.38,.9,.25,.04]],c:[[180,2.4,2.2],[260,3,1.8],[80,3.4,1.8]],m:[[0,7,3.5],[350,4.2,1.2]],rv:[[265,3.2,300,1.4,20,1.1,70,1.9,110,4]]},
+RMQ:{n:"TAICHUNG",ll:[24.26,120.62],r:[[180,3659,0,0]],t:[[.2,-.5,.7,.25,.04]],c:[[120,9,3]],m:[[95,5.5,3]],w:[["h",275,8]]},
+KHH:{n:"KAOHSIUNG",ll:[22.58,120.35],r:[[90,3150,0,0]],t:[[.1,-.4,.9,.28,.04]],w:[["h",265,2.3]],c:[[10,4,3],[320,3.5,1.5]],m:[[320,8,1.5]]},
+HKG:{n:"HONG KONG",ll:[22.31,113.92],r:[[70,3800,-1.35,0,"L"],[70,3800,0,0,"C"],[70,3800,1.5,0,"R"]],t:[[-.3,.75,1.2,.4,.05],[1,.75,.45,.3,.04]],w:[["S"],["I",.3],["C",190,6,4.5],["C",170,3.2,1.6]],m:[[200,5.5,1.8]],c:[[165,3,.8]]},
+MFM:{n:"MACAU",ll:[22.15,113.59],r:[[160,3360,0,0]],t:[[-1,1.25,.6,.3,.04]],w:[["S"],["I",.2,1],["C",265,2.4,1.7],["C",300,3.4,1.5],["C",215,2.8,1.4]],c:[[230,2.8,1.1]]},
+NRT:{n:"NARITA",ll:[35.77,140.39],r:[[160,4000,1.25,0,"R"],[160,2500,-1.25,-.9,"L"]],t:[[-.9,0,.9,.35,.05],[.35,0,.8,.35,.05]],c:[[240,6,1.8]],m:[[80,5,1.6],[300,4.5,1.2]]},
+FUK:{n:"FUKUOKA",ll:[33.59,130.45],r:[[160,2800,0,0]],t:[[0,.5,1.1,.28,.04],[.4,-.5,.5,.25,.04]],c:[[300,3,2.6],[200,2.6,1.5],[25,3,1.5]],w:[["h",320,4.2]],m:[[110,6,2.5]]},
+CTS:{n:"NEW CHITOSE",ll:[42.78,141.69],r:[[10,3000,-.75,0,"L"],[10,3000,.75,0,"R"]],t:[[.2,1.4,.8,.3,.05]],c:[[300,5.5,1.8]],m:[[260,8,3]]},
+OKA:{n:"NAHA",ll:[26.2,127.65],r:[[180,3000,-.65,0,"L"],[180,2700,.65,.1,"R"]],t:[[-.2,-1.25,.8,.3,.04]],w:[["h",270,.15],["h",330,2.8],["I",.3,1]],c:[[45,3.5,2]]},
+SDJ:{n:"SENDAI",ll:[38.14,140.92],r:[[120,3000,0,0],[90,1200,-.55,-.25]],t:[[-.5,-.7,.7,.25,.04]],w:[["h",90,1.7]],c:[[270,4,1.5]],m:[[275,9,3]]},
+KIX:{n:"KANSAI",ll:[34.43,135.23],r:[[60,3500,1.15,0,"R"],[60,4000,-1.15,.4,"L"]],t:[[-.2,1.7,1.5,.35,.05]],w:[["S"],["I",.35],["H",120,4.5]],m:[[130,13,4]],c:[[110,5.2,1.2]]},
+KMJ:{n:"KUMAMOTO",ll:[32.84,130.86],r:[[70,3000,0,0]],t:[[0,-.45,.8,.28,.04]],c:[[250,7,2]],m:[[90,6,3],[300,6.5,2]]},
+NGO:{n:"CHUBU CENTRAIR",ll:[34.86,136.81],r:[[180,3500,0,0]],t:[[0,-.65,.9,.3,.05]],w:[["S"],["I",.35],["H",90,1.9]],c:[[95,2.8,1.5]]},
+HKD:{n:"HAKODATE",ll:[41.77,140.82],r:[[120,3000,0,0]],t:[[-.3,-.45,.7,.25,.04]],w:[["h",195,1.8]],c:[[255,6,2.2]],m:[[25,5,3]]},
+TAK:{n:"TAKAMATSU",ll:[34.21,134.02],r:[[80,2500,0,0]],t:[[0,-.4,.6,.25,.04]],c:[[0,8,2.5]],m:[[150,5,3],[250,4.5,1.8]],w:[["h",0,11]]},
+UKB:{n:"KOBE",ll:[34.63,135.22],r:[[90,2500,0,0]],t:[[-.3,-.4,.5,.22,.04]],w:[["S"],["I",.3],["H",0,2.6]],c:[[345,4.5,2.5]],m:[[340,9,4]]},
+SHI:{n:"SHIMOJISHIMA",ll:[24.83,125.14],r:[[170,3000,0,0]],t:[[.2,.4,.3,.2,.03]],w:[["S"],["I",.45],["C",75,3,2.2]]},
+PUS:{n:"GIMHAE",ll:[35.18,128.94],r:[[180,3200,-.2,0,"L"],[180,2745,.2,.1,"R"]],t:[[-.2,-.9,.7,.28,.04]],rv:[[330,3.2,300,1.7,245,1.6,205,2.6,190,4.5]],m:[[85,5.5,3],[300,7,3]],c:[[80,8,2.5]]},
+MNL:{n:"NINOY AQUINO",ll:[14.51,121.02],r:[[60,3737,0,0],[130,2258,0,.9]],t:[[-1.1,.55,.6,.3,.04],[.9,-.6,.9,.3,.05]],w:[["h",285,3.6]],c:[[0,5,3],[190,4,2],[90,4,2]]},
+CRK:{n:"CLARK",ll:[15.19,120.56],r:[[20,3200,-.23,0,"L"],[20,3200,.23,0,"R"]],t:[[-.3,-.9,.7,.28,.04]],m:[[265,8,4],[95,11,2.5]],c:[[150,4,2]]},
+CEB:{n:"MACTAN-CEBU",ll:[10.31,123.98],r:[[40,3300,0,0]],t:[[-.3,-.45,.8,.3,.04]],w:[["S"],["C",110,.9,2.9],["H",295,2.9]],c:[[140,2.8,1],[290,4.8,2]]},
+HAN:{n:"NOI BAI",ll:[21.22,105.81],r:[[110,3200,-.25,0,"L"],[110,3800,.25,.2,"R"]],t:[[0,1.05,1,.3,.05]],c:[[170,9,3]],m:[[20,7,3]],rv:[[260,9,215,7.5,175,7.8,140,9.5]]},
+DAD:{n:"DA NANG",ll:[16.05,108.2],r:[[170,3048,-.18,0,"L"],[170,3500,.18,0,"R"]],t:[[-.2,.75,.7,.28,.04]],w:[["h",80,3.2]],c:[[50,2.6,2.2],[185,3,1.5]],m:[[35,9,2],[265,8,4]]},
+SGN:{n:"TAN SON NHAT",ll:[10.82,106.65],r:[[70,3048,-.19,0,"L"],[70,3800,.19,.1,"R"]],t:[[0,.9,.9,.3,.05]],c:[[180,2.6,2.2],[90,3,2],[255,3,2],[0,3,1.6]],rv:[[20,6,75,5.5,125,6,160,7.5]]},
+PQC:{n:"PHU QUOC",ll:[10.17,103.99],r:[[100,3000,0,0]],t:[[0,-.4,.6,.25,.04]],w:[["h",265,1.9]],m:[[15,7,3]],c:[[330,5.5,1]]},
+BKK:{n:"SUVARNABHUMI",ll:[13.69,100.75],r:[[10,3700,-1.1,0,"L"],[10,4000,1.1,0,"R"]],t:[[0,0,1.1,.55,.06]],c:[[300,9,3]]},
+CNX:{n:"CHIANG MAI",ll:[18.77,98.96],r:[[180,3100,0,0]],t:[[.1,-.45,.6,.25,.04]],c:[[20,2.6,2.4]],m:[[285,7,3.5]],rv:[[5,4,85,2.2,175,4.2]]},
+KUL:{n:"KLIA",ll:[2.75,101.71],r:[[140,4000,-1,0,"L"],[140,4056,1,0,"R"],[150,4000,3.2,.4]],t:[[0,0,1.1,.5,.06],[.9,0,.5,.4,.05]],c:[[180,8,1.5]],m:[[60,9,3]]},
+SIN:{n:"CHANGI",ll:[1.36,103.99],r:[[20,4000,-.8,0,"L"],[20,4000,.8,0,"C"]],t:[[-.7,0,.8,.3,.06],[.3,0,.8,.3,.06]],w:[["h",105,1.9],["h",15,3.4]],c:[[245,5,2.5],[305,4,1.5]]},
+CGK:{n:"SOEKARNO-HATTA",ll:[-6.13,106.66],r:[[70,3600,-1.2,0,"L"],[70,3660,1.2,0,"R"]],t:[[-.5,0,.9,.4,.05],[.6,0,.9,.4,.05]],w:[["h",0,6]],c:[[115,9,3.5],[165,4,2]]},
+DPS:{n:"NGURAH RAI",ll:[-8.75,115.17],r:[[90,3000,0,0]],t:[[.2,-.4,.9,.28,.04]],w:[["c",270,2.6,1.4],["c",95,2.9,1.2],["c",225,2.8,1.4],["I",.12,1]],c:[[345,2.6,1.8]],m:[[180,4.5,2.2]]},
+LAX:{n:"LOS ANGELES",ll:[33.94,-118.41],r:[[70,2721,-1.12,.35,"6L"],[70,3135,-.9,0,"6R"],[70,3382,.85,0,"7L"],[70,3350,1.08,.15,"7R"]],t:[[-.1,0,1.5,.8,.05]],w:[["h",268,2.4]],c:[[60,5,3.5],[130,5,3],[0,4,2]]},
+SFO:{n:"SAN FRANCISCO",ll:[37.62,-122.38],r:[[100,3618,-.12,0,"L"],[100,3231,.12,-.1,"R"],[10,2637,-.6,-.2,"R"],[10,2286,-.83,-.1,"L"]],t:[[-2.05,.25,.45,1.4,.05]],w:[["h",80,.9],["I",.15,1]],c:[[265,3,2.4],[200,4,2]],m:[[330,7,2.5]]},
+ONT:{n:"ONTARIO",ll:[34.06,-117.6],r:[[80,3718,-.12,0,"L"],[80,3048,.12,.2,"R"]],t:[[0,.6,.9,.28,.04]],m:[[0,9,5]],c:[[180,4,3],[270,5,3],[90,5,2.5]]},
+SEA:{n:"SEATTLE-TACOMA",ll:[47.45,-122.31],r:[[160,3627,-.25,0,"L"],[160,2873,0,.1,"C"],[160,2591,.3,.2,"R"]],t:[[-.1,-1,1,.4,.05]],w:[["h",270,5]],c:[[0,8,3],[180,4,2]],m:[[110,8,3]]},
+PHX:{n:"PHOENIX SKY HARBOR",ll:[33.43,-112.01],r:[[80,3502,-1,0,"8"],[70,3353,.55,.1,"7L"],[70,2377,.8,.2,"7R"]],t:[[0,-.2,1.4,.35,.05]],m:[[190,8,4],[20,7,1.2]],c:[[330,4,3],[80,4.5,2.5]],rv:[[250,3.5,190,2,120,2,75,4]]},
+DFW:{n:"DALLAS/FORT WORTH",ll:[32.9,-97.04],r:[[170,4085,-1.62,0,"C"],[170,4085,-.92,0,"R"],[170,4085,-2.28,.3,"L"],[180,4085,.9,0,"L"],[180,4085,1.6,0,"R"],[130,2835,2.44,-1.35,"R"],[130,2743,-1.2,3.3,"L"]],t:[[-1.2,0,.45,.45,.05],[-.6,0,.45,.45,.05],[0,0,.45,.45,.05],[.6,0,.45,.45,.05],[1.2,0,.45,.45,.05]],w:[["c",0,7,1.6]],c:[[300,8,3],[100,9,3]]},
+IAD:{n:"WASHINGTON DULLES",ll:[38.95,-77.46],r:[[10,3505,-.8,0,"C"],[10,3505,.8,0,"R"],[10,2865,-2.2,.3,"L"],[120,3200,-1.6,-2.43]],t:[[-.9,0,1,.3,.05],[0,0,.9,.25,.05],[.5,0,.9,.25,.05]],c:[[320,6,2.5],[20,6,2]]},
+PRG:{n:"PRAGUE",ll:[50.1,14.26],r:[[60,3715,0,0],[120,3250,-.9,-.2]],t:[[1,-1.1,.9,.3,.05]],c:[[100,7,3]],rv:[[20,9,80,7,140,9]],m:[[200,6,2]]},
+SYD:{n:"SYDNEY",ll:[-33.95,151.18],r:[[160,3962,.52,.3,"R"],[160,2438,-.52,-.3,"L"],[70,2530,-1.05,-.25]],t:[[-.6,1.4,.4,.8,.05],[-.9,-1.2,.5,.6,.05]],w:[["h",170,1.1],["I",.12,1]],c:[[10,6,2.5],[45,2,1.2]]},
+AKL:{n:"AUCKLAND",ll:[-37.01,174.79],r:[[50,3635,0,0,"5R"]],t:[[0,.5,.9,.3,.05]],w:[["h",310,1.3],["c",235,3.2,2.2]],c:[[20,8,3]],m:[[330,3.8,.6],[25,9,1]]}
+};
+
+const Sky = (()=>{
+  const D2R=Math.PI/180, TILT=.56, ZS=2.2, FPS=30, MAXDPR=2, TEXMAX=2048, ORBIT=180;
+  const CY="#00E5FF", MG="#FF2BD6", AC="#39FF9F", GD="#DCC086", MONO='ui-monospace,"SF Mono",Menlo,Consolas,monospace';
+  const sin=Math.sin, cos=Math.cos;
+
+  /* ---- DOM：整個 APP 只有這一組 canvas ---- */
+  const wrap=document.createElement("div"); wrap.className="sky";
+  wrap.innerHTML=`<canvas aria-label="機場上空環景示意動畫"></canvas>`;
+  const cv=wrap.querySelector("canvas"), ctx=cv.getContext("2d");
+
+  let tabOn=true, inView=false, pageOn=!document.hidden;
+  let code=null, G=null, tex=null, ovl=null, glow=null;
+  let CW=0,CH=0,dpr=1,s=1,cx=0,cy=0,W=0,k=1, simT=9.2, raf=0, last=0, fmt=null, ltSec=-1, ltStr="";
+
+  /* ---- 工具 ---- */
+  const pol=(b,d)=>[d*sin(b*D2R), d*cos(b*D2R)];
+  const dirv=h=>[sin(h*D2R), cos(h*D2R)];
+  const hs=n=>{n|=0;n=Math.imul(n^n>>>16,0x45d9f3b);n=Math.imul(n^n>>>16,0x45d9f3b);return (n^n>>>16)>>>0;};
+  const rng=seed=>()=>((seed=hs(seed+0x9E37))%100000)/100000;
+  const wob=(t,sd)=>.1*sin(t*1.3+sd)+.06*sin(t*3.7+sd*2)+.03*sin(t*9.1+sd*3);
+  const pad2=n=>String(n).padStart(2,"0");
+
+  /* ---- 把一站的小設定展開成幾何 ---- */
+  function prep(c, cd){
+    const h0=c.r[0][0], u0=dirv(h0), r0=[u0[1],-u0[0]];
+    const fr=(h,a,p)=>{const u=dirv(h), rt=[u[1],-u[0]]; return [a*u[0]+p*rt[0], a*u[1]+p*rt[1]];};
+    const rw=c.r.map(([h,len,p,a,lab])=>{
+      const u=dirv(h), rt=[u[1],-u[0]], L=len/1000, cc=fr(h,a||0,p||0);
+      let n1=Math.round(h/10)||36, sx="";
+      if(lab){ const m=/^(\d+)?([LRC]?)$/.exec(lab); if(m){ if(m[1]) n1=+m[1]; sx=m[2]; } }
+      const n2=(n1+17)%36+1, sx2=sx==="L"?"R":sx==="R"?"L":sx;
+      const T0=[cc[0]-u[0]*L/2, cc[1]-u[1]*L/2], T1=[cc[0]+u[0]*L/2, cc[1]+u[1]*L/2];
+      return {h,u,rt,L,c:cc,len,
+        ends:[{d:pad2(n1)+sx,T:T0,dir:u},{d:pad2(n2)+sx2,T:T1,dir:[-u[0],-u[1]]}]};
+    });
+    const tm=(c.t||[]).map(([a,p,L,Wd,H])=>({c:[a*u0[0]+p*r0[0], a*u0[1]+p*r0[1]],u:u0,rt:r0,L,Wd,H:H||.04}));
+    const onField=(x,y)=>rw.some(r=>{const dx=x-r.c[0],dy=y-r.c[1];return Math.abs(dx*r.u[0]+dy*r.u[1])<r.L/2+.5&&Math.abs(dx*r.rt[0]+dy*r.rt[1])<.5;})
+      ||tm.some(t=>{const dx=x-t.c[0],dy=y-t.c[1];return Math.abs(dx*t.u[0]+dy*t.u[1])<t.L/2+.35&&Math.abs(dx*t.rt[0]+dy*t.rt[1])<t.Wd/2+.35;});
+    let R=3.2;
+    rw.forEach(r=>r.ends.forEach(e=>R=Math.max(R,Math.hypot(e.T[0],e.T[1])+.8)));
+    tm.forEach(t=>R=Math.max(R,Math.hypot(t.c[0],t.c[1])+.9));
+    const t0=tm[0]||{c:[0,0],u:u0,rt:r0,L:.4,Wd:.2};
+    const tw=[t0.c[0]+t0.u[0]*(t0.L/2+.14), t0.c[1]+t0.u[1]*(t0.L/2+.14)];
+    const seed=[...cd].reduce((a,ch)=>a*31+ch.charCodeAt(0),7);
+    // 使用中跑道方向：全站共用一個風向，平行跑道同向起降
+    const flow=(hs(seed)&1)?1:-1, fv=[u0[0]*flow,u0[1]*flow];
+    rw.forEach(r=>{ const dp=r.u[0]*fv[0]+r.u[1]*fv[1]; r.act=(dp>0||(Math.abs(dp)<.2&&flow>0))?0:1; });
+    const rnd=rng(seed), city=(c.c||[]).map(([b,d,r])=>({c:pol(b,d),r,ga:rnd()*90}));
+    // 市區少量高樓（動態立體）
+    const boxes=[];
+    tm.forEach(t=>boxes.push({...t,col:GD}));
+    boxes.push({c:tw,u:u0,rt:r0,L:.05,Wd:.05,H:.1,col:CY,tower:1});
+    let quota=36;
+    city.forEach(ct=>{
+      const n=Math.min(quota, Math.round(ct.r*7)); quota-=n;
+      const gu=dirv(ct.ga), gr=[gu[1],-gu[0]];
+      for(let i=0;i<n;i++){
+        const a=rnd()*Math.PI*2, d=Math.sqrt(rnd())*ct.r*.85, bx=ct.c[0]+sin(a)*d, by=ct.c[1]+cos(a)*d;
+        if(onField(bx,by)) continue;
+        boxes.push({c:[ct.c[0]+sin(a)*d, ct.c[1]+cos(a)*d],u:gu,rt:gr,L:.07+rnd()*.1,Wd:.07+rnd()*.08,H:.03+rnd()*rnd()*.12,col:rnd()<.3?MG:CY});
+      }
+    });
+    return {cfg:c,cd,onField,h0,u0,r0,rw,tm,tw,R,seed,city,boxes,
+      mt:(c.m||[]).map(([b,d,r])=>({c:pol(b,d),r})),
+      rv:(c.rv||[]).map(a=>{const p=[];for(let i=0;i<a.length;i+=2)p.push(pol(a[i],a[i+1]));return p;})};
+  }
+
+  /* ---- 投影：世界(km, x東 y北) → 畫面(css px) ---- */
+  let th=0, ct=1, st=0;
+  const setTheta=t=>{ th=(G.h0-70)*D2R + t*Math.PI*2/ORBIT; ct=cos(th); st=sin(th); };
+  const P=(x,y,z)=>[cx+s*(x*ct-y*st), cy-s*TILT*(x*st+y*ct)-(z||0)*s*ZS];
+  const depth=(x,y)=>x*st+y*ct;
+
+  /* ---- 靜態圖層：地面、海、山、城市、跑道預先畫進一張世界貼圖 ---- */
+  function mk(n){const c=document.createElement("canvas"); c.width=c.height=n; return c;}
+  function build(){
+    const w=wrap.clientWidth; if(!w||!G) return false;
+    const h=Math.round(Math.min(360,Math.max(210,w*.42)));
+    cv.style.height=h+"px";
+    dpr=Math.min(MAXDPR, window.devicePixelRatio||1);
+    CW=w; CH=h; cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr);
+    cx=w/2; cy=h*.54;
+    s=Math.min(w/2/(G.R*1.02), h/2/(G.R*TILT*1.05));
+    W=Math.hypot(w/2/s, h*.56/(s*TILT))*1.04;
+    k=Math.min(s*dpr, TEXMAX/(2*W));
+    const N=Math.ceil(2*W*k);
+    tex=mk(N); const g=tex.getContext("2d");
+    const wt=c=>c.setTransform(k,0,0,-k,W*k,W*k);   // 世界 km → 貼圖 px
+    const px=1/k;
+
+    g.fillStyle="#060e18"; g.fillRect(0,0,N,N);
+    /* 地表區塊（農地／聚落紋理，稍後被海面覆蓋） */
+    wt(g); { const rf=rng(G.seed+5), ga=rf()*90, gu=dirv(ga), gr=[gu[1],-gu[0]];
+      for(let i=0;i<420;i++){ const x=(rf()*2-1)*W, y=(rf()*2-1)*W; if(G.onField(x,y)) continue;
+        const hl=.12+rf()*.35, hw=.08+rf()*.25; g.beginPath();
+        [[1,1],[1,-1],[-1,-1],[-1,1]].forEach(([i1,i2])=>g.lineTo(x+gu[0]*hl*i1+gr[0]*hw*i2, y+gu[1]*hl*i1+gr[1]*hw*i2));
+        g.closePath(); g.fillStyle=`rgba(${rf()<.5?"30,90,110":"40,70,90"},${.05+rf()*.08})`; g.fill(); } }
+    g.setTransform(1,0,0,1,0,0);
+
+    /* 水域遮罩 */
+    const m=mk(N), mc=m.getContext("2d"); wt(mc); mc.fillStyle="#fff";
+    (G.cfg.w||[]).forEach((it,i)=>{
+      const tp=it[0], land="HCI".includes(tp);
+      mc.globalCompositeOperation=land?"destination-out":"source-over";
+      mc.beginPath();
+      if(tp==="S") mc.rect(-W,-W,2*W,2*W);
+      else if(tp==="h"||tp==="H"){
+        const n=dirv(it[1]), tg=[n[1],-n[0]], d=it[2];
+        for(let t=-2*W;t<=2*W;t+=.15){const o=d+wob(t,i+G.seed%7); mc.lineTo(n[0]*o+tg[0]*t, n[1]*o+tg[1]*t);}
+        mc.lineTo(n[0]*3*W+tg[0]*2*W, n[1]*3*W+tg[1]*2*W); mc.lineTo(n[0]*3*W-tg[0]*2*W, n[1]*3*W-tg[1]*2*W);
+      } else if(tp==="c"||tp==="C"){
+        const cc=pol(it[1],it[2]), r=it[3];
+        for(let a=0;a<=Math.PI*2+.01;a+=.08){const rr=r+wob(a*r*1.6,i+3)*1.2; mc.lineTo(cc[0]+sin(a)*rr, cc[1]+cos(a)*rr);}
+      } else if(tp==="I"){
+        const pd=it[1], pts=[];
+        G.rw.forEach(r=>r.ends.forEach(e=>{pts.push([e.T[0]+r.rt[0]*.1,e.T[1]+r.rt[1]*.1],[e.T[0]-r.rt[0]*.1,e.T[1]-r.rt[1]*.1]);}));
+        if(!it[2]) G.tm.forEach(t=>[[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([i1,i2])=>pts.push([t.c[0]+t.u[0]*t.L/2*i1+t.rt[0]*t.Wd/2*i2, t.c[1]+t.u[1]*t.L/2*i1+t.rt[1]*t.Wd/2*i2])));
+        let a0=1e9,a1=-1e9,p0=1e9,p1=-1e9;
+        pts.forEach(q=>{const a=q[0]*G.u0[0]+q[1]*G.u0[1], p=q[0]*G.r0[0]+q[1]*G.r0[1]; a0=Math.min(a0,a);a1=Math.max(a1,a);p0=Math.min(p0,p);p1=Math.max(p1,p);});
+        a0-=pd;a1+=pd;p0-=pd;p1+=pd; const b=pd*.8;
+        [[a0+b,p0],[a1-b,p0],[a1,p0+b],[a1,p1-b],[a1-b,p1],[a0+b,p1],[a0,p1-b],[a0,p0+b]].forEach(([a,p])=>
+          mc.lineTo(a*G.u0[0]+p*G.r0[0], a*G.u0[1]+p*G.r0[1]));
+      }
+      mc.closePath(); mc.fill();
+    });
+    mc.globalCompositeOperation="source-over";
+    // 海面：深藍＋聲納橫紋
+    const wc=mk(N), wg=wc.getContext("2d");
+    wg.fillStyle="#03182a"; wg.fillRect(0,0,N,N);
+    wg.fillStyle="rgba(0,229,255,.07)"; const sp=Math.max(4,Math.round(5*dpr));
+    for(let y=0;y<N;y+=sp) wg.fillRect(0,y,N,1);
+    wg.globalCompositeOperation="destination-in"; wg.drawImage(m,0,0);
+    g.drawImage(wc,0,0);
+    // 海岸線：遮罩減去侵蝕後的遮罩
+    const e=Math.max(2,Math.round(1.5*dpr));
+    wg.globalCompositeOperation="copy"; wg.drawImage(m,0,0);
+    wg.globalCompositeOperation="destination-in";
+    [[e,0],[-e,0],[0,e],[0,-e]].forEach(([dx,dy])=>wg.drawImage(m,dx,dy));
+    const ec=mk(N), eg=ec.getContext("2d");
+    eg.drawImage(m,0,0); eg.globalCompositeOperation="destination-out"; eg.drawImage(wc,0,0);
+    eg.globalCompositeOperation="source-in"; eg.fillStyle=CY; eg.fillRect(0,0,N,N);
+    g.save(); g.shadowColor=CY; g.shadowBlur=8*dpr; g.globalAlpha=.85; g.drawImage(ec,0,0); g.restore();
+    m.width=wc.width=ec.width=0;   // 釋放暫存
+
+    wt(g);
+    /* 經緯格網 */
+    const gs=s>60?.5:1;
+    for(let v=-Math.floor(W/gs)*gs; v<=W; v+=gs){
+      const major=Math.abs(v/2-Math.round(v/2))<1e-6;
+      g.strokeStyle=major?"rgba(0,229,255,.13)":"rgba(0,229,255,.055)"; g.lineWidth=px;
+      g.beginPath(); g.moveTo(v,-W); g.lineTo(v,W); g.moveTo(-W,v); g.lineTo(W,v); g.stroke();
+    }
+    /* 山：等高線 */
+    G.mt.forEach((mm,j)=>{
+      for(let i=1;i<=6;i++){
+        const r=mm.r*(1-(i-1)/6.5);
+        g.strokeStyle=`rgba(255,43,214,${.12+i*.05})`; g.lineWidth=px*(i===6?1.6:1);
+        g.beginPath();
+        for(let a=0;a<=Math.PI*2+.01;a+=.07){const rr=r*(1+.13*sin(a*3+j+i*.7)+.07*sin(a*5+i));
+          g.lineTo(mm.c[0]+sin(a)*rr+i*.03*r, mm.c[1]+cos(a)*rr+i*.02*r);}
+        g.closePath(); g.stroke();
+      }
+    });
+    /* 河 */
+    G.rv.forEach(pts=>{
+      const path=()=>{g.beginPath(); g.moveTo(...pts[0]);
+        for(let i=1;i<pts.length-1;i++){const mx=(pts[i][0]+pts[i+1][0])/2,my=(pts[i][1]+pts[i+1][1])/2; g.quadraticCurveTo(pts[i][0],pts[i][1],mx,my);}
+        g.lineTo(...pts[pts.length-1]);};
+      path(); g.strokeStyle="#062a40"; g.lineWidth=.14; g.lineJoin="round"; g.stroke();
+      path(); g.strokeStyle="rgba(0,229,255,.55)"; g.lineWidth=px*1.2; g.stroke();
+    });
+    /* 市區：街廓 */
+    const rnd=rng(G.seed+11);
+    G.city.forEach(ct=>{
+      g.save(); g.beginPath(); g.arc(ct.c[0],ct.c[1],ct.r,0,Math.PI*2); g.clip();
+      const gu=dirv(ct.ga), gr=[gu[1],-gu[0]];
+      g.strokeStyle="rgba(0,229,255,.09)"; g.lineWidth=px;
+      g.beginPath();
+      for(let t=-ct.r;t<=ct.r;t+=.28){
+        g.moveTo(ct.c[0]+gu[0]*t-gr[0]*ct.r, ct.c[1]+gu[1]*t-gr[1]*ct.r); g.lineTo(ct.c[0]+gu[0]*t+gr[0]*ct.r, ct.c[1]+gu[1]*t+gr[1]*ct.r);
+        g.moveTo(ct.c[0]+gr[0]*t-gu[0]*ct.r, ct.c[1]+gr[1]*t-gu[1]*ct.r); g.lineTo(ct.c[0]+gr[0]*t+gu[0]*ct.r, ct.c[1]+gr[1]*t+gu[1]*ct.r);
+      }
+      g.stroke();
+      const n=Math.min(260, Math.round(ct.r*ct.r*45));
+      for(let i=0;i<n;i++){
+        const a=rnd()*Math.PI*2, d=Math.sqrt(rnd())*ct.r, x=ct.c[0]+sin(a)*d, y=ct.c[1]+cos(a)*d, bl=.04+rnd()*.09, bw=.04+rnd()*.07;
+        if(G.onField(x,y)) continue;
+        g.beginPath();
+        [[1,1],[1,-1],[-1,-1],[-1,1]].forEach(([i1,i2])=>g.lineTo(x+gu[0]*bl*i1+gr[0]*bw*i2, y+gu[1]*bl*i1+gr[1]*bw*i2));
+        g.closePath(); g.fillStyle=`rgba(0,229,255,${.04+rnd()*.08})`; g.fill();
+        if(rnd()<.35){g.strokeStyle="rgba(0,229,255,.28)"; g.stroke();}
+        if(rnd()<.12){g.fillStyle=rnd()<.5?"rgba(255,43,214,.7)":"rgba(220,192,134,.75)"; g.fillRect(x,y,px*1.6,px*1.6);}
+      }
+      g.restore();
+    });
+    /* 雷達距離環 */
+    g.setLineDash([.06,.08]); g.strokeStyle="rgba(0,229,255,.16)"; g.lineWidth=px;
+    [.35,.7,1].forEach(f=>{g.beginPath(); g.arc(G.tw[0],G.tw[1],G.R*f,0,Math.PI*2); g.stroke();});
+    g.setLineDash([]);
+    /* 機坪與航廈基座 */
+    const quad=(c,u,rt,hl,hw)=>{g.beginPath();[[1,1],[1,-1],[-1,-1],[-1,1]].forEach(([i1,i2])=>g.lineTo(c[0]+u[0]*hl*i1+rt[0]*hw*i2, c[1]+u[1]*hl*i1+rt[1]*hw*i2));g.closePath();};
+    G.tm.forEach(t=>{
+      quad(t.c,t.u,t.rt,t.L/2+.12,t.Wd/2+.16); g.fillStyle="rgba(220,192,134,.07)"; g.fill();
+      g.setLineDash([.04,.04]); g.strokeStyle="rgba(220,192,134,.35)"; g.lineWidth=px; g.stroke(); g.setLineDash([]);
+      // 停機位上的小飛機點
+      for(let i=-2;i<=2;i++){ const q=[t.c[0]+t.u[0]*i*t.L/5+t.rt[0]*(t.Wd/2+.08), t.c[1]+t.u[1]*i*t.L/5+t.rt[1]*(t.Wd/2+.08)];
+        g.fillStyle="rgba(233,240,246,.55)"; g.fillRect(q[0]-px*1.5,q[1]-px*1.5,px*3,px*3); }
+    });
+    /* 滑行道 */
+    const rwW=Math.max(.06, 3.4/s);
+    G.rw.forEach(r=>{
+      const toC=-(r.c[0]*r.rt[0]+r.c[1]*r.rt[1]);
+      let side=Math.sign(toC)||1;
+      if(!toC && G.tm[0]) side=Math.sign((G.tm[0].c[0]-r.c[0])*r.rt[0]+(G.tm[0].c[1]-r.c[1])*r.rt[1])||1;
+      const off=side*(rwW/2+.16), tc=[r.c[0]+r.rt[0]*off, r.c[1]+r.rt[1]*off];
+      g.strokeStyle="rgba(240,167,62,.35)"; g.lineWidth=Math.max(.018,1.2*px);
+      g.beginPath(); g.moveTo(tc[0]-r.u[0]*r.L*.48, tc[1]-r.u[1]*r.L*.48); g.lineTo(tc[0]+r.u[0]*r.L*.48, tc[1]+r.u[1]*r.L*.48);
+      [-.48,-.2,.1,.48].forEach(f=>{g.moveTo(tc[0]+r.u[0]*r.L*f, tc[1]+r.u[1]*r.L*f); g.lineTo(r.c[0]+r.u[0]*r.L*f, r.c[1]+r.u[1]*r.L*f);});
+      g.stroke();
+    });
+    /* 跑道 */
+    G.rw.forEach(r=>{
+      quad(r.c,r.u,r.rt,r.L/2,rwW/2);
+      g.fillStyle="#0b1824"; g.fill();
+      g.save(); g.shadowColor=CY; g.shadowBlur=7*dpr; g.strokeStyle=CY; g.lineWidth=px*1.3; g.stroke(); g.restore();
+      g.strokeStyle="rgba(233,240,246,.7)"; g.lineWidth=Math.max(px, rwW*.08);
+      g.beginPath();
+      for(let t=-r.L/2+.35; t<r.L/2-.35; t+=.12){g.moveTo(r.c[0]+r.u[0]*t, r.c[1]+r.u[1]*t); g.lineTo(r.c[0]+r.u[0]*(t+.06), r.c[1]+r.u[1]*(t+.06));}
+      g.stroke();
+      r.ends.forEach(en=>{
+        g.strokeStyle="rgba(233,240,246,.8)"; g.lineWidth=Math.max(px,rwW*.06); g.beginPath();
+        for(let i=-3;i<=3;i++){ if(!i) continue; const o=i*rwW/8;
+          g.moveTo(en.T[0]+r.rt[0]*o+en.dir[0]*.03, en.T[1]+r.rt[1]*o+en.dir[1]*.03);
+          g.lineTo(en.T[0]+r.rt[0]*o+en.dir[0]*.12, en.T[1]+r.rt[1]*o+en.dir[1]*.12);}
+        g.stroke();
+        g.strokeStyle=AC; g.lineWidth=px*1.6; g.beginPath();
+        g.moveTo(en.T[0]-r.rt[0]*rwW*.6, en.T[1]-r.rt[1]*rwW*.6); g.lineTo(en.T[0]+r.rt[0]*rwW*.6, en.T[1]+r.rt[1]*rwW*.6); g.stroke();
+      });
+      g.fillStyle="rgba(255,240,200,.55)";
+      for(let t=-r.L/2; t<=r.L/2; t+=.2) [-1,1].forEach(sd=>{
+        const q=[r.c[0]+r.u[0]*t+r.rt[0]*sd*rwW*.62, r.c[1]+r.u[1]*t+r.rt[1]*sd*rwW*.62]; g.fillRect(q[0]-px,q[1]-px,px*2,px*2);});
+    });
+    /* 疊加層：掃描線、暗角、遠景霧化、角框（預先畫好一張） */
+    ovl=document.createElement("canvas"); ovl.width=cv.width; ovl.height=cv.height;
+    const o=ovl.getContext("2d"), OW=ovl.width, OH=ovl.height;
+    let gr=o.createLinearGradient(0,0,0,OH*.38); gr.addColorStop(0,"rgba(3,8,16,.88)"); gr.addColorStop(1,"rgba(3,8,16,0)");
+    o.fillStyle=gr; o.fillRect(0,0,OW,OH*.38);
+    gr=o.createRadialGradient(OW/2,OH*.55,Math.min(OW,OH)*.35,OW/2,OH*.55,Math.max(OW,OH)*.72);
+    gr.addColorStop(0,"rgba(2,6,12,0)"); gr.addColorStop(1,"rgba(2,6,12,.8)"); o.fillStyle=gr; o.fillRect(0,0,OW,OH);
+    o.fillStyle="rgba(0,0,0,.2)"; const sl=Math.max(2,Math.round(3*dpr));
+    for(let y=0;y<OH;y+=sl) o.fillRect(0,y,OW,Math.max(1,Math.round(dpr*.9)));
+    o.strokeStyle="rgba(0,229,255,.6)"; o.lineWidth=1.5*dpr; const L=16*dpr, M=8*dpr;
+    [[M,M,1,1],[OW-M,M,-1,1],[M,OH-M,1,-1],[OW-M,OH-M,-1,-1]].forEach(([x,y,a,b])=>{o.beginPath();o.moveTo(x,y+b*L);o.lineTo(x,y);o.lineTo(x+a*L,y);o.stroke();});
+
+    if(!glow){ glow=mk(32); const gg=glow.getContext("2d"), rg=gg.createRadialGradient(16,16,0,16,16,16);
+      rg.addColorStop(0,"rgba(160,250,255,.9)"); rg.addColorStop(.35,"rgba(0,229,255,.35)"); rg.addColorStop(1,"rgba(0,229,255,0)");
+      gg.fillStyle=rg; gg.fillRect(0,0,32,32); }
+    return true;
+  }
+
+  /* ---- 航機：純粹由時間算出位置（定格畫面也能重現） ---- */
+  function path(rw,end,dep,u){
+    const en=rw.ends[end], T=en.T, d=en.dir, L=rw.L, D=G.R*1.35;
+    const at=(al,z,a)=>({x:T[0]+d[0]*al, y:T[1]+d[1]*al, z, d, a});
+    if(!dep){
+      if(u<.55){const q=u/.55, dist=D*(1-q); return at(-dist, dist*.055, Math.min(1,q/.08));}
+      if(u<.78){const q=(u-.55)/.23; return at((1-(1-q)*(1-q))*L*.55, 0, 1);}
+      if(u<.86){const q=(u-.78)/.08; return at(L*.55+q*.05, 0, 1-q);}
+      return null;
+    }
+    if(u<.08) return at(.05,0,u/.08);
+    if(u<.36){const q=(u-.08)/.28; return at(.05+q*q*L*.55, 0, 1);}
+    if(u<.9){const q=(u-.36)/.54, al=L*.6+(q*.6+q*q*.4)*D*1.1; return at(al,(al-L*.6)*.07, Math.min(1,(1-q)/.18));}
+    return null;
+  }
+  function flight(slot,t,du){
+    const Pd=26, off=slot*11.3+3.1, v=t+off, n=Math.floor(v/Pd), u=(v-n*Pd)/Pd-(du||0);
+    if(u<0) return null;
+    const h=hs(n*7+slot*131+G.seed), rw=G.rw[h%G.rw.length];
+    return path(rw,rw.act,(h>>5)&1,u);
+  }
+
+  /* ---- 立體方塊：航廈、塔台、市區高樓 ---- */
+  function box(b,t){
+    const pts=[[1,1],[1,-1],[-1,-1],[-1,1]].map(([i1,i2])=>[b.c[0]+b.u[0]*b.L/2*i1+b.rt[0]*b.Wd/2*i2, b.c[1]+b.u[1]*b.L/2*i1+b.rt[1]*b.Wd/2*i2]);
+    const lo=pts.map(p=>P(p[0],p[1],0)), hi=pts.map(p=>P(p[0],p[1],b.H));
+    const cdp=depth(b.c[0],b.c[1]);
+    ctx.lineWidth=1;
+    for(let i=0;i<4;i++){
+      const j=(i+1)%4, mx=(pts[i][0]+pts[j][0])/2, my=(pts[i][1]+pts[j][1])/2;
+      if(depth(mx,my)>cdp) continue;           // 背面不畫
+      ctx.beginPath(); ctx.moveTo(...lo[i]); ctx.lineTo(...lo[j]); ctx.lineTo(...hi[j]); ctx.lineTo(...hi[i]); ctx.closePath();
+      ctx.fillStyle="rgba(6,16,28,.93)"; ctx.fill();
+      ctx.strokeStyle=b.col; ctx.globalAlpha=.45; ctx.stroke(); ctx.globalAlpha=1;
+    }
+    ctx.beginPath(); hi.forEach(p=>ctx.lineTo(...p)); ctx.closePath();
+    ctx.fillStyle=b.col===GD?"rgba(220,192,134,.22)":b.col===MG?"rgba(255,43,214,.2)":"rgba(0,229,255,.16)"; ctx.fill();
+    ctx.strokeStyle=b.col; ctx.stroke();
+    if(b.tower){ const q=P(b.c[0],b.c[1],b.H+.012);
+      ctx.fillStyle=`rgba(255,70,70,${.35+.65*Math.max(0,sin(t*3.2))})`; ctx.beginPath(); ctx.arc(q[0],q[1],2.2,0,Math.PI*2); ctx.fill(); }
+  }
+
+  /* ---- 跑道號碼標籤 ---- */
+  function rwyTags(){
+    const fsz=CW<520?13:15, ph=fsz+8;
+    ctx.font=`800 ${fsz}px ${MONO}`; ctx.textAlign="center"; ctx.textBaseline="middle";
+    const tags=[];
+    G.rw.forEach(r=>r.ends.forEach(en=>{
+      const al=-.3, t=P(en.T[0]+en.dir[0]*al, en.T[1]+en.dir[1]*al, 0),   // 跑道頭外側
+            th0=P(en.T[0],en.T[1],0), w=ctx.measureText(en.d).width+12;
+      tags.push({en,th0,w,x:t[0],y:t[1]-ph*.9});
+    }));
+    // 相近跑道（如平行跑道）標籤互相避讓
+    tags.sort((a,b)=>b.y-a.y);
+    const placed=[];
+    tags.forEach(g=>{
+      for(let n=0;n<6;n++){
+        const hit=placed.find(o=>Math.abs(o.x-g.x)<(o.w+g.w)/2+3 && Math.abs(o.y-g.y)<ph+3);
+        if(!hit) break; g.y=hit.y-ph-4;
+      }
+      placed.push(g);
+    });
+    placed.forEach(({en,th0,w,x,y})=>{
+      // 指示線：標籤 → 跑道頭
+      ctx.strokeStyle="rgba(0,229,255,.55)"; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(x,y+ph/2); ctx.lineTo(th0[0],th0[1]); ctx.stroke();
+      ctx.fillStyle="rgba(3,10,20,.86)"; ctx.fillRect(x-w/2,y-ph/2,w,ph);
+      ctx.strokeStyle=CY; ctx.strokeRect(x-w/2+.5,y-ph/2+.5,w-1,ph-1);
+      ctx.fillStyle=CY; ctx.fillRect(x-w/2,y-ph/2,3,ph);
+      ctx.fillStyle="#F2FBFF"; ctx.fillText(en.d, x+1.5, y+1);
+    });
+    ctx.textBaseline="alphabetic"; ctx.textAlign="left";
+  }
+
+  /* ---- 畫一格 ---- */
+  function frame(t, live){
+    if(!tex) return;
+    setTheta(t);
+    const a=s*ct*dpr, b=-s*TILT*st*dpr, c=-s*st*dpr, d=-s*TILT*ct*dpr, e=cx*dpr, f=cy*dpr;
+    // 地面貼圖（整張一次畫上）
+    ctx.setTransform(a/k, b/k, -c/k, -d/k, e+(-a+c)*W, f+(-b+d)*W);
+    ctx.imageSmoothingEnabled=true; ctx.drawImage(tex,0,0);
+    // 雷達掃描扇形
+    ctx.setTransform(a,b,c,d,e,f);
+    ctx.globalCompositeOperation="lighter";
+    const sw0=t*.9, R=G.R, tw=G.tw;
+    for(let i=0;i<9;i++){
+      ctx.fillStyle=`rgba(0,229,255,${.07*(1-i/9)})`;
+      ctx.beginPath(); ctx.moveTo(tw[0],tw[1]); ctx.arc(tw[0],tw[1],R,sw0-(i+1)*.06,sw0-i*.06); ctx.closePath(); ctx.fill();
+    }
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    // 進場燈（兔子燈跑馬）：只在使用中的進場端播放，另一端僅留暗燈座
+    const lit=Math.floor(t*10)%9;
+    G.rw.forEach(r=>r.ends.forEach((en,ei)=>{
+      const act=ei===r.act;
+      for(let i=1;i<=7;i++){ const al=-i*.13, q=P(en.T[0]+en.dir[0]*al, en.T[1]+en.dir[1]*al, 0), on=act&&(8-i)===lit;
+        ctx.fillStyle=on?"rgba(255,255,255,.95)":act?"rgba(57,255,159,.45)":"rgba(57,255,159,.12)";
+        ctx.fillRect(q[0]-(on?1.6:.9), q[1]-(on?1.6:.9), on?3.2:1.8, on?3.2:1.8); }
+    }));
+    ctx.globalCompositeOperation="source-over";
+    // 航機影子
+    const fl=[0,1,2].map(i=>flight(i,t)).map((p,i)=>p&&{p,i});
+    fl.forEach(o=>{ if(!o) return; const q=P(o.p.x,o.p.y,0);
+      ctx.fillStyle=`rgba(0,0,0,${.45*o.p.a})`; ctx.beginPath(); ctx.ellipse(q[0],q[1],5,2.2,0,0,Math.PI*2); ctx.fill(); });
+    // 立體建物（由遠到近）
+    G.boxes.slice().sort((m,n)=>depth(n.c[0],n.c[1])-depth(m.c[0],m.c[1])).forEach(bx=>box(bx,t));
+    // 航機、尾跡
+    fl.forEach(o=>{ if(!o) return; const p=o.p, q=P(p.x,p.y,p.z);
+      ctx.strokeStyle=`rgba(0,229,255,${.5*p.a})`; ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(q[0],q[1]);
+      for(let j=1;j<=6;j++){ const pp=flight(o.i,t,j*.004); if(!pp) break; const qq=P(pp.x,pp.y,pp.z); ctx.lineTo(qq[0],qq[1]); }
+      ctx.stroke();
+      const q2=P(p.x+p.d[0]*.1, p.y+p.d[1]*.1, p.z), ang=Math.atan2(q2[1]-q[1], q2[0]-q[0]);
+      ctx.globalCompositeOperation="lighter"; ctx.globalAlpha=p.a; ctx.drawImage(glow,q[0]-14,q[1]-14,28,28);
+      ctx.globalCompositeOperation="source-over";
+      ctx.save(); ctx.translate(q[0],q[1]); ctx.rotate(ang);
+      ctx.fillStyle="#EFFFFF"; ctx.beginPath();
+      [[8,0],[2,1.3],[-1,6.5],[-3,6.5],[-2,1.3],[-6,1.1],[-7.5,3.4],[-8.5,3.4],[-7.5,0],[-8.5,-3.4],[-7.5,-3.4],[-6,-1.1],[-2,-1.3],[-3,-6.5],[-1,-6.5],[2,-1.3]].forEach(v=>ctx.lineTo(v[0],v[1]));
+      ctx.closePath(); ctx.fill();
+      if(Math.floor(t*2.5+o.i)%2){ ctx.fillStyle=MG; ctx.fillRect(-2,6,1.6,1.6); ctx.fillRect(-2,-7.6,1.6,1.6); }
+      ctx.restore(); ctx.globalAlpha=1;
+    });
+    ctx.setTransform(1,0,0,1,0,0); ctx.drawImage(ovl,0,0);
+    ctx.setTransform(dpr,0,0,dpr,0,0); rwyTags();   // 疊在霧化層之上，遠端也清楚
+    hud(t, live);
+  }
+
+  /* ---- HUD 文字 ---- */
+  function hud(t, live){
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    const c=G.cfg, x=18, narrow=CW<520;
+    ctx.textBaseline="alphabetic"; ctx.textAlign="left";
+    ctx.font=`700 13px ${MONO}`; ctx.fillStyle=CY; ctx.fillText(`SKY/VIEW ▸ ${G.cd}`, x, 30);
+    ctx.font=`500 10.5px ${MONO}`; ctx.fillStyle="rgba(200,230,245,.72)";
+    ctx.fillText(c.n, x, 45);
+    if(c.ll) ctx.fillText(`${Math.abs(c.ll[0]).toFixed(2)}°${c.ll[0]>=0?"N":"S"} ${Math.abs(c.ll[1]).toFixed(2)}°${c.ll[1]>=0?"E":"W"}`, x, 58);
+    // 跑道清單
+    const lines=G.rw.map(r=>`RWY ${r.ends[0].d}/${r.ends[1].d}  ${r.len}M`);
+    const show=lines.slice(0, narrow?2:4); if(lines.length>show.length) show.push(`+${lines.length-show.length} RWY`);
+    ctx.font=`600 10.5px ${MONO}`;
+    show.forEach((l,i)=>{ const y=CH-16-(show.length-1-i)*14; ctx.fillStyle="rgba(4,12,22,.6)"; ctx.fillRect(x-4,y-10,ctx.measureText(l).width+8,13); ctx.fillStyle=i<lines.length?GD:"rgba(220,192,134,.7)"; ctx.fillText(l,x,y); });
+    // 羅盤
+    const kx=CW-32, ky=32;
+    ctx.strokeStyle="rgba(0,229,255,.55)"; ctx.lineWidth=1; ctx.beginPath(); ctx.ellipse(kx,ky,15,15*TILT+3,0,0,Math.PI*2); ctx.stroke();
+    const nx=-st, ny=-ct*TILT, nl=Math.hypot(nx,ny)||1;
+    ctx.strokeStyle=MG; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(kx,ky); ctx.lineTo(kx+nx/nl*13, ky+ny/nl*13); ctx.stroke();
+    ctx.font=`700 9px ${MONO}`; ctx.fillStyle=MG; ctx.textAlign="center"; ctx.fillText("N", kx+nx/nl*21, ky+ny/nl*21+3);
+    ctx.textAlign="right"; ctx.font=`600 10.5px ${MONO}`; ctx.fillStyle="rgba(200,230,245,.75)";
+    ctx.fillText(`CAM ${pad2(Math.round(((th/D2R)%360+360)%360)).padStart(3,"0")}°`, kx-24, ky+4);
+    // 當地時間與狀態
+    const sec=Math.floor(Date.now()/1000);
+    if(sec!==ltSec){ ltSec=sec; try{ ltStr=fmt?fmt.format(new Date()):""; }catch(_){ ltStr=""; } }
+    ctx.font=`600 11px ${MONO}`; ctx.fillStyle="rgba(233,240,246,.9)";
+    if(ltStr) ctx.fillText(`LT ${ltStr}`, CW-14, CH-16);
+    ctx.fillStyle=AC; ctx.font=`700 10.5px ${MONO}`;
+    ctx.fillText("● LIVE 30FPS", CW-14, CH-(ltStr?30:16));
+  }
+
+  /* ---- 播放控制：看不到就停 ---- */
+  function loop(now){
+    raf=requestAnimationFrame(loop);
+    const dt=now-last, iv=1000/FPS;
+    if(dt<iv-2) return;                         // 限制每秒 30 格
+    last=now-(dt%iv);
+    simT+=Math.min(dt,120)/1000;
+    frame(simT,true);
+  }
+  function sync(){
+    const run=tabOn && inView && pageOn && !!tex;
+    if(run && !raf){ last=performance.now(); raf=requestAnimationFrame(loop); }
+    else if(!run && raf){ cancelAnimationFrame(raf); raf=0; if(tex) frame(simT,false); }
+  }
+
+  new IntersectionObserver(es=>{ inView=es[es.length-1].isIntersecting; sync(); },{threshold:.05}).observe(wrap);
+  document.addEventListener("visibilitychange",()=>{ pageOn=!document.hidden; sync(); });
+  let rz=0, lastW=0;
+  new ResizeObserver(()=>{ const w=wrap.clientWidth; if(!w||w===lastW) return; clearTimeout(rz);
+    rz=setTimeout(()=>{ lastW=w; if(build()) frame(simT, !!raf); sync(); }, 120); }).observe(wrap);
+
+  function load(cd){
+    if(cd===code && tex) return;
+    code=cd;
+    const cfg=SKY[cd]||{n:"SCHEMATIC",r:[[180,3000,0,0]],t:[[0,-.45,.7,.25,.04]]};
+    G=prep(cfg,cd);
+    try{ fmt=new Intl.DateTimeFormat("en-GB",{timeZone:(typeof TZMAP!=="undefined"&&TZMAP[cd])||(cd==="TSA"?"Asia/Taipei":undefined),hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"}); }catch(_){ fmt=null; }
+    ltSec=-1; tex=null; lastW=0;
+    if(build()){ lastW=wrap.clientWidth; frame(simT, !!raf); }
+    sync();
+  }
+
+  return {
+    mount(host, cd){ if(!host) return; host.appendChild(wrap); load(cd); },
+    setTab(on){ tabOn=on; sync(); }
+  };
+})();
 
 renderMatrix(); renderMatrixDetail(); renderLegs();
 current = DATA.stations.find(s=>s.code==="NRT") || DATA.stations[0];
