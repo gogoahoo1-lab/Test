@@ -1356,7 +1356,7 @@ function getHsrPair(){
 }
 function setHsrPair(n,s){try{localStorage.setItem('xfer_hsr',JSON.stringify({n,s}))}catch(e){}updateHomeBtn()}
 const hsrN=id=>'高鐵'+HSR_NAME[id];
-let TRA_ID={XZY:'4350',PT:'5000'};             // 台鐵新左營、屏東（查無資料時會用站名重新解析）
+let TRA_ID={XZY:'4340',PT:'5000'};             // 台鐵新左營 4340（注意：4350 是只停區間車的左營〔舊城〕站）、屏東 5000             // 台鐵新左營、屏東（查無資料時會用站名重新解析）
 const MRT_HSR='A18';
 const XFER_DEF={mh:12,ht:8,th:10,hm:10};       // 最少轉乘分鐘
 const HORIZON=360;                             // 規劃往後 6 小時內抵達的方案
@@ -1514,7 +1514,7 @@ function pruneTdxCache(all){
     const today=ymd(0);
     Object.keys(localStorage).filter(k=>k.startsWith('tdxc:')).forEach(k=>{
       const m=k.match(/\/(\d{4}-\d{2}-\d{2})\?/);
-      if(all||(m&&m[1]<today)) localStorage.removeItem(k);
+      if(all||(m&&m[1]<today)||/\/4350\//.test(k)) localStorage.removeItem(k);   // 也清掉舊版誤用的 4350 資料
     });
   }catch(e){}
 }
