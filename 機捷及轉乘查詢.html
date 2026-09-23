@@ -1135,6 +1135,8 @@ function tabAction(action){
     case 'xfer':
       currentTab='xfer';
       if(!document.getElementById('xferCont').innerHTML.trim()) renderXferIntro();
+      else if(xDirty&&document.querySelector('#xferCont .xd')){runTransfer();toast('已套用新的轉乘設定')}
+      xDirty=false;
       window.scrollTo({top:0,behavior:'smooth'});
       break;
 
@@ -1207,14 +1209,14 @@ function showSettingsPage(){
         <div style="font-size:12px;color:var(--text3);line-height:1.7;margin-bottom:14px">轉乘時間是換車時至少要預留的分鐘數（含步行、進出站、買票）。規劃時不會排入比這更緊的班次。</div>
         <div class="set-row">
           <label>我的機捷站（南下起點、北上終點）</label>
-          <select id="xHome" onchange="setHome(this.value)">${STATIONS.filter(x=>x.c!=='A18').map(x=>`<option value="${x.c}"${x.c===getHome()?' selected':''}>${x.c} ${x.n}</option>`).join('')}</select>
+          <select id="xHome" onchange="setHome(this.value);toast('已儲存')">${STATIONS.filter(x=>x.c!=='A18').map(x=>`<option value="${x.c}"${x.c===getHome()?' selected':''}>${x.c} ${x.n}</option>`).join('')}</select>
         </div>
         <div class="set-row">
           <label>高鐵車程上限（分鐘，桃園⇄左營；其他站別自動只挑快車；0 = 不限）</label>
-          <input type="number" inputmode="numeric" min="0" max="240" value="${getHsrMax()}" onchange="setHsrMax(this.value)">
+          <input type="number" inputmode="numeric" min="0" max="240" value="${getHsrMax()}" oninput="setHsrMax(this.value)" onchange="toast('已儲存')">
         </div>
         <div class="set-grid">
-          ${[['mh','機捷 → 高鐵（A18／A1）'],['ht','高鐵左營 → 台鐵新左營'],['th','台鐵新左營 → 高鐵左營'],['hm','高鐵 → 機捷（A18／A1）']].map(([k,l])=>`<div class="set-row"><label>${l}</label><input type="number" inputmode="numeric" min="0" max="60" value="${getBuf()[k]}" onchange="setBuf('${k}',this.value)"></div>`).join('')}
+          ${[['mh','機捷 → 高鐵（A18／A1）'],['ht','高鐵左營 → 台鐵新左營'],['th','台鐵新左營 → 高鐵左營'],['hm','高鐵 → 機捷（A18／A1）']].map(([k,l])=>`<div class="set-row"><label>${l}</label><input type="number" inputmode="numeric" min="0" max="60" value="${getBuf()[k]}" oninput="setBuf('${k}',this.value)" onchange="toast('已儲存')"></div>`).join('')}
         </div>
       </div>
 
@@ -1431,9 +1433,10 @@ let xState={S:null,N:null,alerts:[],upd:null};
 const xCache={};
 
 function getHome(){try{return localStorage.getItem('xfer_home')||'A12'}catch(e){return 'A12'}}
-function setHome(c){try{localStorage.setItem('xfer_home',c)}catch(e){}updateHomeBtn()}
+function setHome(c){xDirty=true;try{localStorage.setItem('xfer_home',c)}catch(e){}updateHomeBtn()}
 function getBuf(){try{return Object.assign({},XFER_DEF,JSON.parse(localStorage.getItem('xfer_buf')||'{}'))}catch(e){return {...XFER_DEF}}}
-function setBuf(k,v){const b=getBuf();b[k]=Math.max(0,Math.min(60,parseInt(v)||0));try{localStorage.setItem('xfer_buf',JSON.stringify(b))}catch(e){}}
+let xDirty=false;
+function setBuf(k,v){xDirty=true;const b=getBuf();b[k]=Math.max(0,Math.min(60,parseInt(v)||0));try{localStorage.setItem('xfer_buf',JSON.stringify(b))}catch(e){}}
 
 const toMin=t=>{if(!t)return null;const [h,m]=t.split(':').map(Number);return h*60+m};
 function ymd(off){const d=new Date();d.setDate(d.getDate()+off);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
@@ -1597,6 +1600,7 @@ function applyDelay(trips,delays){
 
 // ---- 主流程 ----
 async function runTransfer(){
+  xDirty=false;
   const box=document.getElementById('xferCont');
   const creds=loadCreds();
   const home=getHome();
@@ -1664,7 +1668,7 @@ async function runTransfer(){
 
 // 高鐵車程上限：優先只用 ≤ 上限的班次；完全排不出方案時才退回全部班次
 function getHsrMax(){try{const v=parseInt(localStorage.getItem('xfer_hsrmax'));return isNaN(v)?100:v}catch(e){return 100}}
-function setHsrMax(v){const n=Math.max(0,Math.min(240,parseInt(v)||0));try{localStorage.setItem('xfer_hsrmax',String(n))}catch(e){}}
+function setHsrMax(v){xDirty=true;const n=Math.max(0,Math.min(240,parseInt(v)||0));try{localStorage.setItem('xfer_hsrmax',String(n))}catch(e){}}
 function planPreferFast(legs,hi,bufs,T0){
   let max=getHsrMax();
   if(!max) return {plans:planRoutes(legs,bufs,T0),hsrMax:0,fallback:false};
