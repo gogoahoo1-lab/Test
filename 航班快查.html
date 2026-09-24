@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>航班快查</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF2F6; --surface:#FFFFFF; --ink:#14263D; --muted:#5B6B80; --line:#D3DBE5;
+  --accent:#F0A81C; --accent-ink:#14263D; --ok:#1F8A5B; --warn:#C0392B; --soft:#E3E9F0;
+  --code:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F1A29; --surface:#172538; --ink:#E6EDF5; --muted:#93A3B8; --line:#2A3B52;
+  --accent:#F4B63F; --accent-ink:#14263D; --ok:#4CC38A; --warn:#FF7A6B; --soft:#1F3048;}}
+:root[data-theme="dark"]{
+  --bg:#0F1A29; --surface:#172538; --ink:#E6EDF5; --muted:#93A3B8; --line:#2A3B52;
+  --accent:#F4B63F; --accent-ink:#14263D; --ok:#4CC38A; --warn:#FF7A6B; --soft:#1F3048;}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55}
+.wrap{max-width:640px;margin:0 auto;padding:0 16px 48px}
+header{display:flex;align-items:baseline;justify-content:space-between;padding:20px 0 12px}
+header h1{font-family:var(--code);font-weight:700;font-size:1.9rem;letter-spacing:.02em;margin:0}
+header small{color:var(--muted)}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:6px 0 12px;display:flex;gap:6px}
+nav button{flex:1;border:1px solid var(--line);background:var(--surface);color:var(--muted);padding:10px 0;border-radius:10px;font:500 .95rem var(--body);cursor:pointer}
+nav button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+section[hidden]{display:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* boarding pass: the one bold element */
+.pass{background:var(--surface);border-radius:16px;position:relative;overflow:hidden;border:1px solid var(--line)}
+.pass-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:18px 18px 14px;gap:8px}
+.pass-top label{display:block;color:var(--muted);font-size:.8rem}
+.iata{width:100%;border:0;background:transparent;color:var(--ink);font:700 3.4rem/1 var(--code);letter-spacing:.04em;text-transform:uppercase;padding:0}
+.iata::placeholder{color:var(--line)}
+.to{text-align:right}.to .iata{text-align:right}
+.city{font-size:.85rem;color:var(--muted);min-height:1.3em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.swap{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:1.2rem;cursor:pointer;transition:transform .25s}
+.swap.spin{transform:rotate(180deg)}
+.perf{height:18px;position:relative;margin:0 -1px}
+.perf::before{content:"";position:absolute;left:18px;right:18px;top:50%;border-top:2px dashed var(--line)}
+.perf::after{content:"";position:absolute;inset:0;background:
+  radial-gradient(circle at 0 50%,var(--bg) 9px,transparent 10px),
+  radial-gradient(circle at 100% 50%,var(--bg) 9px,transparent 10px)}
+.pass-bottom{padding:12px 18px 18px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field label{display:block;color:var(--muted);font-size:.8rem;margin-bottom:4px}
+.field input,.field select{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:9px 10px;font:500 1rem var(--body);min-height:42px}
+.field.full{grid-column:1/-1}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{flex:1;border:0;background:var(--bg);color:var(--muted);padding:9px 0;font:500 .95rem var(--body);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+
+.go{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.go a,.btn{display:flex;align-items:center;justify-content:center;text-align:center;min-height:48px;border-radius:10px;background:var(--ink);color:var(--bg);text-decoration:none;font:600 .95rem var(--body);border:0;cursor:pointer;padding:8px}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.go.two{grid-template-columns:repeat(2,1fr)}
+.hint{color:var(--muted);font-size:.85rem;margin:10px 2px 0}
+.err{color:var(--warn);font-size:.9rem;margin:10px 2px 0;min-height:1.2em}
+
+h2{font-size:1rem;margin:28px 0 10px;color:var(--muted);font-weight:500}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 12px;font:500 .9rem var(--body);cursor:pointer}
+.chip b{font-family:var(--code);font-size:1.05rem;letter-spacing:.03em}
+.list{display:flex;flex-direction:column;gap:6px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;text-align:left;color:var(--ink);font:inherit;width:100%}
+.row .code{font:700 1.25rem var(--code);letter-spacing:.03em}
+.row small{color:var(--muted)}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+.big-input{width:100%;border:0;border-bottom:2px solid var(--line);background:transparent;color:var(--ink);font:700 2.6rem/1.1 var(--code);letter-spacing:.04em;text-transform:uppercase;padding:4px 0 6px}
+.big-input:focus{border-bottom-color:var(--accent);outline:none}
+details{margin-top:24px}
+summary{cursor:pointer;color:var(--muted);font-size:.95rem}
+.result{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+.leg{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:start}
+.leg .port{font:700 2rem/1 var(--code)}
+.leg .t{font:600 1.3rem var(--code)}
+.leg .r{text-align:right}
+.leg .mid{align-self:center;color:var(--muted);font-size:.8rem;text-align:center}
+.meta{color:var(--muted);font-size:.85rem}
+.status{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.85rem;font-weight:600;background:var(--soft)}
+.status.good{color:var(--ok)}.status.bad{color:var(--warn)}
+.late{color:var(--warn)}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:480px;font-size:.9rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{color:var(--muted);font-weight:500;background:var(--soft)}
+td.fn{font:700 1.05rem var(--code);letter-spacing:.03em}
+tr:last-child td{border-bottom:0}
+.fare-actions{display:grid;grid-template-columns:auto 1fr;gap:8px;margin-top:14px}
+.fare-actions select{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:0 10px;font:500 .95rem var(--body);min-height:48px}
+.fare{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.fare-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:8px}
+.price{font:700 1.9rem/1 var(--code);letter-spacing:.01em}
+.fare.best,.fare.best-irrop{border:2px solid var(--accent)}
+.fare.best .price::after{content:"最低價";font:600 .75rem var(--body);background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:2px 8px;margin-left:8px;vertical-align:middle}
+.ft{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 0}
+.ft+.ft{border-top:1px dashed var(--line)}
+.ft .tm{font:600 1.35rem var(--code)}
+.ft .tm sup{font-size:.7rem;color:var(--warn);margin-left:2px}
+.ft .line{text-align:center;color:var(--muted);font-size:.8rem;line-height:1.3}
+.ft .line hr{border:0;border-top:1px solid var(--line);margin:3px 0}
+.ft .r{text-align:right}
+.tag{display:inline-block;font-size:.75rem;padding:1px 8px;border-radius:999px;background:var(--soft);color:var(--muted);margin-right:4px}
+.tag.bad{color:var(--warn)}
+.book{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.book a{display:flex;justify-content:space-between;gap:10px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;color:var(--ink);text-decoration:none;background:var(--bg)}
+.book a b{font-family:var(--code);font-size:1.1rem}
+.linkbtn{background:none;border:0;color:var(--ink);text-decoration:underline;font:500 .9rem var(--body);cursor:pointer;padding:6px 0}
+@media (max-width:420px){.iata{font-size:2.8rem}.go{grid-template-columns:1fr 1fr}.go a:first-child{grid-column:1/-1}}
+@media (prefers-reduced-motion:reduce){.swap{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><h1>航班快查</h1><small id="today"></small></header>
+
+<nav role="tablist">
+  <button role="tab" aria-selected="true" data-tab="fare">機票比價</button>
+  <button role="tab" aria-selected="false" data-tab="flight">航班動態</button>
+  <button role="tab" aria-selected="false" data-tab="airport">機場看板</button>
+  <button role="tab" aria-selected="false" data-tab="irrop">改搭方案</button>
+</nav>
+
+<datalist id="airports"></datalist>
+
+<!-- ===== 機票比價 ===== -->
+<section id="tab-fare">
+  <div class="pass">
+    <div class="pass-top">
+      <div><label for="from">出發</label><input id="from" class="iata" list="airports" maxlength="12" placeholder="TPE" autocomplete="off"><div class="city" id="fromCity"></div></div>
+      <button class="swap" id="swap" aria-label="對調出發與目的地">⇄</button>
+      <div class="to"><label for="to">目的地</label><input id="to" class="iata" list="airports" maxlength="12" placeholder="NRT" autocomplete="off"><div class="city" id="toCity"></div></div>
+    </div>
+    <div class="perf" aria-hidden="true"></div>
+    <div class="pass-bottom">
+      <div class="field full"><div class="seg" id="tripSeg">
+        <button aria-pressed="true" data-v="rt">來回</button><button aria-pressed="false" data-v="ow">單程</button>
+      </div></div>
+      <div class="field"><label for="dep">去程日期</label><input type="date" id="dep"></div>
+      <div class="field" id="retWrap"><label for="ret">回程日期</label><input type="date" id="ret"></div>
+      <div class="field"><label for="pax">成人</label><select id="pax"></select></div>
+      <div class="field"><label for="cabin">艙等</label><select id="cabin">
+        <option value="economy">經濟艙</option><option value="premium">豪華經濟艙</option>
+        <option value="business">商務艙</option><option value="first">頭等艙</option></select></div>
+    </div>
+  </div>
+  <div class="fare-actions">
+    <select id="stops" aria-label="轉機次數"><option value="">轉機不限</option><option value="0">只看直飛</option><option value="1">最多轉 1 次</option></select>
+    <button class="btn" id="fetchFare">查詢票價</button>
+  </div>
+  <p class="err" id="fareErr" role="alert"></p>
+  <div class="result" id="fareResult"></div>
+
+  <h2>到比價網站查</h2>
+  <div class="go" id="fareLinks" style="margin-top:0">
+    <a href="#" data-site="google" target="_blank" rel="noopener">Google Flights</a>
+    <a href="#" data-site="sky" target="_blank" rel="noopener">Skyscanner</a>
+    <a href="#" data-site="kayak" target="_blank" rel="noopener">KAYAK</a>
+  </div>
+
+  <h2>常用航線</h2>
+  <div class="chips" id="routeChips"></div>
+  <h2>最近查過</h2>
+  <div class="list" id="fareHistory"></div>
+</section>
+
+<!-- ===== 航班動態 ===== -->
+<section id="tab-flight" hidden>
+  <div class="card">
+    <label for="fno" class="meta">航班編號</label>
+    <input id="fno" class="big-input" placeholder="JX800" maxlength="8" autocomplete="off">
+    <div class="field" style="margin-top:12px"><label for="fdate">日期（出發地當地）</label><input type="date" id="fdate"></div>
+  </div>
+  <div class="go" id="flightLinks">
+    <a href="#" data-site="fr24" target="_blank" rel="noopener">Flightradar24</a>
+    <a href="#" data-site="fa" target="_blank" rel="noopener">FlightAware</a>
+    <a href="#" data-site="g" target="_blank" rel="noopener">Google 搜尋</a>
+  </div>
+  <p class="err" id="flightErr" role="alert"></p>
+
+  <details id="apiFlight">
+    <summary>在 App 內直接顯示動態（需 AeroDataBox 金鑰）</summary>
+    <div style="margin-top:12px"><button class="btn" id="fetchFlight" style="width:100%">在這裡查詢</button></div>
+    <div class="result" id="flightResult"></div>
+  </details>
+
+  <h2>最近查過</h2>
+  <div class="chips" id="flightHistory"></div>
+</section>
+
+<!-- ===== 機場看板 ===== -->
+<section id="tab-airport" hidden>
+  <div class="card">
+    <label for="apt" class="meta">機場代碼或城市</label>
+    <input id="apt" class="big-input" list="airports" placeholder="TPE" maxlength="12" autocomplete="off">
+    <div class="city" id="aptCity" style="margin-top:6px"></div>
+  </div>
+  <div class="go" id="aptLinks">
+    <a href="#" data-site="dep" target="_blank" rel="noopener">FR24 離場</a>
+    <a href="#" data-site="arr" target="_blank" rel="noopener">FR24 到場</a>
+    <a href="#" data-site="fa" target="_blank" rel="noopener">FlightAware</a>
+  </div>
+  <p class="err" id="aptErr" role="alert"></p>
+
+  <details id="apiApt">
+    <summary>在 App 內顯示到離場表（需 AeroDataBox 金鑰）</summary>
+    <div class="pass-bottom" style="padding:12px 0 0">
+      <div class="field"><label for="aptFrom">起始時間（機場當地）</label><input type="datetime-local" id="aptFrom"></div>
+      <div class="field"><label for="aptSpan">時間範圍</label><select id="aptSpan"><option value="3">3 小時</option><option value="6" selected>6 小時</option><option value="12">12 小時</option></select></div>
+      <div class="field full"><div class="seg" id="dirSeg"><button aria-pressed="true" data-v="Departure">離場</button><button aria-pressed="false" data-v="Arrival">到場</button></div></div>
+      <div class="field full"><button class="btn" id="fetchApt" style="width:100%">在這裡查詢</button></div>
+    </div>
+    <div class="result" id="aptResult"></div>
+  </details>
+</section>
+
+<!-- ===== 改搭方案 ===== -->
+<section id="tab-irrop" hidden>
+  <div class="pass">
+    <div class="pass-top">
+      <div><label for="irFrom">場站</label><input id="irFrom" class="iata" list="airports" maxlength="12" placeholder="TPE" autocomplete="off"><div class="city" id="irFromCity"></div></div>
+      <span aria-hidden="true" style="font-size:1.4rem;color:var(--muted)">✈</span>
+      <div class="to"><label for="irTo">旅客目的地</label><input id="irTo" class="iata" list="airports" maxlength="12" placeholder="NRT" autocomplete="off"><div class="city" id="irToCity"></div></div>
+    </div>
+    <div class="perf" aria-hidden="true"></div>
+    <div class="pass-bottom">
+      <div class="field full"><label for="irStart">最早可出發（你裝置的時間）</label><input type="datetime-local" id="irStart"></div>
+      <div class="field"><label for="irDays">往後找幾天</label><select id="irDays"><option value="1">1 天</option><option value="2" selected>2 天</option><option value="3">3 天</option></select></div>
+      <div class="field"><label for="irPax">需要座位</label><select id="irPax"></select></div>
+      <div class="field"><label for="irCabin">艙等</label><select id="irCabin">
+        <option value="economy">經濟艙</option><option value="premium">豪華經濟艙</option><option value="business">商務艙</option><option value="first">頭等艙</option></select></div>
+      <div class="field"><label for="irStops">轉機</label><select id="irStops"><option value="">不限</option><option value="0">只看直飛</option><option value="1">最多 1 次</option></select></div>
+      <div class="field"><label for="irInc">只看這些航空公司</label><input id="irInc" placeholder="例：BR,CI" autocomplete="off"></div>
+      <div class="field"><label for="irExc">排除航空公司</label><input id="irExc" placeholder="例：MM" autocomplete="off"></div>
+      <div class="field full"><label style="display:flex;gap:8px;align-items:center;color:var(--ink);font-size:.95rem"><input type="checkbox" id="irThrough" checked style="width:auto;min-height:0">排除需要分開購票、自行轉機的行程</label></div>
+    </div>
+  </div>
+  <div class="go two"><button class="btn" id="irSearch" style="grid-column:1/-1">找改搭航班</button></div>
+  <p class="hint">目的地可填城市代碼一次查多個機場，例如 TYO（成田＋羽田）、OSA、SEL、BKK。</p>
+  <p class="err" id="irErr" role="alert"></p>
+  <div id="irSummary" class="chips"></div>
+  <div class="seg" id="irSort" style="margin-top:12px;display:none">
+    <button aria-pressed="true" data-v="arr">最早抵達</button><button aria-pressed="false" data-v="dep">最早出發</button><button aria-pressed="false" data-v="stops">轉機最少</button>
+  </div>
+  <div class="result" id="irResult"></div>
+</section>
+
+<details id="settings">
+  <summary>設定：API 金鑰</summary>
+  <div class="card" style="margin-top:10px">
+    <p class="meta" style="margin-top:0">金鑰只存在這台裝置的瀏覽器裡。把這個檔案分享給別人前，先按「清除金鑰」。</p>
+    <div class="field"><label for="ignavKey">Ignav 金鑰（查票價用，到 ignav.com 註冊，前 1,000 次免費）</label><input id="ignavKey" type="password" autocomplete="off" placeholder="貼上 Ignav 金鑰"></div>
+    <div class="field" style="margin-top:10px"><label for="market">票價市場／幣別</label><select id="market">
+      <option value="TW">台灣</option><option value="US">美國（美元）</option><option value="JP">日本</option><option value="HK">香港</option><option value="GB">英國</option></select></div>
+    <div class="field" style="margin-top:10px"><label for="apiKey">AeroDataBox 金鑰（查航班動態用，X-RapidAPI-Key）</label><input id="apiKey" type="password" autocomplete="off" placeholder="貼上 RapidAPI 金鑰"></div>
+    <div class="go two"><button class="btn" id="saveKey">儲存金鑰</button><button class="btn ghost" id="clearKey">清除金鑰</button></div>
+    <p class="hint" id="keyMsg"></p>
+  </div>
+</details>
+</div>
+
+<script>
+const AIRPORTS=[
+["TPE","RCTP","台北桃園"],["TSA","RCSS","台北松山"],["KHH","RCKH","高雄小港"],["RMQ","RCMQ","台中清泉崗"],["TNN","RCNN","台南"],
+["NRT","RJAA","東京成田"],["HND","RJTT","東京羽田"],["KIX","RJBB","大阪關西"],["ITM","RJOO","大阪伊丹"],["NGO","RJGG","名古屋中部"],
+["FUK","RJFF","福岡"],["CTS","RJCC","札幌新千歲"],["OKA","ROAH","沖繩那霸"],["SDJ","RJSS","仙台"],["KMQ","RJNK","小松"],["HKD","RJCH","函館"],["KOJ","RJFK","鹿兒島"],
+["ICN","RKSI","首爾仁川"],["GMP","RKSS","首爾金浦"],["PUS","RKPK","釜山"],["CJU","RKPC","濟州"],
+["HKG","VHHH","香港"],["MFM","VMMC","澳門"],["PVG","ZSPD","上海浦東"],["SHA","ZSSS","上海虹橋"],["PEK","ZBAA","北京首都"],["PKX","ZBAD","北京大興"],
+["CAN","ZGGG","廣州"],["SZX","ZGSZ","深圳"],["XMN","ZSAM","廈門"],
+["BKK","VTBS","曼谷蘇凡納布"],["DMK","VTBD","曼谷廊曼"],["CNX","VTCC","清邁"],["HKT","VTSP","普吉"],["SIN","WSSS","新加坡"],["KUL","WMKK","吉隆坡"],
+["PEN","WMKP","檳城"],["CGK","WIII","雅加達"],["DPS","WADD","峇里島"],["MNL","RPLL","馬尼拉"],["CEB","RPVM","宿霧"],["CRK","RPLC","克拉克"],
+["SGN","VVTS","胡志明市"],["HAN","VVNB","河內"],["DAD","VVDN","峴港"],
+["DEL","VIDP","新德里"],["DXB","OMDB","杜拜"],["DOH","OTHH","杜哈"],["IST","LTFM","伊斯坦堡"],
+["LHR","EGLL","倫敦希斯洛"],["CDG","LFPG","巴黎戴高樂"],["FRA","EDDF","法蘭克福"],["MUC","EDDM","慕尼黑"],["AMS","EHAM","阿姆斯特丹"],
+["VIE","LOWW","維也納"],["PRG","LKPR","布拉格"],["FCO","LIRF","羅馬"],["MXP","LIMC","米蘭"],["ZRH","LSZH","蘇黎世"],["MAD","LEMD","馬德里"],["BCN","LEBL","巴塞隆納"],
+["LAX","KLAX","洛杉磯"],["SFO","KSFO","舊金山"],["SEA","KSEA","西雅圖"],["ONT","KONT","安大略"],["PHX","KPHX","鳳凰城"],["JFK","KJFK","紐約甘迺迪"],
+["EWR","KEWR","紐華克"],["ORD","KORD","芝加哥"],["YVR","CYVR","溫哥華"],["YYZ","CYYZ","多倫多"],["HNL","PHNL","檀香山"],["GUM","PGUM","關島"],
+["SYD","YSSY","雪梨"],["MEL","YMML","墨爾本"],["BNE","YBBN","布里斯本"],["AKL","NZAA","奧克蘭"]
+];
+const ROUTES=[["TPE","NRT"],["TPE","KIX"],["TPE","OKA"],["TPE","ICN"],["TPE","HKG"],["TPE","BKK"],["TPE","SIN"],["TPE","LAX"]];
+const BY_IATA=Object.fromEntries(AIRPORTS.map(a=>[a[0],a]));
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const store={
+  get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch{return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+};
+const pad=n=>String(n).padStart(2,"0");
+const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+
+$("airports").innerHTML=AIRPORTS.map(a=>`<option value="${a[0]}" label="${a[2]}">${a[2]}</option>`).join("");
+$("today").textContent=new Date().toLocaleDateString("zh-TW",{month:"long",day:"numeric",weekday:"short"});
+
+/* 城市名 → 代碼 */
+function resolve(v){
+  v=(v||"").trim(); if(!v) return "";
+  const up=v.toUpperCase();
+  if(/^[A-Z]{3}$/.test(up)) return up;
+  const hit=AIRPORTS.find(a=>a[2].includes(v)||a[1]===up);
+  return hit?hit[0]:up;
+}
+function bindAirport(inp,cityEl){
+  const show=()=>{const c=resolve(inp.value);cityEl.textContent=BY_IATA[c]?BY_IATA[c][2]:(c.length===3?"":"");};
+  inp.addEventListener("input",show);
+  inp.addEventListener("change",()=>{inp.value=resolve(inp.value);show();});
+  inp.addEventListener("blur",()=>{inp.value=resolve(inp.value);show();});
+  show();
+}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.setAttribute("aria-selected",x===b));
+  document.querySelectorAll("section").forEach(s=>s.hidden=s.id!=="tab-"+b.dataset.tab);
+  store.set("tab",b.dataset.tab);
+}));
+const lastTab=store.get("tab","fare");
+document.querySelector(`nav button[data-tab="${lastTab}"]`)?.click();
+
+function segment(el,onChange){
+  el.addEventListener("click",e=>{
+    const b=e.target.closest("button");if(!b)return;
+    el.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));
+    onChange&&onChange(b.dataset.v);
+  });
+  return ()=>el.querySelector('[aria-pressed="true"]').dataset.v;
+}
+
+/* ---------- 機票比價 ---------- */
+const fromI=$("from"),toI=$("to");
+bindAirport(fromI,$("fromCity"));bindAirport(toI,$("toCity"));
+$("pax").innerHTML=[1,2,3,4,5,6,7,8,9].map(n=>`<option value="${n}">${n} 位</option>`).join("");
+const tripV=segment($("tripSeg"),v=>{$("retWrap").style.visibility=v==="ow"?"hidden":"visible";});
+const now=new Date();
+$("dep").value=ymd(addDays(now,14));$("ret").value=ymd(addDays(now,19));
+$("dep").min=ymd(now);$("ret").min=ymd(now);
+$("dep").addEventListener("change",()=>{if($("ret").value<$("dep").value)$("ret").value=ymd(addDays(new Date($("dep").value),5));});
+const saved=store.get("fareLast",null);
+fromI.value=saved?.from||"TPE";toI.value=saved?.to||"";
+fromI.dispatchEvent(new Event("input"));toI.dispatchEvent(new Event("input"));
+
+function fareState(){
+  return{from:resolve(fromI.value),to:resolve(toI.value),dep:$("dep").value,ret:$("ret").value,
+    trip:tripV(),pax:+$("pax").value,cabin:$("cabin").value};
+}
+function fareCheck(s){
+  if(!/^[A-Z]{3}$/.test(s.from)) return "出發地請輸入 3 碼機場代碼，例如 TPE。";
+  if(!/^[A-Z]{3}$/.test(s.to)) return "目的地請輸入 3 碼機場代碼，例如 NRT。";
+  if(s.from===s.to) return "出發地和目的地相同，請改其中一個。";
+  if(!s.dep) return "請選去程日期。";
+  if(s.trip==="rt"&&(!s.ret||s.ret<s.dep)) return "回程日期要在去程日期之後。";
+  return "";
+}
+const CABIN_EN={economy:"economy",premium:"premium economy",business:"business class",first:"first class"};
+function fareURL(site,s){
+  const rt=s.trip==="rt";
+  if(site==="google"){
+    let q=`Flights from ${s.from} to ${s.to} on ${s.dep}`+(rt?` through ${s.ret}`:" one way");
+    if(s.cabin!=="economy") q+=` ${CABIN_EN[s.cabin]}`;
+    if(s.pax>1) q+=` ${s.pax} adults`;
+    return `https://www.google.com/travel/flights?q=${encodeURIComponent(q)}&hl=zh-TW&curr=TWD`;
+  }
+  if(site==="sky"){
+    const c=d=>d.slice(2).replace(/-/g,"");
+    const cab={economy:"economy",premium:"premiumeconomy",business:"business",first:"first"}[s.cabin];
+    return `https://www.skyscanner.com.tw/transport/flights/${s.from.toLowerCase()}/${s.to.toLowerCase()}/${c(s.dep)}/`+(rt?`${c(s.ret)}/`:"")+`?adultsv2=${s.pax}&cabinclass=${cab}&rtn=${rt?1:0}`;
+  }
+  if(site==="kayak"){
+    return `https://www.kayak.com/flights/${s.from}-${s.to}/${s.dep}`+(rt?`/${s.ret}`:"")+`/${s.cabin}/${s.pax}adults?sort=price_a`;
+  }
+}
+function saveFare(s){
+  store.set("fareLast",{from:s.from,to:s.to});
+  let h=store.get("fareHist",[]).filter(x=>!(x.from===s.from&&x.to===s.to&&x.dep===s.dep&&x.ret===s.ret&&x.trip===s.trip));
+  h.unshift(s);store.set("fareHist",h.slice(0,8));renderFareHist();
+}
+$("fareLinks").addEventListener("click",e=>{
+  const a=e.target.closest("a");if(!a)return;
+  const s=fareState(),msg=fareCheck(s);
+  $("fareErr").textContent=msg;
+  if(msg){e.preventDefault();return;}
+  a.href=fareURL(a.dataset.site,s);saveFare(s);
+});
+$("swap").addEventListener("click",e=>{
+  [fromI.value,toI.value]=[toI.value,fromI.value];
+  fromI.dispatchEvent(new Event("input"));toI.dispatchEvent(new Event("input"));
+  e.currentTarget.classList.toggle("spin");
+});
+$("routeChips").innerHTML=ROUTES.map(([a,b])=>`<button class="chip" data-a="${a}" data-b="${b}"><b>${a}–${b}</b> ${BY_IATA[b][2]}</button>`).join("");
+$("routeChips").addEventListener("click",e=>{
+  const c=e.target.closest(".chip");if(!c)return;
+  fromI.value=c.dataset.a;toI.value=c.dataset.b;
+  fromI.dispatchEvent(new Event("input"));toI.dispatchEvent(new Event("input"));
+  $("fareErr").textContent="";
+});
+function renderFareHist(){
+  const h=store.get("fareHist",[]);
+  $("fareHistory").innerHTML=h.length?h.map((s,i)=>`<button class="row" data-i="${i}">
+    <span class="code">${esc(s.from)} ${s.trip==="rt"?"⇄":"→"} ${esc(s.to)}</span>
+    <small>${esc(s.dep.slice(5))}${s.trip==="rt"?" ～ "+esc(s.ret.slice(5)):" 單程"}，${s.pax} 位</small></button>`).join("")
+    :`<p class="hint">按上面任一個比價網站後，查詢會記在這裡，點一下就能帶回。</p>`;
+}
+$("fareHistory").addEventListener("click",e=>{
+  const r=e.target.closest(".row");if(!r)return;
+  const s=store.get("fareHist",[])[+r.dataset.i];if(!s)return;
+  fromI.value=s.from;toI.value=s.to;$("dep").value=s.dep;$("ret").value=s.ret||"";
+  $("pax").value=s.pax;$("cabin").value=s.cabin;
+  $("tripSeg").querySelector(`[data-v="${s.trip}"]`).click();
+  fromI.dispatchEvent(new Event("input"));toI.dispatchEvent(new Event("input"));
+  window.scrollTo({top:0,behavior:"smooth"});
+});
+renderFareHist();
+
+/* ---------- Ignav 票價 ---------- */
+const fareCache=new Map(),bookCache=new Map();
+const CABIN_IGNAV={economy:"economy",premium:"premium_economy",business:"business",first:"first"};
+async function ignav(path,body){
+  const key=store.get("ignavKey","");
+  if(!key) throw new Error("還沒設定 Ignav 金鑰。打開頁面最下方的「設定」貼上金鑰，或先用下面的比價網站查。");
+  let r;
+  try{
+    r=await fetch("https://ignav.com/api"+path,{method:"POST",headers:{"X-Api-Key":key,"Content-Type":"application/json"},body:JSON.stringify(body)});
+  }catch{throw new Error("連不到 Ignav。若是直接雙擊開檔，改用本機伺服器或 GitHub Pages 開啟再試；也可以先用下面的比價網站查。");}
+  let data=null;try{data=await r.json()}catch{}
+  if(r.status===401||r.status===403) throw new Error("Ignav 金鑰無效，請到「設定」重新貼上。");
+  if(r.status===402) throw new Error("Ignav 免費額度已用完，請到 ignav.com 的 Dashboard 確認。");
+  if(r.status===429) throw new Error("Ignav 請求太頻繁，稍後再試。");
+  if(!r.ok){
+    const m=typeof data?.error==="string"?data.error:(data?.error?.message||data?.message||(typeof data?.detail==="string"?data.detail:""));
+    throw new Error(`Ignav 查詢失敗（HTTP ${r.status}）${m?"："+m:""}。如果是市場不支援，到「設定」把票價市場改成美國再試。`);
+  }
+  return data;
+}
+function money(p){
+  if(!p||p.amount==null) return "—";
+  try{return new Intl.NumberFormat("zh-TW",{style:"currency",currency:p.currency,maximumFractionDigits:0}).format(p.amount)}
+  catch{return `${p.currency||""} ${p.amount}`}
+}
+const dur=m=>m?`${Math.floor(m/60)} 小時${m%60?` ${m%60} 分`:""}`:"";
+const fixUrl=u=>/^https?:\/\//i.test(u||"")?u:"https://"+(u||"");
+function legRow(leg,label){
+  const s=leg?.segments||[];if(!s.length) return "";
+  const a=s[0],b=s[s.length-1],stops=s.length-1;
+  const dd=Math.round((Date.parse(b.arrival_time_local.slice(0,10))-Date.parse(a.departure_time_local.slice(0,10)))/864e5);
+  const via=s.slice(0,-1).map(x=>x.arrival_airport).join("、");
+  const fns=s.map(x=>(x.marketing_carrier_code||"")+(x.flight_number||"")).filter(Boolean).join(" ＋ ");
+  return `<div class="ft">
+    <div><div class="tm">${esc(a.departure_time_local.slice(11,16))}</div><div class="meta">${esc(a.departure_airport)}</div></div>
+    <div class="line">${label}　${esc(dur(leg.duration_minutes))}<hr>${stops?`轉 ${stops} 次（${esc(via)}）`:"直飛"}<br>${esc(fns)}</div>
+    <div class="r"><div class="tm">${esc(b.arrival_time_local.slice(11,16))}${dd>0?`<sup>+${dd}</sup>`:""}</div><div class="meta">${esc(b.arrival_airport)}</div></div></div>`;
+}
+function fareCard(it,i){
+  const tags=[];
+  if(it.bags) tags.push(`<span class="tag">手提 ${esc(it.bags.carry_on??"?")}・託運 ${esc(it.bags.checked??"?")}</span>`);
+  if(it.requires_self_transfer) tags.push(`<span class="tag bad">需自行轉機、分開購票</span>`);
+  if(it.price?.status&&it.price.status!=="verified") tags.push(`<span class="tag">價格未驗證</span>`);
+  const carriers=[...new Set([it.outbound?.carrier,it.inbound?.carrier].filter(Boolean))].join("／");
+  return `<div class="fare ${i===0?"best":""}">
+    <div class="fare-head"><span class="price">${esc(money(it.price))}</span><span class="meta">${esc(carriers)}</span></div>
+    ${legRow(it.outbound,"去程")}${it.inbound?legRow(it.inbound,"回程"):""}
+    ${tags.length?`<div style="margin-top:6px">${tags.join("")}</div>`:""}
+    <button class="linkbtn" data-book="${esc(it.ignav_id)}">看訂票連結與各家價格</button>
+    <div class="book"></div></div>`;
+}
+function renderFares(data){
+  const box=$("fareResult");
+  const list=(data?.itineraries||[]).slice().sort((a,b)=>(a.price?.amount??1e12)-(b.price?.amount??1e12));
+  if(!list.length){box.innerHTML=`<p class="hint">這天沒有符合條件的行程。放寬轉機條件、換個日期，或用下方比價網站查。</p>`;return;}
+  let shown=Math.min(8,list.length);
+  const draw=()=>{
+    box.innerHTML=`<p class="hint" style="margin:0">找到 ${list.length} 個行程，依價格由低到高。價格僅供參考，以訂票網站為準。</p>`
+      +list.slice(0,shown).map(fareCard).join("")
+      +(shown<list.length?`<button class="btn ghost" id="moreFare">再顯示 ${Math.min(8,list.length-shown)} 個</button>`:"");
+    $("moreFare")?.addEventListener("click",()=>{shown=Math.min(shown+8,list.length);draw();});
+  };
+  draw();
+}
+$("fetchFare").addEventListener("click",async e=>{
+  const s=fareState(),msg=fareCheck(s);$("fareErr").textContent=msg;if(msg)return;
+  const body={origin:s.from,destination:s.to,departure_date:s.dep,adults:s.pax,cabin_class:CABIN_IGNAV[s.cabin],market:store.get("ignavMarket","TW")};
+  if(s.trip==="rt") body.return_date=s.ret;
+  if($("stops").value!=="") body.max_stops=+$("stops").value;
+  const path=s.trip==="rt"?"/fares/round-trip":"/fares/one-way",ck=path+JSON.stringify(body);
+  const btn=e.currentTarget,box=$("fareResult");
+  btn.disabled=true;btn.textContent="查詢中…";
+  box.innerHTML=`<p class="hint">查詢 ${esc(s.from)} → ${esc(s.to)} 票價中，通常要幾秒鐘。</p>`;
+  try{
+    const data=fareCache.get(ck)||await ignav(path,body);
+    fareCache.set(ck,data);saveFare(s);renderFares(data);
+  }catch(err){box.innerHTML=`<p class="err">${esc(err.message)}</p>`;}
+  finally{btn.disabled=false;btn.textContent="查詢票價";}
+});
+$("fareResult").addEventListener("click",async e=>{
+  const b=e.target.closest("[data-book]");if(!b)return;
+  const id=b.dataset.book,wrap=b.nextElementSibling;
+  if(wrap.innerHTML){wrap.innerHTML="";b.textContent="看訂票連結與各家價格";return;}
+  b.disabled=true;b.textContent="取得連結中…";
+  try{
+    const data=bookCache.get(id)||await ignav("/fares/booking-links",{ignav_id:id});
+    bookCache.set(id,data);
+    const opts=data?.booking_options||[];
+    wrap.innerHTML=opts.length?opts.map(o=>{
+      const legs=(o.legs||[]).map(l=>l==="outbound"?"去程":l==="inbound"?"回程":l).join("＋");
+      const head=opts.length>1?`<div class="meta">${esc(legs)}（分開購買）</div>`:"";
+      return head+(o.links||[]).slice().sort((x,y)=>(x.price?.amount??1e12)-(y.price?.amount??1e12)).map(l=>
+        `<a href="${esc(fixUrl(l.url))}" target="_blank" rel="noopener"><span>${esc(l.provider_name||"訂票網站")}${l.provider_type==="airline"?` <span class="tag">官網</span>`:""}${l.fare_name?`<br><small class="meta">${esc(l.fare_name)}</small>`:""}</span><b>${l.price?esc(money(l.price)):"看價格"}</b></a>`).join("");
+    }).join(""):`<p class="hint">這個行程目前沒有可用的訂票連結，改用下方比價網站查。</p>`;
+    b.textContent="收起訂票連結";
+  }catch(err){wrap.innerHTML=`<p class="err">${esc(err.message)}</p>`;b.textContent="看訂票連結與各家價格";}
+  finally{b.disabled=false;}
+});
+
+/* ---------- 航班動態 ---------- */
+$("fdate").value=ymd(now);
+const fno=()=>$("fno").value.toUpperCase().replace(/\s+/g,"");
+function flightCheck(){
+  const f=fno();
+  if(!/^[A-Z0-9]{2}\d{1,4}[A-Z]?$/.test(f)) return "請輸入航班編號，例如 JX800、BR32、CI100。";
+  return "";
+}
+function saveFlight(f){
+  let h=store.get("flightHist",[]).filter(x=>x!==f);h.unshift(f);store.set("flightHist",h.slice(0,10));renderFlightHist();
+}
+$("flightLinks").addEventListener("click",e=>{
+  const a=e.target.closest("a");if(!a)return;
+  const msg=flightCheck();$("flightErr").textContent=msg;
+  if(msg){e.preventDefault();return;}
+  const f=fno();
+  a.href={fr24:`https://www.flightradar24.com/data/flights/${f.toLowerCase()}`,
+    fa:`https://www.flightaware.com/live/flight/${f}`,
+    g:`https://www.google.com/search?q=${encodeURIComponent(f+" 航班動態")}`}[a.dataset.site];
+  saveFlight(f);
+});
+function renderFlightHist(){
+  const h=store.get("flightHist",[]);
+  $("flightHistory").innerHTML=h.length?h.map(f=>`<button class="chip"><b>${esc(f)}</b></button>`).join("")
+    :`<p class="hint">查過的航班編號會出現在這裡。</p>`;
+}
+$("flightHistory").addEventListener("click",e=>{
+  const c=e.target.closest(".chip");if(!c)return;$("fno").value=c.textContent.trim();$("flightErr").textContent="";
+});
+renderFlightHist();
+
+/* ---------- AeroDataBox ---------- */
+const STATUS={Unknown:"狀態未知",Expected:"預計準時",EnRoute:"飛行中",CheckIn:"報到中",Boarding:"登機中",GateClosed:"登機門已關",
+  Departed:"已起飛",Delayed:"延誤",Approaching:"進場中",Arrived:"已抵達",Canceled:"已取消",Diverted:"轉降",CanceledUncertain:"可能取消"};
+const BAD=["Delayed","Canceled","Diverted","CanceledUncertain"],GOOD=["Arrived","Departed","EnRoute","Expected"];
+const hm=t=>t?.local?t.local.slice(11,16):"—";
+const statusTag=s=>`<span class="status ${BAD.includes(s)?"bad":GOOD.includes(s)?"good":""}">${esc(STATUS[s]||s||"—")}</span>`;
+async function adb(path){
+  const key=store.get("adbKey","");
+  if(!key) throw new Error("還沒設定金鑰。請打開頁面最下方的「設定」貼上 AeroDataBox 金鑰。");
+  let r;
+  try{
+    r=await fetch("https://aerodatabox.p.rapidapi.com"+path,{headers:{"X-RapidAPI-Key":key,"X-RapidAPI-Host":"aerodatabox.p.rapidapi.com"}});
+  }catch{throw new Error("連不到 AeroDataBox。若是直接雙擊開檔，改用本機伺服器或放上 GitHub Pages 再試。");}
+  if(r.status===204) return null;
+  if(r.status===401||r.status===403) throw new Error("金鑰無效或尚未訂閱 AeroDataBox，請到 RapidAPI 確認。");
+  if(r.status===429) throw new Error("本月免費額度用完或請求太頻繁，稍後再試。");
+  if(!r.ok) throw new Error(`查詢失敗（HTTP ${r.status}）。`);
+  return r.json();
+}
+function legHTML(d,a){
+  const dl=d.revisedTime&&d.revisedTime.local!==d.scheduledTime?.local, al=a.revisedTime&&a.revisedTime.local!==a.scheduledTime?.local;
+  return `<div class="leg">
+    <div><div class="port">${esc(d.airport?.iata||"—")}</div><div class="meta">${esc(d.airport?.municipalityName||d.airport?.name||"")}</div>
+      <div class="t">${hm(d.scheduledTime)}${dl?` <span class="late">→ ${hm(d.revisedTime)}</span>`:""}</div>
+      <div class="meta">航廈 ${esc(d.terminal||"—")}　登機門 ${esc(d.gate||"—")}</div></div>
+    <div class="mid">✈</div>
+    <div class="r"><div class="port">${esc(a.airport?.iata||"—")}</div><div class="meta">${esc(a.airport?.municipalityName||a.airport?.name||"")}</div>
+      <div class="t">${hm(a.scheduledTime)}${al?` <span class="late">→ ${hm(a.revisedTime)}</span>`:""}</div>
+      <div class="meta">航廈 ${esc(a.terminal||"—")}　行李轉盤 ${esc(a.baggageBelt||"—")}</div></div></div>`;
+}
+$("fetchFlight").addEventListener("click",async()=>{
+  const msg=flightCheck();$("flightErr").textContent=msg;if(msg)return;
+  const f=fno(),box=$("flightResult");box.innerHTML=`<p class="hint">查詢 ${esc(f)} 中…</p>`;
+  try{
+    const data=await adb(`/flights/number/${f}/${$("fdate").value}?withAircraftImage=false&withLocation=false`);
+    saveFlight(f);
+    if(!data||!data.length){box.innerHTML=`<p class="hint">${esc($("fdate").value)} 查不到 ${esc(f)}。確認日期是出發地當地日期，或換一天試試。</p>`;return;}
+    box.innerHTML=data.map(x=>`<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font:700 1.4rem var(--code)">${esc(x.number)}</span>${statusTag(x.status)}</div>
+      ${legHTML(x.departure||{},x.arrival||{})}
+      <p class="meta" style="margin:10px 0 0">${esc(x.airline?.name||"")}${x.aircraft?.model?"，"+esc(x.aircraft.model):""}${x.aircraft?.reg?"（"+esc(x.aircraft.reg)+"）":""}</p></div>`).join("");
+  }catch(err){box.innerHTML=`<p class="err">${esc(err.message)}</p>`;}
+});
+
+/* ---------- 機場看板 ---------- */
+const aptI=$("apt");bindAirport(aptI,$("aptCity"));
+aptI.value=store.get("aptLast","TPE");aptI.dispatchEvent(new Event("input"));
+const dirV=segment($("dirSeg"));
+const d0=new Date();$("aptFrom").value=`${ymd(d0)}T${pad(d0.getHours())}:00`;
+function aptCheck(){const c=resolve(aptI.value);return /^[A-Z]{3}$/.test(c)?"":"請輸入 3 碼機場代碼，例如 TPE、NRT。";}
+$("aptLinks").addEventListener("click",e=>{
+  const a=e.target.closest("a");if(!a)return;
+  const msg=aptCheck();$("aptErr").textContent=msg;if(msg){e.preventDefault();return;}
+  const c=resolve(aptI.value),icao=BY_IATA[c]?.[1]||c;
+  store.set("aptLast",c);
+  a.href={dep:`https://www.flightradar24.com/data/airports/${c.toLowerCase()}/departures`,
+    arr:`https://www.flightradar24.com/data/airports/${c.toLowerCase()}/arrivals`,
+    fa:`https://www.flightaware.com/live/airport/${icao}`}[a.dataset.site];
+});
+$("fetchApt").addEventListener("click",async()=>{
+  const msg=aptCheck();$("aptErr").textContent=msg;if(msg)return;
+  const c=resolve(aptI.value),dir=dirV(),box=$("aptResult");
+  const start=new Date($("aptFrom").value);if(isNaN(start)){box.innerHTML=`<p class="err">請選起始時間。</p>`;return;}
+  const end=new Date(start.getTime()+(+$("aptSpan").value)*3600e3-60e3);
+  const f=d=>`${ymd(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  box.innerHTML=`<p class="hint">查詢 ${esc(c)} ${dir==="Departure"?"離場":"到場"}中…</p>`;
+  store.set("aptLast",c);
+  try{
+    const data=await adb(`/flights/airports/iata/${c}/${f(start)}/${f(end)}?direction=${dir}&withLeg=false&withCancelled=true&withCodeshared=false&withCargo=false&withPrivate=false`);
+    const list=(dir==="Departure"?data?.departures:data?.arrivals)||[];
+    if(!list.length){box.innerHTML=`<p class="hint">這段時間沒有航班資料，換個時間範圍試試。</p>`;return;}
+    const rows=list.map(x=>{const m=x.movement||{},late=m.revisedTime&&m.revisedTime.local!==m.scheduledTime?.local;
+      return `<tr><td>${hm(m.scheduledTime)}${late?` <span class="late">${hm(m.revisedTime)}</span>`:""}</td>
+      <td class="fn">${esc(x.number)}</td><td>${esc(m.airport?.iata||"")} ${esc(m.airport?.municipalityName||m.airport?.name||"")}</td>
+      <td>${esc(m.terminal||"—")}</td><td>${esc(m.gate||"—")}</td><td>${statusTag(x.status)}</td><td>${esc(x.airline?.name||"")}</td></tr>`}).join("");
+    box.innerHTML=`<div class="table-wrap"><table><thead><tr><th>時間</th><th>航班</th><th>${dir==="Departure"?"目的地":"出發地"}</th><th>航廈</th><th>登機門</th><th>狀態</th><th>航空公司</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="hint">共 ${list.length} 班，已隱藏共用班號。</p>`;
+  }catch(err){box.innerHTML=`<p class="err">${esc(err.message)}</p>`;}
+});
+
+/* ---------- 改搭方案 ---------- */
+const irFrom=$("irFrom"),irTo=$("irTo");
+bindAirport(irFrom,$("irFromCity"));bindAirport(irTo,$("irToCity"));
+irFrom.value=store.get("irFrom","TPE");irFrom.dispatchEvent(new Event("input"));
+$("irPax").innerHTML=[1,2,3,4,5,6,7,8,9].map(n=>`<option value="${n}">${n} 位</option>`).join("");
+{const d=new Date();d.setMinutes(d.getMinutes()+60);$("irStart").value=`${ymd(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`;}
+const irSortV=segment($("irSort"),()=>drawIrrop());
+let irState=null;
+const codes=v=>(v||"").toUpperCase().split(/[\s,，、]+/).filter(x=>/^[A-Z0-9]{2}$/.test(x));
+const segs=it=>it.outbound?.segments||[];
+const depMs=it=>{const s=segs(it)[0];return s?Date.parse(s.departure_time_utc||s.departure_time_local):NaN;};
+const arrMs=it=>{const s=segs(it).at(-1);return s?Date.parse(s.arrival_time_utc||s.arrival_time_local):NaN;};
+const nStops=it=>Math.max(0,segs(it).length-1);
+const fmtWait=ms=>{const h=ms/36e5;return h<1?`${Math.max(0,Math.round(ms/6e4))} 分鐘後出發`:`${h.toFixed(1)} 小時後出發`;};
+
+$("irSearch").addEventListener("click",async e=>{
+  const from=resolve(irFrom.value),to=resolve(irTo.value),inc=codes($("irInc").value),exc=codes($("irExc").value);
+  let msg="";
+  if(!/^[A-Z]{3}$/.test(from)) msg="場站請輸入 3 碼機場代碼，例如 TPE。";
+  else if(!/^[A-Z]{3}$/.test(to)) msg="目的地請輸入 3 碼機場或城市代碼，例如 NRT 或 TYO。";
+  else if(from===to) msg="場站和目的地相同，請改其中一個。";
+  else if(inc.some(c=>exc.includes(c))) msg="同一家航空公司不能同時「只看」又「排除」。";
+  const start=new Date($("irStart").value);
+  if(!msg&&isNaN(start)) msg="請選最早可出發時間。";
+  $("irErr").textContent=msg;if(msg)return;
+  store.set("irFrom",from);
+
+  const days=+$("irDays").value,dates=[...Array(days)].map((_,i)=>ymd(addDays(start,i)));
+  const base={origin:from,destination:to,adults:+$("irPax").value,cabin_class:CABIN_IGNAV[$("irCabin").value],
+    market:store.get("ignavMarket","TW"),allow_self_transfer:!$("irThrough").checked};
+  if($("irStops").value!=="") base.max_stops=+$("irStops").value;
+  if(inc.length) base.airlines_include=inc;
+  if(exc.length) base.airlines_exclude=exc;
+
+  const btn=e.currentTarget,box=$("irResult");
+  btn.disabled=true;btn.textContent="搜尋中…";$("irSummary").innerHTML="";$("irSort").style.display="none";
+  box.innerHTML=`<p class="hint">搜尋 ${esc(from)} → ${esc(to)}，${dates.map(d=>d.slice(5)).join("、")} 共 ${days} 天的航班…</p>`;
+  const res=await Promise.allSettled(dates.map(async d=>{
+    const body={...base,departure_date:d},ck="/fares/one-way"+JSON.stringify(body);
+    const data=fareCache.get(ck)||await ignav("/fares/one-way",body);
+    fareCache.set(ck,data);return data;
+  }));
+  btn.disabled=false;btn.textContent="找改搭航班";
+  const fails=res.filter(r=>r.status==="rejected");
+  if(fails.length===res.length){box.innerHTML=`<p class="err">${esc(fails[0].reason.message)}</p>`;return;}
+
+  const seen=new Set(),list=[];
+  res.filter(r=>r.status==="fulfilled").flatMap(r=>r.value?.itineraries||[]).forEach(it=>{
+    if(!segs(it).length||depMs(it)<start.getTime()) return;
+    const key=segs(it).map(s=>(s.marketing_carrier_code||"")+(s.flight_number||"")+s.departure_time_local).join("|");
+    if(seen.has(key)) return;seen.add(key);list.push(it);
+  });
+  irState={list,start:start.getTime(),shown:10,warn:fails.length?`有 ${fails.length} 天查詢失敗：${fails[0].reason.message}`:""};
+  if(!list.length){box.innerHTML=`<p class="hint">這段時間找不到符合條件的航班。拉長天數、放寬轉機或航空公司限制，或取消勾選「排除分開購票」再試。</p>`;return;}
+
+  const byArr=[...list].sort((a,b)=>arrMs(a)-arrMs(b))[0];
+  const byDep=[...list].sort((a,b)=>depMs(a)-depMs(b))[0];
+  const minStops=Math.min(...list.map(nStops));
+  const fn=it=>segs(it).map(s=>(s.marketing_carrier_code||"")+(s.flight_number||"")).join("＋");
+  const lastSeg=it=>segs(it).at(-1);
+  $("irSummary").innerHTML=
+    `<span class="chip">最早出發 <b>${esc(fn(byDep))}</b> ${esc(segs(byDep)[0].departure_time_local.slice(5,16).replace("T"," "))}</span>`+
+    `<span class="chip">最早抵達 <b>${esc(fn(byArr))}</b> ${esc(lastSeg(byArr).arrival_time_local.slice(5,16).replace("T"," "))} 抵 ${esc(lastSeg(byArr).arrival_airport)}</span>`+
+    `<span class="chip">轉機最少 <b>${minStops?minStops+" 次":"直飛"}</b> 共 ${list.filter(x=>nStops(x)===minStops).length} 個選項</span>`;
+  $("irSort").style.display="flex";
+  drawIrrop();
+});
+function drawIrrop(){
+  if(!irState) return;
+  const mode=irSortV(),box=$("irResult");
+  const sorted=[...irState.list].sort(mode==="dep"?(a,b)=>depMs(a)-depMs(b)
+    :mode==="stops"?(a,b)=>nStops(a)-nStops(b)||arrMs(a)-arrMs(b)
+    :(a,b)=>arrMs(a)-arrMs(b));
+  const shown=sorted.slice(0,irState.shown);
+  box.innerHTML=(irState.warn?`<p class="err" style="margin:0">${esc(irState.warn)}</p>`:"")
+    +`<p class="hint" style="margin:0">共 ${sorted.length} 個選項。票價代表目前有位可賣，團體或大量旅客仍需向航空公司確認機位。</p>`
+    +shown.map((it,i)=>{
+      const s0=segs(it)[0],tags=[];
+      tags.push(`<span class="tag">${nStops(it)?`轉機 ${nStops(it)} 次`:"直飛"}</span>`);
+      if(it.requires_self_transfer) tags.push(`<span class="tag bad">需分開購票</span>`);
+      if(it.price) tags.push(`<span class="tag">參考票價 ${esc(money(it.price))}</span>`);
+      return `<div class="fare ${i===0?"best-irrop":""}">
+        <div class="fare-head"><span class="meta">${esc(s0.departure_time_local.slice(5,10).replace("-","/"))}　${esc(fmtWait(depMs(it)-irState.start))}</span><span class="meta">${esc(it.outbound?.carrier||"")}</span></div>
+        ${legRow(it.outbound,"")}
+        <div style="margin-top:6px">${tags.join("")}</div></div>`;
+    }).join("")
+    +(sorted.length>irState.shown?`<button class="btn ghost" id="irMore">再顯示 ${Math.min(10,sorted.length-irState.shown)} 個</button>`:"");
+  $("irMore")?.addEventListener("click",()=>{irState.shown+=10;drawIrrop();});
+}
+
+/* ---------- 設定 ---------- */
+$("apiKey").value=store.get("adbKey","");
+$("ignavKey").value=store.get("ignavKey","");
+$("market").value=store.get("ignavMarket","TW");
+$("market").addEventListener("change",()=>{store.set("ignavMarket",$("market").value);fareCache.clear();});
+$("saveKey").addEventListener("click",()=>{
+  const a=$("apiKey").value.trim(),i=$("ignavKey").value.trim();
+  store.set("adbKey",a);store.set("ignavKey",i);store.set("ignavMarket",$("market").value);fareCache.clear();
+  $("keyMsg").textContent=(a||i)?`已儲存：${[i&&"Ignav",a&&"AeroDataBox"].filter(Boolean).join("、")}。`:"兩個欄位都是空的，沒有儲存。";
+});
+$("clearKey").addEventListener("click",()=>{
+  store.set("adbKey","");store.set("ignavKey","");$("apiKey").value="";$("ignavKey").value="";fareCache.clear();
+  $("keyMsg").textContent="兩組金鑰都已清除。";
+});
+</script>
+</body>
+</html>
