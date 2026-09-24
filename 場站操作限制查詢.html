@@ -3566,46 +3566,30 @@ const Sky = (()=>{
     return true;
   }
 
-  /* ---- 航機排程：時間槽依序輪用跑道；同一跑道要等前機脫離才放下一架 ----
-     每個時間槽 k 在時刻 τ=k·S 有一架次：進場機 τ 為接地、離場機 τ 為開始起飛滾行。
-     位置全由 (t−τ) 算出，不存狀態。 */
-  const DEP_OUT=17;
-  const SEP=.55, SEPG=.16;                                           // 最小間隔（km，高度差放大 3 倍計）
+  /* ---- 航機排程：一落一起依序進行 ----
+     落地機停妥消失後 6 秒，離場機才從停機位出現、滑出起飛；
+     離場機開始起飛滾行 20 秒後，下一架落地機才接地。
+     每一架次都記下時刻 τ（落地機＝接地、離場機＝開始起飛滾行），位置全由 (t−τ) 算出。 */
+  const DEP_OUT=17, GAP_AD=6, GAP_DA=20;
   const span=o=>o.dep?[-(o.rw.deps[o.ex%o.rw.deps.length].Tt+1.5),DEP_OUT]:[-ARR_IN,o.rw.arr[o.ex%o.rw.arr.length].Te];
-  // 第 k 槽的架次：先試預定的進／離場，與前幾架有衝突就改另一種，仍衝突就這槽空著（結果快取）
-  function opAt(k){
-    if(k<-3||k<G.k0) return null;
-    const M=G.memo||(G.memo=new Map());
-    if(M.has(k)) return M.get(k);
-    const n=G.rw.length, h=hs(k*7919+G.seed*13), rw=G.rw[((k%n)+n)%n], pref=(h%100)<58;
-    let res=null;
-    const ex=(h>>>11)%12;
-    for(const dep of [pref,!pref]){ const o={k,rw,dep,h,ex}; if(clear(o)){ res=o; break; } }
-    M.set(k,res); return res;
-  }
-  function clear(o){
-    const S=G.S, ta=o.k*S, [a0,a1]=span(o);
-    for(let j=1;j<=Math.ceil(75/S);j++){
-      const p=opAt(o.k-j); if(!p) continue;
-      const tb=p.k*S, [b0,b1]=span(p), lo=Math.max(ta+a0,tb+b0), hi=Math.min(ta+a1,tb+b1);
-      for(let t=lo;t<=hi;t+=.4){
-        const A=world(o,t-ta), B=world(p,t-tb);
-        if(A.a<.03||B.a<.03) continue;
-        // 同一跑道：兩架不可同時在跑道上（含短五邊與剛離地）
-        const onR=q=>q.ph==="roll"||q.ph==="toroll"||q.ph==="hold"||((q.ph==="app"||q.ph==="air")&&q.z<.04);
-        if(o.rw===p.rw&&onR(A)&&onR(B)) return false;
-        // 兩架都在空中用完整間隔；有一架在地面就用地面間隔（滑行道與跑道並行、等候穿越皆屬正常）
-        const lim=(A.z>.005&&B.z>.005)?SEP:SEPG;
-        if(Math.hypot(A.x-B.x,A.y-B.y,(A.z-B.z)*3)<lim) return false;
-      }
+  function extend(t){
+    const Q=G.seq||(G.seq={list:[],next:G.t0,n:0}), nR=G.rw.length;
+    while(Q.next<t+ARR_IN+1){
+      const n=Q.n++, h=hs(n*7919+G.seed*13), h2=hs(h+77);
+      const A={k:n*2, rw:G.rw[h%nR], dep:false, h, ex:(h>>>11)%12, tau:Q.next};
+      const D={k:n*2+1, rw:G.rw[h2%nR], dep:true, h:h2, ex:(h2>>>11)%12};
+      // 離場機出現時刻＝落地機消失後 GAP_AD 秒；起飛滾行時刻再加上滑行時間
+      D.tau=A.tau+span(A)[1]+GAP_AD-span(D)[0];
+      Q.list.push(A,D);
+      Q.next=D.tau+GAP_DA;
     }
-    return true;
+    return Q.list;
   }
   function ops(t){
-    const S=G.S, out=[];
-    for(let k=Math.floor((t-60)/S); k<=Math.ceil((t+45)/S); k++){
-      const o=opAt(k); if(!o) continue;
-      const dt=t-k*S, [a0,a1]=span(o);
+    const L=extend(t), out=[];
+    for(let i=L.length-1;i>=0;i--){
+      const o=L[i], dt=t-o.tau, [a0,a1]=span(o);
+      if(o.tau<t-80) break;
       if(dt<a0||dt>a1) continue;
       out.push({...o,dt});
     }
@@ -3928,7 +3912,7 @@ const Sky = (()=>{
     code=cd;
     const cfg=SKY[cd]||{n:"SCHEMATIC",r:[[180,3000,0,0]],t:[[0,-.45,.7,.25,.04]]};
     G=prep(cfg,cd);
-    G.k0=Math.floor((simT-90)/G.S);      // 排程只從目前時間附近開始算，長時間播放後切站也不會遞迴過深
+    G.t0=simT-30;                        // 從目前時間附近開始排班，切站後馬上就有飛機在場
     try{ fmt=new Intl.DateTimeFormat("en-GB",{timeZone:(typeof TZMAP!=="undefined"&&TZMAP[cd])||(cd==="TSA"?"Asia/Taipei":undefined),hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"}); }catch(_){ fmt=null; }
     ltSec=-1; tex=null; lastW=0;
     if(build()){ lastW=wrap.clientWidth; frame(simT, !!raf); }
