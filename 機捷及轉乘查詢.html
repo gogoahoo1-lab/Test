@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="機捷轉乘">
+<meta name="theme-color" content="#0C0C0E">
 <title>桃園機捷時刻查詢</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap');
@@ -440,6 +445,213 @@ body:not(.tab-xfer) .hero-time{margin-bottom:0}
 .xh-type.loc{background:rgba(255,255,255,.06);color:var(--text2)}
 .xh-note{color:var(--text3)}
 @media (prefers-reduced-motion:reduce){.xd-load i{animation:none}}
+
+/* ===== 轉乘頁大字版 ===== */
+.xf-title{font-size:20px}
+.xf-upd{font-size:13px}
+.xf-home{font-size:14px;height:38px}
+.xlegend{font-size:12px}
+.xf-alert{font-size:13px}
+.xd-dir{font-size:17px}
+.xd-dir small{font-size:13px}
+.xd-cd{font-size:13px}
+.xd-lbl{font-size:12px}
+.xd-big{font-size:40px}
+.xd-mid .tot{font-size:16px}
+.xd-mid .xfn{font-size:12px}
+.xtag{font-size:12px;padding:4px 9px}
+.xd-msg,.xd-load{font-size:14px}
+.xt{width:58px;font-size:18px}
+.xt small{font-size:11px}
+.xdot{width:13px;height:13px}
+.xleg::before{left:75px}
+.xrow{min-height:30px}
+.xs{font-size:16px}
+.xride{padding:8px 0 10px 95px;font-size:14px}
+.xb{font-size:13px;padding:4px 10px}
+.xdl{font-size:13px}
+.xwalk{padding:10px 0 10px 95px;font-size:13px}
+.xwalk::before{left:75px}
+.xopt{margin-left:95px;padding:10px 12px 8px}
+.xopt-tt{font-size:12px}
+.xopt-r{grid-template-columns:32px 48px 1fr auto;font-size:15px;padding:5px 0}
+.xopt-n{font-size:12px;width:auto}
+.xopt-no{font-size:13px}
+.xopt-a small{font-size:11px}
+.xalt{padding:14px 18px}
+.xa-t{font-size:18px}
+.xa-d{font-size:14px}
+.xa-strip{height:6px}
+.xall-hd{font-size:16px;padding:16px 18px}
+.xall-hd span{font-size:13px}
+.xh-row{padding:14px 18px;gap:16px}
+.xh-t{width:66px}
+.xh-t b{font-size:23px;font-weight:600;letter-spacing:.5px}
+.xh-t span{font-size:14px}
+.xh-top{font-size:17px;gap:8px}
+.xh-dur{font-size:14px}
+.xh-type{font-size:13px;padding:3px 8px;border-radius:6px}
+.xh-sub{font-size:14px;margin-top:5px}
+.pk-no{font-size:14px}
+.pk-wait{font-size:13px}
+.pk-times{font-size:32px}
+.pk-dur{font-size:15px}
+.pk-sub{font-size:12px}
+.pk-leg{font-size:13px;padding:4px 9px}
+.xall-hd{flex-wrap:wrap;row-gap:2px;white-space:nowrap}
+.xall-hd span{white-space:normal;flex:1 1 160px}
+.xh-t span{font-size:15px}
+.xt{width:63px;padding-right:15px}
+.xleg::before,.xwalk::before{left:69px}
+.xride,.xwalk{padding-left:98px}
+.xopt{margin-left:98px;margin-right:-6px;padding:10px 10px 8px}
+.xopt-r{grid-template-columns:26px 46px 1fr auto;column-gap:5px;font-size:14px}
+.xopt-tr{gap:4px}
+.xopt-tr .xh-type{font-size:12px;padding:2px 6px}
+.xopt-no{font-size:12px}
+
+/* ===================== iPad／大螢幕版面 ===================== */
+#xferCont{container-type:inline-size}
+@media (min-width:768px){
+  .app{max-width:860px;padding-bottom:120px}
+  .hero{padding:64px 40px 40px}
+  .hero::before{width:420px;height:420px}
+  .hero-name{font-size:22px}
+  .hero-loc{font-size:13px;padding:6px 14px}
+  .hero-time .big{font-size:64px}
+  .hero-time .label{font-size:14px}
+  .date-strip{gap:10px}
+  .date-num{width:48px;height:48px;font-size:16px}
+  .date-item.active .date-num{width:54px;height:54px;font-size:18px}
+  .date-day{font-size:12px}
+  .home-seg button{height:38px;padding:0 20px;font-size:15px}
+  .mode-seg button{height:36px;padding:0 16px;font-size:14px}
+  .hsr-chip{height:38px;font-size:15px}
+  .home-when>button,.when-time{height:42px;font-size:15px}
+  .when-time b{font-size:20px}
+  .when-lbl{font-size:13px}
+  .home-btn{height:54px;min-width:200px;font-size:18px}
+  /* 時刻頁與設定頁：內容置中、不要拉太寬 */
+  .fav-bar,.sel-area,.actions,#resCont{max-width:640px;margin-left:auto;margin-right:auto}
+  .xfer{padding:12px 28px 4px}
+  /* 底部頁籤：滿版、圖示集中 */
+  .tab-bar{max-width:none;justify-content:center;gap:72px}
+  .tab-item .tab-ic{font-size:26px}
+  .tab-item .tab-lb{font-size:13px}
+  /* 選單改成置中的對話框 */
+  .modal-ov{align-items:center;padding:24px}
+  .modal{max-width:560px;border-radius:24px;max-height:86vh}
+  .wh-grab{display:none}
+  .pk-list{padding-bottom:20px}
+}
+/* 轉乘結果卡片夠寬時：左邊時間軸、右邊其他方案與全部班次 */
+@container (min-width:640px){
+  .xd:has(>.xtl){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-auto-rows:min-content;align-items:start}
+  .xd:has(>.xtl)>*{grid-column:1/-1}
+  .xd:has(>.xtl)>button.xf-upd{justify-self:start}
+  .xd:has(>.xtl)>.xtl{grid-column:1;grid-row:span 40;padding:20px 22px 16px}
+  .xd:has(>.xtl)>.xalts,.xd:has(>.xtl)>.xall{grid-column:2;border-left:1px solid var(--border)}
+  .xd:has(>.xtl)>.xalts{border-top:1px solid var(--border);margin-top:14px}
+  .xd-sum{padding:16px 22px 0}
+  .xd-big{font-size:48px}
+  .xstrip{height:10px;margin:16px 22px 0}
+}
+/* 橫放 iPad／桌面：轉乘頁改成左側控制面板＋右側結果 */
+@media (min-width:1024px){
+  body.tab-xfer .app{max-width:1320px;display:grid;grid-template-columns:420px minmax(0,1fr);column-gap:8px;align-items:start;padding:0 16px 110px}
+  body.tab-xfer .hero{position:sticky;top:0;min-height:100vh;padding:48px 28px 120px;border-radius:0 0 28px 28px;display:flex;flex-direction:column}
+  body.tab-xfer .hero::after{display:none}
+  body.tab-xfer .hero-time .big{font-size:56px}
+  body.tab-xfer .date-strip{gap:6px}
+  body.tab-xfer .date-num{width:44px;height:44px;font-size:15px}
+  body.tab-xfer .date-item.active .date-num{width:50px;height:50px}
+  body.tab-xfer .xfer{padding:36px 12px 4px;grid-column:2}
+  body.tab-xfer #xferCont .empty-st{padding-top:22vh}
+}
+@media (min-width:1024px) and (max-height:760px){
+  body.tab-xfer .hero{min-height:0;position:relative}
+}
+
+/* ===== 訂票捷徑 ===== */
+.bk-btn{margin-left:auto;height:30px;padding:0 14px;border-radius:15px;border:1px solid var(--copper);background:transparent;color:var(--copper);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.bk-btn:hover{background:var(--copper);color:#fff}
+.bk-free{margin-left:auto;font-size:12px;color:var(--text3)}
+.bk-body{padding:0 20px;overflow-y:auto}
+.bk-rows>div{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--border)}
+.bk-rows span{font-size:13px;color:var(--text3);letter-spacing:1px}
+.bk-rows b{font-size:17px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.bk-rows b.bk-h{color:var(--hsr)}.bk-rows b.bk-t{color:var(--tra)}
+.bk-copy{margin-top:16px;padding:12px 14px;border-radius:12px;border:1px dashed var(--border);background:var(--card2)}
+.bk-copy span{display:block;font-size:11px;color:var(--text3);margin-bottom:6px}
+.bk-copy code{font-family:inherit;font-size:14px;color:var(--text);line-height:1.5;word-break:break-all}
+.bk-note{font-size:12px;color:var(--text2);line-height:1.7;margin:12px 2px 0}
+.bk-go{display:block;width:100%;height:52px;margin:18px 0 4px;border:none;border-radius:26px;color:#fff;font-family:inherit;font-size:16px;font-weight:700;cursor:pointer}
+.bk-go.h{background:var(--hsr);color:#1A0F08}.bk-go.t{background:var(--tra);color:#0C1320}
+
+/* ===== 粗體強化：時間、車次、站名、結論一眼可讀 ===== */
+/* 機捷時刻頁 */
+.tc-t .tv{font-weight:700}
+.tc-dur .dv{font-weight:700}
+.stn-disp{font-weight:700}
+/* 轉乘結果卡 */
+.xd-dir{font-weight:800}
+.xd-cd{font-weight:700}
+.xd-big{font-weight:700;letter-spacing:.5px}
+.xd-mid .tot{font-weight:800}
+.xtag{font-weight:800}
+.xt{font-weight:800}
+.xs{font-weight:700}
+.xb{font-weight:800}
+.xride>span:not(.xb):not(.bk-free){font-weight:600;color:var(--text)}
+.xwalk{font-weight:500}
+.xwalk.tight{font-weight:700}
+.xdl{font-weight:800}
+/* 台鐵前 3 選擇 */
+.xopt-r b{font-weight:800}
+.xopt-a{font-weight:700;color:var(--text)}
+.xopt-r:not(.on) .xopt-a{color:var(--text2)}
+.xopt-n{font-weight:800}
+/* 其他方案列 */
+.xa-t{font-weight:800}
+.xa-d{font-weight:600}
+/* 全部高鐵／台鐵班次 */
+.xall-hd{font-weight:800}
+.xh-t b{font-weight:800}
+.xh-t span{font-weight:600}
+.xh-top{font-weight:800}
+.xh-type{font-weight:800}
+.xh-dur{font-weight:600}
+.xh-why{font-weight:600}
+/* 3 個方案選單 */
+.pk-no{font-weight:800}
+.pk-times{font-weight:700;letter-spacing:.5px}
+.pk-dur{font-weight:800}
+.pk-leg{font-weight:600;color:var(--text)}
+.pk-wait{font-weight:700}
+/* 首頁控制列 */
+.when-lbl{font-weight:600}
+.hero-time .big{font-weight:400}
+.xh-arr{font-weight:800;color:var(--text);white-space:nowrap}
+.xh-why{font-weight:500}
+.xh-t span{color:var(--text2)}
+
+/* ===== 高鐵剩餘座位 ===== */
+.seatbox{display:inline-flex;gap:6px;flex-wrap:wrap}
+.seat{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px;white-space:nowrap}
+.seat i{width:7px;height:7px;border-radius:50%;display:inline-block}
+.s-ok{background:rgba(107,191,123,.12);color:var(--ok)}.s-ok i{background:var(--ok)}
+.s-few{background:rgba(242,196,107,.14);color:#F2C46B}.s-few i{background:#F2C46B}
+.s-full{background:rgba(224,90,90,.14);color:var(--err)}.s-full i{background:var(--err)}
+.pk-leg .seat{margin-left:6px;padding:1px 6px;font-size:11px}
+.xh-top .seat{font-size:11px;padding:2px 7px}
+.bk-rows b .seat{font-size:13px}
+.bk-fare{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px 14px}
+.bk-fare>span{white-space:nowrap;color:var(--text);letter-spacing:0}
+.bk-fare em{font-style:normal;color:var(--copper-l)}
+.bk-rows>div>span{white-space:nowrap}
+.set-chk{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text);margin:4px 0 14px;cursor:pointer}
+.set-chk input{width:20px;height:20px;accent-color:var(--copper)}
+.seat-test{margin-top:12px;padding:12px;border-radius:10px;background:var(--card2);font-size:11px;line-height:1.6;color:var(--text2);white-space:pre-wrap;word-break:break-all;font-family:ui-monospace,Menlo,monospace}
 </style>
 </head>
 <body class="tab-home">
@@ -557,6 +769,13 @@ body:not(.tab-xfer) .hero-time{margin-bottom:0}
     <div class="hs-body" id="hsBody"></div>
     <div class="hs-hint">「機捷」標示可轉乘機捷的站，「台鐵」標示可轉乘台鐵往屏東的站。</div>
     <div class="wh-act"><button class="wh-now" onclick="hsrReset()">桃園 ⇄ 左營</button><button class="wh-ok" onclick="hsrConfirm()">確定</button></div>
+  </div>
+</div>
+<div class="modal-ov" id="bkOv" onclick="closeBook(event)">
+  <div class="modal wh-modal" role="dialog" aria-label="訂票" onclick="event.stopPropagation()">
+    <div class="wh-grab"></div>
+    <div class="modal-hd"><h2 id="bkTitle">訂票</h2><button class="modal-cl" onclick="closeBook()" aria-label="關閉">✕</button></div>
+    <div class="bk-body" id="bkBody"></div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -1263,6 +1482,7 @@ function showSettingsPage(){
           <label>我的機捷站（南下起點、北上終點）</label>
           <select id="xHome" onchange="setHome(this.value);toast('已儲存')">${STATIONS.map(x=>`<option value="${x.c}"${x.c===getHome()?' selected':''}>${x.c} ${x.n}</option>`).join('')}</select>
         </div>
+        <label class="set-chk"><input type="checkbox" ${getSkipFull()?'checked':''} onchange="setSkipFull(this.checked);toast('已儲存')"><span>規劃時略過標準車廂已售完的高鐵</span></label>
         <div class="set-row">
           <label>高鐵車程上限（分鐘，桃園⇄左營；其他站別自動只挑快車；0 = 不限）</label>
           <input type="number" inputmode="numeric" min="0" max="240" value="${getHsrMax()}" oninput="setHsrMax(this.value)" onchange="toast('已儲存')">
@@ -1270,6 +1490,13 @@ function showSettingsPage(){
         <div class="set-grid">
           ${[['mh','機捷 → 高鐵（A18／A1）'],['ht','高鐵左營 → 台鐵新左營'],['th','台鐵新左營 → 高鐵左營'],['hm','高鐵 → 機捷（A18／A1）']].map(([k,l])=>`<div class="set-row"><label>${l}</label><input type="number" inputmode="numeric" min="0" max="60" value="${getBuf()[k]}" oninput="setBuf('${k}',this.value)" onchange="toast('已儲存')"></div>`).join('')}
         </div>
+      </div>
+
+      <div style="background:var(--card);border-radius:var(--r);padding:24px;border:1px solid var(--border);margin-top:14px">
+        <div style="font-size:15px;font-weight:700;margin-bottom:6px">高鐵座位與票價</div>
+        <div style="font-size:12px;color:var(--text3);line-height:1.7;margin-bottom:12px">用目前選的高鐵站，實際向 TDX 查今天的剩餘座位與票價，確認資料正常。</div>
+        <button class="set-btn pri" style="width:100%" onclick="testSeatApi()">測試高鐵座位 API</button>
+        <pre id="seatTest" class="seat-test" style="display:none"></pre>
       </div>
 
       <div style="background:var(--card);border-radius:var(--r);padding:24px;border:1px solid var(--border);margin-top:14px">
@@ -1584,7 +1811,77 @@ async function resolveTRA(){
 async function loadHSR(o,d,days){
   let out=[];
   for(const off of days) out=out.concat(parseTHSR(await cfetch(`${THSR_BASE}/DailyTimetable/OD/${o}/to/${d}/${ymd(off)}?$top=2000&$format=JSON`,216e5),off));
+  // 剩餘座位：查不到不影響規劃
+  try{
+    const seats=await loadSeats(o,d,days);
+    out.forEach(t=>{const v=seats[Math.floor(t.dep/1440)+'|'+normNo(t.no)];if(v)t.seat=v});
+  }catch(e){}
+  try{hsrFare[o+'|'+d]=await loadFare(o,d)}catch(e){}
   return out.sort((a,b)=>a.dep-b.dep);
+}
+// ---- 高鐵剩餘座位與票價 ----
+const hsrFare={};
+const normNo=n=>String(n??'').replace(/^0+/,'');
+function seatVal(v){
+  const x=String(v??'').trim().toUpperCase();
+  if(x==='O'||x==='AVAILABLE'||x==='1') return 'ok';
+  if(x==='L'||x==='LIMITED'||x==='2') return 'few';
+  if(x==='X'||x==='FULL'||x==='SOLDOUT'||x==='3') return 'full';
+  return null;
+}
+function parseSeats(data,d,off,out){
+  const list=Array.isArray(data)?data:(data?.AvailableSeats||data?.ODAvailableSeats||data?.AvailableSeatList||[]);
+  list.forEach(x=>{
+    const no=x.TrainNo||x.TrainInfo?.TrainNo||x.DailyTrainInfo?.TrainNo;if(!no) return;
+    let std=x.StandardSeatStatus,biz=x.BusinessSeatStatus;
+    if(std==null&&Array.isArray(x.StopStations)){
+      const st=x.StopStations.find(z=>z.StationID===d)||x.StopStations[x.StopStations.length-1];
+      if(st){std=st.StandardSeatStatus;biz=st.BusinessSeatStatus}
+    }
+    const v={std:seatVal(std),biz:seatVal(biz)};
+    if(v.std||v.biz) out[off+'|'+normNo(no)]=v;
+  });
+}
+async function loadSeats(o,d,days){
+  const out={};
+  for(const off of days){
+    const data=await cfetch(`${THSR_BASE}/AvailableSeatStatus/Train/OD/${o}/to/${d}/TrainDate/${ymd(off)}?$top=2000&$format=JSON`,12e4);
+    parseSeats(data,d,off,out);
+  }
+  return out;
+}
+async function loadFare(o,d){
+  const data=await cfetch(`${THSR_BASE}/ODFare/${o}/to/${d}?$format=JSON`,864e5);
+  const list=Array.isArray(data)?data:(data?.ODFares||[]);
+  const it=list.find(x=>x.OriginStationID===o&&x.DestinationStationID===d)||list[0];
+  const fares=it?.Fares||[];
+  const pick=c=>fares.find(f=>+f.CabinClass===c&&+f.TicketType===1&&+f.FareClass===1)?.Price;
+  const r={std:pick(1),biz:pick(2),free:pick(3)};
+  return (r.std||r.biz||r.free)?r:null;
+}
+const SEAT_TXT={ok:'有位',few:'少量',full:'售完'};
+function seatHTML(t,short){
+  if(!t||!t.seat) return '';
+  const {std,biz}=t.seat,c=v=>`<i class="st-${v}"></i>`;
+  if(short) return std?`<span class="seat s-${std}" title="標準車廂${SEAT_TXT[std]}">${c(std)}${SEAT_TXT[std]}</span>`:'';
+  return `<span class="seatbox">${std?`<span class="seat s-${std}">${c(std)}標準 ${SEAT_TXT[std]}</span>`:''}${biz?`<span class="seat s-${biz}">${c(biz)}商務 ${SEAT_TXT[biz]}</span>`:''}</span>`;
+}
+function getSkipFull(){try{return localStorage.getItem('xfer_skipfull')!=='0'}catch(e){return true}}
+function setSkipFull(v){try{localStorage.setItem('xfer_skipfull',v?'1':'0')}catch(e){}xDirty=true}
+async function testSeatApi(){
+  const el=document.getElementById('seatTest');el.style.display='block';el.textContent='測試中⋯';
+  const hp=getHsrPair(),lines=[];
+  try{
+    const u=`${THSR_BASE}/AvailableSeatStatus/Train/OD/${hp.n}/to/${hp.s}/TrainDate/${ymd(0)}?$top=2000&$format=JSON`;
+    const d=await tdxFetch(u);const out={};parseSeats(d,hp.s,0,out);
+    const n=Object.keys(out).length;
+    lines.push(`剩餘座位：${n?'✓ 解析到 '+n+' 班':'✕ 有回應但解析不到班次'}`);
+    const raw=Array.isArray(d)?d[0]:(d?.AvailableSeats?.[0]||d);
+    lines.push('原始資料：'+JSON.stringify(raw).slice(0,260));
+  }catch(e){lines.push('剩餘座位：✕ '+e.message)}
+  try{const f=await loadFare(hp.n,hp.s);lines.push(`票價：${f?`✓ 標準 $${f.std??'—'}・商務 $${f.biz??'—'}・自由座 $${f.free??'—'}`:'✕ 解析不到'}`)}
+  catch(e){lines.push('票價：✕ '+e.message)}
+  el.textContent=lines.join('\n');
 }
 async function loadTRA(dir,days,retried){
   const [o,d]=dir==='S'?[TRA_ID.XZY,TRA_ID.PT]:[TRA_ID.PT,TRA_ID.XZY];
@@ -1653,6 +1950,7 @@ function applyDelay(trips,delays){
 
 // ---- 主流程 ----
 async function runTransfer(){
+  xBook=[];
   xDirty=false;
   const box=document.getElementById('xferCont');
   const creds=loadCreds();
@@ -1722,7 +2020,12 @@ async function runTransfer(){
 // 高鐵車程上限：優先只用 ≤ 上限的班次；完全排不出方案時才退回全部班次
 function getHsrMax(){try{const v=parseInt(localStorage.getItem('xfer_hsrmax'));return isNaN(v)?100:v}catch(e){return 100}}
 function setHsrMax(v){xDirty=true;const n=Math.max(0,Math.min(240,parseInt(v)||0));try{localStorage.setItem('xfer_hsrmax',String(n))}catch(e){}}
-function planPreferFast(legs,hi,bufs,T0){
+function planPreferFast(legs0,hi,bufs,T0){
+  let legs=legs0;
+  if(getSkipFull()){
+    const ok=legs0[hi].filter(t=>t.seat?.std!=='full');
+    if(ok.length&&ok.length<legs0[hi].length){legs=legs0.slice();legs[hi]=ok}
+  }
   let max=getHsrMax();
   if(!max) return {plans:planRoutes(legs,bufs,T0),hsrMax:0,fallback:false};
   const hp=getHsrPair();
@@ -1788,7 +2091,7 @@ function goHome(){
 function planSummary(p,meta){
   return p.legs.map((l,i)=>{
     const nm=l.mode==='mrt'?`機捷${l.type==='直達車'?'直達':'普通'}`:l.mode==='hsr'?`高鐵 ${l.no}`:`${l.type} ${l.no}`;
-    return `<span class="pk-leg ${l.mode}">${hm(l.dep)} ${nm}</span>`;
+    return `<span class="pk-leg ${l.mode}">${hm(l.dep)} ${nm}${l.mode==='hsr'?seatHTML(l,true):''}</span>`;
   }).join('');
 }
 function openPlanPicker(k){
@@ -1856,6 +2159,58 @@ function stripHTML(p,cls){
   return `<div class="${cls}">${h}</div>`;
 }
 
+// ---- 訂票捷徑：開官方訂票頁＋複製車次資料 ----
+const BOOK_URL={hsr:'https://irs.thsrc.com.tw/IMINT/?locale=tw',tra:'https://tip.railway.gov.tw/tra-tip-web/tip/tip001/tip123/query'};
+let xBook=[];
+function needsTicket(l){return l.mode==='hsr'||(l.mode==='tra'&&!/區間/.test(l.type))}
+function bookBtnHTML(l,from,to){
+  if(l.mode==='mrt') return '';
+  if(!needsTicket(l)) return `<span class="bk-free">免訂位・刷卡搭乘</span>`;
+  const fk=Object.keys(hsrFare).find(k=>{const[a,b]=k.split('|');return from.includes(HSR_NAME[a]||'#')&&to.includes(HSR_NAME[b]||'#')});
+  const i=xBook.push({l,from,to,fare:l.mode==='hsr'&&fk?hsrFare[fk]:null})-1;
+  return `<button class="bk-btn" onclick="event.stopPropagation();openBook(${i})">訂票</button>`;
+}
+function bookText(b){
+  const off=Math.floor(b.l.dep/1440),d=new Date();d.setDate(d.getDate()+off);
+  const date=`${d.getMonth()+1}/${d.getDate()}（${WK[d.getDay()]}）`;
+  const nm=b.l.mode==='hsr'?`高鐵 ${b.l.no}`:`${b.l.type} ${b.l.no}`;
+  return {date,full:ymd(off),nm,txt:`${date} ${nm} ${b.from.replace('高鐵','')}→${b.to.replace('高鐵','')} ${hm(b.l.dep)}–${hm(b.l.arr)}`};
+}
+function openBook(i){
+  const b=xBook[i];if(!b) return;
+  const t=bookText(b),isH=b.l.mode==='hsr';
+  document.getElementById('bkTitle').textContent=`訂票・${t.nm}`;
+  document.getElementById('bkBody').innerHTML=`
+    <div class="bk-rows">
+      <div><span>乘車日</span><b>${t.full.replace(/-/g,'/')}（${WK[new Date(t.full+'T00:00').getDay()]}）</b></div>
+      <div><span>車次</span><b class="${isH?'bk-h':'bk-t'}">${t.nm}</b></div>
+      <div><span>區間</span><b>${b.from} → ${b.to}</b></div>
+      <div><span>時間</span><b>${hm(b.l.dep)} 開・${hm(b.l.arr)} 到</b></div>
+      ${isH&&b.l.seat?`<div><span>剩餘座位</span><b>${seatHTML(b.l)}</b></div>`:''}
+      ${isH&&b.fare?`<div><span>全票票價</span><b class="bk-fare">${[['標準',b.fare.std],['商務',b.fare.biz],['自由座',b.fare.free]].filter(x=>x[1]).map(([n,v])=>`<span>${n} <em>$${v}</em></span>`).join('')}</b></div>`:''}
+    </div>
+    <div class="bk-copy"><span>會複製這段文字</span><code>${t.txt}</code></div>
+    <div class="bk-note">${isH
+      ?'在高鐵訂票頁選起訖站與日期，時間改用「依車次」輸入車次最快。也可以改用 T Express App。'
+      :'在台鐵訂票頁選「依車次」，填入起訖站、日期與車次；需要輸入身分證字號並通過驗證。'}</div>
+    <button class="bk-go ${isH?'h':'t'}" onclick="goBook(${i})">複製並前往${isH?'高鐵':'台鐵'}訂票</button>`;
+  document.getElementById('bkOv').classList.add('show');
+}
+function closeBook(e){if(e&&e.target!==document.getElementById('bkOv'))return;document.getElementById('bkOv').classList.remove('show')}
+function copyText(txt){
+  let ok=false;
+  try{const ta=document.createElement('textarea');ta.value=txt;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:-100px;opacity:0;font-size:16px';document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,txt.length);ok=document.execCommand('copy');ta.remove()}catch(e){}
+  if(!ok&&navigator.clipboard){navigator.clipboard.writeText(txt).catch(()=>{});ok=true}
+  return ok;
+}
+function goBook(i){
+  const b=xBook[i],t=bookText(b);
+  const ok=copyText(t.txt);
+  window.open(BOOK_URL[b.l.mode],'_blank','noopener');
+  toast(ok?'已複製車次資料':'請手動記下車次：'+t.nm);
+  document.getElementById('bkOv').classList.remove('show');
+}
+
 function legName(l,label){
   if(l.mode==='mrt') return `機捷 ${l.type}`;
   if(l.mode==='hsr') return `高鐵 ${l.no} 車次`;
@@ -1881,7 +2236,7 @@ function traOptionsHTML(p,i,meta,bufs,r){
   const rows=opts.map((t,j)=>{
     const late=t.live>0?`<span class="xdl late">晚 ${t.live} 分</span>`:'';
     const note=j===0?'':after?`+${t.arr-opts[0].arr}分`:`早${opts[0].dep-t.dep}分`;
-    return `<div class="xopt-r${t===l?' on':''}"><span class="xopt-n">第${j+1}</span><b>${hm(t.dep)}</b><span class="xopt-tr"><span class="xh-type ${traCls(t.type)}">${t.type}</span>${t.type.length<5?`<span class="xopt-no">${t.no}</span>`:''}${late}</span><span class="xopt-a">${hm(t.arr)}${note?`<small>${note}</small>`:''}</span></div>`;
+    return `<div class="xopt-r${t===l?' on':''}"><span class="xopt-n">第${j+1}</span><b>${hm(t.dep)}</b><span class="xopt-tr"><span class="xh-type ${traCls(t.type)}">${t.type}</span>${t.type.length<3?`<span class="xopt-no">${t.no}</span>`:''}${late}</span><span class="xopt-a">${hm(t.arr)}${note?`<small>${note}</small>`:''}</span></div>`;
   }).join('');
   return `<div class="xopt"><div class="xopt-tt">${title}</div>${rows}</div>`;
 }
@@ -1898,7 +2253,7 @@ function timelineHTML(p,meta,bufs,r){
     const sched=(l.mode==='tra'&&l.live>0)?`<small><s>${hm(l.sdep)}</s></small>`:'';
     h+=`<div class="xleg" style="--m:${colors[l.mode]}">
       <div class="xrow"><div class="xt">${hm(l.dep)}${sched}</div><i class="xdot"></i><div class="xs">${from}</div></div>
-      <div class="xride"><span class="xb">${legName(l)}</span><span${l.mode==='hsr'&&getHsrMax()&&l.arr-l.dep>getHsrMax()?' style="color:var(--err)"':''}>${fmtDur(l.arr-l.dep)}</span>${live}</div>
+      <div class="xride"><span class="xb">${legName(l)}</span><span${l.mode==='hsr'&&getHsrMax()&&l.arr-l.dep>getHsrMax()?' style="color:var(--err)"':''}>${fmtDur(l.arr-l.dep)}</span>${live}${l.mode==='hsr'?seatHTML(l):''}${bookBtnHTML(l,from,to)}</div>
       ${l.mode==='tra'?traOptionsHTML(p,i,meta,bufs,r):''}
       <div class="xrow"><div class="xt">${hm(l.arr)}</div><i class="xdot"></i><div class="xs">${to}</div></div>
     </div>`;
@@ -2008,8 +2363,10 @@ function allLegHTML(k,r,T0,hi){
     else{
       const p=res.plan;
       const pre=hi>0?`${meta[0][0]} ${hm(p.dep)} 出發・`+(isHsr?'':(()=>{const hs=p.legs.find(l=>l.mode==='hsr');return hs?`接高鐵 ${hs.no}・`:''})()):'';
-      sub=`${pre}抵達${dest} ${hmx(p.arr)}`;
-      if(pi<0){
+      sub=`${pre}<b class="xh-arr">抵達${dest} ${hmx(p.arr)}</b>`;
+      if(pi<0&&h.seat?.std==='full'&&getSkipFull()){
+        sub+=`<br><span class="xh-note">標準車廂已售完，所以沒列入方案</span>`;
+      }else if(pi<0){
         const better=plans.find(q=>q.dep>=p.dep&&q.arr<=p.arr);
         if(better) sub+=`<br><span class="xh-note">${hm(better.dep)} 出發也能 ${hm(better.arr)} 到，所以沒列入方案</span>`;
         else if(slow) sub+=`<br><span class="xh-note">車程 ${fmtDur(dur)} 超過上限 ${fmtDur(hsrMax)}，所以沒列入方案</span>`;
@@ -2019,7 +2376,7 @@ function allLegHTML(k,r,T0,hi){
     const body=res.plan?`<div class="xalt-body">${timelineHTML(res.plan,meta,bufs,r)}</div>`:'';
     return `<div class="xh-row${cls}"${res.plan?` onclick="this.nextElementSibling.classList.toggle('show')"`:''}>
       <div class="xh-t"><b>${hm(h.dep)}</b><span>${hm(h.arr)}</span></div>
-      <div class="xh-m"><div class="xh-top">${isHsr?`高鐵 ${h.no}`:`<span class="xh-type ${traCls(h.type)}">${h.type}</span>${h.no}`}<span class="xh-dur">${fmtDur(dur)}</span>${h.live>0?`<span class="xdl late">晚 ${h.live} 分</span>`:''}${tags.join('')}</div><div class="xh-sub">${sub}</div></div>
+      <div class="xh-m"><div class="xh-top">${isHsr?`高鐵 ${h.no}`:`<span class="xh-type ${traCls(h.type)}">${h.type}</span>${h.no}`}<span class="xh-dur">${fmtDur(dur)}</span>${isHsr?seatHTML(h,true):''}${h.live>0?`<span class="xdl late">晚 ${h.live} 分</span>`:''}${tags.join('')}</div><div class="xh-sub">${sub}</div></div>
     </div>${body}`;
   }).join('');
   let summary=`${trains.length} 班・${meta[hi][1].replace('高鐵','')} → ${meta[hi][2].replace('高鐵','')}`;
