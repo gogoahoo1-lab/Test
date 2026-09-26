@@ -922,6 +922,7 @@ const STATIONS=[
   {c:'A11',n:'坑口',         ex:false, cm:36, em:null},
   {c:'A12',n:'機場第一航廈', ex:true,  cm:40, em:32},
   {c:'A13',n:'機場第二航廈', ex:true,  cm:43, em:35},
+  {c:'A14a',n:'機場旅館',   ex:false, cm:46, em:null},
   {c:'A15',n:'大園',         ex:false, cm:49, em:null},
   {c:'A16',n:'橫山',         ex:false, cm:52, em:null},
   {c:'A17',n:'領航',         ex:false, cm:55, em:null},
@@ -1096,7 +1097,7 @@ function parseTDXTrains(originCode, destCode, dayOff=0){
   const originEntries = data.filter(e=>{
     const sid = e.StationID || e.stationID;
     const dir = e.Direction !== undefined ? e.Direction : e.direction;
-    return sid === originCode && dir === direction;
+    return String(sid).toUpperCase() === originCode.toUpperCase() && dir === direction;
   });
   // 只取該日（星期）適用的時刻表；若資料沒標到該日則保留全部
   const dayEntries=originEntries.filter(e=>svcMatch(e,wd));
@@ -1244,7 +1245,7 @@ function buildTrackerHTML(train,stns){
 
   let displayStns=stns;
   if(stns.length>8){
-    const step=Math.max(1,Math.floor((stns.length-2)/6));
+    const step=Math.max(1,Math.ceil((stns.length-2)/6));
     displayStns=[stns[0]];
     for(let i=1;i<stns.length-1;i++){if(i===originIdx||i%step===0)displayStns.push(stns[i])}
     if(displayStns[displayStns.length-1]!==stns[stns.length-1])displayStns.push(stns[stns.length-1]);
@@ -1257,7 +1258,7 @@ function buildTrackerHTML(train,stns){
     const cls=isPrev?'prev':isOrig?'origin':isDest?'dest':'';
     const showName=isPrev||isOrig||isDest;
     const nameCls=showName?'endpoint':'';
-    return `<div class="track-stn"><div class="track-stn-dot ${cls}" data-stn="${s.code}"></div><div class="track-stn-name ${nameCls}">${showName?s.name:s.code}</div></div>`;
+    return `<div class="track-stn"><div class="track-stn-dot ${cls}" data-stn="${s.code}" data-i="${stns.indexOf(s)}"></div><div class="track-stn-name ${nameCls}">${showName?s.name:s.code}</div></div>`;
   }).join('');
 
   return `<div class="tracker" id="trackerCard">
@@ -1281,100 +1282,105 @@ function buildTrackerHTML(train,stns){
   </div>`;
 }
 
+// 月台停靠時間（分鐘）：列車在發車前這段時間已停在月台
+const MRT_DWELL=0.5;
+function stnMin(st,isExp){const S=STATIONS[st.idx];return (isExp&&S.ex&&S.em!=null)?S.em:S.cm}
 function startTracker(train,stns){
   trackerTrain=train;trackerStations=stns;
   if(trackerInterval)clearInterval(trackerInterval);
-  const originStnIdx=stns.findIndex(s=>!s.isPrev);
-  const hasPrev=originStnIdx>0;
-  const originFrac=hasPrev?(originStnIdx/(stns.length-1)):0;
-  const journeyFrac=1-originFrac;
-  let wasDeparted=false; // track if train was already departed when tracker started
+  const o=stns.findIndex(s=>!s.isPrev),last=stns.length-1;
+  const hasPrev=o>0,isExp=train.t==='e';
+  // 前一站→起站的行車時間（進站動畫長度）
+  const seg=hasPrev?Math.max(1.5,Math.abs(STATIONS[stns[o].idx].cm-STATIONS[stns[0].idx].cm)):0;
+  // 起站之後各站的累計行車時間，用來把「經過幾分鐘」換算成在第幾站之間
+  const cum=stns.map((st,k)=>k<o?0:Math.abs(stnMin(st,isExp)-stnMin(stns[o],isExp)));
+  let wasDeparted=false;
+
+  // 依實際畫出的站點位置定位（站點圖會省略中間站，不能用平均分配）
+  function anchors(line){
+    const lr=line.getBoundingClientRect();
+    return [...document.querySelectorAll('#trkStations .track-stn-dot')].map(d=>{const r=d.getBoundingClientRect();return {i:+d.dataset.i,x:r.left+r.width/2-lr.left,el:d}}).sort((a,b)=>a.i-b.i);
+  }
+  function xAt(A,f){
+    if(!A.length) return 0;
+    if(f<=A[0].i) return A[0].x;
+    for(let k=0;k<A.length-1;k++){
+      const a=A[k],b=A[k+1];
+      if(f<=b.i) return a.x+(b.x-a.x)*((f-a.i)/((b.i-a.i)||1));
+    }
+    return A[A.length-1].x;
+  }
+  function fAtTime(tt){ // tt = 起站發車後經過的分鐘數
+    for(let k=o;k<last;k++){
+      if(tt<=cum[k+1]) return k+(tt-cum[k])/((cum[k+1]-cum[k])||1);
+    }
+    return last;
+  }
+  function place(f){
+    const line=document.querySelector('.track-line');if(!line) return;
+    const A=anchors(line);if(!A.length||!line.offsetWidth) return;
+    const x0=A[0].x,x1=A[A.length-1].x,x=xAt(A,f);
+    const rail=line.querySelector('.track-rail');
+    if(rail){rail.style.left=x0+'px';rail.style.right='auto';rail.style.width=(x1-x0)+'px'}
+    const prog=document.getElementById('trkProgress');
+    prog.style.left=x0+'px';prog.style.width=Math.max(0,x-x0)+'px';
+    document.getElementById('trkTrain').style.left=x+'px';
+    A.forEach(a=>a.el.classList.toggle('passed',a.i<=f+0.001));
+  }
 
   function update(){
     const d=new Date();
-    const currentMin=d.getHours()*60+d.getMinutes()+d.getSeconds()/60;
+    const cur=d.getHours()*60+d.getMinutes()+d.getSeconds()/60;
     const countdown=document.getElementById('trkCountdown');
     if(!countdown)return;
-
-    if(currentMin>=train.dep&&!wasDeparted){
-      // Train just departed from origin → re-render to swap to mini + next
-      wasDeparted=true;
-      clearInterval(trackerInterval);
-      setTimeout(()=>advanceToNextTrain(),500);
-      return;
+    if(cur>=train.dep&&!wasDeparted){
+      wasDeparted=true;clearInterval(trackerInterval);
+      setTimeout(()=>advanceToNextTrain(),500);return;
     }
-
-    if(currentMin>=train.dep){
-      // Already departed state - should not happen since we re-render above
-      // But as safety: if no next train, show en-route in full card
-      wasDeparted=true;
-    }
-
     const cdLabel=document.getElementById('trkCdLabel');
     const status=document.getElementById('trkStatus');
-    const progress=document.getElementById('trkProgress');
-    const trainEl=document.getElementById('trkTrain');
     const eta=document.getElementById('trkEta');
-    const trackLine=document.querySelector('.track-line');
-    if(!trackLine)return;
-    const railLeft=16,railRight=trackLine.offsetWidth-16,railWidth=railRight-railLeft;
-    const originPos=railLeft+originFrac*railWidth;
+    const origName=stns[o].name,prevName=hasPrev?stns[0].name:'';
 
-    if(currentMin<train.dep){
-      const remain=train.dep-currentMin;
-      const mins=Math.ceil(remain);
-      countdown.textContent=`${mins}`;
-      cdLabel.textContent='分鐘後進站';
-      status.textContent='列車接近中';
-      status.style.color='var(--copper-l)';
-      const approachWindow=3;
-      const approachPct=Math.max(0,Math.min(1,1-remain/approachWindow));
-      let pos=hasPrev?railLeft+approachPct*originFrac*railWidth:railLeft;
-      progress.style.width='0%';
-      trainEl.style.left=pos+'px';
-      const prevName=hasPrev?stns[0].name:'';
-      const origName=stns[originStnIdx].name;
-      if(remain>approachWindow) eta.innerHTML=`列車將於 <strong>${mins} 分鐘</strong>後抵達 ${origName}`;
-      else eta.innerHTML=`列車已從 ${prevName} 出發，<strong>${mins} 分鐘</strong>後進站`;
-      document.querySelectorAll('.track-stn-dot').forEach(dot=>dot.classList.remove('passed'));
-      if(hasPrev&&approachPct>0)document.querySelector('.track-stn-dot.prev')?.classList.add('passed');
-    } else if(currentMin<train.arr){
-      // This branch only runs when there's no next train (safety fallback)
-      const elapsed=currentMin-train.dep;
-      const total=train.arr-train.dep;
-      const pct=Math.min(elapsed/total,1);
-      const remain=train.arr-currentMin;
-      const mins=Math.ceil(remain);
-      countdown.textContent=`${mins}`;
-      cdLabel.textContent='分鐘後抵達';
-      status.textContent='行駛中';
-      status.style.color='var(--ok)';
-      const pos=originPos+pct*journeyFrac*railWidth;
-      progress.style.width=((originFrac+pct*journeyFrac)*100)+'%';
-      trainEl.style.left=pos+'px';
-      const journeyStns=stns.slice(originStnIdx);
-      const jsLen=journeyStns.length;
-      const curIdx=Math.min(Math.floor(pct*(jsLen-1)),jsLen-2);
-      const fromStn=journeyStns[curIdx];
-      const toStn=journeyStns[Math.min(curIdx+1,jsLen-1)];
-      eta.innerHTML=`${fromStn.name} → ${toStn.name}，預計 <strong>${mins} 分鐘</strong>後抵達 ${stns[stns.length-1].name}`;
-      document.querySelectorAll('.track-stn-dot').forEach((dot,i)=>{
-        const allDots=document.querySelectorAll('.track-stn-dot');
-        const stnPct=i/(allDots.length-1);
-        const trainPct=originFrac+pct*journeyFrac;
-        if(stnPct<=trainPct)dot.classList.add('passed');else dot.classList.remove('passed');
-      });
-    } else {
+    if(cur<train.dep){
+      const remain=train.dep-cur;
+      if(remain<=MRT_DWELL){
+        // 已進站，停靠等待發車
+        place(o);
+        const sec=Math.max(0,Math.ceil(remain*60));
+        countdown.textContent=`${sec}`;cdLabel.textContent='秒後發車';
+        status.textContent='列車已進站';status.style.color='var(--ok)';
+        eta.innerHTML=`列車停靠 ${origName}，<strong>${sec} 秒</strong>後發車`;
+        return;
+      }
+      const toArr=remain-MRT_DWELL,mins=Math.ceil(toArr);
+      countdown.textContent=`${mins}`;cdLabel.textContent='分鐘後進站';
+      status.textContent='列車接近中';status.style.color='var(--copper-l)';
+      if(hasPrev&&toArr<=seg){
+        place(o*(1-toArr/seg));   // 由前一站駛向起站
+        eta.innerHTML=`列車已從 ${prevName} 出發，<strong>${mins} 分鐘</strong>後進站`;
+      }else{
+        place(0);
+        eta.innerHTML=`列車將於 <strong>${mins} 分鐘</strong>後抵達 ${origName}`;
+      }
+    }else if(cur<train.arr){
+      const total=train.arr-train.dep,el=cur-train.dep;
+      const f=fAtTime(Math.min(el/total,1)*cum[last]);
+      place(f);
+      const mins=Math.ceil(train.arr-cur);
+      countdown.textContent=`${mins}`;cdLabel.textContent='分鐘後抵達';
+      status.textContent='行駛中';status.style.color='var(--ok)';
+      const k=Math.min(Math.floor(f),last-1);
+      eta.innerHTML=`${stns[k].name} → ${stns[k+1].name}，預計 <strong>${mins} 分鐘</strong>後抵達 ${stns[last].name}`;
+    }else{
+      place(last);
       countdown.textContent='0';cdLabel.textContent='已抵達';
       status.textContent='已到站';status.style.color='var(--copper-l)';
-      progress.style.width='100%';trainEl.style.left=railRight+'px';
-      document.querySelectorAll('.track-stn-dot').forEach(d=>d.classList.add('passed'));
-      eta.innerHTML=`已抵達 <strong>${stns[stns.length-1].name}</strong>`;
+      eta.innerHTML=`已抵達 <strong>${stns[last].name}</strong>`;
       clearInterval(trackerInterval);
       setTimeout(()=>advanceToNextTrain(),5000);
     }
   }
-  // If train already departed when tracker starts, mark it
   if(nowM()>=train.dep) wasDeparted=true;
   update();
   trackerInterval=setInterval(update,1000);
