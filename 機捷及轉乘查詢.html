@@ -652,6 +652,25 @@ body:not(.tab-xfer) .hero-time{margin-bottom:0}
 .set-chk{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text);margin:4px 0 14px;cursor:pointer}
 .set-chk input{width:20px;height:20px;accent-color:var(--copper)}
 .seat-test{margin-top:12px;padding:12px;border-radius:10px;background:var(--card2);font-size:11px;line-height:1.6;color:var(--text2);white-space:pre-wrap;word-break:break-all;font-family:ui-monospace,Menlo,monospace}
+
+/* ===== 出發／抵達標籤強化 ===== */
+.pk-sub{margin-top:4px}
+.pk-sub span{font-size:14px;font-weight:800;letter-spacing:1px;padding:2px 10px;border-radius:6px}
+.pk-sub span:first-child{color:var(--copper-l);background:rgba(212,149,107,.14)}
+.pk-sub span:last-child{color:var(--ok);background:rgba(107,191,123,.13)}
+.xd-lbl{display:inline-block;font-size:14px;font-weight:800;letter-spacing:1px;padding:2px 10px;border-radius:6px;margin-bottom:8px}
+.xd-sum>div:first-child .xd-lbl{color:var(--copper-l);background:rgba(212,149,107,.14)}
+.xd-sum>div:last-child .xd-lbl{color:var(--ok);background:rgba(107,191,123,.13)}
+.xd-mid .tot,.xd-mid .xfn{white-space:nowrap}
+.xd-sum>div:first-child,.xd-sum>div:last-child{flex-shrink:1;min-width:0}
+@media (max-width:400px){.xd-big{font-size:36px}.xd-lbl{font-size:13px;padding:2px 8px}}
+.bk-steps{margin-top:16px;padding:12px 14px;border-radius:12px;background:var(--card2);border:1px solid var(--border)}
+.bk-st-tt{font-size:12px;color:var(--text3);margin-bottom:6px}
+.bk-st{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:14px}
+.bk-st i{width:22px;height:22px;border-radius:50%;background:var(--border);color:var(--text);font-style:normal;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.bk-st span{color:var(--text2);width:70px;flex-shrink:0}
+.bk-st b{font-weight:800;font-size:16px}
+.bk-st b.hl{color:var(--copper-l)}
 </style>
 </head>
 <body class="tab-home">
@@ -2189,12 +2208,20 @@ function openBook(i){
       ${isH&&b.l.seat?`<div><span>剩餘座位</span><b>${seatHTML(b.l)}</b></div>`:''}
       ${isH&&b.fare?`<div><span>全票票價</span><b class="bk-fare">${[['標準',b.fare.std],['商務',b.fare.biz],['自由座',b.fare.free]].filter(x=>x[1]).map(([n,v])=>`<span>${n} <em>$${v}</em></span>`).join('')}</b></div>`:''}
     </div>
-    <div class="bk-copy"><span>會複製這段文字</span><code>${t.txt}</code></div>
-    <div class="bk-note">${isH
-      ?'在高鐵訂票頁選起訖站與日期，時間改用「依車次」輸入車次最快。也可以改用 T Express App。'
-      :'在台鐵訂票頁選「依車次」，填入起訖站、日期與車次；需要輸入身分證字號並通過驗證。'}</div>
-    <button class="bk-go ${isH?'h':'t'}" onclick="goBook(${i})">複製並前往${isH?'高鐵':'台鐵'}訂票</button>`;
+    <div class="bk-steps">
+      <div class="bk-st-tt">到訂票頁照這個順序選（官方頁面無法由外部自動帶入）</div>
+      ${bookSteps(b,t,isH).map((x,j)=>`<div class="bk-st"><i>${j+1}</i><span>${x[0]}</span><b${x[2]?' class="hl"':''}>${x[1]}</b></div>`).join('')}
+    </div>
+    <button class="bk-go ${isH?'h':'t'}" onclick="goBook(${i})">複製車次 ${b.l.no}，前往${isH?'高鐵':'台鐵'}訂票</button>
+    <div class="bk-note">車次會先複製好，在「${isH?'車次':'車次代碼'}」欄位長按貼上即可。</div>`;
   document.getElementById('bkOv').classList.add('show');
+}
+function bookSteps(b,t,isH){
+  const f=b.from.replace('高鐵',''),to=b.to.replace('高鐵','');
+  const d=t.full.slice(5).replace('-','/')+t.date.replace(/^[^（]*/,'');
+  return isH
+    ?[['搜尋方式','點選「車次」',true],['出發站',f],['到達站',to],['出發日期',d],['車次',b.l.no,true]]
+    :[['訂票方式','「單程・依車次」',true],['出發站',f],['抵達站',to],['乘車日期',d],['車次代碼',b.l.no,true],['身分證字號','自行輸入']];
 }
 function closeBook(e){if(e&&e.target!==document.getElementById('bkOv'))return;document.getElementById('bkOv').classList.remove('show')}
 function copyText(txt){
@@ -2205,9 +2232,9 @@ function copyText(txt){
 }
 function goBook(i){
   const b=xBook[i],t=bookText(b);
-  const ok=copyText(t.txt);
+  const ok=copyText(String(b.l.no));
   window.open(BOOK_URL[b.l.mode],'_blank','noopener');
-  toast(ok?'已複製車次資料':'請手動記下車次：'+t.nm);
+  toast(ok?`已複製車次 ${b.l.no}`:'請記下車次：'+b.l.no);
   document.getElementById('bkOv').classList.remove('show');
 }
 
