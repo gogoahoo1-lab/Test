@@ -907,6 +907,9 @@ body:not(.tab-xfer) .hero-time{margin-bottom:0}
 <div class="toast" id="toast"></div>
 
 <script>
+// ========== 共用小工具 ==========
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const SVC_CUT=180;   // 凌晨 3 點前的班次屬於前一個營運日（跨午夜）
 // ========== EMBEDDED FALLBACK DATA ==========
 const STATIONS=[
   {c:'A1', n:'台北車站',     ex:true,  cm:0,  em:0},
@@ -930,8 +933,9 @@ const STATIONS=[
   {c:'A19',n:'桃園體育園區', ex:false, cm:63, em:null},
   {c:'A20',n:'興南',         ex:false, cm:66, em:null},
   {c:'A21',n:'環北',         ex:true,  cm:70, em:57},
+  {c:'A22',n:'老街溪',       ex:false, cm:72, em:null},
 ];
-const TC=70,TE=57;
+const TC=72,TE=57;   // 普通車全程 A1–A22；直達車算到 A21
 const SC={c:{fA:360,lA:1380,fB:362,lB:1382,iv:15},e:{fA:366,lA:1356,fB:368,lB:1358,iv:15}};
 
 // ========== TDX API ==========
@@ -1016,7 +1020,11 @@ async function connectTDX(){
   const idEl=document.getElementById('tdxId');
   const secEl=document.getElementById('tdxSecret');
   const clean=v=>(v||'').replace(/[\s\u200B-\u200D\uFEFF\u3000]/g,'').replace(/[\uFF01-\uFF5E]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));
-  if(idEl&&clean(idEl.value)){const i=clean(idEl.value),k=clean(secEl.value);saveCreds(i,k);idEl.value=i;secEl.value=k}
+  if(idEl){
+    const i=clean(idEl.value),k=clean(secEl.value);
+    if(!!i!==!!k){tdxStatusMsg='err|✕ Client ID 與 Client Secret 要兩個都填，或都留空使用內建金鑰。';updateSetStatus();return}
+    if(i){saveCreds(i,k);idEl.value=i;secEl.value=k}
+  }
 
   const creds=loadCreds();
   if(!creds.id||!creds.secret){
@@ -1094,10 +1102,16 @@ function parseTDXTrains(originCode, destCode, dayOff=0){
   const direction = oIdx < dIdx ? 0 : 1; // 0=south, 1=north
 
   // Find timetable entries for origin station in the right direction
+  const idxOf=c=>STATIONS.findIndex(s=>s.c.toUpperCase()===String(c||'').toUpperCase());
   const originEntries = data.filter(e=>{
     const sid = e.StationID || e.stationID;
+    if(String(sid).toUpperCase()!==originCode.toUpperCase()) return false;
+    // 有終點站資訊時，用終點判斷方向，並排除到不了目的地的區間車
+    const destId=e.DestinationStationID||e.DestinationStaionID||e.destinationStationID;
+    const di=idxOf(destId);
+    if(di>=0) return direction===0 ? di>=dIdx : di<=dIdx;
     const dir = e.Direction !== undefined ? e.Direction : e.direction;
-    return String(sid).toUpperCase() === originCode.toUpperCase() && dir === direction;
+    return dir === direction;
   });
   // 只取該日（星期）適用的時刻表；若資料沒標到該日則保留全部
   const dayEntries=originEntries.filter(e=>svcMatch(e,wd));
@@ -1117,7 +1131,8 @@ function parseTDXTrains(originCode, destCode, dayOff=0){
       const depTime = t.DepartureTime || t.departureTime;
       if(!depTime) return;
       const [hh,mm] = depTime.split(':').map(Number);
-      const depMin = hh*60+mm;
+      let depMin = hh*60+mm;
+      if(depMin<SVC_CUT) depMin+=1440;   // 00:xx 末班車屬於當天營運日
 
       // Determine type: check timetable-level first, then entry-level
       const tTypeName=(t.TrainTypeName?.Zh_tw||t.TrainTypeName?.zh_tw||t.trainTypeName?.Zh_tw||'');
@@ -1173,11 +1188,15 @@ function renderDateStrip(){
 let lastDay=new Date().getDate();
 function updateClock(){
   const dnow=new Date().getDate();
-  if(dnow!==lastDay){lastDay=dnow;xDay=Math.max(0,xDay-1);renderDateStrip();syncWhen()}
+  if(dnow!==lastDay){
+    lastDay=dnow;xDay=Math.max(0,xDay-1);renderDateStrip();syncWhen();
+    if(currentTab==='home'&&selO!==null&&selD!==null&&document.querySelector('#resCont .results-area')) render(true);
+    if(document.querySelector('#xferCont .xd')){if(currentTab==='xfer') runTransfer(); else xDirty=true}
+  }
   tickXfer();if(xTime==null)syncWhen();const d=new Date();document.getElementById('heroTime').textContent=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
 
 // Favs
-function loadF(){try{const d=localStorage.getItem('mrt_fav');if(d)favs=JSON.parse(d)}catch(e){}}
+function loadF(){try{const d=localStorage.getItem('mrt_fav');if(d)favs=JSON.parse(d).filter(f=>STATIONS.some(s=>s.c===f.oC)&&STATIONS.some(s=>s.c===f.dC)).map(f=>({...f,oN:STATIONS.find(s=>s.c===f.oC).n,dN:STATIONS.find(s=>s.c===f.dC).n}))}catch(e){favs=[]}}
 let favs=[];
 function saveF(){try{localStorage.setItem('mrt_fav',JSON.stringify(favs))}catch(e){}}
 function renderF(){const b=document.getElementById('favBar');b.innerHTML='';favs.forEach((f,i)=>{const c=document.createElement('div');c.className='fav-chip';c.innerHTML=`<span class="fs">★</span>${f.oN}<span class="fa">⇄</span>${f.dN}<span class="fd" onclick="event.stopPropagation();rmF(${i})">✕</span>`;c.onclick=e=>{if(e.target.classList.contains('fd'))return;selO=STATIONS.findIndex(s=>s.c===f.oC);selD=STATIONS.findIndex(s=>s.c===f.dC);upUI();search()};b.appendChild(c)})}
@@ -1191,7 +1210,7 @@ function closePicker(e){if(e&&e.target!==document.getElementById('mOv'))return;d
 function filterS(){renderSL(document.getElementById('mSearch').value.trim())}
 function renderSL(q){const l=document.getElementById('sList'),di=pm==='home'?null:pm==='origin'?selD:selO,si=pm==='home'?STATIONS.findIndex(x=>x.c===getHome()):pm==='origin'?selO:selD,ql=q.toLowerCase();let h='';STATIONS.forEach((s,i)=>{if(ql&&!s.n.includes(ql)&&!s.c.toLowerCase().includes(ql))return;h+=`<div class="stn-item${i===si?' sel':''}${i===di?' dis':''}" onclick="${i===di?'':`pickS(${i})`}"><div class="stn-code${s.ex?'':' co'}">${s.c}</div><div class="stn-info"><div class="nm">${s.n}</div><div class="tgs">${s.ex?'<span class="tg ex">直達車</span>':''}<span class="tg cm">普通車</span></div></div>${i===si?'<div class="stn-chk">✓</div>':''}</div>`});l.innerHTML=h}
 function pickS(i){if(pm==='home'){setHome(STATIONS[i].c);document.getElementById('mOv').classList.remove('show');runTransfer();return}if(pm==='origin')selO=i;else selD=i;document.getElementById('mOv').classList.remove('show');upUI()}
-function doSwap(){[selO,selD]=[selD,selO];upUI();if(document.getElementById('resCont').innerHTML.includes('tc '))search()}
+function doSwap(){[selO,selD]=[selD,selO];upUI();if(selO!==null&&selD!==null&&document.querySelector('#resCont .results-area'))search()}
 function upUI(){document.getElementById('goBtn').disabled=(selO===null||selD===null);const od=document.getElementById('oDisp'),dd=document.getElementById('dDisp');if(selO!==null){od.textContent=`${STATIONS[selO].c} ${STATIONS[selO].n}`;od.classList.remove('ph')}else{od.textContent='選擇出發站';od.classList.add('ph')}if(selD!==null){dd.textContent=`${STATIONS[selD].c} ${STATIONS[selD].n}`;dd.classList.remove('ph')}else{dd.textContent='選擇到達站';dd.classList.add('ph')}upFav()}
 
 // Trains (embedded fallback)
@@ -1293,7 +1312,10 @@ function startTracker(train,stns){
   // 前一站→起站的行車時間（進站動畫長度）
   const seg=hasPrev?Math.max(1.5,Math.abs(STATIONS[stns[o].idx].cm-STATIONS[stns[0].idx].cm)):0;
   // 起站之後各站的累計行車時間，用來把「經過幾分鐘」換算成在第幾站之間
-  const cum=stns.map((st,k)=>k<o?0:Math.abs(stnMin(st,isExp)-stnMin(stns[o],isExp)));
+  const cmO=STATIONS[stns[o].idx].cm,cmD=STATIONS[stns[last].idx].cm;
+  const runT=Math.abs(stnMin(stns[last],isExp)-stnMin(stns[o],isExp));
+  // 直達車略過的中間站依普通車時間比例換算，確保單調遞增
+  const cum=stns.map((st,k)=>k<o?0:Math.abs(STATIONS[st.idx].cm-cmO)/(Math.abs(cmD-cmO)||1)*runT);
   let wasDeparted=false;
 
   // 依實際畫出的站點位置定位（站點圖會省略中間站，不能用平均分配）
@@ -1330,7 +1352,8 @@ function startTracker(train,stns){
 
   function update(){
     const d=new Date();
-    const cur=d.getHours()*60+d.getMinutes()+d.getSeconds()/60;
+    let cur=d.getHours()*60+d.getMinutes()+d.getSeconds()/60;
+    if(cur<SVC_CUT&&train.dep>1200) cur+=1440;   // 跨過午夜
     const countdown=document.getElementById('trkCountdown');
     if(!countdown)return;
     if(cur>=train.dep&&!wasDeparted){
@@ -1382,13 +1405,13 @@ function startTracker(train,stns){
     }
   }
   if(nowM()>=train.dep) wasDeparted=true;
-  update();
   trackerInterval=setInterval(update,1000);
+  update();
 }
 
 function advanceToNextTrain(){
   // Re-render to properly swap mini/full cards
-  if(selO!==null&&selD!==null) render(true);
+  if(currentTab==='home'&&selO!==null&&selD!==null) render(true);
 }
 
 // Build mini tracker for en-route train
@@ -1418,7 +1441,8 @@ function startMiniTracker(train){
   if(miniInterval) clearInterval(miniInterval);
   function update(){
     const d=new Date();
-    const cur=d.getHours()*60+d.getMinutes()+d.getSeconds()/60;
+    let cur=d.getHours()*60+d.getMinutes()+d.getSeconds()/60;
+    if(cur<SVC_CUT&&train.dep>1200) cur+=1440;
     const cd=document.getElementById('miniCd');
     const prog=document.getElementById('miniProgress');
     const st=document.getElementById('miniStatus');
@@ -1452,6 +1476,8 @@ function render(noScroll){
   let source='TDX';
   if(!all){all=genFallback(selO,selD);source='內建'}
   const now=nowM();
+  // 凌晨時段：當作前一營運日的末班車（時間往前平移一天）
+  if(now<SVC_CUT) all=all.map(t=>t.dep>=1440?{...t,dep:t.dep-1440,arr:t.arr-1440}:t).sort((a,b)=>a.dep-b.dep);
   const bothExpress=STATIONS[selO].ex&&STATIONS[selD].ex;
   if(!bothExpress) all=all.filter(t=>t.t!=='e');
   let trains=all;
@@ -1512,7 +1538,7 @@ function render(noScroll){
     <div class="tc-times"><div class="tc-t"><div class="tl">出發</div><div class="tv">${hm(t.dep)}</div></div>
     <div class="tc-arr">\u2192</div><div class="tc-t"><div class="tl">抵達</div><div class="tv">${hm(t.arr)}</div></div></div>
     <div class="tc-dur"><div class="dv">${t.dur} 分</div><div class="dl2">車程</div></div></div>`});
-    if(more)h+=`<div class="load-more"><button onclick="dc+=10;render()">顯示更多班次</button></div>`}
+    if(more)h+=`<div class="load-more"><button onclick="dc+=10;render(true)">顯示更多班次</button></div>`}
   h+='</div>';ct.innerHTML=h;
 
   // Start trackers
@@ -1534,6 +1560,10 @@ function tabAction(action){
   if(clicked) clicked.classList.add('active');
 
   if(action==='home'||action==='xfer'||action==='settings') setPageTab(action);
+  if(action==='xfer'||action==='settings'){   // 離開時刻頁：停止列車追蹤
+    if(trackerInterval){clearInterval(trackerInterval);trackerInterval=null}
+    if(miniInterval){clearInterval(miniInterval);miniInterval=null}
+  }
   switch(action){
     case 'xfer':
       currentTab='xfer';
@@ -1594,11 +1624,11 @@ function showSettingsPage(){
         </div>
         <div class="set-row">
           <label>Client ID</label>
-          <input type="text" id="tdxId" placeholder="使用內建金鑰（要換才需填）" value="${loadOwnCreds().id}">
+          <input type="text" id="tdxId" placeholder="使用內建金鑰（要換才需填）" value="${esc(loadOwnCreds().id)}">
         </div>
         <div class="set-row">
           <label>Client Secret</label>
-          <input type="password" id="tdxSecret" placeholder="使用內建金鑰（要換才需填）" value="${loadOwnCreds().secret}">
+          <input type="password" id="tdxSecret" placeholder="使用內建金鑰（要換才需填）" value="${esc(loadOwnCreds().secret)}">
         </div>
         <div class="set-actions" style="margin-top:4px">
           <button class="set-btn pri" onclick="connectTDX()">連線測試</button>
@@ -1844,7 +1874,7 @@ function whQuick(v){whSetTo(v,true)}
 let xState={S:null,N:null,alerts:[],upd:null};
 const xCache={};
 
-function getHome(){try{return localStorage.getItem('xfer_home')||'A12'}catch(e){return 'A12'}}
+function getHome(){try{const c=localStorage.getItem('xfer_home');return STATIONS.some(s=>s.c===c)?c:'A12'}catch(e){return 'A12'}}
 function setHome(c){xDirty=true;try{localStorage.setItem('xfer_home',c)}catch(e){}updateHomeBtn()}
 function getBuf(){try{return Object.assign({},XFER_DEF,JSON.parse(localStorage.getItem('xfer_buf')||'{}'))}catch(e){return {...XFER_DEF}}}
 let xDirty=false;
@@ -1853,7 +1883,8 @@ function setBuf(k,v){xDirty=true;const b=getBuf();b[k]=Math.max(0,Math.min(60,pa
 const toMin=t=>{if(!t)return null;const [h,m]=t.split(':').map(Number);return h*60+m};
 function ymd(off){const d=new Date();d.setDate(d.getDate()+off);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function fmtDur(m){m=Math.round(m);const h=Math.floor(m/60),mm=m%60;return h?`${h}時${mm?mm+'分':''}`:`${mm}分`}
-function hmx(m){return hm(m)+(m>=(xDay+1)*1440?'<sup>翌</sup>':'')}
+let xBase=0;   // 目前結果所查詢的日期（相對今天）
+function hmx(m){return hm(m)+(m>=(xBase+1)*1440?'<sup>翌</sup>':'')}
 
 const xInflight={};
 const persistable=u=>/DailyTimetable\/OD|DailyTrainTimetable\/OD|\/TRA\/Station\?/.test(u);
@@ -1897,8 +1928,10 @@ function parseTHSR(data,off){
     const d=toMin(x.OriginStopTime?.DepartureTime||x.OriginStopTime?.ArrivalTime);
     const a=toMin(x.DestinationStopTime?.ArrivalTime||x.DestinationStopTime?.DepartureTime);
     if(d==null||a==null) return null;
-    let dep=d+off*1440,arr=a+off*1440;if(arr<dep)arr+=1440;
-    return {mode:'hsr',no,type:'',dep,arr};
+    let dep=d+off*1440,arr=a+off*1440;
+    if(d<SVC_CUT){dep+=1440;arr+=1440}
+    if(arr<dep)arr+=1440;
+    return {mode:'hsr',no:esc(no),type:'',dep,arr};
   }).filter(Boolean);
 }
 function traType(n){
@@ -1919,8 +1952,11 @@ function parseTRA(data,oId,dId,off){
     if(!o||!t) return null;
     const d=toMin(o.DepartureTime||o.ArrivalTime),a=toMin(t.ArrivalTime||t.DepartureTime);
     if(d==null||a==null) return null;
-    let dep=d+off*1440,arr=a+off*1440;if(arr<dep)arr+=1440;
-    return {mode:'tra',no:String(info.TrainNo||''),type:traType(info.TrainTypeName?.Zh_tw),dep,arr};
+    let dep=d+off*1440,arr=a+off*1440;
+    const first=toMin(st[0]?.DepartureTime||st[0]?.ArrivalTime);
+    if(first!=null?d<first:d<SVC_CUT){dep+=1440;arr+=1440}   // 列車跨午夜才到本站
+    if(arr<dep)arr+=1440;
+    return {mode:'tra',no:esc(info.TrainNo||''),type:esc(traType(info.TrainTypeName?.Zh_tw)),dep,arr};
   }).filter(Boolean);
 }
 function mrtTrips(from,to,off){
@@ -2082,7 +2118,7 @@ function applyDelay(trips,delays){
 
 // ---- 主流程 ----
 async function runTransfer(){
-  xBook=[];
+  xBook=[];xBase=xDay;
   xDirty=false;
   const box=document.getElementById('xferCont');
   const creds=loadCreds();
@@ -2137,7 +2173,8 @@ async function runTransfer(){
       if(xPickPending&&xOnly===d.k){xPickPending=false;if(r.plans.length)openPlanPicker(d.k)}
     }catch(e){
       if(runTransfer.req!==reqId) return;
-      document.getElementById('xd'+d.k).innerHTML=xdHead(d.k)+`<div class="xd-msg">${e.message==='RATE_LIMIT'?'TDX 暫時限制查詢次數（請求太密集）。等 10 秒左右再按上方「更新」。':e.message==='NO_CREDS'?'尚未設定 TDX 金鑰。':`查詢失敗：${e.message}。按上方「更新」再試一次。`}</div>`;
+      xPickPending=false;
+      document.getElementById('xd'+d.k).innerHTML=xdHead(d.k)+`<div class="xd-msg">${e.message==='RATE_LIMIT'?'TDX 暫時限制查詢次數（請求太密集）。等 10 秒左右再按上方「更新」。':e.message==='NO_CREDS'?'尚未設定 TDX 金鑰。':`查詢失敗：${esc(e.message)}。按上方「更新」再試一次。`}</div>`;
     }
   }
   xState.upd=new Date();
@@ -2175,7 +2212,8 @@ function planPreferFast(legs0,hi,bufs,T0){
 let xOnly=null,xPickPending=false;
 // 路線模式：full = 機捷＋高鐵＋台鐵；rail = 只搭高鐵＋台鐵（從高鐵桃園站起訖）
 function getXMode(){try{return localStorage.getItem('xfer_mode')||'full'}catch(e){return 'full'}}
-function setXMode(v){try{localStorage.setItem('xfer_mode',v)}catch(e){}updateHomeBtn()}
+function setXMode(v){try{localStorage.setItem('xfer_mode',v)}catch(e){}updateHomeBtn();refreshXferIfShown()}
+function refreshXferIfShown(){if(currentTab==='xfer'&&document.querySelector('#xferCont .xd')){if(xOnly)xOnly=getHomeDir();runTransfer()}}
 function mrtHub(){return MRT_HUB[getHsrPair().n]||null}
 function wantMrt(){return getXMode()!=='rail'}
 function wantTra(){return getXMode()!=='mh'}
@@ -2189,7 +2227,7 @@ function xModeNote(){
   return out.join('；');
 }
 function getHomeDir(){try{return localStorage.getItem('xfer_homedir')||'S'}catch(e){return 'S'}}
-function setHomeDir(v){try{localStorage.setItem('xfer_homedir',v)}catch(e){}updateHomeBtn()}
+function setHomeDir(v){try{localStorage.setItem('xfer_homedir',v)}catch(e){}updateHomeBtn();refreshXferIfShown()}
 function updateHomeBtn(){
   const w=document.getElementById('homeWrap');if(!w)return;
   const c=loadCreds();
@@ -2338,6 +2376,7 @@ function bookSteps(b,t,isH){
 }
 function closeBook(e){if(e&&e.target!==document.getElementById('bkOv'))return;document.getElementById('bkOv').classList.remove('show')}
 function goBook(i){
+  if(!xBook[i]) return;
   const b=xBook[i],t=bookText(b);
   window.open(BOOK_URL[b.l.mode],'_blank','noopener');
   document.getElementById('bkOv').classList.remove('show');
@@ -2385,7 +2424,7 @@ function timelineHTML(p,meta,bufs,r){
     const sched=(l.mode==='tra'&&l.live>0)?`<small><s>${hm(l.sdep)}</s></small>`:'';
     h+=`<div class="xleg" style="--m:${colors[l.mode]}">
       <div class="xrow"><div class="xt">${hm(l.dep)}${sched}</div><i class="xdot"></i><div class="xs">${from}</div></div>
-      <div class="xride"><span class="xb">${legName(l)}</span><span${l.mode==='hsr'&&getHsrMax()&&l.arr-l.dep>getHsrMax()?' style="color:var(--err)"':''}>${fmtDur(l.arr-l.dep)}</span>${live}${l.mode==='hsr'?seatHTML(l):''}${bookBtnHTML(l,from,to)}</div>
+      <div class="xride"><span class="xb">${legName(l)}</span><span${l.mode==='hsr'&&(r?.hsrMax??getHsrMax())&&l.arr-l.dep>(r?.hsrMax??getHsrMax())?' style="color:var(--err)"':''}>${fmtDur(l.arr-l.dep)}</span>${live}${l.mode==='hsr'?seatHTML(l):''}${bookBtnHTML(l,from,to)}</div>
       ${l.mode==='tra'?traOptionsHTML(p,i,meta,bufs,r):''}
       <div class="xrow"><div class="xt">${hm(l.arr)}</div><i class="xdot"></i><div class="xs">${to}</div></div>
     </div>`;
