@@ -671,6 +671,9 @@ body:not(.tab-xfer) .hero-time{margin-bottom:0}
 .bk-st span{color:var(--text2);width:70px;flex-shrink:0}
 .bk-st b{font-weight:800;font-size:16px}
 .bk-st b.hl{color:var(--copper-l)}
+.pk-sub span,.xd-lbl,.xd-sum>div:first-child .xd-lbl,.xd-sum>div:last-child .xd-lbl,.pk-sub span:first-child,.pk-sub span:last-child{color:#fff;font-weight:800}
+.pk-sub span:first-child,.xd-sum>div:first-child .xd-lbl{background:rgba(212,149,107,.32)}
+.pk-sub span:last-child,.xd-sum>div:last-child .xd-lbl{background:rgba(107,191,123,.30)}
 </style>
 </head>
 <body class="tab-home">
@@ -2091,6 +2094,7 @@ function updateHomeBtn(){
 function setPageTab(t){
   document.body.classList.remove('tab-home','tab-xfer','tab-settings');
   document.body.classList.add('tab-'+t);
+  const hn=document.querySelector('.hero-name');if(hn) hn.textContent=t==='xfer'?'轉乘時刻':'機捷時刻';
 }
 function renderXferIntro(){
   const c=loadCreds(),ok=c.id&&c.secret;
@@ -2178,7 +2182,7 @@ function stripHTML(p,cls){
   return `<div class="${cls}">${h}</div>`;
 }
 
-// ---- 訂票捷徑：開官方訂票頁＋複製車次資料 ----
+// ---- 訂票捷徑：開官方訂票頁＋步驟清單 ----
 const BOOK_URL={hsr:'https://irs.thsrc.com.tw/IMINT/?locale=tw',tra:'https://tip.railway.gov.tw/tra-tip-web/tip/tip001/tip123/query'};
 let xBook=[];
 function needsTicket(l){return l.mode==='hsr'||(l.mode==='tra'&&!/區間/.test(l.type))}
@@ -2212,8 +2216,7 @@ function openBook(i){
       <div class="bk-st-tt">到訂票頁照這個順序選（官方頁面無法由外部自動帶入）</div>
       ${bookSteps(b,t,isH).map((x,j)=>`<div class="bk-st"><i>${j+1}</i><span>${x[0]}</span><b${x[2]?' class="hl"':''}>${x[1]}</b></div>`).join('')}
     </div>
-    <button class="bk-go ${isH?'h':'t'}" onclick="goBook(${i})">複製車次 ${b.l.no}，前往${isH?'高鐵':'台鐵'}訂票</button>
-    <div class="bk-note">車次會先複製好，在「${isH?'車次':'車次代碼'}」欄位長按貼上即可。</div>`;
+    <button class="bk-go ${isH?'h':'t'}" onclick="goBook(${i})">前往${isH?'高鐵':'台鐵'}訂票</button>`;
   document.getElementById('bkOv').classList.add('show');
 }
 function bookSteps(b,t,isH){
@@ -2224,17 +2227,9 @@ function bookSteps(b,t,isH){
     :[['訂票方式','「單程・依車次」',true],['出發站',f],['抵達站',to],['乘車日期',d],['車次代碼',b.l.no,true],['身分證字號','自行輸入']];
 }
 function closeBook(e){if(e&&e.target!==document.getElementById('bkOv'))return;document.getElementById('bkOv').classList.remove('show')}
-function copyText(txt){
-  let ok=false;
-  try{const ta=document.createElement('textarea');ta.value=txt;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:-100px;opacity:0;font-size:16px';document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,txt.length);ok=document.execCommand('copy');ta.remove()}catch(e){}
-  if(!ok&&navigator.clipboard){navigator.clipboard.writeText(txt).catch(()=>{});ok=true}
-  return ok;
-}
 function goBook(i){
   const b=xBook[i],t=bookText(b);
-  const ok=copyText(String(b.l.no));
   window.open(BOOK_URL[b.l.mode],'_blank','noopener');
-  toast(ok?`已複製車次 ${b.l.no}`:'請記下車次：'+b.l.no);
   document.getElementById('bkOv').classList.remove('show');
 }
 
@@ -2316,7 +2311,7 @@ function renderDir(k,r,T0,sel=0){
   const tight=best.legs.some((l,i)=>i<best.legs.length-1&&best.legs[i+1].dep-l.arr-bufs[i]<3);
   if(tight) tags.push(`<span class="xtag r">轉乘偏緊</span>`);
   const nX=best.legs.length-1;
-  el.innerHTML=xdHead(k,`<span data-dep="${best.dep}"></span>`)+(xOnly===k&&plans.length>1?`<button class="xf-upd" style="display:block;margin:6px 18px 0;color:var(--copper)" onclick="openPlanPicker('${k}')">換一個方案</button>`:'')+`
+  el.innerHTML=xdHead(k,`<span data-dep="${best.dep}"></span>`)+(xOnly===k&&plans.length>1?`<button class="xf-upd" style="display:block;margin:6px 18px 0;color:var(--copper);font-weight:800;font-size:14px" onclick="openPlanPicker('${k}')">換一個方案</button>`:'')+`
     <div class="xd-sum">
       <div><div class="xd-lbl">出發</div><div class="xd-big">${hmx(best.dep)}</div></div>
       <div class="xd-mid"><div class="tot">${fmtDur(best.arr-best.dep)}</div><div class="xfn">轉乘 ${nX} 次</div></div>
