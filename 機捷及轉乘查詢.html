@@ -674,6 +674,110 @@ body:not(.tab-xfer) .hero-time{margin-bottom:0}
 .pk-sub span,.xd-lbl,.xd-sum>div:first-child .xd-lbl,.xd-sum>div:last-child .xd-lbl,.pk-sub span:first-child,.pk-sub span:last-child{color:#fff;font-weight:800}
 .pk-sub span:first-child,.xd-sum>div:first-child .xd-lbl{background:rgba(212,149,107,.32)}
 .pk-sub span:last-child,.xd-sum>div:last-child .xd-lbl{background:rgba(107,191,123,.30)}
+
+/* ===== 手機版整體放大字級 ===== */
+@media (max-width:767px){
+  /* 頂部 */
+  .hero-name{font-size:21px}
+  .hero-loc{font-size:13px;padding:5px 12px}
+  .date-num{font-size:16px;width:42px;height:42px}
+  .date-item.active .date-num{font-size:18px;width:48px;height:48px}
+  .date-day{font-size:13px;font-weight:600}
+  .hero-time .label{font-size:14px}
+  /* 轉乘控制列 */
+  .mode-seg button{font-size:15px;height:36px;padding:0 11px}
+  .hsr-chip{font-size:17px;height:42px;padding:0 8px 0 16px}
+  .hsr-chip span{font-size:13px;padding:4px 10px}
+  .home-seg button{font-size:17px;height:40px;padding:0 20px}
+  .home-when>button,.when-time{font-size:17px;height:44px}
+  .when-time b{font-size:22px}
+  .when-lbl{font-size:15px}
+  .home-btn{font-size:20px;height:56px;min-width:190px}
+  /* 轉乘結果區 */
+  .xf-title{font-size:23px}
+  .xf-upd{font-size:14px}
+  .xf-home{font-size:16px;height:42px}
+  .xlegend{font-size:14px;gap:16px}
+  .xlegend i{width:14px;height:5px}
+  .xf-alert{font-size:14px}
+  .xd-dir{font-size:20px}
+  .xd-dir small{font-size:15px}
+  .xd-cd{font-size:15px}
+  .xtag{font-size:13px}
+  .xs{font-size:17px}
+  .xt{font-size:19px}
+  .xride{font-size:15px}
+  .xb{font-size:14px}
+  .xwalk{font-size:14px}
+  .xopt-tt{font-size:13px}
+  .xopt-r{font-size:15px}
+  .xa-t{font-size:19px}
+  .xa-d{font-size:15px}
+  .xall-hd{font-size:17px}
+  .xall-hd span{font-size:14px}
+  .xh-top{font-size:18px}
+  .xh-sub{font-size:15px}
+  .seat{font-size:13px}
+  /* 3 個方案選單 */
+  .pk-no{font-size:16px}
+  .pk-wait{font-size:15px}
+  .pk-dur{font-size:17px}
+  .pk-leg{font-size:15px}
+  .modal-hd h2{font-size:19px}
+  /* 機捷時刻頁 */
+  .fav-chip{font-size:14px}
+  .fav-chip .fd{font-size:15px}
+  .stn-lbl{font-size:13px;width:36px}
+  .stn-disp{font-size:18px}
+  .btn-pri{font-size:17px;height:54px}
+  .res-title{font-size:19px}
+  .res-route{font-size:13px}
+  .ftab{font-size:14px;height:36px}
+  .next-lbl{font-size:11px}
+  .tc-badge .bd{font-size:12px;width:48px}
+  .tc-t .tl{font-size:11px}
+  .tc-t .tv{font-size:24px}
+  .tc-arr{font-size:16px}
+  .tc-dur .dv{font-size:17px}
+  .tc-dur .dl2{font-size:11px}
+  .tracker-badge .trkb{font-size:12px}
+  .tracker-badge .trk-status{font-size:13px}
+  .tracker-countdown .cd-lbl{font-size:12px}
+  .tracker-times{font-size:15px}
+  .tracker-times .tt-dep,.tracker-times .tt-arr{font-size:18px}
+  .tracker-times .tt-dur{font-size:13px}
+  .tracker-eta{font-size:14px}
+  .tracker-eta strong{font-size:16px}
+  .tm-badge span{font-size:11px}
+  .tm-info{font-size:14px}
+  .tm-info .tm-status{font-size:12px}
+  .tm-cd .tm-cd-num{font-size:21px}
+  .tm-cd .tm-cd-lbl{font-size:11px}
+  .stn-info .nm{font-size:17px}
+  .stn-code{font-size:13px}
+  /* 設定頁 */
+  .set-row label{font-size:13px}
+  .set-chk{font-size:15px}
+  /* 底部頁籤 */
+  .tab-item .tab-lb{font-size:13px}
+}
+@media (max-width:767px){
+  .home-wrap{padding:0 12px}
+  .mode-seg{max-width:100%;width:100%}
+  .mode-seg button{flex:1 1 auto;font-size:15px;padding:0 6px;min-width:0}
+  .tc{gap:10px;padding:14px 14px}
+  .tc-times{gap:6px;min-width:0}
+}
+@media (max-width:380px){
+  .mode-seg button{font-size:14px;padding:0 4px}
+  .tc-t .tv{font-size:22px;letter-spacing:0}
+  .tc-dur .dv{font-size:16px}
+}
+@media (max-width:767px){
+  .res-hd{flex-wrap:wrap;row-gap:4px}
+  .res-title{flex:1 1 100%}
+  .res-route{font-size:15px;font-weight:700;color:var(--text2)}
+}
 </style>
 </head>
 <body class="tab-home">
@@ -1391,7 +1495,7 @@ function render(noScroll){
   let h=`<div class="results-area">
     ${miniHTML}
     ${trackerHTML}
-    <div class="res-hd"><div class="res-title">即將到來班次 <span style="font-size:10px;color:var(--text3);font-weight:400">(${source}・${nowStr} 起)</span></div><div class="res-route">${STATIONS[selO].n} \u2192 ${STATIONS[selD].n}</div></div>`;
+    <div class="res-hd"><div class="res-title">即將到來班次 <span style="font-size:12px;color:var(--text3);font-weight:500">(${source}・${nowStr} 起)</span></div><div class="res-route">${STATIONS[selO].n} \u2192 ${STATIONS[selD].n}</div></div>`;
 
   if(!sh.length){h+=`<div class="no-res"><div class="nri">\ud83d\udd0d</div><div>無可用班次</div></div>`}
   else{sh.forEach((t,i)=>{
