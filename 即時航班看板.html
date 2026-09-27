@@ -281,15 +281,23 @@ ul.doc li{margin:6px 0}
 .hold-grid.solo{grid-template-columns:1fr}
 .hold-map{margin-top:14px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:rgba(255,255,255,.65)}
 .hold-map[hidden]{display:none!important}
-#holdMap{height:480px;width:100%;background:#e8eef2}
+#holdMap{height:480px;width:100%;background:#aad3df}
 @media (max-width:720px){#holdMap{height:360px}}
 .hold-map .cap{font-size:12px;color:var(--dim);padding:8px 12px}
 .hmap-icon{background:none;border:0}
 .hmap-icon svg{display:block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
 .hmap-lbl{position:absolute;left:100%;top:50%;transform:translate(3px,-50%);font:600 11px/1 system-ui,sans-serif;white-space:nowrap;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff}
 .hmap-pop{font-size:12.5px;line-height:1.6}
+.hmap-type{font-weight:600;font-size:10px;padding:0 4px;border-radius:4px;background:rgba(255,255,255,.85);color:#1f4e79;margin-left:3px;text-shadow:none}
+.hmap-dark .hmap-type{background:rgba(11,22,32,.8);color:#d6e2ea}
+.hmap-halo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border:2px solid;border-radius:50%;animation:holdPulse 1.4s ease-in-out infinite;pointer-events:none}
 .hmap-lbl i{display:block;font-style:normal;font-weight:500;font-size:10px;color:#51677a;margin-top:1px}
 .hmap-nolbl .hmap-lbl{display:none}
+.hmap-dark .hmap-lbl{text-shadow:0 0 3px #0b1620,0 0 3px #0b1620,0 0 3px #0b1620;filter:brightness(1.8)}
+.hmap-dark .hmap-lbl i{color:#d6e2ea}
+.hmap-dark .hmap-icon path{stroke:#0b1620}
+.leaflet-control-layers{border-radius:8px!important;font:12.5px system-ui,sans-serif}
+.leaflet-control-layers label{margin:3px 0}
 .hmap-fit{display:block;margin-bottom:6px;background:#fff;border:1px solid rgba(0,0,0,.2);border-radius:6px;padding:5px 10px;font:12px system-ui,sans-serif;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15)}
 .fmap-toolbar [hidden],.hold-radar[hidden]{display:none!important}
 .hold-radar{border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.65);padding:8px}
@@ -312,7 +320,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-27i</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-27l</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -810,7 +818,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
     <div class="kpis" id="holdKpis"></div>
     <div class="hold-map" id="holdMapWrap" hidden>
       <div id="holdMap"></div>
-      <div class="cap">飛機圖示朝向為航向，標籤為航班號與出發地→目的地；紅／橘色為盤旋中，線條為近 30 分鐘航跡。點圖示看詳細資料，點下方表格的航班可在地圖上定位。航線優先取看板的 TDX 資料，其餘由擴充功能向 adsb.lol／hexdb.io 查詢，偶有過時或查不到。<span id="holdMapErr" style="color:var(--bad)"></span></div>
+      <div class="cap">飛機圖示朝向為航向、大小依機型翼展比例（A380 最大、窄體機較小），標籤為航班號、機型與出發地→目的地；紅／橘色為盤旋中，線條為近 30 分鐘航跡。點圖示看詳細資料，點下方表格的航班可在地圖上定位。航線優先取看板的 TDX 資料，其餘由擴充功能向 adsb.lol／hexdb.io 查詢，偶有過時或查不到。<span id="holdMapErr" style="color:var(--bad)"></span></div>
     </div>
     <div class="hold-grid" id="holdGrid">
       <div>
@@ -826,7 +834,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
 
   <div class="card">
     <h2>航班即時地圖</h2>
-    <p>嵌入開源 ADS-B 即時航班地圖（globe.airplanes.live），可對準各站空域檢視即時航機位置與軌跡。此為社群營運的公開服務，非商業追蹤軟體。</p>
+    <p>嵌入開源 ADS-B 即時航班地圖（預設 globe.adsb.fi），打開本頁會自動載入，切換機場或來源也會自動重新載入。此為社群營運的公開服務，非商業追蹤軟體。</p>
     <div class="fmap-toolbar">
       <label class="f">對準機場
         <select id="fmapAirport">
@@ -839,11 +847,11 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
       </label>
       <label class="f">來源
         <select id="fmapSrc">
-          <option value="airplanes" selected>airplanes.live</option>
-          <option value="adsbfi">adsb.fi</option>
+          <option value="adsbfi" selected>adsb.fi</option>
+          <option value="airplanes">airplanes.live</option>
         </select>
       </label>
-      <button class="btn primary" id="btnFmapLoad">載入地圖</button>
+      <button class="btn primary" id="btnFmapLoad">重新載入</button>
       <button class="btn ghost" id="btnFmapOpen">在新分頁開啟</button>
       <span class="note" id="fmapStatus" style="align-self:flex-end;padding-bottom:9px"></span>
     </div>
@@ -858,7 +866,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
 <section id="tab-help" hidden>
   <div class="card">
     <h2>怎麼用</h2>
-    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-27i</b>（到離看板新增區域篩選；航班地圖新增盤旋偵測，可指定航空公司全球追蹤）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
+    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-27l</b>（到離看板新增區域篩選；航班地圖新增盤旋偵測，可指定航空公司全球追蹤）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
     <ul class="doc">
       <li>桃園機場走「<b>TDX 桃園機場</b>」頁籤最省事：填 Client ID／Secret 後按立即抓取，到場與離場會一次抓齊。</li>
       <li>TDX 的 <code>$top</code> 預設值只有 <b>30 筆</b>，不分頁就只會拿到 30 班。本頁已改成自動帶 <code>$top</code>／<code>$skip</code> 分頁抓到底。</li>
@@ -2941,7 +2949,7 @@ var FMAP_APT = {
 
 function fmapUrl(){
   var apt = $("fmapAirport") ? $("fmapAirport").value : "RCTP";
-  var src = $("fmapSrc") ? $("fmapSrc").value : "airplanes";
+  var src = $("fmapSrc") ? $("fmapSrc").value : "adsbfi";
   var base = src === "adsbfi" ? "https://globe.adsb.fi/" : "https://globe.airplanes.live/";
   var p = FMAP_APT[apt] || FMAP_APT.RCTP;
   /* tar1090 支援 lat/lon/zoom 參數置中；airport 參數也可但座標較穩 */
@@ -3180,7 +3188,8 @@ function holdNormalize(j){
         alt_baro: g ? "ground" : (s[7] != null ? Math.round(s[7]*3.28084) : (s[13] != null ? Math.round(s[13]*3.28084) : null)),
         gs: s[9] != null ? Math.round(s[9]*1.94384) : null, track: s[10],
         baro_rate: s[11] != null ? Math.round(s[11]*196.85) : null,
-        squawk: s[14] || "", seen_pos: s[3] ? Math.max(0, now - s[3]) : 0
+        squawk: s[14] || "", seen_pos: s[3] ? Math.max(0, now - s[3]) : 0,
+        category: s[17] != null ? s[17] : null
       };
     });
   }
@@ -3231,7 +3240,7 @@ function holdFetch(cfg){
       { name:"adsb.lol", url:"https://api.adsb.lol/v2/point/" + lat + "/" + lon + "/" + r },
       { name:"adsb.fi", url:"https://opendata.adsb.fi/api/v2/lat/" + lat + "/lon/" + lon + "/dist/" + r }
     ];
-    if(ch === "bridge") srcs.push({ name:"OpenSky", url:"https://opensky-network.org/api/states/all?" + holdBbox(lat, lon, r) });
+    if(ch === "bridge") srcs.push({ name:"OpenSky", url:"https://opensky-network.org/api/states/all?extended=1&" + holdBbox(lat, lon, r) });
     get = ch === "bridge" ? holdViaBridge : holdViaFetch;
   }
   return holdTrySources(srcs, get).then(function(l){
@@ -3269,7 +3278,7 @@ function holdFetchFlights(cfg){
       if(ch !== "bridge") return Promise.reject(new Error(HOLD_CORS_HINT));
       // 備援：OpenSky 全球（4 credits／次）
       HOLD.usedOpenSkyGlobal = true;
-      return holdTrySources([{ name:"OpenSky", url:"https://opensky-network.org/api/states/all" }], get)
+      return holdTrySources([{ name:"OpenSky", url:"https://opensky-network.org/api/states/all?extended=1" }], get)
         .then(function(l){ HOLD.lastSrc = "擴充功能・" + HOLD.lastSrc; return pick(l); },
               function(e2){ throw new Error(errs.concat(e2).join("；")); });
     }
@@ -3350,7 +3359,9 @@ function holdIngest(list, cfg){
     }
     tr.cs = cs || tr.cs || "";
     tr.reg = a.r || a.reg || tr.reg || "";
-    tr.type = a.t || a.type || tr.type || "";
+    tr.type = String(a.t || a.type || tr.type || "").toUpperCase();
+    if(a.category != null) tr.cat = a.category;
+    acFill(tr);
     tr.alt = onGround ? 0 : (+alt || +a.alt_geom || 0);
     tr.gs = a.gs != null ? Math.round(+a.gs) : tr.gs;
     tr.vs = a.baro_rate != null ? +a.baro_rate : (a.geom_rate != null ? +a.geom_rate : null);
@@ -3640,6 +3651,62 @@ function routeLookup(){
 }
 
 /* =========================================================
+   機型資料與地圖圖示大小
+   ─ 機型來源：adsb.lol／adsb.fi 直接提供；OpenSky 沒有，改向 hexdb.io 依 ICAO 位址查（快取 30 天）
+   ─ 圖示大小依翼展換算，讓 A380、777、350、321、ATR 在地圖上看得出大小差異
+   ========================================================= */
+/* 常見機型翼展（公尺） */
+var TYPE_SPAN = {
+  A388:79.8, B748:68.4, B744:64.4, B74F:64.4, A35K:64.75, A359:64.75, A346:63.5, A343:60.3,
+  B77W:64.8, B77L:64.8, B773:60.9, B772:60.9, B779:71.8, B78X:60.1, B789:60.1, B788:60.1,
+  A339:64.0, A338:64.0, A333:60.3, A332:60.3, A330:60.3, B764:51.9, B763:47.6, B762:47.6, B752:38.1, B753:38.1,
+  A21N:35.8, A321:35.8, A20N:35.8, A320:35.8, A319:35.8, A318:34.1, BCS3:35.1, BCS1:35.1,
+  B39M:35.9, B38M:35.9, B37M:35.9, B739:35.8, B738:35.8, B737:34.3, B736:34.3,
+  E195:28.7, E190:28.7, E290:33.7, E295:35.1, E175:26.0, E170:26.0, CRJ9:24.9, CRJ7:23.2,
+  AT76:27.05, AT75:27.05, AT72:27.05, DH8D:28.4, SF34:21.4, MD11:51.7, DC10:50.4
+};
+/* 沒有機型時，用 OpenSky 的航機類別推估：6=重型、5=757 級、4=大型、3=中型、2=小型 */
+var CAT_SPAN = { 6:62, 5:38, 4:34, 3:26, 2:18 };
+function planeSize(tr){
+  var span = TYPE_SPAN[String(tr.type || "").toUpperCase()] || CAT_SPAN[tr.cat] || 34;
+  return Math.round(8 + span * 0.33);   // A380≈34px、777／350≈29px、321≈20px、ATR≈17px
+}
+var ACINFO = { cache:{}, pending:{}, busy:false };
+(function(){
+  try{
+    var c = JSON.parse(localStorage.getItem("acCache") || "{}"), now = Date.now();
+    Object.keys(c).forEach(function(k){ if(now - c[k].t < 30*86400000) ACINFO.cache[k] = c[k]; });
+  }catch(e){}
+})();
+function acFill(tr){
+  var c = ACINFO.cache[tr.hex];
+  if(c){
+    if(!tr.type && c.type) tr.type = c.type;
+    if(!tr.reg && c.reg) tr.reg = c.reg;
+    if(c.name) tr.typeName = c.name;
+  }else if(!tr.type && !ACINFO.pending[tr.hex]) ACINFO.pending[tr.hex] = 1;
+}
+function acLookup(){
+  var list = Object.keys(ACINFO.pending);
+  if(!list.length || ACINFO.busy || !holdBridge()) return;
+  ACINFO.busy = true;
+  var batch = list.slice(0, 10);
+  batch.forEach(function(h){ delete ACINFO.pending[h]; });
+  batch.reduce(function(chain, hex){
+    return chain.then(function(){
+      return holdViaBridge("https://hexdb.io/api/v1/aircraft/" + encodeURIComponent(hex)).then(function(j){
+        ACINFO.cache[hex] = { type: String(j.ICAOTypeCode || "").toUpperCase(), reg: j.Registration || "", name: j.Type || "", t: Date.now() };
+      }, function(){ ACINFO.cache[hex] = { t: Date.now() - 29*86400000 }; });   // 查不到：一天後再試
+    });
+  }, Promise.resolve()).then(function(){
+    ACINFO.busy = false;
+    try{ localStorage.setItem("acCache", JSON.stringify(ACINFO.cache)); }catch(e){}
+    Object.keys(HOLD.tracks).forEach(function(k){ acFill(HOLD.tracks[k]); });
+    holdRender();
+  });
+}
+
+/* =========================================================
    指定航空公司（全球）的位置地圖：Leaflet + CARTO 底圖，按需載入
    ========================================================= */
 var HMAP = { map:null, layer:null, loading:null, fitted:"", markers:{} };
@@ -3662,23 +3729,35 @@ function holdLoadLeaflet(){
 function holdMapInit(){
   if(HMAP.map) return;
   HMAP.map = L.map("holdMap", { worldCopyJump:true, zoomControl:true, attributionControl:true }).setView([25, 121], 4);
-  // 底圖：Esri 淺灰底圖（免金鑰）；若圖磚連續載入失敗，自動改用 OpenStreetMap
-  var esriBase = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
-    maxZoom: 16, attribution: "Tiles &copy; Esri"
+  // 底圖：多種免金鑰樣式，右上角可切換，記住上次選擇
+  var ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/";
+  function esri(path, o){ return L.tileLayer(ESRI + path + "/MapServer/tile/{z}/{y}/{x}", Object.assign({ maxZoom:16, attribution:"Tiles &copy; Esri" }, o || {})); }
+  function withRef(base, ref){ return L.layerGroup([base, ref]); }
+  var styles = {
+    "海洋藍": withRef(esri("Ocean/World_Ocean_Base", { maxNativeZoom:10 }), esri("Ocean/World_Ocean_Reference", { maxNativeZoom:10, attribution:"" })),
+    "地形": esri("World_Topo_Map"),
+    "衛星": withRef(esri("World_Imagery"), esri("Reference/World_Boundaries_and_Places", { attribution:"" })),
+    "深色": withRef(esri("Canvas/World_Dark_Gray_Base", { maxNativeZoom:16 }), esri("Canvas/World_Dark_Gray_Reference", { attribution:"" })),
+    "街道": esri("World_Street_Map"),
+    "OpenStreetMap": L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom:16, attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' })
+  };
+  var pick = "海洋藍";
+  try{ var sv = localStorage.getItem("hmapStyle"); if(sv && styles[sv]) pick = sv; }catch(e){}
+  styles[pick].addTo(HMAP.map);
+  HMAP.map.getContainer().classList.toggle("hmap-dark", pick === "深色" || pick === "衛星");
+  L.control.layers(styles, null, { position:"topleft", collapsed:true }).addTo(HMAP.map);
+  HMAP.map.on("baselayerchange", function(e){
+    try{ localStorage.setItem("hmapStyle", e.name); }catch(err){}
+    HMAP.map.getContainer().classList.toggle("hmap-dark", e.name === "深色" || e.name === "衛星");
   });
-  var esriRef = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}", {
-    maxZoom: 16, pane: "overlayPane"
-  });
+  // Esri 圖磚連續失敗時自動改用 OpenStreetMap
   var fails = 0, switched = false;
-  esriBase.on("tileerror", function(){
-    if(switched || ++fails < 6) return;
+  HMAP.map.on("tileerror", function(){
+    if(switched || ++fails < 8) return;
     switched = true;
-    HMAP.map.removeLayer(esriBase); HMAP.map.removeLayer(esriRef);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 16, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(HMAP.map);
+    Object.keys(styles).forEach(function(k){ if(HMAP.map.hasLayer(styles[k])) HMAP.map.removeLayer(styles[k]); });
+    styles["OpenStreetMap"].addTo(HMAP.map);
   });
-  esriBase.addTo(HMAP.map); esriRef.addTo(HMAP.map);
   // 「標籤」開關：航班號＋出發地→目的地
   var Lbl = L.Control.extend({ options:{ position:"topright" }, onAdd:function(){
     var b = L.DomUtil.create("button", "hmap-fit");
@@ -3701,17 +3780,20 @@ function holdMapInit(){
   HMAP.map.addControl(new Fit());
 }
 function holdPlaneIcon(tr){
-  var col = tr.level >= 3 ? "#d65656" : tr.level === 2 ? "#e0892a" : tr.level === 1 ? "#3a8fa7" : "#35526b";
-  var size = tr.level >= 2 ? 26 : 20;
+  var col = tr.level >= 3 ? "#d65656" : tr.level === 2 ? "#e0892a" : tr.level === 1 ? "#3a8fa7" : "#1f4e79";
+  var size = planeSize(tr);
   var rot = tr.trk != null ? Math.round(tr.trk) : 0;
   var label = esc(tr.fno || tr.cs || "");
   var rt = routeText(holdRoute(tr));
+  var halo = tr.level >= 2 ? '<span class="hmap-halo" style="border-color:' + col + ';width:' + (size + 14) + 'px;height:' + (size + 14) + 'px"></span>' : "";
   return L.divIcon({
     className: "hmap-icon",
     iconSize: [size, size], iconAnchor: [size/2, size/2],
-    html: '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" style="transform:rotate(' + rot + 'deg)">' +
+    html: halo + '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" style="transform:rotate(' + rot + 'deg)">' +
       '<path d="M12 2c.8 0 1.3.7 1.3 1.6v5.6l7.7 4.6v2l-7.7-2.3v4.6l2.2 1.7v1.6L12 20.5l-3.5 1v-1.6l2.2-1.7v-4.6L3 15.8v-2l7.7-4.6V3.6C10.7 2.7 11.2 2 12 2z" fill="' + col + '" stroke="#fff" stroke-width="1"/></svg>' +
-      '<span class="hmap-lbl" style="color:' + col + '">' + label + (rt ? '<i>' + esc(rt) + "</i>" : "") + "</span>"
+      '<span class="hmap-lbl" style="color:' + col + '">' + label +
+        (tr.type ? ' <b class="hmap-type">' + esc(tr.type) + "</b>" : "") +
+        (rt ? '<i>' + esc(rt) + "</i>" : "") + "</span>"
   });
 }
 function holdPopupHtml(tr){
@@ -3721,7 +3803,7 @@ function holdPopupHtml(tr){
     (holdRoute(tr) ? "<br>" + esc(routeLong(holdRoute(tr))) : "") +
     '<br><span class="hlv l' + tr.level + '">' + lv + "</span>" +
     (tr.holding ? " " + fmtDur(Date.now() - tr.holdSince) + "・" + tr.laps + " 圈" : "") +
-    "<br>" + esc(tr.type || "") + (tr.reg ? " " + esc(tr.reg) : "") +
+    "<br>機型 " + esc(tr.type || "—") + (tr.typeName ? "（" + esc(tr.typeName) + "）" : "") + (tr.reg ? "・" + esc(tr.reg) : "") +
     "<br>高度 " + fmtAlt(tr.alt) + (tr.gs != null ? "・地速 " + tr.gs + " kt" : "") + (tr.trk != null ? "・航向 " + Math.round(tr.trk) + "°" : "") +
     (tr.dist != null ? "<br>距 " + esc(tr.refApt.iata) + " " + Math.round(tr.dist) + " 浬（" + compass(tr.brg) + "方）" : "") +
     (tr.emerg ? '<br><b style="color:#d65656">SQUAWK ' + esc(tr.squawk) + "</b>" : "") +
@@ -3763,6 +3845,7 @@ function holdDrawMap(cfg, list){
     }
     $("holdMapErr").textContent = "";
     setTimeout(routeLookup, 50);
+    setTimeout(acLookup, 400);
   }, function(e){ $("holdMapErr").textContent = e.message + "，請確認網路可連到 cdnjs.cloudflare.com。"; });
 }
 
@@ -5179,6 +5262,21 @@ function shift(hhmm, mins){
 
   /* ── 航班地圖 ── */
   if($("btnFmapLoad")) $("btnFmapLoad").addEventListener("click", loadFmap);
+  // 記住機場／來源選擇，切換時自動重新載入
+  try{
+    var fm = JSON.parse(localStorage.getItem("fmapCfg") || "null");
+    if(fm){
+      if(fm.apt != null && $("fmapAirport").querySelector('option[value="' + fm.apt + '"]')) $("fmapAirport").value = fm.apt;
+      if(fm.src && $("fmapSrc").querySelector('option[value="' + fm.src + '"]')) $("fmapSrc").value = fm.src;
+    }
+  }catch(e){}
+  ["fmapAirport","fmapSrc"].forEach(function(id){
+    if(!$(id)) return;
+    $(id).addEventListener("change", function(){
+      try{ localStorage.setItem("fmapCfg", JSON.stringify({ apt:$("fmapAirport").value, src:$("fmapSrc").value })); }catch(e){}
+      loadFmap();
+    });
+  });
   if($("btnFmapOpen")) $("btnFmapOpen").addEventListener("click", openFmapNewTab);
   holdInit();
 
