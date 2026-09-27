@@ -355,7 +355,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-27p</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-27s</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -849,6 +849,27 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
         <input type="text" id="holdProxy" placeholder="https://script.google.com/macros/s/…/exec" style="width:100%">
       </div>
     </details>
+    <details class="alpick" style="margin-top:8px">
+      <summary>Telegram 推播<span class="pill" id="tgPill">未設定</span></summary>
+      <div style="padding:10px 16px 14px;border-top:1px solid var(--line)">
+        <p class="note" style="margin:0 0 10px">盤旋開始、升級為長時間盤旋、出現緊急代碼（7700／7600／7500）時，傳訊息到你的 Telegram。只會推播目前監看範圍內的航機；看板要保持開著才會發送。Token 只存在這台電腦的瀏覽器裡。</p>
+        <div class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <label class="f" style="flex:2;min-width:260px">Bot Token
+            <input type="password" id="tgToken" placeholder="123456789:ABCdef…" autocomplete="off" style="width:100%">
+          </label>
+          <label class="f" style="flex:1;min-width:150px">Chat ID
+            <input type="text" id="tgChat" placeholder="例如 123456789" autocomplete="off" style="width:100%">
+          </label>
+          <button class="btn ghost" id="btnTgChat" type="button">自動取得 Chat ID</button>
+        </div>
+        <div class="row" style="gap:16px;flex-wrap:wrap;align-items:center;margin-top:10px">
+          <label style="display:flex;gap:6px;align-items:center;font-size:13.5px"><input type="checkbox" id="tgOn"> 啟用 Telegram 推播</label>
+          <label style="display:flex;gap:6px;align-items:center;font-size:13.5px"><input type="checkbox" id="tgExit" checked> 脫離盤旋時也通知</label>
+          <button class="btn primary" id="btnTgTest" type="button">測試發送</button>
+          <span class="note" id="tgMsg"></span>
+        </div>
+      </div>
+    </details>
     <div class="hold-alert" id="holdAlert"><span class="hold-dot"></span><span id="holdAlertTxt"></span></div>
     <div class="kpis" id="holdKpis"></div>
     <div class="hold-map" id="holdMapWrap" hidden>
@@ -901,7 +922,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
 <section id="tab-help" hidden>
   <div class="card">
     <h2>怎麼用</h2>
-    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-27p</b>（到離看板新增區域篩選；航班地圖新增盤旋偵測，可指定航空公司全球追蹤）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
+    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-27s</b>（到離看板新增區域篩選；航班地圖新增盤旋偵測，可指定航空公司全球追蹤）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
     <ul class="doc">
       <li>桃園機場走「<b>TDX 桃園機場</b>」頁籤最省事：填 Client ID／Secret 後按立即抓取，到場與離場會一次抓齊。</li>
       <li>TDX 的 <code>$top</code> 預設值只有 <b>30 筆</b>，不分頁就只會拿到 30 班。本頁已改成自動帶 <code>$top</code>／<code>$skip</code> 分頁抓到底。</li>
@@ -3439,6 +3460,8 @@ function holdIngest(list, cfg){
       tr.brg = bearing(cfg.apt.lat, cfg.apt.lon, tr.lat, tr.lon);
       tr.match = holdMatchFlight(tr.fno, cfg.apt.iata);
     }
+    // ADS-B 與 hexdb 都沒有機型時，改用 TDX 看板上這班的機型
+    if(!tr.type && tr.match && tr.match.aircraft){ tr.type = tdxType(tr.match.aircraft, tr.match.airline); tr.typeSrc = "TDX"; }
   });
 }
 
@@ -3475,6 +3498,116 @@ function holdNotifyNew(list, cfg){
     }catch(e){}
   });
 }
+/* =========================================================
+   Telegram 推播：盤旋開始／升級為長時間盤旋／squawk 緊急／脫離盤旋
+   Bot Token 與 Chat ID 只存在這台電腦的瀏覽器（localStorage），不會寫進檔案
+   ========================================================= */
+var TG = { sent:{}, queue:[], busy:false };
+function tgCfg(){
+  try{ return JSON.parse(localStorage.getItem("tgCfg") || "{}"); }catch(e){ return {}; }
+}
+function tgSaveCfg(){
+  var c = { token:$("tgToken").value.trim(), chat:$("tgChat").value.trim(), on:$("tgOn").checked, exit:$("tgExit").checked };
+  try{ localStorage.setItem("tgCfg", JSON.stringify(c)); }catch(e){}
+  tgPill();
+  return c;
+}
+function tgPill(){
+  var c = tgCfg();
+  $("tgPill").textContent = c.on && c.token && c.chat ? "已啟用" : (c.token && c.chat ? "已設定・未啟用" : "未設定");
+}
+/* 發送一則訊息；先試一般請求（可讀回結果），被跨站限制擋下時改用 no-cors（送得出去但無法確認） */
+function tgSend(text, cfgOverride){
+  var c = cfgOverride || tgCfg();
+  if(!c.token || !c.chat) return Promise.reject(new Error("請先填 Bot Token 與 Chat ID"));
+  var url = "https://api.telegram.org/bot" + encodeURIComponent(c.token).replace(/%3A/gi, ":") + "/sendMessage";
+  var body = new URLSearchParams({ chat_id:c.chat, text:text, parse_mode:"HTML", disable_web_page_preview:"true" });
+  return fetch(url, { method:"POST", body:body }).then(function(res){
+    return res.json().then(function(j){
+      if(!j.ok) throw new Error(j.description || ("HTTP " + res.status));
+      return "ok";
+    });
+  }, function(){
+    return fetch(url, { method:"POST", body:body, mode:"no-cors" }).then(function(){ return "unverified"; });
+  });
+}
+function tgEnqueue(text){
+  TG.queue.push(text);
+  tgFlush();
+}
+function tgFlush(){
+  if(TG.busy || !TG.queue.length) return;
+  TG.busy = true;
+  var t = TG.queue.shift();
+  tgSend(t).catch(function(e){ $("tgMsg").textContent = "推播失敗：" + e.message; })
+    .then(function(){ setTimeout(function(){ TG.busy = false; tgFlush(); }, 1100); });
+}
+function tgEsc(s){ return String(s == null ? "" : s).replace(/[&<>]/g, function(c){ return { "&":"&amp;", "<":"&lt;", ">":"&gt;" }[c]; }); }
+function tgHm(){ var d = new Date(); return pad2(d.getHours()) + ":" + pad2(d.getMinutes()); }
+function tgText(tr, kind){
+  var name = tr.fno || tr.cs || tr.hex.toUpperCase();
+  var head = kind === "exit" ? "✅ 已脫離盤旋" : kind === "emerg" ? "🚨 緊急代碼 SQUAWK " + tr.squawk : tr.level >= 3 ? "🔴 長時間盤旋" : "🟠 開始盤旋";
+  var rt = holdRoute(tr), m = tr.match, lines = [];
+  lines.push("<b>" + head + "｜" + tgEsc(name) + "</b>" + (tr.type ? "（" + tgEsc(tr.type) + "）" : ""));
+  if(kind === "exit") lines.push("最多盤旋 " + tr.maxLaps + " 圈");
+  else if(tr.holding) lines.push("已盤旋 " + fmtDur(Date.now() - tr.holdSince) + "・" + tr.laps + " 圈");
+  if(rt) lines.push("航線：" + tgEsc(routeLong(rt)));
+  if(m && (m.sched || m.est)) lines.push("表定 " + tgEsc(m.sched || "—") + (m.est ? "｜預估 " + tgEsc(m.est) : "") + (m.gate ? "｜門 " + tgEsc(m.gate) : ""));
+  var pos = tr.dist != null ? "距 " + tr.refApt.iata + " " + Math.round(tr.dist) + " 浬（" + compass(tr.brg) + "方）" : tr.lat.toFixed(2) + ", " + tr.lon.toFixed(2);
+  lines.push(pos + "｜" + fmtAlt(tr.alt) + (tr.gs != null ? "｜" + tr.gs + " kt" : ""));
+  if(tr.reg) lines.push("註冊號 " + tgEsc(tr.reg));
+  lines.push("🕒 " + tgHm() + "　<a href=\"https://globe.adsb.fi/?icao=" + tr.hex + "\">看航跡</a>");
+  return lines.join("\n");
+}
+/* 每次畫面更新後呼叫：找出需要推播的狀態變化 */
+function tgCheck(scope){
+  var c = tgCfg();
+  if(!c.on || !c.token || !c.chat) return;
+  scope.forEach(function(tr){
+    if(tr.emerg && !TG.sent[tr.hex + ":emerg"]){ TG.sent[tr.hex + ":emerg"] = 1; tgEnqueue(tgText(tr, "emerg")); }
+    if(tr.holding && tr.level >= 2){
+      var k = tr.hex + ":" + tr.level;
+      if(!TG.sent[k]){ TG.sent[k] = 1; TG.sent[tr.hex + ":held"] = 1; tgEnqueue(tgText(tr, "hold")); }
+    }
+    if(!tr.holding && tr.exitAt && TG.sent[tr.hex + ":held"] && !TG.sent[tr.hex + ":exit:" + tr.exitAt]){
+      TG.sent[tr.hex + ":exit:" + tr.exitAt] = 1;
+      delete TG.sent[tr.hex + ":2"]; delete TG.sent[tr.hex + ":3"]; delete TG.sent[tr.hex + ":held"];
+      if(c.exit) tgEnqueue(tgText(tr, "exit"));
+    }
+  });
+}
+function tgInit(){
+  if(!$("tgToken")) return;
+  var c = tgCfg();
+  $("tgToken").value = c.token || ""; $("tgChat").value = c.chat || "";
+  $("tgOn").checked = !!c.on; $("tgExit").checked = c.exit !== false;
+  tgPill();
+  ["tgToken","tgChat","tgOn","tgExit"].forEach(function(id){ $(id).addEventListener("change", tgSaveCfg); });
+  $("btnTgTest").addEventListener("click", function(){
+    var cc = tgSaveCfg();
+    $("tgMsg").textContent = "發送中…";
+    tgSend("✈️ <b>即時航班看板</b>\n測試訊息：Telegram 推播設定成功！\n🕒 " + tgHm(), cc).then(function(r){
+      $("tgMsg").textContent = r === "ok" ? "已送出，請看 Telegram。" : "已送出（瀏覽器無法確認結果），請看 Telegram 有沒有收到。";
+    }, function(e){ $("tgMsg").textContent = "失敗：" + e.message; });
+  });
+  $("btnTgChat").addEventListener("click", function(){
+    var token = $("tgToken").value.trim();
+    if(!token){ $("tgMsg").textContent = "請先填 Bot Token。"; return; }
+    $("tgMsg").textContent = "查詢中…";
+    fetch("https://api.telegram.org/bot" + token + "/getUpdates").then(function(r){ return r.json(); }).then(function(j){
+      if(!j.ok) throw new Error(j.description || "查詢失敗");
+      var ups = (j.result || []).filter(function(u){ return u.message && u.message.chat; });
+      if(!ups.length){ $("tgMsg").textContent = "找不到訊息：請先在 Telegram 對你的 bot 傳一句話（例如 hi），再按一次。"; return; }
+      var chat = ups[ups.length - 1].message.chat;
+      $("tgChat").value = chat.id;
+      tgSaveCfg();
+      $("tgMsg").textContent = "已取得 Chat ID（" + (chat.first_name || chat.title || "") + "）。可以按「測試發送」了。";
+    }).catch(function(){
+      $("tgMsg").innerHTML = "無法自動取得。請在瀏覽器網址列打開 <code>https://api.telegram.org/bot你的Token/getUpdates</code>，找到 <code>\"chat\":{\"id\":</code> 後面的數字，貼到 Chat ID 欄。";
+    });
+  });
+}
+
 function fmtAlt(a){ return a >= 18000 ? "FL" + Math.round(a/100) : (a ? a.toLocaleString() + " ft" : "—"); }
 function fmtDur(ms){ var m = Math.max(0, Math.round(ms/60000)); return m < 1 ? "<1 分" : m + " 分"; }
 function compass(b){ return ["北","東北","東","東南","南","西南","西","西北"][Math.round(b/45) % 8]; }
@@ -3524,6 +3657,7 @@ function holdRender(){
   document.title = (nHold ? "(" + nHold + " 盤旋) " : "") + HOLD.baseTitle;
 
   holdNotifyNew(active.filter(function(t){ return t.level >= 2; }), cfg);
+  tgCheck(all.filter(function(tr){ return holdPassAirline(tr, cfg); }));   // 含已落地的航機，才能發「脫離盤旋」
 
   var lvName = [global ? "飛行中" : "一般", "注意", "盤旋中", "長時間盤旋"];
   function row(tr, exited){
@@ -3709,10 +3843,44 @@ function planeSize(tr){
 var ACINFO = { cache:{}, pending:{}, busy:false };
 (function(){
   try{
-    var c = JSON.parse(localStorage.getItem("acCache") || "{}"), now = Date.now();
+    var c = JSON.parse(localStorage.getItem("acCache2") || "{}"), now = Date.now();
     Object.keys(c).forEach(function(k){ if(now - c[k].t < 30*86400000) ACINFO.cache[k] = c[k]; });
   }catch(e){}
 })();
+/* TDX 機型文字（A321-252NX、A350-900、B787-10…）→ ICAO 機型代碼 */
+function tdxType(txt, airline){
+  var t = String(txt || "").toUpperCase().replace(/\s/g, "");
+  var m;
+  if(/^[A-Z][A-Z0-9]{2,3}$/.test(t) && TYPE_SPAN[t]) return t;
+  if(/A350-?1000|A35K/.test(t)) return "A35K";
+  if(/A350/.test(t)) return "A359";
+  if(/A330-?9|A339/.test(t)) return "A339";
+  if(/A330-?8|A338/.test(t)) return "A338";
+  if(/A330-?3|A333/.test(t)) return "A333";
+  if(/A330-?2|A332/.test(t)) return "A332";
+  if(/A380|A388/.test(t)) return "A388";
+  if(/A321/.test(t)) return /NX|NEO|271N|251N|252N|253N/.test(t) || airline === "JX" ? "A21N" : "A321";
+  if(/A320/.test(t)) return /NEO|N$|271N|251N/.test(t) ? "A20N" : "A320";
+  if(/A319/.test(t)) return "A319";
+  if(/B?777-?300ER|77W/.test(t)) return "B77W";
+  if(/B?777-?F|77L/.test(t)) return "B77L";
+  if(/B?777-?9/.test(t)) return "B779";
+  if(/B?777-?3/.test(t)) return "B773";
+  if(/B?777/.test(t)) return "B772";
+  if(/B?787-?10|78X/.test(t)) return "B78X";
+  if(/B?787-?9|789/.test(t)) return "B789";
+  if(/B?787/.test(t)) return "B788";
+  if(/B?747-?8/.test(t)) return "B748";
+  if(/B?747/.test(t)) return "B744";
+  if(/B?737-?MAX-?8|B?38M|737-8$/.test(t)) return "B38M";
+  if(/B?737-?8/.test(t)) return "B738";
+  if(/B?737-?9/.test(t)) return /MAX/.test(t) ? "B39M" : "B739";
+  if(/B?767-?3/.test(t)) return "B763";
+  if(/ATR-?72|AT7/.test(t)) return "AT76";
+  if(/E190|ERJ-?190/.test(t)) return "E190";
+  if((m = /^([A-Z]\d{3})/.exec(t))) return m[1];
+  return t.slice(0, 4);
+}
 function acFill(tr){
   var c = ACINFO.cache[tr.hex];
   if(c){
@@ -3729,13 +3897,23 @@ function acLookup(){
   batch.forEach(function(h){ delete ACINFO.pending[h]; });
   batch.reduce(function(chain, hex){
     return chain.then(function(){
+      // 先問 hexdb.io，沒有機型再問 adsb.lol（依 ICAO 位址查即時資料）
       return holdViaBridge("https://hexdb.io/api/v1/aircraft/" + encodeURIComponent(hex)).then(function(j){
-        ACINFO.cache[hex] = { type: String(j.ICAOTypeCode || "").toUpperCase(), reg: j.Registration || "", name: j.Type || "", t: Date.now() };
-      }, function(){ ACINFO.cache[hex] = { t: Date.now() - 29*86400000 }; });   // 查不到：一天後再試
+        return { type: String(j.ICAOTypeCode || "").toUpperCase(), reg: j.Registration || "", name: j.Type || "" };
+      }, function(){ return null; }).then(function(r){
+        if(r && r.type) return r;
+        return holdViaBridge("https://api.adsb.lol/v2/hex/" + encodeURIComponent(hex)).then(function(j){
+          var a = (j.ac || [])[0] || {};
+          return a.t ? { type: String(a.t).toUpperCase(), reg: a.r || (r && r.reg) || "", name: a.desc || (r && r.name) || "" } : r;
+        }, function(){ return r; });
+      }).then(function(r){
+        if(r && r.type) ACINFO.cache[hex] = { type: r.type, reg: r.reg, name: r.name, t: Date.now() };
+        else ACINFO.cache[hex] = { reg: r ? r.reg : "", t: Date.now() - (30*86400000 - 6*3600000) };   // 查不到：6 小時後再試
+      });
     });
   }, Promise.resolve()).then(function(){
     ACINFO.busy = false;
-    try{ localStorage.setItem("acCache", JSON.stringify(ACINFO.cache)); }catch(e){}
+    try{ localStorage.setItem("acCache2", JSON.stringify(ACINFO.cache)); }catch(e){}
     Object.keys(HOLD.tracks).forEach(function(k){ acFill(HOLD.tracks[k]); });
     holdRender();
   });
@@ -3763,7 +3941,7 @@ function holdLoadLeaflet(){
 }
 function holdMapInit(){
   if(HMAP.map) return;
-  HMAP.map = L.map("holdMap", { worldCopyJump:true, zoomControl:true, attributionControl:true }).setView([25, 121], 4);
+  HMAP.map = L.map("holdMap", { worldCopyJump:false, zoomControl:true, attributionControl:true }).setView([25, 121], 4);
   // 底圖：多種免金鑰樣式，右上角可切換，記住上次選擇
   var ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/";
   function esri(path, o){ return L.tileLayer(ESRI + path + "/MapServer/tile/{z}/{y}/{x}", Object.assign({ maxZoom:16, attribution:"Tiles &copy; Esri" }, o || {})); }
@@ -3844,13 +4022,16 @@ function holdPopupHtml(tr){
     (holdRoute(tr) ? "<br>" + esc(routeLong(holdRoute(tr))) : "") +
     '<br><span class="hlv l' + tr.level + '">' + lv + "</span>" +
     (tr.holding ? " " + fmtDur(Date.now() - tr.holdSince) + "・" + tr.laps + " 圈" : "") +
-    "<br>機型 " + esc(tr.type || "—") + (tr.typeName ? "（" + esc(tr.typeName) + "）" : "") + (tr.reg ? "・" + esc(tr.reg) : "") +
+    "<br>機型 " + esc(tr.type || "查無資料") + (tr.typeName ? "（" + esc(tr.typeName) + "）" : "") + (tr.typeSrc === "TDX" ? "（依 TDX 看板）" : "") + (tr.reg ? "・" + esc(tr.reg) : "") +
+    '<br><span class="note">ICAO 位址 ' + esc(tr.hex.toUpperCase()) + "</span>" +
     "<br>高度 " + fmtAlt(tr.alt) + (tr.gs != null ? "・地速 " + tr.gs + " kt" : "") + (tr.trk != null ? "・航向 " + Math.round(tr.trk) + "°" : "") +
     (tr.dist != null ? "<br>距 " + esc(tr.refApt.iata) + " " + Math.round(tr.dist) + " 浬（" + compass(tr.brg) + "方）" : "") +
     (tr.emerg ? '<br><b style="color:#d65656">SQUAWK ' + esc(tr.squawk) + "</b>" : "") +
     (m ? "<br>表定 " + esc(m.sched || "—") + (m.est ? "・預估 " + esc(m.est) : "") + "<br>" + (m.dir === "A" ? "自 " : "往 ") + esc(m.peer || "") + " " + esc(aptName(m.peer) || "") : "") +
     "</div>";
 }
+/* 以太平洋為中心：西經（美洲）加 360°，讓北美航機出現在亞洲右邊，跨換日線的航跡也能連續 */
+function pLon(lon){ return lon < -30 ? lon + 360 : lon; }
 function holdDrawMap(cfg, list){
   var wrap = $("holdMapWrap");
   if(!wrap) return;
@@ -3863,14 +4044,14 @@ function holdDrawMap(cfg, list){
     var now = Date.now(), pts = [];
     list.slice().sort(function(a,b){ return a.level - b.level; }).forEach(function(tr){
       if(tr.onGround || tr.lat == null) return;
-      var trail = tr.pts.filter(function(p){ return now - p.t <= 30*60000; }).map(function(p){ return [p.lat, p.lon]; });
+      var trail = tr.pts.filter(function(p){ return now - p.t <= 30*60000; }).map(function(p){ return [p.lat, pLon(p.lon)]; });
       if(trail.length > 1){
         L.polyline(trail, { className: "hmap-trail lv" + tr.level, color: tr.level >= 2 ? "#d65656" : "#6b8397", weight: tr.level >= 2 ? 2.5 : 1.2, opacity: tr.level >= 2 ? .9 : .5 }).addTo(HMAP.layer);
       }
-      var mk = L.marker([tr.lat, tr.lon], { icon: holdPlaneIcon(tr), zIndexOffset: tr.level * 1000 })
+      var mk = L.marker([tr.lat, pLon(tr.lon)], { icon: holdPlaneIcon(tr), zIndexOffset: tr.level * 1000 })
         .bindPopup(holdPopupHtml(tr)).addTo(HMAP.layer);
       HMAP.markers[tr.hex] = mk;
-      pts.push([tr.lat, tr.lon]);
+      pts.push([tr.lat, pLon(tr.lon)]);
     });
     // 換公司或按「全部顯示」時才自動縮放，其餘保留使用者目前的視角
     var key = cfg.gAl.join(",");
@@ -5320,6 +5501,7 @@ function shift(hhmm, mins){
   });
   if($("btnFmapOpen")) $("btnFmapOpen").addEventListener("click", openFmapNewTab);
   holdInit();
+  tgInit();
 
   switchTab("tdx");
   refreshAll();
