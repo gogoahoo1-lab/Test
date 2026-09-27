@@ -382,7 +382,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-28f</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-28g</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -1027,7 +1027,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
 <section id="tab-help" hidden>
   <div class="card">
     <h2>怎麼用</h2>
-    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-28f</b>（盤旋偵測：轉降偵測、目的地天氣、背景監看、資料來源狀態、盤旋紀錄統計）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
+    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-28g</b>（盤旋偵測：轉降偵測、目的地天氣、背景監看、資料來源狀態、盤旋紀錄統計）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
     <ul class="doc">
       <li>桃園機場走「<b>TDX 桃園機場</b>」頁籤最省事：填 Client ID／Secret 後按立即抓取，到場與離場會一次抓齊。</li>
       <li>TDX 的 <code>$top</code> 預設值只有 <b>30 筆</b>，不分頁就只會拿到 30 班。本頁已改成自動帶 <code>$top</code>／<code>$skip</code> 分頁抓到底。</li>
@@ -3802,7 +3802,7 @@ function holdRender(){
       var e = estLost(t, now);
       if(!e) return;
       estList.push(Object.assign({}, t, { lat:e.lat, lon:e.lon, trk:e.trk, est:true, how:e.how, lostEl:e.el,
-        lastPos:{ lat:t.lat, lon:t.lon }, level:0, holding:false, dist:null }));
+        lastPos:{ lat:t.lat, lon:t.lon }, level:0, holding:false, dist:null, basisTs: t.seen }));
     });
     inScope = inScope.filter(function(t){ return !t.lost; });
     estList = estList.concat(estFromSchedule(cfg, haveFno, now));
@@ -4268,6 +4268,7 @@ function holdPopupHtml(tr){
     "<br>高度 " + fmtAlt(tr.alt) + (tr.gs != null ? "・地速 " + tr.gs + " kt" : "") + (tr.trk != null ? "・航向 " + Math.round(tr.trk) + "°" : "") +
     (tr.dist != null ? "<br>距 " + esc(tr.refApt.iata) + " " + Math.round(tr.dist) + " 浬（" + compass(tr.brg) + "方）" : "") +
     (tr.emerg ? '<br><b style="color:#d65656">SQUAWK ' + esc(tr.squawk) + "</b>" : "") +
+    (tr.apiPos && tr.apiPos === tr.posT ? '<br><span class="note">位置來自 API（' + fixHm(tr.apiPos) + "）</span>" : "") +
     (tr.holding ? "<br>" + esc(tr.holdKind || "盤旋") + "・預估延誤 ≥ " + Math.max(1, Math.round((Date.now() - tr.holdSince)/60000)) + " 分" : "") +
     (tr.divert ? '<br><b style="color:#d65656">⚠ 疑似轉降</b>：原目的地 ' + esc(tr.divert.from) + (tr.divert.to ? " → 可能備降 " + esc(aptLabel(tr.divert.to)) : "") : "") +
     (tr.destIata && metarForIata(tr.destIata) ? "<br>" + metarBadge(metarForIata(tr.destIata), IATA_TO_ICAO[tr.destIata]) : "") +
@@ -5022,8 +5023,8 @@ function fixApply(e, now){
   if(f.landed) return null;
   var from = aptLL(f.from || (e.estRoute && e.estRoute.from) || ""), to = aptLL(f.to || (e.estRoute && e.estRoute.to) || (e.destIata || ""));
   if(!e.estRoute && f.from && f.to) e.estRoute = { from:f.from, to:f.to };
-  // 1. API 有新鮮位置：從該位置依地速往目的地推
-  if(f.pos && f.pos.ts && now - f.pos.ts < 45*60000){
+  // 1. API 有位置、而且比我們自己最後收到的 ADS-B 還新（6 小時內）：從該位置依地速往目的地推
+  if(f.pos && f.pos.ts && now - f.pos.ts < 6*3600000 && f.pos.ts > (e.basisTs || 0)){
     var el = now - f.pos.ts, spd = f.pos.gs && f.pos.gs > 250 ? f.pos.gs : EST_KT, flown = spd * el / 3600000, p = { lat:f.pos.lat, lon:f.pos.lon };
     if(to){
       var remain = nm(p.lat, p.lon, to.lat, to.lon);
@@ -5031,8 +5032,9 @@ function fixApply(e, now){
       var q = gcInterp(p, to, 0.02);
       e.trk = bearing(p.lat, p.lon, q.lat, q.lon);
     }else if(f.pos.hdg != null){ p = destPoint(p.lat, p.lon, f.pos.hdg, flown); e.trk = f.pos.hdg; }
-    e.lat = p.lat; e.lon = p.lon;
-    e.how = provName + " 位置修正（位置為 " + fmtDur(el) + "前，" + ago + "前查詢）";
+    e.lat = p.lat; e.lon = p.lon; e.gs = spd; e.posT = now;
+    if(f.pos.alt) e.alt = f.pos.alt;
+    e.how = provName + " 位置修正（API 位置時間 " + fixHm(f.pos.ts) + "，" + fmtDur(el) + "前；" + ago + "前查詢，之後依地速往目的地推算）";
     e.fixed = true;
     return e;
   }
@@ -5045,6 +5047,7 @@ function fixApply(e, now){
       var pp = gcInterp(from, to, fr), qq = gcInterp(from, to, Math.min(1, fr + 0.01));
       e.lat = pp.lat; e.lon = pp.lon; e.trk = bearing(pp.lat, pp.lon, qq.lat, qq.lon);
       e.progress = fr;
+      if(f.dep && f.arr) { e.gs = Math.round(nm(from.lat, from.lon, to.lat, to.lon) / ((f.arr - f.dep)/3600000)); e.posT = now; }
       e.how = provName + " 時間修正（實際起飛" + (f.dep ? " " + fixHm(f.dep) : "") + "、預計抵達" + (f.arr ? " " + fixHm(f.arr) : "") + "，" + ago + "前查詢）";
       e.fixed = true;
     }
@@ -5180,6 +5183,15 @@ function fixBulkApply(){
     if(!it) return;
     if(it.type){ tr.type = it.type; tr.typeSrc = "API"; }
     if(it.reg) tr.reg = it.reg;
+    // API 位置比 ADS-B 新（例如 OpenSky 延遲或剛失聯）：採用 API 位置
+    if(it.lat != null && it.ts && it.ts > (tr.posT || 0) + 60000 && !tr.onGround){
+      tr.lat = +it.lat; tr.lon = +it.lon; tr.posT = it.ts;
+      if(it.hdg != null) tr.trk = +it.hdg;
+      if(it.gs) tr.gs = it.gs;
+      if(it.alt) tr.alt = it.alt;
+      if(tr.lost){ tr.seen = it.ts; }
+      tr.apiPos = it.ts;
+    }
   });
   routeSave();
   try{ localStorage.setItem("acCache2", JSON.stringify(ACINFO.cache)); }catch(e){}
@@ -5221,7 +5233,7 @@ function fixBulkExtra(cfg, haveFno, estList, now){
   Object.keys(HOLD.tracks).forEach(function(k){ var t = HOLD.tracks[k]; if(t.cs) have[t.cs] = 1; if(t.fno) have[t.fno] = 1; });
   var re = new RegExp("^(" + cfg.gAl.join("|") + ")\\d");
   return FIXALL.items.filter(function(it){
-    return it.cs && re.test(it.cs) && !it.landed && !have[it.cs] && !haveFno[it.fno] && it.lat != null && it.ts && now - it.ts < 90*60000;
+    return it.cs && re.test(it.cs) && !it.landed && !have[it.cs] && !haveFno[it.fno] && it.lat != null && it.ts && now - it.ts < 6*3600000;
   }).map(function(it){
     var e = { hex: it.hex || ("api-" + it.cs), cs: it.cs, fno: holdFlightNo(it.cs) || it.fno, lat: it.lat, lon: it.lon, trk: it.hdg, alt: it.alt || 0,
       gs: it.gs, type: it.type, reg: it.reg, level: 0, pts: [], est: true, estRoute: it.from && it.to ? { from:it.from, to:it.to } : null };
@@ -5275,7 +5287,7 @@ function holdDrawMap(cfg, list, estList){
       if(tr.lastPos){
         L.polyline([[tr.lastPos.lat, pLon(tr.lastPos.lon)], [tr.lat, pLon(tr.lon)]], { className:"hmap-trail hmap-estline", color:"#8aa0b3", weight:1.5, opacity:.8, dashArray:"4 6" }).addTo(HMAP.layer);
       }
-      place(tr, -500, false);
+      place(tr, -500, !!(tr.gs && tr.posT));
     });
     Object.keys(HMAP.markers).forEach(function(k){
       if(!keep[k]){ HMAP.markLayer.removeLayer(HMAP.markers[k]); delete HMAP.markers[k]; }
