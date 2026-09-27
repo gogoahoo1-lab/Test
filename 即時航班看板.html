@@ -382,7 +382,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-28i</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-28k</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -898,10 +898,10 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
       </div>
     </details>
     <details class="alpick" style="margin-top:8px" id="fixBox">
-      <summary>推估位置修正 API（選用）<span class="pill" id="fixPill">未設定</span></summary>
+      <summary>航班資料 API（選用）<span class="pill" id="fixPill">未設定</span></summary>
       <div style="padding:10px 16px 14px;border-top:1px solid var(--line)">
         <p class="note" style="margin:0 0 10px">AirLabs 可填最多 3 組金鑰：平常用第 1 組，遇到金鑰失效、額度用完或當日達上限時，自動改用第 2、第 3 組，原本那組到期（隔天或下個月）後自動恢復。</p>
-        <p class="note" style="margin:0 0 10px">洋區收不到 ADS-B 時，向航班資料 API 查詢實際起飛時間、預計抵達時間與最新位置，讓「推估」位置更準確；已落地的航班也會自動移除。只在有推估航機時才查詢，每班依下方間隔重查，並有每日上限。需要 ADS-B 橋接擴充功能 v2.1 以上。API Key 只存在這台電腦的瀏覽器。</p>
+        <p class="note" style="margin:0 0 10px">用航班資料 API 整批更新監看範圍內所有航機的航線、機型、註冊號與位置；ADS-B 收不到的航班，只顯示 API 實際回報、15 分鐘內的位置（標「API」），不做任何推估。有每日上限。需要 ADS-B 橋接擴充功能 v2.1 以上。API Key 只存在這台電腦的瀏覽器。</p>
         <div class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end">
           <label class="f">服務
             <select id="fixProv"><option value="">不使用</option><option value="airlabs">AirLabs（有免費方案）</option><option value="aeroapi">FlightAware AeroAPI（每月 5 美元免費額度）</option></select>
@@ -918,7 +918,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
           <label class="f">每組每日上限
             <input type="number" id="fixCap" min="1" max="500" value="30" style="width:80px">
           </label>
-          <label class="f">同一班重查間隔
+          <label class="f" hidden>同一班重查間隔
             <select id="fixEvery"><option value="30">30 分鐘</option><option value="60" selected>1 小時</option><option value="120">2 小時</option><option value="240">4 小時</option></select>
           </label>
         </div>
@@ -966,7 +966,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
     <div class="kpis" id="holdKpis"></div>
     <div class="hold-map" id="holdMapWrap" hidden>
       <div id="holdMap"></div>
-      <div class="cap">飛機圖示朝向為航向、大小依機型翼展比例（A380 最大、窄體機較小）；標「推估」的是洋區收不到訊號時的估算位置；標籤為航班號、機型與出發地→目的地；紅／橘色為盤旋中，線條為近 30 分鐘航跡。點圖示看詳細資料，點下方表格的航班可在地圖上定位。航線優先取看板的 TDX 資料，其餘由擴充功能向 adsb.lol／hexdb.io 查詢，偶有過時或查不到。<span id="holdMapErr" style="color:var(--bad)"></span></div>
+      <div class="cap">飛機圖示朝向為航向、大小依機型翼展比例（A380 最大、窄體機較小）；標「API」的是 ADS-B 收不到、由 API 回報的位置；標籤為航班號、機型與出發地→目的地；紅／橘色為盤旋中，線條為近 30 分鐘航跡。點圖示看詳細資料，點下方表格的航班可在地圖上定位。航線優先取看板的 TDX 資料，其餘由擴充功能向 adsb.lol／hexdb.io 查詢，偶有過時或查不到。<span id="holdMapErr" style="color:var(--bad)"></span></div>
     </div>
     <div class="hold-grid" id="holdGrid">
       <div>
@@ -1027,7 +1027,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
 <section id="tab-help" hidden>
   <div class="card">
     <h2>怎麼用</h2>
-    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-28i</b>（盤旋偵測：轉降偵測、目的地天氣、背景監看、資料來源狀態、盤旋紀錄統計）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
+    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-28k</b>（盤旋偵測：轉降偵測、目的地天氣、背景監看、資料來源狀態、盤旋紀錄統計）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
     <ul class="doc">
       <li>桃園機場走「<b>TDX 桃園機場</b>」頁籤最省事：填 Client ID／Secret 後按立即抓取，到場與離場會一次抓齊。</li>
       <li>TDX 的 <code>$top</code> 預設值只有 <b>30 筆</b>，不分頁就只會拿到 30 班。本頁已改成自動帶 <code>$top</code>／<code>$skip</code> 分頁抓到底。</li>
@@ -1075,8 +1075,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
         ・<b>背景監看</b>：擴充功能 v2.0 起可在背景每 30 秒偵測，關掉看板分頁也會推播 Telegram 並記錄事件（Chrome 需開著）。開啟後看板本身不再重複推播。<br>
         ・<b>資料來源狀態</b>：列出各資料源最近成功／失敗、被限流或被擋，方便排查更新變慢的原因。<br>
         ・<b>盤旋與轉降紀錄</b>：自動記錄每次事件（航班、時間、圈數、高度、結果、目的地天氣），提供時段與目的地統計，可匯出 CSV 用 Excel 開啟。<br>
-        ・<b>推估位置修正 API</b>（選用）：填入 AirLabs 或 FlightAware AeroAPI 的 API Key 後，洋區推估的航班會查詢實際起飛／預計抵達時間與最新位置來修正，標示為「推估（已修正）」，已落地的自動移除。有每日呼叫上限與同班重查間隔，避免超過免費額度；FlightAware 個人方案限個人用途。<br>
-        ・<b>API 全面更新</b>：在「推估位置修正 API」勾選「全面更新」，每隔設定的間隔用一次整批查詢（AirLabs /flights 或 FlightAware operators enroute）更新監看範圍內所有航機的航線、機型、註冊號與位置；洋區看不到的航班也會用 API 位置補上。資料優先順序為 TDX 官方班表 ＞ API ＞ 社群資料庫。換監看範圍時會立即更新一次。<br>
+        ・<b>航班資料 API</b>（選用）：填入 AirLabs（最多 3 組金鑰自動輪替）或 FlightAware AeroAPI 的 API Key，每隔設定的間隔用一次整批查詢，更新監看範圍內所有航機的航線、機型、註冊號與位置。ADS-B 收不到的航班只顯示 API 實際回報、15 分鐘內的位置（標「API」），不做任何推估；超過 15 分鐘沒有新位置就不顯示。資料優先順序為 TDX 官方班表 ＞ API ＞ 社群資料庫。<br>
         ・<b>平滑移動</b>：兩次更新之間依地速與航向推算，飛機在地圖上連續移動。</li>
       <li><b>盤旋偵測的資料來源</b>：adsb.lol、adsb.fi、OpenSky 都不允許網頁直接跨站讀取，而且會擋 Cloudflare 等雲端主機，所以要透過下列其中一種方式：<br>
         ① <b>ADS-B 橋接 Chrome 擴充功能（推薦）</b>：用你自己電腦的網路抓資料，裝好後不用任何設定，狀態列會顯示「擴充功能・adsb.lol」。只在安裝的那台電腦的 Chrome 有效；若是直接雙擊打開本機 html 檔，要在擴充功能詳細資料開啟「允許存取檔案網址」。擴充功能的設定頁可選填 OpenSky 帳號當備援。<br>
@@ -3453,12 +3452,22 @@ function holdFetchFlights(cfg){
   }
   var get = ch === "bridge" ? holdViaBridge : holdViaFetch;
   var out = [], okAny = false, errs = [], i = 0, now0 = Date.now();
+  // 輪流查詢：每輪只查 1 種機型（其他機型的航機沿用上次位置、平滑移動），大幅降低對 adsb.lol 的請求量。
+  // 連續 3 次都沒有這家航空公司航機的機型，改成每 10 分鐘才查一次。
+  var allTypes = cfg.types.slice(), types;
+  (function(){
+    var live = allTypes.filter(function(t){ var y = LOL.yield[t]; return !y || y.zero < 3 || now0 - y.t > 10*60000; });
+    if(!live.length) live = allTypes;
+    var t = live[(LOL.rr++) % live.length];
+    types = t ? [t] : [];
+  })();
+  HOLD.rrType = types[0] || "";
   function wait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
   // adsb.lol 被限流（429）時退避：1 → 2 → 4 → 8 → 最多 15 分鐘不打它
-  if(now0 < LOL.until) i = cfg.types.length;
+  if(now0 < LOL.until) i = types.length;
   function step(){
-    if(i >= cfg.types.length){
-      if(okAny){ LOL.backoff = 0; HOLD.lastSrc = (ch === "bridge" ? "擴充功能・" : "") + "adsb.lol"; return pick(out); }
+    if(i >= types.length){
+      if(okAny){ LOL.backoff = 0; HOLD.lastSrc = (ch === "bridge" ? "擴充功能・" : "") + "adsb.lol"; HOLD.partial = true; return pick(out); }
       if(ch !== "bridge") return Promise.reject(new Error(HOLD_CORS_HINT));
       // 備援：OpenSky 全球（4 credits／次）；90 秒內打過或今日額度快用完就先不打，沿用現有資料
       var osWait = Date.now() - (HOLD.lastOS || 0) < 88000, osLow = HOLD.osRemain != null && HOLD.osRemain < 40;
@@ -3472,22 +3481,26 @@ function holdFetchFlights(cfg){
         .then(function(l){ HOLD.lastSrc = "擴充功能・" + HOLD.lastSrc; return pick(l); },
               function(e2){ throw new Error(errs.concat(e2).join("；")); });
     }
-    var t = cfg.types[i++];
+    var t = types[i++];
     return get("https://api.adsb.lol/v2/type/" + t).then(function(j){
-      okAny = true; out = out.concat(holdNormalize(j));
+      okAny = true;
+      var got = holdNormalize(j), mine = pick(got).length, y = LOL.yield[t] || (LOL.yield[t] = { zero:0, t:0 });
+      y.t = Date.now(); y.zero = mine ? 0 : y.zero + 1;
+      out = out.concat(got);
     }, function(e){
       errs.push(t + " " + e.message);
       if(/429/.test(e.message)){
         LOL.backoff = Math.min(15*60000, Math.max(60000, (LOL.backoff || 30000) * 2));
         LOL.until = Date.now() + LOL.backoff;
       }
-      if(ch === "direct" || /429|沒有回應|重新整理/.test(e.message)) i = cfg.types.length;   // 跨站被擋、被限流或擴充功能沒回應就不再連打
-    }).then(function(){ return i < cfg.types.length ? wait(2000).then(step) : step(); });
+      if(ch === "direct" || /429|沒有回應|重新整理/.test(e.message)) i = types.length;   // 跨站被擋、被限流或擴充功能沒回應就不再連打
+    }).then(function(){ return i < types.length ? wait(2000).then(step) : step(); });
   }
   HOLD.usedOpenSkyGlobal = false;
+  HOLD.partial = false;
   return Promise.resolve(step());
 }
-var LOL = { until:0, backoff:0 };
+var LOL = { until:0, backoff:0, rr:0, yield:{} };
 
 function holdCallsign(a){ return String(a.flight || a.callsign || "").trim().toUpperCase(); }
 function holdFlightNo(cs){
@@ -3595,9 +3608,10 @@ function holdIngest(list, cfg){
   Object.keys(HOLD.tracks).forEach(function(k){
     var tr = HOLD.tracks[k];
     tr.pts = tr.pts.filter(function(p){ return now - p.t <= HOLD.WINDOW; });
-    if(now - tr.seen > 5*60000){
+    var expire = cfg.mode === "airline" ? Math.max(5*60000, (cfg.types.length || 1) * 30000 * 1.6) : 5*60000;
+    if(now - tr.seen > expire){
       // 全球模式：巡航中失去訊號（多半是進入洋區）的航機保留 16 小時，改用推估位置顯示
-      if(cfg.mode === "airline" && !tr.onGround && tr.alt >= 10000 && now - tr.seen < 16*3600000){ tr.lost = true; return; }
+
       // 盤旋中就失去訊號：把紀錄收尾，避免永遠停在「盤旋中」
       if(tr.logId){ var le = hlogFind(tr.logId); if(le && le.outcome === "盤旋中"){ le.outcome = "失去訊號"; le.end = tr.seen; HLOG.dirty = true; } }
       if(tr.divLogId){ var ld = hlogFind(tr.divLogId); if(ld && ld.outcome === "轉降中"){ ld.outcome = "轉降中（失去訊號）"; ld.end = tr.seen; HLOG.dirty = true; } }
@@ -3824,23 +3838,12 @@ function holdRender(){
   var inScope = all.filter(function(tr){ return holdPassAirline(tr, cfg); });
   var global = cfg.mode === "airline";
   if(global) inScope = inScope.filter(function(tr){ return !tr.onGround; });
-  // 推估位置：失聯航機＋班表推估
+  // 不做任何推估：ADS-B 收不到的航班，只顯示 API 實際回報、15 分鐘內的位置（不往前推算）
   var estList = [];
   if(global){
     var haveFno = {};
     inScope.forEach(function(t){ if(t.fno) haveFno[t.fno] = 1; });
-    inScope.filter(function(t){ return t.lost; }).forEach(function(t){
-      var e = estLost(t, now);
-      if(!e) return;
-      estList.push(Object.assign({}, t, { lat:e.lat, lon:e.lon, trk:e.trk, est:true, how:e.how, lostEl:e.el,
-        lastPos:{ lat:t.lat, lon:t.lon }, level:0, holding:false, dist:null, basisTs: t.seen }));
-    });
-    inScope = inScope.filter(function(t){ return !t.lost; });
-    // 不再用班表時間推估「應該已起飛」的航班（資訊不可靠），只保留：實際飛過後失聯的航機、API 確認在空中的航機
-    estList = estList.concat(fixBulkExtra(cfg, haveFno, estList, now));
-    // 有設定修正 API 時，用 API 資料修正推估位置（已落地的移除）
-    estList = estList.map(function(e){ return fixApply(e, now); }).filter(Boolean);
-    setTimeout(fixRun, 1500);
+    estList = fixBulkExtra(cfg, haveFno, [], now);
   }
   var active = inScope.filter(function(tr){ return (global && !cfg.onlyHold) || tr.level >= 1; });
   var recent = inScope.filter(function(tr){ return tr.level === 0 && tr.exitAt && now - tr.exitAt < 20*60000; });
@@ -3852,7 +3855,7 @@ function holdRender(){
   var nLong = active.filter(function(t){ return t.level >= 3; }).length;
   $("holdKpis").innerHTML = global ?
     kpi("", "追蹤公司", cfg.gAl.map(function(c){ return ICAO_IATA[c] || c; }).join("、") || "—") +
-    kpi("c", "空中航機", inScope.length + " 架" + (estList.length ? "＋推估 " + estList.length : "")) +
+    kpi("c", "空中航機", inScope.length + " 架" + (estList.length ? "＋API " + estList.length : "")) +
     kpiRaw("r", "盤旋中", '<span style="color:' + (nHold ? "var(--bad)" : "inherit") + '">' + nHold + " 架</span>") +
     kpi("r", "長時間盤旋", nLong + " 架") +
     kpi("", "注意中", inScope.filter(function(t){ return t.level === 1; }).length + " 架")
@@ -3920,10 +3923,10 @@ function holdRender(){
   if(global && cfg.bad.length) list.push('<tr><td colspan="7" class="note">看不懂的航空公司代碼：' + esc(cfg.bad.join("、")) + "。內建對照表沒有這家的 IATA 代碼，請改輸入 3 字母 ICAO 代碼（例如 SJX、CAL、EVA）。</td></tr>");
   if(global && !cfg.onlyHold) estList.forEach(function(t){
     var r = t.estRoute || holdRoute(t);
-    list.push('<tr class="hrow" data-hex="' + esc(t.hex) + '"><td><span class="hlv ' + (t.fixed ? "l1" : "l0") + '">' + (t.fixed ? "推估（已修正）" : "推估位置") + "</span></td>" +
+    list.push('<tr class="hrow" data-hex="' + esc(t.hex) + '"><td><span class="hlv l0">API 位置</span></td>' +
       '<td class="mono" style="color:var(--amber);font-weight:600">' + esc(t.fno || t.cs) + "</td>" +
       "<td>" + esc(t.type || "—") + "</td>" +
-      '<td class="note">' + (t.lostEl != null ? "失聯 " + fmtDur(t.lostEl) : "未收到訊號") + "</td>" +
+      '<td class="note">' + (t.alt ? fmtAlt(t.alt) : "—") + "<br>" + (t.apiTs ? fixHm(t.apiTs) + " 回報" : "") + "</td>" +
       '<td class="mono">' + t.lat.toFixed(1) + ", " + t.lon.toFixed(1) + "</td><td>—</td>" +
       '<td><span class="note">' + (r ? esc(routeLong(r)) : "—") + "</span></td></tr>");
   });
@@ -4269,7 +4272,7 @@ function holdPlaneIcon(tr){
   var rot = tr.trk != null ? Math.round(tr.trk) : 0;
   var label = esc(tr.fno || tr.cs || "");
   var rt = routeText(tr.estRoute || holdRoute(tr));
-  if(tr.est) label += '<span class="hmap-estag">推估</span>';
+  if(tr.est) label += '<span class="hmap-estag">API</span>';
   if(tr.divert) label += '<span class="hmap-divtag">轉降?' + (tr.divert.to ? " " + esc(tr.divert.to) : "") + "</span>";
   var halo = tr.level >= 2 ? '<span class="hmap-halo" style="border-color:' + col + ';width:' + (size + 14) + 'px;height:' + (size + 14) + 'px"></span>' : "";
   return L.divIcon({
@@ -4285,14 +4288,14 @@ function holdPlaneIcon(tr){
 function holdPopupHtml(tr){
   if(tr.est){
     var r0 = tr.estRoute || holdRoute(tr), m0 = tr.match;
-    return '<div class="hmap-pop"><b>' + esc(tr.fno || tr.cs) + '</b> <span class="hlv ' + (tr.fixed ? "l1" : "l0") + '">' + (tr.fixed ? "推估（已修正）" : "推估位置") + "</span>" +
+    return '<div class="hmap-pop"><b>' + esc(tr.fno || tr.cs) + '</b> <span class="hlv l0">API 位置</span>' +
       (r0 ? "<br>" + esc(routeLong(r0)) : "") +
       (tr.type ? "<br>機型 " + esc(tr.type) + (tr.reg ? "・" + esc(tr.reg) : "") : "") +
-      "<br>" + esc(tr.how) +
+      "<br>位置來自 " + (tr.prov === "aeroapi" ? "FlightAware" : "AirLabs") + "，回報時間 " + (tr.apiTs ? fixHm(tr.apiTs) : "—") + "（ADS-B 收不到這班）" +
+      (tr.alt ? "<br>高度 " + fmtAlt(tr.alt) + (tr.gs ? "・" + tr.gs + " kt" : "") : "") +
       (tr.lostEl != null ? "<br>最後收到訊號：" + fmtDur(tr.lostEl) + "前，" + fmtAlt(tr.alt) + (tr.gs ? "・" + tr.gs + " kt" : "") : "") +
-      (tr.progress != null ? "<br>推估已飛約 " + Math.round(tr.progress*100) + "%" : "") +
       (m0 ? "<br>表定 " + esc(m0.sched || "—") + (m0.act ? "・實際 " + esc(m0.act) : (m0.est ? "・預估 " + esc(m0.est) : "")) : "") +
-      '<br><span class="note">洋區多半沒有 ADS-B 收訊站，位置為估算，僅供參考</span></div>';
+      '</div>';
   }
   var m = tr.match, lv = ["飛行中","注意","盤旋中","長時間盤旋"][tr.level] || "";
   return '<div class="hmap-pop"><b>' + esc(tr.fno || tr.cs || tr.hex.toUpperCase()) + "</b>" +
@@ -5284,11 +5287,12 @@ function fixBulkExtra(cfg, haveFno, estList, now){
   Object.keys(HOLD.tracks).forEach(function(k){ var t = HOLD.tracks[k]; if(t.cs) have[t.cs] = 1; if(t.fno) have[t.fno] = 1; });
   var re = new RegExp("^(" + cfg.gAl.join("|") + ")\\d");
   return FIXALL.items.filter(function(it){
-    return it.cs && re.test(it.cs) && !it.landed && !it.sched && !have[it.cs] && !haveFno[it.fno] && it.lat != null && it.ts && now - it.ts < 6*3600000;
+    return it.cs && re.test(it.cs) && !it.landed && !it.sched && !have[it.cs] && !haveFno[it.fno] && it.lat != null && it.ts && now - it.ts < 15*60000;
   }).map(function(it){
     var e = { hex: it.hex || ("api-" + it.cs), cs: it.cs, fno: holdFlightNo(it.cs) || it.fno, lat: it.lat, lon: it.lon, trk: it.hdg, alt: it.alt || 0,
-      gs: it.gs, type: it.type, reg: it.reg, level: 0, pts: [], est: true, estRoute: it.from && it.to ? { from:it.from, to:it.to } : null };
-    return e;   // 位置交給 fixApply 用 API 資料推算
+      gs: it.gs, type: it.type, reg: it.reg, level: 0, pts: [], est: true, apiTs: it.ts, prov: fixCfg().prov,
+      estRoute: it.from && it.to ? { from:it.from, to:it.to } : null };
+    return e;   // 直接用 API 回報的位置，不推算
   });
 }
 
@@ -5338,7 +5342,7 @@ function holdDrawMap(cfg, list, estList){
       if(tr.lastPos){
         L.polyline([[tr.lastPos.lat, pLon(tr.lastPos.lon)], [tr.lat, pLon(tr.lon)]], { className:"hmap-trail hmap-estline", color:"#8aa0b3", weight:1.5, opacity:.8, dashArray:"4 6" }).addTo(HMAP.layer);
       }
-      place(tr, -500, !!(tr.gs && tr.posT));
+      place(tr, -500, false);
     });
     Object.keys(HMAP.markers).forEach(function(k){
       if(!keep[k]){ HMAP.markLayer.removeLayer(HMAP.markers[k]); delete HMAP.markers[k]; }
@@ -5412,7 +5416,7 @@ function holdTick(){
     holdIngest(list, cfg);
     var t = new Date();
     $("holdStatus").textContent = "監看中・" + pad2(t.getHours()) + ":" + pad2(t.getMinutes()) + ":" + pad2(t.getSeconds()) + " 更新（" + HOLD.lastSrc + "，" +
-      (cfg.mode === "airline" ? (/adsb\.lol/.test(HOLD.lastSrc) ? "查 " + cfg.types.length + " 種機型，" : "") + "找到 " + list.length + " 架" : list.length + " 架") + "）";
+      (cfg.mode === "airline" ? (/adsb\.lol/.test(HOLD.lastSrc) ? "本輪查 " + HOLD.rrType + "（" + cfg.types.length + " 種機型輪流），" : "") + "追蹤中 " + Object.keys(HOLD.tracks).length + " 架" : list.length + " 架") + "）";
   }).catch(function(e){
     HOLD.err = e.message || String(e);
     if(!cfg.proxy && !holdBridge()){ var dp = $("holdProxy").closest("details"); if(dp) dp.open = true; }
@@ -5423,7 +5427,7 @@ function holdTick(){
     if(HOLD.on){
       var n = cfg.mode === "airline" ? cfg.types.length : 1;
       clearTimeout(HOLD.timer);
-      var wait = cfg.mode === "airline" ? Math.max(30000, n * 3000) : Math.max(HOLD.POLL, n * 1300);   // 依機型查全球：至少 30 秒一輪，避免 adsb.lol 限流
+      var wait = cfg.mode === "airline" ? 30000 : Math.max(HOLD.POLL, n * 1300);   // 依機型查全球：每 30 秒一輪、每輪只查 1 種機型
       // OpenSky 有每日額度：機場周邊 30 秒一次（1 credit），全球航空公司 90 秒一次（4 credits）
       if(cfg.mode === "airline" && (/OpenSky/.test(HOLD.lastSrc) || HOLD.usedOpenSkyGlobal)) wait = 90000;
       else if(/OpenSky/.test(HOLD.lastSrc)) wait = 30000;
