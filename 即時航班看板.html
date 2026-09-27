@@ -300,7 +300,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-27c</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-27e</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -790,8 +790,8 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
     <details class="alpick" style="margin-top:4px">
       <summary>進階：自訂資料代理<span class="pill" id="holdProxyPill">未使用</span></summary>
       <div style="padding:10px 16px 14px;border-top:1px solid var(--line)">
-        <p class="note" style="margin:0 0 8px">預設直接向 airplanes.live 取資料，失敗時改用 adsb.fi。若兩者都被瀏覽器擋下（跨站限制），可填自己的代理網址：機場周邊用 {lat}、{lon}、{r} 代表座標與半徑（浬），指定航空公司用 {type} 代表機型代碼，例如 https://你的worker.workers.dev/?lat={lat}&amp;lon={lon}&amp;r={r}&amp;type={type}</p>
-        <input type="text" id="holdProxy" placeholder="留空＝不使用" style="width:100%">
+        <p class="note" style="margin:0 0 8px">ADS-B 資料站不允許網頁直接跨站讀取，需要透過自己的 Cloudflare Worker 轉接。部署好 adsb-proxy Worker 後，把網址貼在下面即可，例如 https://adsb-proxy.你的帳號.workers.dev（不用加任何參數）。</p>
+        <input type="text" id="holdProxy" placeholder="https://adsb-proxy.你的帳號.workers.dev" style="width:100%">
       </div>
     </details>
     <div class="hold-alert" id="holdAlert"><span class="hold-dot"></span><span id="holdAlertTxt"></span></div>
@@ -842,7 +842,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
 <section id="tab-help" hidden>
   <div class="card">
     <h2>怎麼用</h2>
-    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-27c</b>（到離看板新增區域篩選；航班地圖新增盤旋偵測，可指定航空公司全球追蹤）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
+    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-27e</b>（到離看板新增區域篩選；航班地圖新增盤旋偵測，可指定航空公司全球追蹤）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
     <ul class="doc">
       <li>桃園機場走「<b>TDX 桃園機場</b>」頁籤最省事：填 Client ID／Secret 後按立即抓取，到場與離場會一次抓齊。</li>
       <li>TDX 的 <code>$top</code> 預設值只有 <b>30 筆</b>，不分頁就只會拿到 30 班。本頁已改成自動帶 <code>$top</code>／<code>$skip</code> 分頁抓到底。</li>
@@ -883,6 +883,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
       <li>場站篩選固定列出 TPE、RMQ、KHH、TSA 四站（後面數字是資料庫裡的筆數，0 代表還沒抓過），其餘場站依實際資料出現。</li>
       <li>到離看板會自動判斷登機階段：離場航班、尚未起飛、距排定起飛 40 分鐘以內顯示「登機中」，15 分鐘以內顯示「最後登機」。TDX 不提供登機狀態，這是用時間推算的。若資料來源本身含有「登機中」「Boarding」「Final Call」等文字（非 TDX），也會直接辨識。正在登機的航班會浮到看板最上方的綠框置頂區，拿到實際起飛時間後自動消失。</li>
       <li>追蹤中的航班進入登機或最後登機時，也會推播到你的 Teams 中繼 URL。</li>
+      <li><b>盤旋偵測需要資料代理</b>：airplanes.live／adsb.fi 不允許網頁直接跨站讀取（瀏覽器主控台會出現 CORS 錯誤），請在 Cloudflare 建一個 Worker，貼上隨檔附的 adsb-proxy Worker 程式碼並部署，再把 Worker 網址填到「進階：自訂資料代理」。airplanes.live 已不對非收訊站開放、adsb.lol 會擋 Cloudflare 的連線，所以 Worker 主要改用 OpenSky Network：請註冊免費帳號、在帳號頁建立 API Client，再到 Worker 的 Settings → Variables and Secrets 新增 OPENSKY_CLIENT_ID 與 OPENSKY_CLIENT_SECRET 兩個 Secret（每天 4,000 credits）。機場周邊每 30 秒更新一次，每次 1 credit；全球航空公司每 90 秒一次，每次 4 credits，全天開著剛好在額度內，兩種模式不要同時整天開。OpenSky 沒有機型與註冊號資料，這兩欄會空白。</li>
       <li>「航班地圖」頁上方的<b>盤旋偵測</b>每 15 秒從 airplanes.live（備援 adsb.fi）抓機場周邊航機位置，追蹤每架航機近 12 分鐘的航向。同一方向累積轉 240° 以上列為「注意」，滿一圈且高度 1,500 呎以上、未落地列為「盤旋中」，盤旋超過 15 分鐘或滿 3 圈列為「長時間盤旋」；squawk 7700／7600／7500 直接列最高級。呼號會換算成航班號（例如 SJX762 → JX762）並對照看板上的 TDX 資料。「監看方式」改成<b>指定航空公司（全球）</b>時，輸入 IATA 或 ICAO 代碼（例如 JX 或 SJX，最多 3 家），就會列出該公司全球所有空中航機並判斷盤旋。公開 ADS-B API 沒有依航空公司查詢的功能，所以是依機型抓全球航機、再用呼號前綴篩選：「查詢機型」會自動帶入該公司機隊（不在內建表的公司用 21 種常見客機），機隊有新機型時可以自己補上。每種機型查詢間隔 1.1 秒，機型越多更新越慢。勾「只列出盤旋／注意」可以只看有狀況的航機。飛往台灣的航班會顯示距目的地機場的距離，其他顯示經緯度；遠洋航段沒有收訊站時會暫時消失。只要監看開著，切到其他頁籤也會繼續偵測，「航班地圖」頁籤上會出現紅色數字。這是依航跡推算，偶爾會把繞飛天氣或雷達引導的大轉彎判成注意，請以塔台／簽派資訊為準。</li>
       <li>到離看板的航班列表上方有<b>區域</b>按鈕（國內、東北亞、港澳大陸、東南亞、南亞、北美、大洋洲、歐洲、中東非洲、其他），依航點代碼判斷所屬區域，按鈕旁數字是目前條件下的班次數；再點一次或點「全部」即取消。區域篩選會跟方向、日期、狀態、場站、航空公司條件一起生效，關島、塞班歸在大洋洲。</li>
       <li>定期班表的「航點篩選」可依國家快速選取：展開面板後上方會列出目前航點涵蓋的國家／地區，點一下就勾選該國所有航點，再點一次取消；也可以在下方逐一勾選單一航點，兩種方式可以混用。</li>
@@ -3098,29 +3099,46 @@ function holdLoadCfg(){
 }
 
 /* 依序嘗試：自訂代理 → airplanes.live → adsb.fi。回傳統一格式的航機陣列。 */
+/* 代理網址：填 Worker 網址即可（例 https://adsb-proxy.xxx.workers.dev），
+   程式會自動加上 ?mode=point&lat=..&lon=..&r=.. 或 ?mode=type&type=..；
+   若網址含 {lat}{lon}{r}{type} 佔位符，則沿用舊的樣板寫法。 */
+function holdProxyUrl(cfg, q){
+  var base = cfg.proxy;
+  if(!base) return "";
+  if(base.indexOf("{") >= 0){
+    return base.replace("{lat}", q.lat || "").replace("{lon}", q.lon || "").replace("{r}", q.r || "").replace("{type}", q.type || "");
+  }
+  var qs = Object.keys(q).map(function(k){ return k + "=" + encodeURIComponent(q[k]); }).join("&");
+  return base + (base.indexOf("?") >= 0 ? "&" : "?") + qs;
+}
+var HOLD_CORS_HINT = "瀏覽器的跨站限制（CORS）擋掉了直接連線，需要設定資料代理：請到「進階：自訂資料代理」填入 Cloudflare Worker 網址（做法見「格式說明」）。";
 function holdFetch(cfg){
   if(cfg.mode === "airline") return holdFetchFlights(cfg);
   var lat = cfg.apt.lat, lon = cfg.apt.lon, r = cfg.r;
   var srcs = [];
-  if(cfg.proxy) srcs.push({ name:"自訂代理", url: cfg.proxy.replace("{lat}", lat).replace("{lon}", lon).replace("{r}", r) });
-  srcs.push({ name:"airplanes.live", url:"https://api.airplanes.live/v2/point/" + lat + "/" + lon + "/" + r });
-  srcs.push({ name:"adsb.fi", url:"https://opendata.adsb.fi/api/v2/lat/" + lat + "/lon/" + lon + "/dist/" + r });
+  if(cfg.proxy) srcs.push({ name:"自訂代理", url: holdProxyUrl(cfg, { mode:"point", lat:lat, lon:lon, r:r }) });
+  else {
+    srcs.push({ name:"airplanes.live", url:"https://api.airplanes.live/v2/point/" + lat + "/" + lon + "/" + r });
+    srcs.push({ name:"adsb.fi", url:"https://opendata.adsb.fi/api/v2/lat/" + lat + "/lon/" + lon + "/dist/" + r });
+  }
   var i = 0, errs = [];
   function next(){
-    if(i >= srcs.length) return Promise.reject(new Error(errs.join("；")));
+    if(i >= srcs.length) return Promise.reject(new Error(cfg.proxy ? errs.join("；") : HOLD_CORS_HINT));
     var s = srcs[i++];
     var ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
     var to = ctl ? setTimeout(function(){ ctl.abort(); }, 10000) : null;
     return fetch(s.url, ctl ? { signal: ctl.signal, cache:"no-store" } : { cache:"no-store" })
       .then(function(res){
         if(to) clearTimeout(to);
-        if(!res.ok) throw new Error("HTTP " + res.status);
+        if(!res.ok) return res.json().catch(function(){ return {}; }).then(function(j){
+          throw new Error("HTTP " + res.status + (j.detail ? "（" + j.detail.join("；") + "）" : ""));
+        });
         return res.json();
       })
       .then(function(j){
         var list = j.ac || j.aircraft || j.states || [];
         if(!Array.isArray(list)) throw new Error("格式不符");
-        HOLD.lastSrc = s.name;
+        HOLD.lastSrc = j.src ? s.name + "・" + j.src : s.name;
         return list;
       })
       .catch(function(e){
@@ -3142,15 +3160,29 @@ function holdFetchOne(url){
     .catch(function(e){ if(to) clearTimeout(to); throw new Error(e && e.name === "AbortError" ? "逾時" : (e && e.message ? e.message : "無法連線（可能是跨站限制）")); });
 }
 function holdFetchFlights(cfg){
+  // 有代理：一次請 Worker 用 OpenSky 全球資料依呼號前綴篩選
+  if(cfg.proxy && cfg.proxy.indexOf("{") < 0){
+    var url = holdProxyUrl(cfg, { mode:"airline", prefix: cfg.gAl.join(",") });
+    return fetch(url, { cache:"no-store" }).then(function(res){
+      return res.json().catch(function(){ return {}; }).then(function(j){
+        if(!res.ok) throw new Error("代理回應 HTTP " + res.status + (j.detail ? "：" + j.detail.join("；") : (j.error ? "：" + j.error : "")));
+        var l = j.ac || [];
+        HOLD.lastSrc = "自訂代理・" + (j.src || "") + (j.remaining ? "（今日剩 " + j.remaining + " credits）" : "");
+        return l;
+      });
+    }, function(){ throw new Error("連不到代理網址，請確認 Worker 網址正確且已部署"); });
+  }
   var out = [], seen = {}, okAny = false, lastErr = "", i = 0;
-  var proxy = cfg.proxy && cfg.proxy.indexOf("{type}") >= 0 ? cfg.proxy : "";
+  var proxy = cfg.proxy;
   var pre = cfg.gAl;
   function wait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
   function one(t){
     var urls = [];
-    if(proxy) urls.push(["自訂代理", proxy.replace("{type}", t)]);
-    urls.push(["airplanes.live", "https://api.airplanes.live/v2/type/" + t]);
-    urls.push(["adsb.lol", "https://api.adsb.lol/v2/type/" + t]);
+    if(proxy) urls.push(["自訂代理", holdProxyUrl(cfg, { mode:"type", type:t })]);
+    else {
+      urls.push(["airplanes.live", "https://api.airplanes.live/v2/type/" + t]);
+      urls.push(["adsb.lol", "https://api.adsb.lol/v2/type/" + t]);
+    }
     var k = 0;
     function tryNext(){
       if(k >= urls.length) return Promise.resolve(null);
@@ -3162,7 +3194,7 @@ function holdFetchFlights(cfg){
   }
   function step(){
     if(i >= cfg.types.length){
-      if(!okAny) return Promise.reject(new Error(lastErr || "無法連線"));
+      if(!okAny) return Promise.reject(new Error(proxy ? (lastErr || "無法連線") : HOLD_CORS_HINT));
       return out;
     }
     var t = cfg.types[i++];
@@ -3214,7 +3246,7 @@ function holdAnalyze(tr, now){
   var sum = 0, best = 0, bestIdx = n-1;
   for(var i = n-1; i > 0; i--){
     var a = pts[i-1], b = pts[i];
-    if(b.t - a.t > 90000) break;
+    if(b.t - a.t > 240000) break;   // OpenSky 模式約 90 秒一點，容許較大間隔
     sum += angDiff(a.trk, b.trk);
     if(Math.abs(sum) > Math.abs(best)){ best = sum; bestIdx = i-1; }
   }
@@ -3464,9 +3496,10 @@ function holdTick(){
     holdIngest(list, cfg);
     var t = new Date();
     $("holdStatus").textContent = "監看中・" + pad2(t.getHours()) + ":" + pad2(t.getMinutes()) + ":" + pad2(t.getSeconds()) + " 更新（" + HOLD.lastSrc + "，" +
-      (cfg.mode === "airline" ? "查 " + cfg.types.length + " 種機型，找到 " + list.length + " 架" : list.length + " 架") + "）";
+      (cfg.mode === "airline" ? (cfg.proxy ? "" : "查 " + cfg.types.length + " 種機型，") + "找到 " + list.length + " 架" : list.length + " 架") + "）";
   }).catch(function(e){
     HOLD.err = e.message || String(e);
+    if(!cfg.proxy){ var dp = $("holdProxy").closest("details"); if(dp) dp.open = true; }
     $("holdStatus").textContent = "抓取失敗，15 秒後重試";
   }).then(function(){
     HOLD.busy = false;
@@ -3474,7 +3507,11 @@ function holdTick(){
     if(HOLD.on){
       var n = cfg.mode === "airline" ? cfg.types.length : 1;
       clearTimeout(HOLD.timer);
-      HOLD.timer = setTimeout(holdTick, Math.max(HOLD.POLL, n * 1300));
+      var wait = Math.max(HOLD.POLL, n * 1300);
+      // OpenSky 有每日額度：機場周邊 30 秒一次（1 credit），全球航空公司 90 秒一次（4 credits）
+      if(cfg.proxy && cfg.mode === "airline") wait = 90000;
+      else if(/OpenSky/.test(HOLD.lastSrc)) wait = 30000;
+      HOLD.timer = setTimeout(holdTick, wait);
     }
   });
 }
@@ -3508,9 +3545,12 @@ function holdInit(){
   $("holdApt").addEventListener("change", function(){ holdSave(); holdReset(); });
   function syncMode(){
     var g = $("holdMode").value === "airline";
+    var tl = $("holdGTypes").closest("label"); 
     var ga = document.querySelectorAll("#tab-map .hold-g"), aa = document.querySelectorAll("#tab-map .hold-a");
     for(var i=0;i<ga.length;i++) ga[i].hidden = !g;
     for(var j=0;j<aa.length;j++) aa[j].hidden = g;
+    // 用代理時改由 OpenSky 依呼號查全球，不需要機型清單
+    if(tl) tl.hidden = !g || !!$("holdProxy").value.trim();
   }
   syncMode();
   $("holdMode").addEventListener("change", function(){ syncMode(); holdSave(); holdReset(); });
@@ -3525,7 +3565,10 @@ function holdInit(){
   $("holdOnlyHold").addEventListener("change", function(){ holdSave(); holdRender(); });
   $("holdRadius").addEventListener("change", function(){ holdSave(); holdReset(); });
   $("holdAirline").addEventListener("change", function(){ holdSave(); holdRender(); });
-  $("holdProxy").addEventListener("change", function(){ holdSave(); $("holdProxyPill").textContent = this.value.trim() ? "使用中" : "未使用"; });
+  $("holdProxy").addEventListener("change", function(){
+    this.value = this.value.trim().replace(/\/+$/, "");
+    holdSave(); $("holdProxyPill").textContent = this.value ? "使用中" : "未使用"; syncMode();
+    HOLD.err = ""; if(HOLD.on && !HOLD.busy){ clearTimeout(HOLD.timer); holdTick(); } });
   $("holdNotify").addEventListener("change", function(){
     holdSave();
     if(this.checked && window.Notification && Notification.permission === "default"){ try{ Notification.requestPermission(); }catch(e){} }
