@@ -403,7 +403,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-28n</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-28o</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -840,7 +840,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
 <section id="tab-cam" hidden>
   <div class="card">
     <h2>各站即時影像</h2>
-    <p>桃園與高雄兩站的機場即時影像（24 小時 YouTube 直播）。畫面來自航空愛好者長期經營的公開直播，非機場官方頁面（官方頁面設有防嵌入限制，無法直接內嵌）。需要連線才能播放。</p>
+    <p>桃園與高雄兩站的機場即時影像（24 小時 YouTube 直播）。畫面來自航空愛好者長期經營的公開直播，非機場官方頁面（官方頁面設有防嵌入限制，無法直接內嵌）。需要連線才能播放。切到本頁會自動靜音播放，要聽塔台通訊請點畫面右下角的喇叭開啟聲音。</p>
     <div class="cam-stations" id="camGrid"></div>
   </div>
 </section>
@@ -1054,7 +1054,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
 <section id="tab-help" hidden>
   <div class="card">
     <h2>怎麼用</h2>
-    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-28n</b>（盤旋偵測：轉降偵測、目的地天氣、背景監看、資料來源狀態、盤旋紀錄統計）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
+    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-28o</b>（盤旋偵測：轉降偵測、目的地天氣、背景監看、資料來源狀態、盤旋紀錄統計）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
     <ul class="doc">
       <li>桃園機場走「<b>TDX 桃園機場</b>」頁籤最省事：填 Client ID／Secret 後按立即抓取，到場與離場會一次抓齊。</li>
       <li>TDX 的 <code>$top</code> 預設值只有 <b>30 筆</b>，不分頁就只會拿到 30 班。本頁已改成自動帶 <code>$top</code>／<code>$skip</code> 分頁抓到底。</li>
@@ -3108,7 +3108,7 @@ var CAMS = [
 ];
 
 function camFeedHtml(f, stnName){
-  var src   = "https://www.youtube.com/embed/" + f.yt + "?rel=0&modestbranding=1&playsinline=1";
+  var src   = "https://www.youtube.com/embed/" + f.yt + "?autoplay=1&mute=1&rel=0&modestbranding=1&playsinline=1";   // 瀏覽器只允許「靜音」自動播放
   var watch = "https://www.youtube.com/watch?v=" + f.yt;
   var title = stnName + (f.label ? " " + f.label : "") + " 即時影像";
   return '<div class="cam-item">' +
@@ -3119,7 +3119,7 @@ function camFeedHtml(f, stnName){
     '<div class="cam-frame">' +
       '<iframe src="' + src + '" title="' + esc(title) + '" ' +
         'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
-        'allowfullscreen loading="lazy"></iframe>' +
+        'allowfullscreen></iframe>' +
     '</div>' +
     '<p class="cam-note">' + esc(f.desc) +
       ' ｜ <a href="' + watch + '" target="_blank" rel="noopener">在 YouTube 開啟</a></p>' +
@@ -5613,6 +5613,8 @@ function switchTab(name){
   ["tdx","board","airline","sched","otd","cam","map","help"].forEach(function(t){
     $("tab-" + t).hidden = (t !== name);
   });
+  // 離開即時影像就移除直播，回來時重新自動播放（避免背景持續吃頻寬）
+  if(activeTab === "cam" && name !== "cam" && $("camGrid")){ $("camGrid").innerHTML = ""; tabDirty.cam = true; }
   activeTab = name;
   renderActiveTab();
   window.scrollTo(0,0);
