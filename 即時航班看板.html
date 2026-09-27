@@ -288,10 +288,20 @@ ul.doc li{margin:6px 0}
 .hmap-icon svg{display:block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
 .hmap-lbl{position:absolute;left:100%;top:50%;transform:translate(3px,-50%);font:600 11px/1 system-ui,sans-serif;white-space:nowrap;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff}
 .hmap-pop{font-size:12.5px;line-height:1.6}
-.hmap-icon.est{opacity:.9}
-.hmap-icon.est svg{filter:none!important}
-.hmap-icon.est path{fill:rgba(255,255,255,.18)!important;stroke:#5d7488!important;stroke-width:1.8!important;stroke-dasharray:2 1.5}
-.hmap-cyber .hmap-icon.est path{stroke:#cfe6f0!important}
+.hmap-divtag{font-size:9.5px;font-weight:700;margin-left:4px;padding:0 4px;border-radius:4px;background:#d65656;color:#fff;text-shadow:none}
+.hmap-cyber .hmap-divtag{background:#FF3355;box-shadow:0 0 8px #FF3355}
+.wx{display:inline-block;font-size:11px;font-weight:700;padding:0 6px;border-radius:999px;color:#fff;background:#6b8397}
+.wx-VFR{background:#2e9e5b}.wx-MVFR{background:#2f6fd6}.wx-IFR{background:#d64545}.wx-LIFR{background:#b0369b}
+.wx-sev{color:#c0392b;font-size:12px}
+.hold-wx{margin:10px 0 0;padding:8px 14px;border-radius:12px;background:rgba(255,255,255,.6);border:1px solid var(--line);font-size:13px}
+.hold-wx[hidden]{display:none}
+.dg{display:inline-block;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:600}
+.dg-ok{background:rgba(46,158,91,.15);color:#237a47}.dg-warn{background:rgba(222,150,40,.18);color:#9a5d00}.dg-bad{background:rgba(214,86,86,.15);color:#a33}
+.hbars{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;align-items:end;height:120px;padding:6px 4px 0;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.6)}
+.hbar{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
+.hbar i{display:block;width:100%;min-height:2px;border-radius:3px 3px 0 0;background:var(--cyan)}
+.hbar span{font-size:10px;color:var(--dim);margin:2px 0 3px}
+
 .hmap-estag{font-size:9.5px;font-weight:600;margin-left:4px;padding:0 4px;border-radius:4px;border:1px dashed currentColor;opacity:.85}
 .hmap-cyber .hmap-estline{stroke:#9fd7e6;stroke-opacity:.7;filter:none}
 
@@ -372,7 +382,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-27u</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-28b</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -887,22 +897,52 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
         </div>
       </div>
     </details>
+    <details class="alpick" style="margin-top:8px" id="bgBox">
+      <summary>背景監看（關掉看板也持續偵測）<span class="pill" id="bgPill">未啟用</span></summary>
+      <div style="padding:10px 16px 14px;border-top:1px solid var(--line)">
+        <p class="note" style="margin:0 0 10px">由「ADS-B 橋接」擴充功能在背景每 30 秒偵測一次，使用上面相同的監看設定與 Telegram 設定。只要 Chrome 開著，關掉看板分頁也會照常推播到 Telegram，並把盤旋紀錄存起來，下次打開看板時自動合併。開啟後看板本身不再重複推播。需要擴充功能 v2.0 以上。</p>
+        <div class="row" style="gap:12px;flex-wrap:wrap;align-items:center">
+          <button class="btn primary" id="btnBgOn" type="button">以目前設定開啟背景監看</button>
+          <button class="btn ghost" id="btnBgOff" type="button">停止背景監看</button>
+          <span class="note" id="bgMsg"></span>
+        </div>
+        <div class="note" id="bgStatus" style="margin-top:10px"></div>
+      </div>
+    </details>
+    <details class="alpick" style="margin-top:8px" id="diagBox">
+      <summary>資料來源狀態<span class="pill" id="diagPill">—</span></summary>
+      <div style="padding:10px 16px 14px;border-top:1px solid var(--line)" id="diagBody"></div>
+    </details>
+    <div class="hold-wx" id="holdWx" hidden></div>
     <div class="hold-alert" id="holdAlert"><span class="hold-dot"></span><span id="holdAlertTxt"></span></div>
     <div class="kpis" id="holdKpis"></div>
     <div class="hold-map" id="holdMapWrap" hidden>
       <div id="holdMap"></div>
-      <div class="cap">飛機圖示朝向為航向、大小依機型翼展比例（A380 最大、窄體機較小）；虛線空心、標「推估」的是洋區收不到訊號時的估算位置；標籤為航班號、機型與出發地→目的地；紅／橘色為盤旋中，線條為近 30 分鐘航跡。點圖示看詳細資料，點下方表格的航班可在地圖上定位。航線優先取看板的 TDX 資料，其餘由擴充功能向 adsb.lol／hexdb.io 查詢，偶有過時或查不到。<span id="holdMapErr" style="color:var(--bad)"></span></div>
+      <div class="cap">飛機圖示朝向為航向、大小依機型翼展比例（A380 最大、窄體機較小）；標「推估」的是洋區收不到訊號時的估算位置；標籤為航班號、機型與出發地→目的地；紅／橘色為盤旋中，線條為近 30 分鐘航跡。點圖示看詳細資料，點下方表格的航班可在地圖上定位。航線優先取看板的 TDX 資料，其餘由擴充功能向 adsb.lol／hexdb.io 查詢，偶有過時或查不到。<span id="holdMapErr" style="color:var(--bad)"></span></div>
     </div>
     <div class="hold-grid" id="holdGrid">
       <div>
         <div class="tbox" style="margin-top:0" id="holdTable"><div class="empty">按「開始監看」後，約 1–2 分鐘累積足夠的航跡才會開始判斷。</div></div>
-        <p class="note" style="margin-top:8px">判定：<span class="hlv l1">注意</span> 同向累積轉 240° 以上；<span class="hlv l2">盤旋中</span> 滿一圈（360°）；<span class="hlv l3">長時間盤旋</span> 盤旋超過 15 分鐘或滿 3 圈，轉降機率升高。另外 squawk 7700／7600／7500 會直接列為最高級。點一列可在地圖上定位該機。</p>
+        <p class="note" style="margin-top:8px">判定：<span class="hlv l1">注意</span> 同向累積轉 240° 以上；<span class="hlv l2">盤旋中</span> 滿一圈（360°）；<span class="hlv l3">長時間盤旋</span> 盤旋超過 15 分鐘或滿 3 圈，轉降機率升高；<span class="hlv l3">疑似轉降</span> 接近目的地或盤旋後，持續 4 分鐘以上背離目的地。高度維持或呈跑馬場形才算盤旋，邊轉圈邊大幅下降列為「繞圈下降」（注意）。squawk 7700／7600／7500 直接列最高級。點一列可在地圖上定位該機。</p>
       </div>
       <div class="hold-radar" id="holdRadarBox">
         <div id="holdRadar"></div>
         <div class="cap">灰色為一般航機，紅／橘色為盤旋中，線條為近 10 分鐘航跡；圓圈每 20 浬一圈。</div>
       </div>
     </div>
+    <details class="alpick" style="margin-top:14px" id="hlogBox">
+      <summary>盤旋與轉降紀錄・統計<span class="pill" id="hlogPill">0 筆</span></summary>
+      <div style="padding:10px 16px 14px;border-top:1px solid var(--line)">
+        <div class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+          <label class="f">統計範圍
+            <select id="hlogRange"><option value="1">近 1 天</option><option value="7">近 7 天</option><option value="30" selected>近 30 天</option><option value="3650">全部</option></select>
+          </label>
+          <button class="btn ghost" id="btnHlogCsv" type="button">匯出 CSV（Excel 可開）</button>
+          <button class="btn ghost" id="btnHlogClear" type="button">清除紀錄</button>
+        </div>
+        <div id="hlogBody"></div>
+      </div>
+    </details>
   </div>
 
   <div class="card">
@@ -939,7 +979,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
 <section id="tab-help" hidden>
   <div class="card">
     <h2>怎麼用</h2>
-    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-27u</b>（到離看板新增區域篩選；航班地圖新增盤旋偵測，可指定航空公司全球追蹤）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
+    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-28b</b>（盤旋偵測：轉降偵測、目的地天氣、背景監看、資料來源狀態、盤旋紀錄統計）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
     <ul class="doc">
       <li>桃園機場走「<b>TDX 桃園機場</b>」頁籤最省事：填 Client ID／Secret 後按立即抓取，到場與離場會一次抓齊。</li>
       <li>TDX 的 <code>$top</code> 預設值只有 <b>30 筆</b>，不分頁就只會拿到 30 班。本頁已改成自動帶 <code>$top</code>／<code>$skip</code> 分頁抓到底。</li>
@@ -980,6 +1020,14 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
       <li>場站篩選固定列出 TPE、RMQ、KHH、TSA 四站（後面數字是資料庫裡的筆數，0 代表還沒抓過），其餘場站依實際資料出現。</li>
       <li>到離看板會自動判斷登機階段：離場航班、尚未起飛、距排定起飛 40 分鐘以內顯示「登機中」，15 分鐘以內顯示「最後登機」。TDX 不提供登機狀態，這是用時間推算的。若資料來源本身含有「登機中」「Boarding」「Final Call」等文字（非 TDX），也會直接辨識。正在登機的航班會浮到看板最上方的綠框置頂區，拿到實際起飛時間後自動消失。</li>
       <li>追蹤中的航班進入登機或最後登機時，也會推播到你的 Teams 中繼 URL。</li>
+      <li><b>盤旋偵測進階功能</b>：<br>
+        ・<b>轉降偵測</b>：航機接近目的地（250 浬內）或盤旋過後，持續 4 分鐘以上背離目的地、且比最接近時遠了 30 浬以上，標為「疑似轉降」，並依航向推算最可能的備降機場。轉回目的地會自動取消。<br>
+        ・<b>盤旋分類</b>：高度維持（±1,500 呎）或呈跑馬場形（兩個約 180° 轉彎＋直線段）才算盤旋；邊轉圈邊下降超過 3,000 呎列為「繞圈下降」（多為雷達引導，只列注意）。盤旋中會顯示預估延誤分鐘。<br>
+        ・<b>目的地天氣</b>：盤旋、轉降、注意中的航機會附上目的地 METAR（aviationweather.gov），含飛行類別、風、能見度、雲幕與強風／雷雨等警示；機場周邊模式另顯示監看機場的即時天氣。<br>
+        ・<b>背景監看</b>：擴充功能 v2.0 起可在背景每 30 秒偵測，關掉看板分頁也會推播 Telegram 並記錄事件（Chrome 需開著）。開啟後看板本身不再重複推播。<br>
+        ・<b>資料來源狀態</b>：列出各資料源最近成功／失敗、被限流或被擋，方便排查更新變慢的原因。<br>
+        ・<b>盤旋與轉降紀錄</b>：自動記錄每次事件（航班、時間、圈數、高度、結果、目的地天氣），提供時段與目的地統計，可匯出 CSV 用 Excel 開啟。<br>
+        ・<b>平滑移動</b>：兩次更新之間依地速與航向推算，飛機在地圖上連續移動。</li>
       <li><b>盤旋偵測的資料來源</b>：adsb.lol、adsb.fi、OpenSky 都不允許網頁直接跨站讀取，而且會擋 Cloudflare 等雲端主機，所以要透過下列其中一種方式：<br>
         ① <b>ADS-B 橋接 Chrome 擴充功能（推薦）</b>：用你自己電腦的網路抓資料，裝好後不用任何設定，狀態列會顯示「擴充功能・adsb.lol」。只在安裝的那台電腦的 Chrome 有效；若是直接雙擊打開本機 html 檔，要在擴充功能詳細資料開啟「允許存取檔案網址」。擴充功能的設定頁可選填 OpenSky 帳號當備援。<br>
         ② <b>Google Apps Script 代理</b>：把 adsb-proxy Apps Script 部署成網頁應用程式，網址填到「進階：自訂資料代理」。手機也能用，但 Google 的伺服器是否會被資料站擋下要實測。<br>
@@ -3216,6 +3264,11 @@ window.addEventListener("message", function(ev){
 });
 /* 經由擴充功能抓一個網址，回傳解析後的 JSON；失敗丟出錯誤 */
 function holdViaBridge(url, opt){
+  var t0 = Date.now();
+  return holdViaBridgeRaw(url, opt).then(function(j){ diagRec(url, true, Date.now() - t0); return j; },
+    function(e){ diagRec(url, false, 0, e && e.message); throw e; });
+}
+function holdViaBridgeRaw(url, opt){
   return new Promise(function(resolve, reject){
     var id = ++HOLD_BRIDGE_SEQ;
     HOLD_BRIDGE_Q[id] = {
@@ -3234,6 +3287,11 @@ function holdViaBridge(url, opt){
 }
 /* 直接 fetch（給代理或直接連線用） */
 function holdViaFetch(url){
+  var t0 = Date.now();
+  return holdViaFetchRaw(url).then(function(j){ diagRec(url, true, Date.now() - t0); return j; },
+    function(e){ diagRec(url, false, 0, e && e.message); throw e; });
+}
+function holdViaFetchRaw(url){
   var ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
   var to = ctl ? setTimeout(function(){ ctl.abort(); }, 60000) : null;
   return fetch(url, ctl ? { signal: ctl.signal, cache:"no-store" } : { cache:"no-store" })
@@ -3402,11 +3460,36 @@ function holdAnalyze(tr, now){
     sum += angDiff(a.trk, b.trk);
     if(Math.abs(sum) > Math.abs(best)){ best = sum; bestIdx = i-1; }
   }
-  return { turn: Math.abs(best), dir: best > 0 ? 1 : (best < 0 ? -1 : 0), dur: now - pts[bestIdx].t };
+  // 盤旋區段內的高度變化與跑馬場形狀（兩個約 180° 的轉彎＋中間直線段）
+  var seg = pts.slice(bestIdx), alts = seg.map(function(p){ return p.alt || 0; }).filter(function(a){ return a > 0; });
+  var altRange = alts.length ? Math.max.apply(null, alts) - Math.min.apply(null, alts) : 0;
+  var altDrop = alts.length ? alts[0] - alts[alts.length - 1] : 0;
+  var bigTurns = 0, legs = 0, runTurn = 0, runStraight = 0, dts = [];
+  for(var j = 1; j < seg.length; j++){
+    var dt = (seg[j].t - seg[j-1].t) / 1000, dh = angDiff(seg[j-1].trk, seg[j].trk);
+    dts.push(dt);
+    if(dt > 0 && Math.abs(dh) / dt >= 0.8){
+      runTurn += Math.abs(dh);
+      if(runStraight >= 40) legs++;
+      runStraight = 0;
+    }else{
+      if(runTurn >= 150) bigTurns++;
+      runTurn = 0; runStraight += dt;
+    }
+  }
+  if(runTurn >= 150) bigTurns++;
+  if(runStraight >= 40) legs++;
+  var avgDt = dts.length ? dts.reduce(function(a,b){ return a+b; }, 0) / dts.length : 999;
+  var racetrack = avgDt <= 35 && bigTurns >= 2 && legs >= 1;
+  // 最近 4 分鐘的累積轉向：用來判斷是否已經停止繞圈（脫離）
+  var recentTurn = 0, rc = 0;
+  for(var k = n-1; k > 0 && now - pts[k-1].t <= 4*60000; k--){ recentTurn += angDiff(pts[k-1].trk, pts[k].trk); rc++; }
+  return { turn: Math.abs(best), dir: best > 0 ? 1 : (best < 0 ? -1 : 0), dur: now - pts[bestIdx].t,
+           altRange: altRange, altDrop: altDrop, racetrack: racetrack, recentTurn: Math.abs(recentTurn), recentN: rc };
 }
 
 function holdLevel(tr){
-  if(tr.emerg) return 3;
+  if(tr.emerg || tr.divert) return 3;
   if(!tr.holding) return tr.turn >= 240 ? 1 : 0;
   var holdMin = (Date.now() - tr.holdSince) / 60000;
   if(holdMin >= 15 || tr.turn >= 1080) return 3;
@@ -3438,7 +3521,7 @@ function holdIngest(list, cfg){
     tr.alt = onGround ? 0 : (+alt || +a.alt_geom || 0);
     tr.gs = a.gs != null ? Math.round(+a.gs) : tr.gs;
     tr.vs = a.baro_rate != null ? +a.baro_rate : (a.geom_rate != null ? +a.geom_rate : null);
-    tr.lat = +a.lat; tr.lon = +a.lon; tr.trk = trk;
+    tr.lat = +a.lat; tr.lon = +a.lon; tr.trk = trk; tr.posT = t;
     tr.onGround = onGround;
     tr.squawk = a.squawk || "";
     tr.emerg = /^(7700|7600|7500)$/.test(tr.squawk) || (a.emergency && a.emergency !== "none");
@@ -3457,10 +3540,15 @@ function holdIngest(list, cfg){
     var r = holdAnalyze(tr, now);
     tr.turn = r.turn; tr.turnDir = r.dir;
     var eligible = !tr.onGround && tr.alt >= 1500 && (tr.gs == null || tr.gs >= 90);
-    if(eligible && r.turn >= 360){
+    // 滿一圈後再分類：高度大致維持（±1,500 呎）或呈跑馬場形 → 盤旋；邊轉圈邊大幅下降 → 繞圈下降（多為雷達引導），只列注意
+    var orbitDescent = r.turn >= 360 && !r.racetrack && r.altRange > 1500 && r.altDrop > 3000;
+    tr.holdKind = r.turn >= 360 ? (r.racetrack ? "跑馬場等待" : orbitDescent ? "繞圈下降" : "定高繞圈") : "";
+    var stopped = r.recentN >= 2 && r.recentTurn < 90;   // 最近 4 分鐘幾乎沒轉：已改直飛
+    if(tr.holding && orbitDescent && !tr.logId){ tr.holding = false; }   // 剛判定的其實是繞圈下降：撤回
+    if(eligible && r.turn >= 360 && !orbitDescent && !stopped){
       if(!tr.holding){ tr.holding = true; tr.holdSince = now - r.dur; }
       tr.lastHold = now;
-    }else if(tr.holding && (r.turn < 180 || !eligible)){
+    }else if(tr.holding && (r.turn < 180 || !eligible || stopped || orbitDescent)){
       // 近期不再同向轉圈 → 視為已脫離；保留 20 分鐘紀錄
       tr.holding = false; tr.exitAt = now;
     }
@@ -3484,7 +3572,12 @@ function holdIngest(list, cfg){
     }
     // ADS-B 與 hexdb 都沒有機型時，改用 TDX 看板上這班的機型
     if(!tr.type && tr.match && tr.match.aircraft){ tr.type = tdxType(tr.match.aircraft, tr.match.airline); tr.typeSrc = "TDX"; }
+    holdCheckDivert(tr, cfg, now);
+    tr.level = holdLevel(tr);
+    if(tr.holding || tr.divert || tr.level >= 1){ if(tr.destIata) metarForIata(tr.destIata); }
+    hlogTrack(tr, now);
   });
+  hlogSave();
 }
 
 function holdPassAirline(tr, cfg){
@@ -3508,11 +3601,11 @@ function holdBeep(){
 function holdNotifyNew(list, cfg){
   if(!cfg.notify) return;
   list.forEach(function(tr){
-    var key = tr.hex + ":" + tr.level;
+    var key = tr.hex + ":" + tr.level + (tr.divert ? ":div" : "");
     if(HOLD.notified[key]) return;
     HOLD.notified[key] = 1;
     var name = tr.fno || tr.cs || tr.hex.toUpperCase();
-    var msg = name + (tr.level === 3 ? " 長時間盤旋" : " 開始盤旋") +
+    var msg = name + (tr.divert ? " 疑似轉降" + (tr.divert.to ? " → " + tr.divert.to : "") : tr.level === 3 ? " 長時間盤旋" : " 開始盤旋") +
       (tr.dist != null ? "，距" + tr.refApt.name + " " + Math.round(tr.dist) + " 浬" : "") + "，高度 " + fmtAlt(tr.alt);
     holdBeep();
     try{
@@ -3540,6 +3633,10 @@ function tgPill(){
 }
 /* 發送一則訊息；先試一般請求（可讀回結果），被跨站限制擋下時改用 no-cors（送得出去但無法確認） */
 function tgSend(text, cfgOverride){
+  return tgSendRaw(text, cfgOverride).then(function(r){ diagRec("https://api.telegram.org", true, 0); return r; },
+    function(e){ diagRec("https://api.telegram.org", false, 0, e && e.message); throw e; });
+}
+function tgSendRaw(text, cfgOverride){
   var c = cfgOverride || tgCfg();
   if(!c.token || !c.chat) return Promise.reject(new Error("請先填 Bot Token 與 Chat ID"));
   var url = "https://api.telegram.org/bot" + encodeURIComponent(c.token).replace(/%3A/gi, ":") + "/sendMessage";
@@ -3568,16 +3665,19 @@ function tgEsc(s){ return String(s == null ? "" : s).replace(/[&<>]/g, function(
 function tgHm(){ var d = new Date(); return pad2(d.getHours()) + ":" + pad2(d.getMinutes()); }
 function tgText(tr, kind){
   var name = tr.fno || tr.cs || tr.hex.toUpperCase();
-  var head = kind === "exit" ? "✅ 已脫離盤旋" : kind === "emerg" ? "🚨 緊急代碼 SQUAWK " + tr.squawk : tr.level >= 3 ? "🔴 長時間盤旋" : "🟠 開始盤旋";
+  var head = kind === "exit" ? "✅ 已脫離盤旋" : kind === "divert" ? "⚠️ 疑似轉降" : kind === "emerg" ? "🚨 緊急代碼 SQUAWK " + tr.squawk : tr.level >= 3 ? "🔴 長時間盤旋" : "🟠 開始盤旋";
   var rt = holdRoute(tr), m = tr.match, lines = [];
   lines.push("<b>" + head + "｜" + tgEsc(name) + "</b>" + (tr.type ? "（" + tgEsc(tr.type) + "）" : ""));
   if(kind === "exit") lines.push("最多盤旋 " + tr.maxLaps + " 圈");
-  else if(tr.holding) lines.push("已盤旋 " + fmtDur(Date.now() - tr.holdSince) + "・" + tr.laps + " 圈");
+  else if(kind === "divert") lines.push("原目的地 " + tgEsc(tr.divert.from) + (tr.divert.to ? " → 可能備降 <b>" + tgEsc(aptLabel(tr.divert.to)) + "</b>" + (tr.divert.toDist ? "（" + tr.divert.toDist + " 浬）" : "") : "，去向不明"));
+  else if(tr.holding) lines.push("已盤旋 " + fmtDur(Date.now() - tr.holdSince) + "・" + tr.laps + " 圈" + (tr.holdKind ? "（" + tr.holdKind + "）" : "") + "｜預估延誤 ≥ " + Math.max(1, Math.round((Date.now() - tr.holdSince)/60000)) + " 分");
   if(rt) lines.push("航線：" + tgEsc(routeLong(rt)));
   if(m && (m.sched || m.est)) lines.push("表定 " + tgEsc(m.sched || "—") + (m.est ? "｜預估 " + tgEsc(m.est) : "") + (m.gate ? "｜門 " + tgEsc(m.gate) : ""));
   var pos = tr.dist != null ? "距 " + tr.refApt.iata + " " + Math.round(tr.dist) + " 浬（" + compass(tr.brg) + "方）" : tr.lat.toFixed(2) + ", " + tr.lon.toFixed(2);
   lines.push(pos + "｜" + fmtAlt(tr.alt) + (tr.gs != null ? "｜" + tr.gs + " kt" : ""));
   if(tr.reg) lines.push("註冊號 " + tgEsc(tr.reg));
+  var wxm = tr.destIata ? metarForIata(tr.destIata) : null;
+  if(wxm) lines.push("🌦 " + tgEsc(metarPlain(wxm)));
   lines.push("🕒 " + tgHm() + "　<a href=\"https://globe.adsb.fi/?icao=" + tr.hex + "\">看航跡</a>");
   return lines.join("\n");
 }
@@ -3585,9 +3685,11 @@ function tgText(tr, kind){
 function tgCheck(scope){
   var c = tgCfg();
   if(!c.on || !c.token || !c.chat) return;
+  if(BG.active) return;   // 背景監看開著時由擴充功能推播，避免重複
   scope.forEach(function(tr){
     if(tr.lost) return;
     if(tr.emerg && !TG.sent[tr.hex + ":emerg"]){ TG.sent[tr.hex + ":emerg"] = 1; tgEnqueue(tgText(tr, "emerg")); }
+    if(tr.divert && !TG.sent[tr.hex + ":div:" + tr.divert.since]){ TG.sent[tr.hex + ":div:" + tr.divert.since] = 1; tgEnqueue(tgText(tr, "divert")); }
     if(tr.holding && tr.level >= 2){
       var k = tr.hex + ":" + tr.level;
       if(!TG.sent[k]){ TG.sent[k] = 1; TG.sent[tr.hex + ":held"] = 1; tgEnqueue(tgText(tr, "hold")); }
@@ -3678,8 +3780,9 @@ function holdRender(){
 
   // 警示條與分頁徽章
   var alertBox = $("holdAlert");
+  var divs = active.filter(function(t){ return t.divert; });
   if(nHold){
-    var names = active.filter(function(t){ return t.level >= 2; }).slice(0, 5).map(function(t){ return t.fno || t.cs || t.hex.toUpperCase(); });
+    var names = active.filter(function(t){ return t.level >= 2; }).slice(0, 5).map(function(t){ return (t.fno || t.cs || t.hex.toUpperCase()) + (t.divert ? "（疑似轉降" + (t.divert.to ? "→" + t.divert.to : "") + "）" : ""); });
     $("holdAlertTxt").innerHTML = "<b>" + nHold + " 架航機正在" + (global ? "" : esc(cfg.apt.name) + "周邊") + "盤旋</b>：" + esc(names.join("、")) + (nHold > 5 ? " 等" : "");
     alertBox.classList.add("on");
   }else alertBox.classList.remove("on");
@@ -3693,23 +3796,30 @@ function holdRender(){
   }
   document.title = (nHold ? "(" + nHold + " 盤旋) " : "") + HOLD.baseTitle;
 
-  holdNotifyNew(active.filter(function(t){ return t.level >= 2; }), cfg);
+  holdNotifyNew(active.filter(function(t){ return t.level >= 2 || t.divert; }), cfg);
   tgCheck(all.filter(function(tr){ return holdPassAirline(tr, cfg); }));   // 含已落地的航機，才能發「脫離盤旋」
 
   var lvName = [global ? "飛行中" : "一般", "注意", "盤旋中", "長時間盤旋"];
+  function lvText(tr){ return tr.divert ? "疑似轉降" : tr.emerg && !tr.holding ? "緊急代碼" : (tr.level === 1 && tr.holdKind === "繞圈下降") ? "繞圈下降" : lvName[tr.level]; }
   function row(tr, exited){
     var m = tr.match;
     var vs = tr.vs == null ? "" : (tr.vs > 300 ? " ↑" : (tr.vs < -300 ? " ↓" : ""));
     var holdTxt = exited ? "已脫離 " + fmtDur(now - tr.exitAt) + "前（最多 " + tr.maxLaps + " 圈）"
-      : (tr.holding ? fmtDur(now - tr.holdSince) + "・" + tr.laps + " 圈" : (tr.turn < 90 ? "—" : "累積轉 " + Math.round(tr.turn) + "°"));
+      : (tr.holding ? fmtDur(now - tr.holdSince) + "・" + tr.laps + " 圈" + '<br><span class="note">' + esc(tr.holdKind || "") + "・預估延誤 ≥ " + Math.max(1, Math.round((now - tr.holdSince)/60000)) + " 分</span>"
+        : (tr.divert ? "原目的地 " + esc(tr.divert.from) + " → " + (tr.divert.to ? "可能備降 <b>" + esc(aptLabel(tr.divert.to)) + "</b>" + (tr.divert.toDist ? "（" + tr.divert.toDist + " 浬）" : "") : "去向不明")
+        : (tr.turn < 90 ? "—" : "累積轉 " + Math.round(tr.turn) + "°" + (tr.holdKind ? '<br><span class="note">' + esc(tr.holdKind) + "</span>" : ""))));
     var rtx = holdRoute(tr);
     var info = m
       ? '<span class="mono">' + esc(m.sched || "—") + "</span>" + (m.est ? ' <span class="note">預估 ' + esc(m.est) + "</span>" : "") +
         '<br><span class="note">' + (m.dir === "A" ? "自 " : "往 ") + esc(m.peer || "—") + (aptName(m.peer) ? " " + esc(aptName(m.peer)) : "") +
         (m.gate ? "・門 " + esc(m.gate) : "") + "</span>"
       : (rtx ? '<span class="note">' + esc(routeLong(rtx)) + "</span>" : '<span class="note">' + (tr.fno ? "看板無此班資料" : "—") + "</span>");
+    if((tr.holding || tr.divert || tr.level >= 1) && tr.destIata){
+      var wx = metarForIata(tr.destIata);
+      if(wx) info += '<br>' + metarBadge(wx, IATA_TO_ICAO[tr.destIata]);
+    }
     return '<tr class="hrow' + (HOLD.focus === tr.hex ? " sel" : "") + '" data-hex="' + esc(tr.hex) + '">' +
-      '<td><span class="hlv ' + (exited ? "l0" : "l" + tr.level) + '">' + (exited ? "已脫離" : lvName[tr.level]) + "</span>" +
+      '<td><span class="hlv ' + (exited ? "l0" : "l" + tr.level) + '">' + (exited ? "已脫離" : lvText(tr)) + "</span>" +
         (tr.emerg ? '<br><b style="color:var(--bad)">SQK ' + esc(tr.squawk) + "</b>" : "") + "</td>" +
       '<td class="mono" style="color:var(--amber);font-weight:600">' + esc(tr.fno || tr.cs || "—") +
         (tr.fno && tr.cs ? '<br><span class="note">' + esc(tr.cs) + "</span>" : "") + "</td>" +
@@ -3743,6 +3853,15 @@ function holdRender(){
     for(var i=0;i<rs.length;i++) rs[i].addEventListener("click", function(){ holdFocus(this.getAttribute("data-hex")); });
   }
   $("holdGrid").classList.toggle("solo", global);
+  // 機場周邊模式：顯示監看機場的即時天氣
+  var wxBox = $("holdWx");
+  if(wxBox){
+    var wxm = !global ? metarGet(cfg.code) : null;
+    wxBox.innerHTML = wxm ? "監看機場天氣：" + metarBadge(wxm, cfg.code) + ' <span class="note">（' + esc(wxm.rawOb || "") + "）</span>" : "";
+    wxBox.hidden = !wxm;
+  }
+  setTimeout(metarLookup, 900);
+  diagRender(); hlogRender();
   if(global) holdDrawMap(cfg, inScope, estList); else if($("holdMapWrap")) $("holdMapWrap").hidden = true;
   $("holdRadarBox").hidden = global;
   if(!global) holdDrawRadar(cfg, inScope);
@@ -4055,6 +4174,7 @@ function holdPlaneIcon(tr){
   var label = esc(tr.fno || tr.cs || "");
   var rt = routeText(tr.estRoute || holdRoute(tr));
   if(tr.est) label += '<span class="hmap-estag">推估</span>';
+  if(tr.divert) label += '<span class="hmap-divtag">轉降?' + (tr.divert.to ? " " + esc(tr.divert.to) : "") + "</span>";
   var halo = tr.level >= 2 ? '<span class="hmap-halo" style="border-color:' + col + ';width:' + (size + 14) + 'px;height:' + (size + 14) + 'px"></span>' : "";
   return L.divIcon({
     className: "hmap-icon lv" + tr.level + (tr.est ? " est" : ""),
@@ -4089,6 +4209,9 @@ function holdPopupHtml(tr){
     "<br>高度 " + fmtAlt(tr.alt) + (tr.gs != null ? "・地速 " + tr.gs + " kt" : "") + (tr.trk != null ? "・航向 " + Math.round(tr.trk) + "°" : "") +
     (tr.dist != null ? "<br>距 " + esc(tr.refApt.iata) + " " + Math.round(tr.dist) + " 浬（" + compass(tr.brg) + "方）" : "") +
     (tr.emerg ? '<br><b style="color:#d65656">SQUAWK ' + esc(tr.squawk) + "</b>" : "") +
+    (tr.holding ? "<br>" + esc(tr.holdKind || "盤旋") + "・預估延誤 ≥ " + Math.max(1, Math.round((Date.now() - tr.holdSince)/60000)) + " 分" : "") +
+    (tr.divert ? '<br><b style="color:#d65656">⚠ 疑似轉降</b>：原目的地 ' + esc(tr.divert.from) + (tr.divert.to ? " → 可能備降 " + esc(aptLabel(tr.divert.to)) : "") : "") +
+    (tr.destIata && metarForIata(tr.destIata) ? "<br>" + metarBadge(metarForIata(tr.destIata), IATA_TO_ICAO[tr.destIata]) : "") +
     (m ? "<br>表定 " + esc(m.sched || "—") + (m.est ? "・預估 " + esc(m.est) : "") + "<br>" + (m.dir === "A" ? "自 " : "往 ") + esc(m.peer || "") + " " + esc(aptName(m.peer) || "") : "") +
     "</div>";
 }
@@ -4246,6 +4369,432 @@ function estFromSchedule(cfg, haveFno, now){
 }
 var IATA_TO_ICAO_AL = (function(){ var o = {}; Object.keys(ICAO_IATA).forEach(function(k){ if(!o[ICAO_IATA[k]]) o[ICAO_IATA[k]] = k; }); return o; })();
 
+/* =========================================================
+   深度優化模組
+   A. 備降機場座標表（轉降判斷、推估位置共用）
+   B. 轉降偵測
+   C. 目的地 METAR（aviationweather.gov）
+   D. 資料來源診斷
+   E. 盤旋事件紀錄與統計
+   ========================================================= */
+
+/* ---------- A. 常用機場座標（IATA：ICAO, 緯度, 經度） ---------- */
+var ALT_APTS = {
+  TPE:["RCTP",25.0777,121.2328], TSA:["RCSS",25.0694,121.5525], KHH:["RCKH",22.5771,120.3500], RMQ:["RCMQ",24.2647,120.6208],
+  TNN:["RCNN",22.9504,120.2057], HKG:["VHHH",22.3080,113.9185], MFM:["VMMC",22.1496,113.5915], CAN:["ZGGG",23.3924,113.2988],
+  SZX:["ZGSZ",22.6393,113.8107], XMN:["ZSAM",24.5440,118.1277], FOC:["ZSFZ",25.9351,119.6633], PVG:["ZSPD",31.1434,121.8052],
+  SHA:["ZSSS",31.1979,121.3363], HGH:["ZSHC",30.2295,120.4344], NGB:["ZSNB",29.8267,121.4619], OKA:["ROAH",26.1958,127.6459],
+  ISG:["ROIG",24.3964,124.2450], MMY:["ROMY",24.7828,125.2950], KIX:["RJBB",34.4273,135.2440], ITM:["RJOO",34.7855,135.4382],
+  NRT:["RJAA",35.7720,140.3929], HND:["RJTT",35.5523,139.7800], NGO:["RJGG",34.8584,136.8054], FUK:["RJFF",33.5859,130.4511],
+  KMJ:["RJFT",32.8373,130.8550], KOJ:["RJFK",31.8034,130.7194], CTS:["RJCC",42.7752,141.6923], SDJ:["RJSS",38.1397,140.9170],
+  ICN:["RKSI",37.4602,126.4407], GMP:["RKSS",37.5583,126.7906], PUS:["RKPK",35.1795,128.9382], CJU:["RKPC",33.5113,126.4930],
+  MNL:["RPLL",14.5086,121.0198], CRK:["RPLC",15.1859,120.5603], CEB:["RPVM",10.3075,123.9794], SGN:["VVTS",10.8188,106.6520],
+  HAN:["VVNB",21.2212,105.8072], DAD:["VVDN",16.0439,108.1994], CXR:["VVCR",11.9982,109.2194], BKK:["VTBS",13.6900,100.7501],
+  DMK:["VTBD",13.9126,100.6068], SIN:["WSSS",1.3644,103.9915], KUL:["WMKK",2.7456,101.7099], PEN:["WMKP",5.2971,100.2770],
+  CGK:["WIII",-6.1256,106.6559], DPS:["WADD",-8.7482,115.1672], GUM:["PGUM",13.4834,144.7960], SPN:["PGSN",15.1190,145.7290],
+  ROR:["PTRO",7.3673,134.5443], CTU:["ZUUU",30.5785,103.9471], CKG:["ZUCK",29.7192,106.6417], ANC:["PANC",61.1743,-149.9963],
+  SEA:["KSEA",47.4490,-122.3093], PDX:["KPDX",45.5887,-122.5975], YVR:["CYVR",49.1939,-123.1844], SFO:["KSFO",37.6190,-122.3748],
+  OAK:["KOAK",37.7213,-122.2208], SJC:["KSJC",37.3626,-121.9290], SMF:["KSMF",38.6954,-121.5908], LAX:["KLAX",33.9416,-118.4085],
+  ONT:["KONT",34.0560,-117.6012], LAS:["KLAS",36.0840,-115.1537], PHX:["KPHX",33.4343,-112.0116], HNL:["PHNL",21.3187,-157.9225],
+  PRG:["LKPR",50.1008,14.2600], VIE:["LOWW",48.1103,16.5697], MUC:["EDDM",48.3538,11.7861], FRA:["EDDF",50.0379,8.5622]
+};
+(function(){
+  Object.keys(ALT_APTS).forEach(function(k){
+    var a = ALT_APTS[k];
+    if(!APTLL.cache[k] || APTLL.cache[k].lat == null) APTLL.cache[k] = { lat:a[1], lon:a[2] };
+    if(!IATA_TO_ICAO[k]) IATA_TO_ICAO[k] = a[0];
+    if(!ICAO_TO_IATA[a[0]]) ICAO_TO_IATA[a[0]] = k;
+  });
+})();
+function aptLabel(iata){ var n = aptName(iata); return iata + (n ? " " + n : ""); }
+
+/* ---------- B. 轉降偵測 ----------
+   條件：曾經接近目的地（250 浬內）或剛盤旋過，之後持續 4 分鐘以上航向背離目的地（夾角 > 100°），
+   且距離比最接近時遠了 30 浬以上 → 疑似轉降。依目前航向找最可能的備降機場。 */
+function holdDestOf(tr, cfg){
+  var rt = holdRoute(tr);
+  if(rt && rt.to && rt.to !== "?") return rt.to;
+  if(cfg.mode !== "airline" && tr.alt && tr.alt < 15000 && tr.dist != null && tr.dist < cfg.r) return cfg.apt.iata;
+  return "";
+}
+function likelyAlternate(tr, destIata){
+  var best = null, bestScore = 1e9;
+  Object.keys(ALT_APTS).forEach(function(k){
+    if(k === destIata) return;
+    var a = ALT_APTS[k], d = nm(tr.lat, tr.lon, a[1], a[2]);
+    if(d > 900 || d < 5) return;
+    var diff = Math.abs(angDiff(tr.trk || 0, bearing(tr.lat, tr.lon, a[1], a[2])));
+    if(diff > 40) return;
+    var score = diff * 4 + d / 15;
+    if(score < bestScore){ bestScore = score; best = { iata:k, dist:Math.round(d) }; }
+  });
+  return best;
+}
+function holdCheckDivert(tr, cfg, now){
+  if(tr.onGround || tr.trk == null) return;
+  var dest = holdDestOf(tr, cfg);
+  if(!dest){ return; }
+  var ll = aptLL(dest);
+  if(!ll) return;
+  var d = nm(tr.lat, tr.lon, ll.lat, ll.lon);
+  if(tr.destIata !== dest){ tr.destIata = dest; tr.minDest = d; tr.divert = null; }
+  if(d < tr.minDest) tr.minDest = d;
+  tr.destDist = d;
+  var recent = tr.pts.filter(function(p){ return now - p.t <= 4.5*60000; });
+  var span = recent.length ? now - recent[0].t : 0;
+  var awayAll = recent.length >= 2 && span >= 3.5*60000 && recent.every(function(p){
+    return Math.abs(angDiff(p.trk, bearing(p.lat, p.lon, ll.lat, ll.lon))) > 100;
+  });
+  var towardAll = recent.length >= 2 && recent.every(function(p){
+    return Math.abs(angDiff(p.trk, bearing(p.lat, p.lon, ll.lat, ll.lon))) < 60;
+  });
+  var wasNear = tr.minDest <= 250 || (tr.lastHold && now - tr.lastHold < 60*60000);
+  if(!tr.divert && !tr.holding && wasNear && awayAll && d >= tr.minDest + 30){
+    var alt = likelyAlternate(tr, dest);
+    tr.divert = { from:dest, to: alt ? alt.iata : "", toDist: alt ? alt.dist : null, since: now };
+  }else if(tr.divert){
+    if(towardAll && d < tr.minDest + 20) tr.divert = null;   // 又轉回目的地：取消
+    else{
+      var alt2 = likelyAlternate(tr, dest);
+      if(alt2){ tr.divert.to = alt2.iata; tr.divert.toDist = alt2.dist; }
+    }
+  }
+}
+
+/* ---------- C. METAR ---------- */
+var METAR = { cache:{}, pending:{}, busy:false };
+function metarGet(icao){
+  if(!icao) return null;
+  var c = METAR.cache[icao];
+  if(!c || Date.now() - c.t > 10*60000) METAR.pending[icao] = 1;
+  return c && c.m ? c.m : null;
+}
+function metarForIata(iata){ return metarGet(IATA_TO_ICAO[String(iata || "").toUpperCase()] || ""); }
+function metarLookup(){
+  var ids = Object.keys(METAR.pending);
+  if(!ids.length || METAR.busy) return;
+  METAR.busy = true;
+  var batch = ids.slice(0, 20);
+  batch.forEach(function(i){ delete METAR.pending[i]; });
+  var url = "https://aviationweather.gov/api/data/metar?format=json&ids=" + batch.join(",");
+  var get = holdBridge() ? holdViaBridge : holdViaFetch;
+  get(url).then(function(arr){
+    var now = Date.now();
+    batch.forEach(function(i){ METAR.cache[i] = { t: now, m: (METAR.cache[i] && METAR.cache[i].m) || null }; });
+    (Array.isArray(arr) ? arr : []).forEach(function(m){ if(m && m.icaoId) METAR.cache[m.icaoId] = { t: now, m: m }; });
+  }, function(){
+    batch.forEach(function(i){ METAR.cache[i] = { t: Date.now() - 8*60000, m: METAR.cache[i] && METAR.cache[i].m }; });
+  }).then(function(){ METAR.busy = false; holdRender(); });
+}
+function metarCeiling(m){
+  var c = (m.clouds || []).filter(function(x){ return /BKN|OVC|VV/.test(x.cover) && x.base != null; }).map(function(x){ return +x.base; });
+  return c.length ? Math.min.apply(null, c) : null;
+}
+function metarVisKm(m){
+  if(m.visib == null) return null;
+  var v = String(m.visib);
+  if(/\+/.test(v)) return 10;
+  var n = parseFloat(v);
+  return isFinite(n) ? Math.round(n * 1.609 * 10) / 10 : null;
+}
+function metarCat(m){
+  if(m.fltCat) return m.fltCat;
+  var c = metarCeiling(m), v = metarVisKm(m);
+  if((c != null && c < 500) || (v != null && v < 1.6)) return "LIFR";
+  if((c != null && c < 1000) || (v != null && v < 4.8)) return "IFR";
+  if((c != null && c <= 3000) || (v != null && v <= 8)) return "MVFR";
+  return "VFR";
+}
+var METAR_CAT_ZH = { VFR:"目視", MVFR:"邊際目視", IFR:"儀器", LIFR:"低儀器" };
+function metarShort(m){
+  if(!m) return "";
+  var parts = [];
+  if(m.wdir != null || m.wspd != null){
+    var wd = m.wdir === "VRB" ? "VRB" : (m.wdir != null ? String(m.wdir).padStart(3, "0") + "°" : "");
+    parts.push("風 " + wd + (m.wspd != null ? m.wspd : "") + (m.wgst ? "G" + m.wgst : "") + "kt");
+  }
+  var v = metarVisKm(m); if(v != null) parts.push("能見 " + (v >= 10 ? "10km+" : v + "km"));
+  var c = metarCeiling(m); if(c != null) parts.push("雲幕 " + c + "ft");
+  if(m.wxString) parts.push(m.wxString);
+  return parts.join("｜");
+}
+/* 惡劣天氣提示：陣風 ≥ 35kt、雷雨、低儀器天氣、能見度 < 1.6km */
+function metarSevere(m){
+  if(!m) return "";
+  var w = [];
+  if(m.wgst >= 35 || m.wspd >= 30) w.push("強風");
+  if(/TS/.test(m.wxString || "")) w.push("雷雨");
+  if(/\+RA|\+SHRA/.test(m.wxString || "")) w.push("大雨");
+  if(/FG/.test(m.wxString || "")) w.push("霧");
+  var c = metarCat(m); if(c === "LIFR" || c === "IFR") w.push(METAR_CAT_ZH[c] + "天氣");
+  return w.join("、");
+}
+function metarBadge(m, icao){
+  if(!m) return "";
+  var cat = metarCat(m);
+  return '<span class="wx wx-' + cat + '" title="' + esc(m.rawOb || "") + '">' + esc(icao || m.icaoId) + " " + cat + "</span> " +
+    '<span class="note">' + esc(metarShort(m)) + "</span>" + (metarSevere(m) ? ' <b class="wx-sev">⚠ ' + esc(metarSevere(m)) + "</b>" : "");
+}
+function metarPlain(m){
+  if(!m) return "";
+  var cat = metarCat(m);
+  return m.icaoId + " " + cat + "（" + METAR_CAT_ZH[cat] + "）" + (metarShort(m) ? "｜" + metarShort(m) : "") + (metarSevere(m) ? "｜⚠ " + metarSevere(m) : "");
+}
+
+/* ---------- D. 資料來源診斷 ---------- */
+var DIAG = {};
+function diagName(url){
+  url = String(url);
+  if(/api\.adsb\.lol\/v2\/point/.test(url)) return "adsb.lol 機場周邊";
+  if(/api\.adsb\.lol\/v2\/type/.test(url)) return "adsb.lol 依機型";
+  if(/api\.adsb\.lol\/v2\/hex/.test(url)) return "adsb.lol 機型補查";
+  if(/api\.adsb\.lol\/api\/0\/routeset/.test(url)) return "adsb.lol 航線";
+  if(/adsb\.fi/.test(url)) return "adsb.fi";
+  if(/opensky-network/.test(url)) return "OpenSky";
+  if(/hexdb\.io\/api\/v1\/route/.test(url)) return "hexdb 航線";
+  if(/hexdb\.io\/api\/v1\/aircraft/.test(url)) return "hexdb 機型";
+  if(/hexdb\.io\/api\/v1\/airport/.test(url)) return "hexdb 機場座標";
+  if(/aviationweather/.test(url)) return "METAR 天氣";
+  if(/api\.telegram\.org/.test(url)) return "Telegram";
+  if(/airplanes\.live/.test(url)) return "airplanes.live";
+  return "自訂代理";
+}
+function diagRec(url, ok, ms, err){
+  var n = diagName(url), d = DIAG[n] || (DIAG[n] = { ok:0, fail:0, ms:0, lastOk:0, lastFail:0, err:"" });
+  if(ok){ d.ok++; d.lastOk = Date.now(); d.ms = d.ms ? Math.round(d.ms * 0.7 + ms * 0.3) : ms; }
+  else{ d.fail++; d.lastFail = Date.now(); d.err = String(err || "失敗").slice(0, 80); }
+}
+function diagState(d){
+  if(d.lastOk >= d.lastFail) return ["ok", "正常"];
+  if(/429/.test(d.err)) return ["warn", "被限流"];
+  if(/403|CORS|跨站|無法連線|不允許/.test(d.err)) return ["bad", "被擋"];
+  if(/逾時/.test(d.err)) return ["warn", "逾時"];
+  return ["bad", "錯誤"];
+}
+function diagAgo(t){ if(!t) return "—"; var s = Math.round((Date.now() - t)/1000); return s < 60 ? s + " 秒前" : s < 3600 ? Math.round(s/60) + " 分前" : Math.round(s/3600) + " 小時前"; }
+function diagRender(){
+  var box = $("diagBody");
+  if(!box || !box.closest("details").open) return;
+  var cfg = holdCfg(), ch = holdChannel(cfg);
+  var names = Object.keys(DIAG).sort();
+  box.innerHTML = '<p class="note" style="margin:0 0 8px">目前通道：<b>' + (ch === "bridge" ? "ADS-B 橋接擴充功能" : ch === "proxy" ? "自訂代理" : "直接連線（多半會被瀏覽器擋下）") + "</b>" +
+    (HOLD.lastSrc ? "　最近一次資料來源：<b>" + esc(HOLD.lastSrc) + "</b>" : "") + "</p>" +
+    (names.length ? '<div class="tbox" style="margin-top:0"><table><thead><tr><th>來源</th><th>狀態</th><th>最後成功</th><th>成功／失敗</th><th>平均回應</th><th>最後錯誤</th></tr></thead><tbody>' +
+      names.map(function(n){
+        var d = DIAG[n], st = diagState(d);
+        return "<tr><td>" + esc(n) + '</td><td><span class="dg dg-' + st[0] + '">' + st[1] + "</span></td><td>" + diagAgo(d.lastOk) + "</td><td>" + d.ok + "／" + d.fail +
+          "</td><td>" + (d.ms ? d.ms + " ms" : "—") + '</td><td class="note">' + esc(d.lastFail ? d.err + "（" + diagAgo(d.lastFail) + "）" : "—") + "</td></tr>";
+      }).join("") + "</tbody></table></div>"
+    : '<div class="empty">開始監看後會顯示各資料來源的狀態。</div>');
+}
+
+/* ---------- E. 盤旋事件紀錄 ---------- */
+var HLOG = { list:[], dirty:false };
+(function(){ try{ HLOG.list = JSON.parse(localStorage.getItem("holdLog") || "[]"); }catch(e){ HLOG.list = []; } })();
+function hlogSave(){
+  if(!HLOG.dirty) return;
+  HLOG.dirty = false;
+  if(HLOG.list.length > 3000) HLOG.list = HLOG.list.slice(-3000);
+  try{ localStorage.setItem("holdLog", JSON.stringify(HLOG.list)); }catch(e){}
+}
+function hlogFind(id){ for(var i = HLOG.list.length - 1; i >= 0; i--) if(HLOG.list[i].id === id) return HLOG.list[i]; return null; }
+function hlogBase(tr, kind, start){
+  var rt = holdRoute(tr);
+  return { id: tr.hex + "-" + kind + "-" + Math.round(start/1000), kind: kind, fno: tr.fno || tr.cs || tr.hex.toUpperCase(), cs: tr.cs || "", hex: tr.hex,
+    type: tr.type || "", from: rt ? rt.from : "", to: rt ? rt.to : (tr.destIata || ""), start: start, end: start, laps: 0,
+    altMin: tr.alt || 0, altMax: tr.alt || 0, wx: "", outcome: kind === "divert" ? "轉降中" : "盤旋中", divertTo: "", src: "page" };
+}
+/* 每次分析完呼叫，依航機狀態新增／更新紀錄 */
+function hlogTrack(tr, now){
+  if(tr.holding){
+    if(!tr.logId){ var ev = hlogBase(tr, "hold", tr.holdSince); tr.logId = ev.id; if(!hlogFind(ev.id)) HLOG.list.push(ev); }
+    var e = hlogFind(tr.logId);
+    if(e){
+      e.end = now; e.laps = Math.max(e.laps, tr.laps || 0);
+      if(tr.alt){ e.altMin = Math.min(e.altMin || tr.alt, tr.alt); e.altMax = Math.max(e.altMax, tr.alt); }
+      if(!e.wx){ var m = metarForIata(e.to || tr.destIata); if(m) e.wx = metarPlain(m); }
+      if(!e.to && tr.destIata) e.to = tr.destIata;
+      HLOG.dirty = true;
+    }
+  }else if(tr.logId){
+    var e2 = hlogFind(tr.logId);
+    if(e2 && e2.outcome === "盤旋中"){ e2.outcome = "已脫離"; e2.end = tr.exitAt || now; HLOG.dirty = true; }
+    if(e2){
+      if(tr.divert && e2.outcome !== "轉降"){ e2.outcome = "轉降"; e2.divertTo = tr.divert.to; HLOG.dirty = true; }
+      else if(tr.onGround && e2.outcome === "已脫離"){
+        var ll = aptLL(e2.to), near = ll ? nm(tr.lat, tr.lon, ll.lat, ll.lon) < 15 : false;
+        e2.outcome = near ? "落地" : "落地（非原目的地）"; HLOG.dirty = true;
+      }
+      if(now - e2.end > 3*3600000) tr.logId = null;   // 追蹤結果最多 3 小時
+    }
+  }
+  // 沒盤旋直接轉降，也記一筆
+  if(tr.divert && !tr.divLogId){
+    var linked = tr.logId && hlogFind(tr.logId);
+    if(!linked){ var d = hlogBase(tr, "divert", tr.divert.since); d.divertTo = tr.divert.to; tr.divLogId = d.id; if(!hlogFind(d.id)) HLOG.list.push(d); HLOG.dirty = true; }
+    else tr.divLogId = linked.id;
+  }
+  if(tr.divLogId){
+    var dv = hlogFind(tr.divLogId);
+    if(dv && dv.kind === "divert"){
+      dv.end = now; if(tr.divert && tr.divert.to) dv.divertTo = tr.divert.to;
+      if(tr.onGround && dv.outcome === "轉降中"){ dv.outcome = "轉降落地"; HLOG.dirty = true; }
+      if(!tr.divert && dv.outcome === "轉降中"){ dv.outcome = "取消（轉回原目的地）"; HLOG.dirty = true; }
+    }
+  }
+}
+function hlogMerge(extra){
+  var have = {};
+  HLOG.list.forEach(function(e){ have[e.id] = e; });
+  (extra || []).forEach(function(e){
+    var h = have[e.id];
+    if(!h){ HLOG.list.push(e); have[e.id] = e; }
+    else if(e.end > h.end){ Object.assign(h, e); }
+  });
+  HLOG.list.sort(function(a,b){ return a.start - b.start; });
+  HLOG.dirty = true; hlogSave();
+}
+function hlogFmtTime(t){
+  var d = new Date(t);
+  return new Intl.DateTimeFormat("zh-TW", { timeZone:"Asia/Taipei", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit", hour12:false }).format(d);
+}
+function hlogHour(t){ return +new Intl.DateTimeFormat("en-GB", { timeZone:"Asia/Taipei", hour:"2-digit", hour12:false }).format(new Date(t)) % 24; }
+function hlogRender(){
+  var box = $("hlogBody");
+  if(!box || !box.closest("details").open) return;
+  var days = +($("hlogRange") ? $("hlogRange").value : 30), cut = Date.now() - days*86400000;
+  var list = HLOG.list.filter(function(e){ return e.start >= cut; });
+  var holds = list.filter(function(e){ return e.kind === "hold"; });
+  var mins = holds.map(function(e){ return (e.end - e.start)/60000; });
+  var avg = mins.length ? mins.reduce(function(a,b){ return a+b; }, 0) / mins.length : 0;
+  var maxm = mins.length ? Math.max.apply(null, mins) : 0;
+  var divs = list.filter(function(e){ return /轉降/.test(e.outcome); }).length;
+  var byHour = new Array(24).fill(0);
+  holds.forEach(function(e){ byHour[hlogHour(e.start)]++; });
+  var hmax = Math.max.apply(null, byHour.concat([1]));
+  var byDest = {};
+  holds.forEach(function(e){ var k = e.to || "未知"; var o = byDest[k] || (byDest[k] = { n:0, min:0, div:0 }); o.n++; o.min += (e.end - e.start)/60000; });
+  list.forEach(function(e){ if(/轉降/.test(e.outcome)){ var k = e.to || "未知"; (byDest[k] || (byDest[k] = { n:0, min:0, div:0 })).div++; } });
+  var dests = Object.keys(byDest).sort(function(a,b){ return byDest[b].n - byDest[a].n; }).slice(0, 10);
+  var html = '<div class="kpis" style="margin-top:0">' +
+    kpi("", "盤旋事件", holds.length + " 次") + kpi("c", "平均盤旋", avg ? Math.round(avg) + " 分" : "—") +
+    kpi("r", "最長盤旋", maxm ? Math.round(maxm) + " 分" : "—") + kpi("r", "轉降", divs + " 次") + "</div>";
+  html += '<h3 style="margin:16px 0 6px;font-size:14px">各時段盤旋次數（台灣時間，依開始盤旋時間）</h3><div class="hbars">' +
+    byHour.map(function(n, h){
+      return '<div class="hbar" title="' + h + ' 時：' + n + ' 次"><i style="height:' + Math.round(n / hmax * 100) + '%"></i><span>' + h + "</span></div>";
+    }).join("") + "</div>";
+  if(dests.length){
+    html += '<h3 style="margin:16px 0 6px;font-size:14px">依目的地</h3><div class="tbox" style="margin-top:0"><table><thead><tr><th>目的地</th><th>盤旋次數</th><th>平均盤旋</th><th>轉降</th></tr></thead><tbody>' +
+      dests.map(function(k){ var o = byDest[k]; return "<tr><td>" + esc(aptLabel(k)) + "</td><td>" + o.n + "</td><td>" + (o.n ? Math.round(o.min / o.n) + " 分" : "—") + "</td><td>" + o.div + "</td></tr>"; }).join("") +
+      "</tbody></table></div>";
+  }
+  var recent = list.slice(-60).reverse();
+  html += '<h3 style="margin:16px 0 6px;font-size:14px">最近紀錄</h3>' + (recent.length ? '<div class="tbox" style="margin-top:0;max-height:420px"><table><thead><tr><th>開始</th><th>類型</th><th>航班</th><th>機型</th><th>航線</th><th>盤旋</th><th>高度</th><th>結果</th><th>目的地天氣</th></tr></thead><tbody>' +
+    recent.map(function(e){
+      var mn = Math.max(0, Math.round((e.end - e.start)/60000));
+      return "<tr><td class=\"mono\">" + hlogFmtTime(e.start) + "</td><td>" + (e.kind === "hold" ? "盤旋" : "轉降") + "</td>" +
+        '<td class="mono" style="font-weight:600">' + esc(e.fno) + "</td><td>" + esc(e.type || "—") + "</td>" +
+        "<td>" + esc((e.from || "?") + "→" + (e.to || "?")) + "</td>" +
+        "<td>" + (e.kind === "hold" ? mn + " 分・" + e.laps + " 圈" : "—") + "</td>" +
+        '<td class="mono">' + (e.altMin ? fmtAlt(e.altMin) + (e.altMax - e.altMin > 900 ? "～" + fmtAlt(e.altMax) : "") : "—") + "</td>" +
+        "<td>" + esc(e.outcome + (e.divertTo ? " " + e.divertTo : "")) + "</td>" +
+        '<td class="note">' + esc(e.wx || "—") + "</td></tr>";
+    }).join("") + "</tbody></table></div>" : '<div class="empty">還沒有紀錄。開始監看後，偵測到盤旋或轉降就會自動記下來。</div>');
+  box.innerHTML = html;
+}
+function hlogCsv(){
+  var head = ["開始時間","結束時間","類型","航班","呼號","ICAO位址","機型","出發地","目的地","盤旋分鐘","圈數","最低高度ft","最高高度ft","結果","轉降機場","目的地天氣","來源"];
+  var rows = HLOG.list.map(function(e){
+    return [hlogFmtTime(e.start), hlogFmtTime(e.end), e.kind === "hold" ? "盤旋" : "轉降", e.fno, e.cs, e.hex.toUpperCase(), e.type, e.from, e.to,
+      Math.round((e.end - e.start)/60000), e.laps, e.altMin, e.altMax, e.outcome, e.divertTo, e.wx, e.src === "bg" ? "背景監看" : "看板"];
+  });
+  var csv = "﻿" + [head].concat(rows).map(function(r){ return r.map(function(v){ v = String(v == null ? "" : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(","); }).join("\r\n");
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type:"text/csv;charset=utf-8" }));
+  a.download = "盤旋紀錄_" + twDate() + ".csv";
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
+}
+
+/* =========================================================
+   背景監看（擴充功能 v2.0）：設定下傳、狀態查詢、紀錄合併
+   ========================================================= */
+var BG = { active:false, status:null, ver:"" };
+function bgCmd(cmd, data){
+  return new Promise(function(resolve, reject){
+    if(!holdBridge()) return reject(new Error("沒有偵測到 ADS-B 橋接擴充功能"));
+    var id = ++HOLD_BRIDGE_SEQ;
+    HOLD_BRIDGE_Q[id] = {
+      to: setTimeout(function(){ delete HOLD_BRIDGE_Q[id]; reject(new Error("擴充功能沒有回應（可能版本太舊，請更新到 v2.0）")); }, 15000),
+      done: function(m){
+        if(!m.ok) return reject(new Error(m.error || "失敗"));
+        try{ resolve(JSON.parse(m.body || "null")); }catch(e){ resolve(null); }
+      }
+    };
+    window.postMessage({ __adsb:"cmd", id:id, cmd:cmd, data:data || null }, "*");
+  });
+}
+function bgBuildConfig(){
+  var cfg = holdCfg();
+  return {
+    enabled: true, mode: cfg.mode,
+    apt: { icao: cfg.code, iata: cfg.apt.iata, name: cfg.apt.name, lat: cfg.apt.lat, lon: cfg.apt.lon },
+    r: cfg.r, airlines: cfg.airlines, gAl: cfg.gAl, types: cfg.types, tg: tgCfg()
+  };
+}
+function bgPaint(){
+  var st = BG.status;
+  BG.active = !!(st && st.enabled);
+  $("bgPill").textContent = BG.active ? "執行中" : "未啟用";
+  if(!st){ $("bgStatus").textContent = holdBridge() ? "" : "需要安裝 ADS-B 橋接擴充功能 v2.0。"; return; }
+  var c = st.config || {};
+  $("bgStatus").innerHTML = BG.active
+    ? "監看：<b>" + (c.mode === "airline" ? "指定航空公司 " + esc((c.gAl || []).join("、")) : "機場周邊 " + esc(c.apt ? c.apt.iata : "") + " " + c.r + " 浬") + "</b>" +
+      "　Telegram：" + (c.tg && c.tg.on && c.tg.token && c.tg.chat ? "推播中" : "未啟用") +
+      "<br>最後偵測：" + (st.lastRun ? diagAgo(st.lastRun) : "—") + (st.lastSrc ? "（" + esc(st.lastSrc) + "，" + (st.count || 0) + " 架）" : "") +
+      (st.holding ? "　目前盤旋：<b>" + st.holding + "</b> 架" : "") + (st.lastErr ? '<br><span style="color:var(--bad)">最近錯誤：' + esc(st.lastErr) + "</span>" : "") +
+      "<br>擴充功能版本 " + esc(st.version || "")
+    : "目前沒有在背景監看。" + (st.version ? "（擴充功能版本 " + esc(st.version) + "）" : "");
+}
+function bgPoll(){
+  if(!holdBridge()) { bgPaint(); return; }
+  bgCmd("status").then(function(st){ BG.status = st; bgPaint(); }, function(e){ BG.status = null; $("bgStatus").textContent = e.message; BG.active = false; $("bgPill").textContent = "未啟用"; });
+  bgCmd("getLog").then(function(list){ if(Array.isArray(list) && list.length){ hlogMerge(list); hlogRender(); $("hlogPill").textContent = HLOG.list.length + " 筆"; } }, function(){});
+}
+function bgInit(){
+  if(!$("btnBgOn")) return;
+  $("btnBgOn").addEventListener("click", function(){
+    var conf = bgBuildConfig();
+    if(conf.mode === "airline" && !conf.gAl.length){ $("bgMsg").textContent = "請先輸入航空公司代碼。"; return; }
+    $("bgMsg").textContent = "設定中…";
+    bgCmd("setConfig", conf).then(function(st){ BG.status = st; bgPaint(); $("bgMsg").textContent = "背景監看已開啟，可以關掉這個分頁了。"; },
+      function(e){ $("bgMsg").textContent = "失敗：" + e.message; });
+  });
+  $("btnBgOff").addEventListener("click", function(){
+    bgCmd("setConfig", { enabled:false }).then(function(st){ BG.status = st; bgPaint(); $("bgMsg").textContent = "已停止背景監看。"; },
+      function(e){ $("bgMsg").textContent = "失敗：" + e.message; });
+  });
+  setTimeout(bgPoll, 1200);
+  setInterval(bgPoll, 30000);
+  // 紀錄區
+  $("hlogPill").textContent = HLOG.list.length + " 筆";
+  $("hlogBox").addEventListener("toggle", hlogRender);
+  $("hlogRange").addEventListener("change", hlogRender);
+  $("btnHlogCsv").addEventListener("click", hlogCsv);
+  $("btnHlogClear").addEventListener("click", function(){
+    if(!confirm("確定清除所有盤旋紀錄？（背景監看的紀錄也會一併清除）")) return;
+    HLOG.list = []; HLOG.dirty = true; hlogSave(); hlogRender(); $("hlogPill").textContent = "0 筆";
+    bgCmd("clearLog").catch(function(){});
+  });
+  $("diagBox").addEventListener("toggle", diagRender);
+  setInterval(function(){
+    var bad = Object.keys(DIAG).filter(function(n){ return diagState(DIAG[n])[0] !== "ok"; }).length;
+    $("diagPill").textContent = Object.keys(DIAG).length ? (bad ? bad + " 個異常" : "全部正常") : "—";
+    $("hlogPill").textContent = HLOG.list.length + " 筆";
+    diagRender();
+  }, 5000);
+}
+
 /* 以太平洋為中心：西經（美洲）加 360°，讓北美航機出現在亞洲右邊，跨換日線的航跡也能連續 */
 function pLon(lon){ return lon < -30 ? lon + 360 : lon; }
 function holdDrawMap(cfg, list, estList){
@@ -4256,30 +4805,48 @@ function holdDrawMap(cfg, list, estList){
   holdLoadLeaflet().then(function(){
     holdMapInit();
     HMAP.map.invalidateSize();
-    HMAP.layer.clearLayers();
-    HMAP.markers = {};
-    var now = Date.now(), pts = [];
+    HMAP.layer.clearLayers();              // 航跡線每次重畫
+    if(!HMAP.markLayer) HMAP.markLayer = L.layerGroup().addTo(HMAP.map);
+    HMAP.markers = HMAP.markers || {};
+    var now = Date.now(), pts = [], keep = {};
+    function place(tr, zi, moving){
+      var html = holdPlaneIcon(tr).options.html, mk = HMAP.markers[tr.hex];
+      var ll = [tr.lat, pLon(tr.lon)];
+      if(!mk){
+        mk = L.marker(ll, { icon: holdPlaneIcon(tr), zIndexOffset: zi }).bindPopup(holdPopupHtml(tr)).addTo(HMAP.markLayer);
+        HMAP.markers[tr.hex] = mk;
+      }else{
+        if(mk._hHtml !== html) mk.setIcon(holdPlaneIcon(tr));
+        mk.setZIndexOffset(zi);
+        mk.setPopupContent(holdPopupHtml(tr));
+      }
+      mk._hHtml = html;
+      // 平滑移動：記錄定位時間、速度與航向，由動畫迴圈往前推算
+      mk._base = moving && tr.gs > 60 && tr.trk != null && !tr.holding
+        ? { lat: tr.lat, lon: tr.lon, t: tr.posT || now, gs: tr.gs, trk: tr.trk } : null;
+      if(!mk._base) mk.setLatLng(ll);
+      keep[tr.hex] = 1;
+      pts.push(ll);
+    }
     list.slice().sort(function(a,b){ return a.level - b.level; }).forEach(function(tr){
       if(tr.onGround || tr.lat == null) return;
       var trail = tr.pts.filter(function(p){ return now - p.t <= 30*60000; }).map(function(p){ return [p.lat, pLon(p.lon)]; });
       if(trail.length > 1){
         L.polyline(trail, { className: "hmap-trail lv" + tr.level, color: tr.level >= 2 ? "#d65656" : "#6b8397", weight: tr.level >= 2 ? 2.5 : 1.2, opacity: tr.level >= 2 ? .9 : .5 }).addTo(HMAP.layer);
       }
-      var mk = L.marker([tr.lat, pLon(tr.lon)], { icon: holdPlaneIcon(tr), zIndexOffset: tr.level * 1000 })
-        .bindPopup(holdPopupHtml(tr)).addTo(HMAP.layer);
-      HMAP.markers[tr.hex] = mk;
-      pts.push([tr.lat, pLon(tr.lon)]);
+      place(tr, tr.level * 1000, true);
     });
     // 推估位置：半透明＋虛線框；失聯航機畫一條虛線連回最後收到訊號的位置
     estList.forEach(function(tr){
       if(tr.lastPos){
         L.polyline([[tr.lastPos.lat, pLon(tr.lastPos.lon)], [tr.lat, pLon(tr.lon)]], { className:"hmap-trail hmap-estline", color:"#8aa0b3", weight:1.5, opacity:.8, dashArray:"4 6" }).addTo(HMAP.layer);
       }
-      var mk = L.marker([tr.lat, pLon(tr.lon)], { icon: holdPlaneIcon(tr), zIndexOffset: -500 })
-        .bindPopup(holdPopupHtml(tr)).addTo(HMAP.layer);
-      HMAP.markers[tr.hex] = mk;
-      pts.push([tr.lat, pLon(tr.lon)]);
+      place(tr, -500, false);
     });
+    Object.keys(HMAP.markers).forEach(function(k){
+      if(!keep[k]){ HMAP.markLayer.removeLayer(HMAP.markers[k]); delete HMAP.markers[k]; }
+    });
+    holdAnimStart();
     // 換公司或按「全部顯示」時才自動縮放，其餘保留使用者目前的視角
     var key = cfg.gAl.join(",");
     if(pts.length && HMAP.fitted !== key){
@@ -4298,6 +4865,21 @@ function holdDrawMap(cfg, list, estList){
     setTimeout(aptLookup, 700);
     if(HMAP.pendingSweep){ HMAP.pendingSweep = false; holdSweep(); }
   }, function(e){ $("holdMapErr").textContent = e.message + "，請確認網路可連到 cdnjs.cloudflare.com。"; });
+}
+/* 動畫迴圈：每 0.25 秒依地速與航向把飛機往前推（最多推到下次更新時間的 2 倍，避免失聯時一直飛） */
+function holdAnimStart(){
+  if(HMAP.animTimer) return;
+  HMAP.animTimer = setInterval(function(){
+    if(!HMAP.map || document.hidden) return;
+    var now = Date.now(), cap = (HOLD.lastPollMs || 15000) * 2 + 5000;
+    Object.keys(HMAP.markers || {}).forEach(function(k){
+      var mk = HMAP.markers[k], b = mk._base;
+      if(!b) return;
+      var dt = Math.min(Math.max(0, now - b.t), cap);
+      var p = destPoint(b.lat, b.lon, b.trk, b.gs * dt / 3600000);
+      mk.setLatLng([p.lat, pLon(p.lon)]);
+    });
+  }, 250);
 }
 
 function holdFocus(hex){
@@ -4341,6 +4923,7 @@ function holdTick(){
       // OpenSky 有每日額度：機場周邊 30 秒一次（1 credit），全球航空公司 90 秒一次（4 credits）
       if(cfg.mode === "airline" && (/OpenSky/.test(HOLD.lastSrc) || HOLD.usedOpenSkyGlobal)) wait = 90000;
       else if(/OpenSky/.test(HOLD.lastSrc)) wait = 30000;
+      HOLD.lastPollMs = wait;
       HOLD.timer = setTimeout(holdTick, wait);
     }
   });
@@ -5732,6 +6315,7 @@ function shift(hhmm, mins){
   if($("btnFmapOpen")) $("btnFmapOpen").addEventListener("click", openFmapNewTab);
   holdInit();
   tgInit();
+  bgInit();
 
   switchTab("tdx");
   refreshAll();
