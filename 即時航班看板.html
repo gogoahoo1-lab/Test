@@ -382,7 +382,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-28g</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-28i</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -901,7 +901,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
       <summary>推估位置修正 API（選用）<span class="pill" id="fixPill">未設定</span></summary>
       <div style="padding:10px 16px 14px;border-top:1px solid var(--line)">
         <p class="note" style="margin:0 0 10px">AirLabs 可填最多 3 組金鑰：平常用第 1 組，遇到金鑰失效、額度用完或當日達上限時，自動改用第 2、第 3 組，原本那組到期（隔天或下個月）後自動恢復。</p>
-        <p class="note" style="margin:0 0 10px">洋區收不到 ADS-B 時，向航班資料 API 查詢實際起飛時間、預計抵達時間與最新位置，讓「推估」位置更準確；已落地的航班也會自動移除。只在有推估航機時才查詢，每班依下方間隔重查，並有每日上限。需要 ADS-B 橋接擴充功能 v2.1。API Key 只存在這台電腦的瀏覽器。</p>
+        <p class="note" style="margin:0 0 10px">洋區收不到 ADS-B 時，向航班資料 API 查詢實際起飛時間、預計抵達時間與最新位置，讓「推估」位置更準確；已落地的航班也會自動移除。只在有推估航機時才查詢，每班依下方間隔重查，並有每日上限。需要 ADS-B 橋接擴充功能 v2.1 以上。API Key 只存在這台電腦的瀏覽器。</p>
         <div class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end">
           <label class="f">服務
             <select id="fixProv"><option value="">不使用</option><option value="airlabs">AirLabs（有免費方案）</option><option value="aeroapi">FlightAware AeroAPI（每月 5 美元免費額度）</option></select>
@@ -1027,7 +1027,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
 <section id="tab-help" hidden>
   <div class="card">
     <h2>怎麼用</h2>
-    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-28g</b>（盤旋偵測：轉降偵測、目的地天氣、背景監看、資料來源狀態、盤旋紀錄統計）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
+    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-28i</b>（盤旋偵測：轉降偵測、目的地天氣、背景監看、資料來源狀態、盤旋紀錄統計）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
     <ul class="doc">
       <li>桃園機場走「<b>TDX 桃園機場</b>」頁籤最省事：填 Client ID／Secret 後按立即抓取，到場與離場會一次抓齊。</li>
       <li>TDX 的 <code>$top</code> 預設值只有 <b>30 筆</b>，不分頁就只會拿到 30 班。本頁已改成自動帶 <code>$top</code>／<code>$skip</code> 分頁抓到底。</li>
@@ -3403,6 +3403,7 @@ function holdTrySources(srcs, get){
     return get(s.url).then(function(j){
       var list = holdNormalize(j);
       HOLD.lastSrc = s.name + (j.src ? "・" + j.src : "") + (j.__remaining || j.remaining ? "（今日剩 " + (j.__remaining || j.remaining) + " credits）" : "");
+      if(/OpenSky/.test(s.name) && (j.__remaining || j.remaining)) HOLD.osRemain = parseInt(j.__remaining || j.remaining, 10);
       return list;
     }, function(e){ errs.push(s.name + "：" + e.message); return next(); });
   }
@@ -3451,14 +3452,22 @@ function holdFetchFlights(cfg){
       .then(pick, function(errs){ throw new Error(errs.join("；")); });
   }
   var get = ch === "bridge" ? holdViaBridge : holdViaFetch;
-  var out = [], okAny = false, errs = [], i = 0;
+  var out = [], okAny = false, errs = [], i = 0, now0 = Date.now();
   function wait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+  // adsb.lol 被限流（429）時退避：1 → 2 → 4 → 8 → 最多 15 分鐘不打它
+  if(now0 < LOL.until) i = cfg.types.length;
   function step(){
     if(i >= cfg.types.length){
-      if(okAny){ HOLD.lastSrc = (ch === "bridge" ? "擴充功能・" : "") + "adsb.lol"; return pick(out); }
+      if(okAny){ LOL.backoff = 0; HOLD.lastSrc = (ch === "bridge" ? "擴充功能・" : "") + "adsb.lol"; return pick(out); }
       if(ch !== "bridge") return Promise.reject(new Error(HOLD_CORS_HINT));
-      // 備援：OpenSky 全球（4 credits／次）
-      HOLD.usedOpenSkyGlobal = true;
+      // 備援：OpenSky 全球（4 credits／次）；90 秒內打過或今日額度快用完就先不打，沿用現有資料
+      var osWait = Date.now() - (HOLD.lastOS || 0) < 88000, osLow = HOLD.osRemain != null && HOLD.osRemain < 40;
+      if(osWait || osLow){
+        HOLD.skipNote = (now0 < LOL.until ? "adsb.lol 限流冷卻中（" + fixHm(LOL.until) + " 恢復）" : "adsb.lol 無資料") +
+          (osLow ? "，OpenSky 今日額度快用完" : "，等待 OpenSky 下一輪");
+        return null;   // 這一輪不更新，飛機依速度與航向繼續推算
+      }
+      HOLD.usedOpenSkyGlobal = true; HOLD.lastOS = Date.now();
       return holdTrySources([{ name:"OpenSky", url:"https://opensky-network.org/api/states/all?extended=1" }], get)
         .then(function(l){ HOLD.lastSrc = "擴充功能・" + HOLD.lastSrc; return pick(l); },
               function(e2){ throw new Error(errs.concat(e2).join("；")); });
@@ -3468,12 +3477,17 @@ function holdFetchFlights(cfg){
       okAny = true; out = out.concat(holdNormalize(j));
     }, function(e){
       errs.push(t + " " + e.message);
-      if(ch === "direct" || /429/.test(e.message)) i = cfg.types.length;   // 跨站被擋或被限流就不再連打
-    }).then(function(){ return i < cfg.types.length ? wait(1100).then(step) : step(); });
+      if(/429/.test(e.message)){
+        LOL.backoff = Math.min(15*60000, Math.max(60000, (LOL.backoff || 30000) * 2));
+        LOL.until = Date.now() + LOL.backoff;
+      }
+      if(ch === "direct" || /429|沒有回應|重新整理/.test(e.message)) i = cfg.types.length;   // 跨站被擋、被限流或擴充功能沒回應就不再連打
+    }).then(function(){ return i < cfg.types.length ? wait(2000).then(step) : step(); });
   }
   HOLD.usedOpenSkyGlobal = false;
-  return step();
+  return Promise.resolve(step());
 }
+var LOL = { until:0, backoff:0 };
 
 function holdCallsign(a){ return String(a.flight || a.callsign || "").trim().toUpperCase(); }
 function holdFlightNo(cs){
@@ -3584,6 +3598,9 @@ function holdIngest(list, cfg){
     if(now - tr.seen > 5*60000){
       // 全球模式：巡航中失去訊號（多半是進入洋區）的航機保留 16 小時，改用推估位置顯示
       if(cfg.mode === "airline" && !tr.onGround && tr.alt >= 10000 && now - tr.seen < 16*3600000){ tr.lost = true; return; }
+      // 盤旋中就失去訊號：把紀錄收尾，避免永遠停在「盤旋中」
+      if(tr.logId){ var le = hlogFind(tr.logId); if(le && le.outcome === "盤旋中"){ le.outcome = "失去訊號"; le.end = tr.seen; HLOG.dirty = true; } }
+      if(tr.divLogId){ var ld = hlogFind(tr.divLogId); if(ld && ld.outcome === "轉降中"){ ld.outcome = "轉降中（失去訊號）"; ld.end = tr.seen; HLOG.dirty = true; } }
       delete HOLD.tracks[k]; return;
     }
     tr.lost = false;
@@ -3593,14 +3610,22 @@ function holdIngest(list, cfg){
     // 滿一圈後再分類：高度大致維持（±1,500 呎）或呈跑馬場形 → 盤旋；邊轉圈邊大幅下降 → 繞圈下降（多為雷達引導），只列注意
     var orbitDescent = r.turn >= 360 && !r.racetrack && r.altRange > 1500 && r.altDrop > 3000;
     tr.holdKind = r.turn >= 360 ? (r.racetrack ? "跑馬場等待" : orbitDescent ? "繞圈下降" : "定高繞圈") : "";
-    var stopped = r.recentN >= 2 && r.recentTurn < 90;   // 最近 4 分鐘幾乎沒轉：已改直飛
-    if(tr.holding && orbitDescent && !tr.logId){ tr.holding = false; }   // 剛判定的其實是繞圈下降：撤回
-    if(eligible && r.turn >= 360 && !orbitDescent && !stopped){
-      if(!tr.holding){ tr.holding = true; tr.holdSince = now - r.dur; }
+    // 最近 4 分鐘幾乎沒轉：已改直飛（取樣要夠密才判斷，OpenSky 90 秒一點時改靠整體轉角判斷，避免誤判脫離）
+    var stopped = r.recentN >= 5 && r.recentTurn < 90;
+    // 剛判定的盤旋（10 分鐘內）後來看出其實是繞圈下降：撤回，並刪除那筆紀錄
+    if(tr.holding && orbitDescent && now - tr.holdSince < 10*60000){
+      tr.holding = false;
+      if(tr.logId){ HLOG.list = HLOG.list.filter(function(x){ return x.id !== tr.logId; }); HLOG.dirty = true; tr.logId = null; }
+    }
+    // 取樣夠密時，還要求最近 4 分鐘確實在轉（避免把前一次盤旋的圈數算進來而太早判定）
+    var turningNow = r.recentN < 5 || r.recentTurn >= 180;
+    if(eligible && r.turn >= 360 && !orbitDescent && !stopped && (tr.holding || turningNow)){
+      if(!tr.holding){ tr.holding = true; tr.holdSince = Math.max(now - r.dur, tr.exitAt || 0); }
       tr.lastHold = now;
     }else if(tr.holding && (r.turn < 180 || !eligible || stopped || orbitDescent)){
       // 近期不再同向轉圈 → 視為已脫離；保留 20 分鐘紀錄
       tr.holding = false; tr.exitAt = now;
+      delete HOLD.notified[tr.hex + ":2"]; delete HOLD.notified[tr.hex + ":3"];   // 之後再盤旋還會提醒
     }
     tr.laps = Math.floor(r.turn / 360);
     if(tr.laps > tr.maxLaps) tr.maxLaps = tr.laps;
@@ -3691,14 +3716,18 @@ function tgSendRaw(text, cfgOverride){
   if(!c.token || !c.chat) return Promise.reject(new Error("請先填 Bot Token 與 Chat ID"));
   var url = "https://api.telegram.org/bot" + encodeURIComponent(c.token).replace(/%3A/gi, ":") + "/sendMessage";
   var body = new URLSearchParams({ chat_id:c.chat, text:text, parse_mode:"HTML", disable_web_page_preview:"true" });
+  // 有擴充功能就經由擴充功能送（可讀回結果）；否則只送一次，讀不到回覆時視為「已送出、無法確認」，不重送以免重複
+  if(holdBridge()){
+    return holdViaBridgeRaw(url, { method:"POST", body: JSON.stringify({ chat_id:c.chat, text:text, parse_mode:"HTML", disable_web_page_preview:true }) })
+      .then(function(j){ if(!j || !j.ok) throw new Error((j && j.description) || "Telegram 回應錯誤"); return "ok"; },
+        function(e){ if(/不允許/.test(e.message)) return tgDirect(url, body); throw e; });
+  }
+  return tgDirect(url, body);
+}
+function tgDirect(url, body){
   return fetch(url, { method:"POST", body:body }).then(function(res){
-    return res.json().then(function(j){
-      if(!j.ok) throw new Error(j.description || ("HTTP " + res.status));
-      return "ok";
-    });
-  }, function(){
-    return fetch(url, { method:"POST", body:body, mode:"no-cors" }).then(function(){ return "unverified"; });
-  });
+    return res.json().then(function(j){ if(!j.ok) throw new Error(j.description || ("HTTP " + res.status)); return "ok"; }, function(){ return "unverified"; });
+  }, function(){ return "unverified"; });
 }
 function tgEnqueue(text){
   TG.queue.push(text);
@@ -3736,16 +3765,18 @@ function tgCheck(scope){
   var c = tgCfg();
   if(!c.on || !c.token || !c.chat) return;
   if(BG.active) return;   // 背景監看開著時由擴充功能推播，避免重複
+  var nowT = Date.now();
+  Object.keys(TG.sent).forEach(function(k){ if(nowT - TG.sent[k] > 24*3600000) delete TG.sent[k]; });
   scope.forEach(function(tr){
     if(tr.lost) return;
-    if(tr.emerg && !TG.sent[tr.hex + ":emerg"]){ TG.sent[tr.hex + ":emerg"] = 1; tgEnqueue(tgText(tr, "emerg")); }
-    if(tr.divert && !TG.sent[tr.hex + ":div:" + tr.divert.since]){ TG.sent[tr.hex + ":div:" + tr.divert.since] = 1; tgEnqueue(tgText(tr, "divert")); }
+    if(tr.emerg && !TG.sent[tr.hex + ":emerg"]){ TG.sent[tr.hex + ":emerg"] = Date.now(); tgEnqueue(tgText(tr, "emerg")); }
+    if(tr.divert && !TG.sent[tr.hex + ":div:" + tr.divert.since]){ TG.sent[tr.hex + ":div:" + tr.divert.since] = Date.now(); tgEnqueue(tgText(tr, "divert")); }
     if(tr.holding && tr.level >= 2){
       var k = tr.hex + ":" + tr.level;
-      if(!TG.sent[k]){ TG.sent[k] = 1; TG.sent[tr.hex + ":held"] = 1; tgEnqueue(tgText(tr, "hold")); }
+      if(!TG.sent[k]){ TG.sent[k] = Date.now(); TG.sent[tr.hex + ":held"] = Date.now(); tgEnqueue(tgText(tr, "hold")); }
     }
     if(!tr.holding && tr.exitAt && TG.sent[tr.hex + ":held"] && !TG.sent[tr.hex + ":exit:" + tr.exitAt]){
-      TG.sent[tr.hex + ":exit:" + tr.exitAt] = 1;
+      TG.sent[tr.hex + ":exit:" + tr.exitAt] = Date.now();
       delete TG.sent[tr.hex + ":2"]; delete TG.sent[tr.hex + ":3"]; delete TG.sent[tr.hex + ":held"];
       if(c.exit) tgEnqueue(tgText(tr, "exit"));
     }
@@ -3805,7 +3836,7 @@ function holdRender(){
         lastPos:{ lat:t.lat, lon:t.lon }, level:0, holding:false, dist:null, basisTs: t.seen }));
     });
     inScope = inScope.filter(function(t){ return !t.lost; });
-    estList = estList.concat(estFromSchedule(cfg, haveFno, now));
+    // 不再用班表時間推估「應該已起飛」的航班（資訊不可靠），只保留：實際飛過後失聯的航機、API 確認在空中的航機
     estList = estList.concat(fixBulkExtra(cfg, haveFno, estList, now));
     // 有設定修正 API 時，用 API 資料修正推估位置（已落地的移除）
     estList = estList.map(function(e){ return fixApply(e, now); }).filter(Boolean);
@@ -3916,6 +3947,11 @@ function holdRender(){
   }
   setTimeout(metarLookup, 900);
   setTimeout(fixBulkRun, 1200);
+  // 機場周邊模式也查航線（轉降判斷、紀錄需要目的地），每分鐘最多一次
+  if(!global && holdBridge() && Date.now() - (HOLD.lastRouteQ || 0) > 60000){
+    HOLD.lastRouteQ = Date.now();
+    setTimeout(routeLookup, 300); setTimeout(acLookup, 600); setTimeout(aptLookup, 900);
+  }
   diagRender(); hlogRender();
   if(global) holdDrawMap(cfg, inScope, estList); else if($("holdMapWrap")) $("holdMapWrap").hidden = true;
   $("holdRadarBox").hidden = global;
@@ -4123,11 +4159,12 @@ function acLookup(){
     return chain.then(function(){
       // 先問 hexdb.io，沒有機型再問 adsb.lol（依 ICAO 位址查即時資料）
       return holdViaBridge("https://hexdb.io/api/v1/aircraft/" + encodeURIComponent(hex)).then(function(j){
+        j = j || {};
         return { type: String(j.ICAOTypeCode || "").toUpperCase(), reg: j.Registration || "", name: j.Type || "" };
       }, function(){ return null; }).then(function(r){
         if(r && r.type) return r;
         return holdViaBridge("https://api.adsb.lol/v2/hex/" + encodeURIComponent(hex)).then(function(j){
-          var a = (j.ac || [])[0] || {};
+          var a = ((j && j.ac) || [])[0] || {};
           return a.t ? { type: String(a.t).toUpperCase(), reg: a.r || (r && r.reg) || "", name: a.desc || (r && r.name) || "" } : r;
         }, function(){ return r; });
       }).then(function(r){
@@ -4135,7 +4172,7 @@ function acLookup(){
         else ACINFO.cache[hex] = { reg: r ? r.reg : "", t: Date.now() - (30*86400000 - 6*3600000) };   // 查不到：6 小時後再試
       });
     });
-  }, Promise.resolve()).then(function(){
+  }, Promise.resolve()).catch(function(){}).then(function(){
     ACINFO.busy = false;
     try{ localStorage.setItem("acCache2", JSON.stringify(ACINFO.cache)); }catch(e){}
     Object.keys(HOLD.tracks).forEach(function(k){ acFill(HOLD.tracks[k]); });
@@ -4304,7 +4341,7 @@ function holdSweep(){
 /* =========================================================
    推估位置（補足 ADS-B 收不到的洋區航段，類似 Flightradar24 的 estimated）
    1. 失聯推估：原本收得到、進入洋區後失去訊號的航機，依最後位置、地速，沿大圓航線往目的地推算
-   2. 班表推估：TDX 看板上已起飛（或即將抵達）但一直沒收到訊號的航班，依起飛時間與大圓航線推算
+   2. （已停用）班表推估
    機場座標由擴充功能向 hexdb.io 查詢並快取
    ========================================================= */
 var IATA_TO_ICAO = (function(){ var o = {}; Object.keys(ICAO_TO_IATA).forEach(function(k){ o[ICAO_TO_IATA[k]] = k; }); return o; })();
@@ -4329,11 +4366,12 @@ function aptLookup(){
   batch.reduce(function(chain, iata){
     return chain.then(function(){
       return holdViaBridge("https://hexdb.io/api/v1/airport/icao/" + IATA_TO_ICAO[iata]).then(function(j){
+        j = j || {};
         var lat = parseFloat(j.latitude), lon = parseFloat(j.longitude);
         APTLL.cache[iata] = isFinite(lat) && isFinite(lon) ? { lat:lat, lon:lon } : { none:1 };
       }, function(){});
     });
-  }, Promise.resolve()).then(function(){
+  }, Promise.resolve()).catch(function(){}).then(function(){
     APTLL.busy = false;
     try{ localStorage.setItem("aptLL", JSON.stringify(APTLL.cache)); }catch(e){}
     holdRender();
@@ -4497,7 +4535,7 @@ function holdCheckDivert(tr, cfg, now){
   var ll = aptLL(dest);
   if(!ll) return;
   var d = nm(tr.lat, tr.lon, ll.lat, ll.lon);
-  if(tr.destIata !== dest){ tr.destIata = dest; tr.minDest = d; tr.divert = null; }
+  if(tr.destIata !== dest){ tr.destIata = dest; tr.minDest = d; tr.firstDest = d; tr.divert = null; tr.depNear = tr.onGround || (tr.alt && tr.alt < 3000 && d < 15); }
   if(d < tr.minDest) tr.minDest = d;
   tr.destDist = d;
   var recent = tr.pts.filter(function(p){ return now - p.t <= 4.5*60000; });
@@ -4508,7 +4546,9 @@ function holdCheckDivert(tr, cfg, now){
   var towardAll = recent.length >= 2 && recent.every(function(p){
     return Math.abs(angDiff(p.trk, bearing(p.lat, p.lon, ll.lat, ll.lon))) < 60;
   });
-  var wasNear = tr.minDest <= 250 || (tr.lastHold && now - tr.lastHold < 60*60000);
+  // 必須真的「曾往目的地接近」過（至少近了 15 浬）或剛盤旋過；剛從該機場起飛的航機不算
+  var approached = (tr.firstDest - tr.minDest) >= 15 && !tr.depNear;
+  var wasNear = (tr.minDest <= 250 && approached) || (tr.lastHold && now - tr.lastHold < 60*60000);
   if(!tr.divert && !tr.holding && wasNear && awayAll && d >= tr.minDest + 30){
     var alt = likelyAlternate(tr, dest);
     tr.divert = { from:dest, to: alt ? alt.iata : "", toDist: alt ? alt.dist : null, since: now };
@@ -4558,7 +4598,7 @@ function metarVisKm(m){
   return isFinite(n) ? Math.round(n * 1.609 * 10) / 10 : null;
 }
 function metarCat(m){
-  if(m.fltCat) return m.fltCat;
+  if(/^(VFR|MVFR|IFR|LIFR)$/.test(m.fltCat || "")) return m.fltCat;
   var c = metarCeiling(m), v = metarVisKm(m);
   if((c != null && c < 500) || (v != null && v < 1.6)) return "LIFR";
   if((c != null && c < 1000) || (v != null && v < 4.8)) return "IFR";
@@ -4668,7 +4708,10 @@ function hlogBase(tr, kind, start){
 }
 /* 每次分析完呼叫，依航機狀態新增／更新紀錄 */
 function hlogTrack(tr, now){
+  if(BG.active) return;   // 背景監看開著時由擴充功能記錄，避免重複
   if(tr.holding){
+    var cur = tr.logId && hlogFind(tr.logId);
+    if(cur && cur.outcome !== "盤旋中"){ tr.logId = null; }   // 同一架再次盤旋：另開一筆
     if(!tr.logId){ var ev = hlogBase(tr, "hold", tr.holdSince); tr.logId = ev.id; if(!hlogFind(ev.id)) HLOG.list.push(ev); }
     var e = hlogFind(tr.logId);
     if(e){
@@ -4710,8 +4753,12 @@ function hlogMerge(extra){
   HLOG.list.forEach(function(e){ have[e.id] = e; });
   (extra || []).forEach(function(e){
     var h = have[e.id];
+    if(!h){
+      // 看板與背景對同一事件算出的開始時間可能差幾秒：同航機、同類型、時間重疊視為同一筆
+      h = HLOG.list.filter(function(x){ return x.hex === e.hex && x.kind === e.kind && Math.abs(x.start - e.start) < 5*60000; })[0];
+    }
     if(!h){ HLOG.list.push(e); have[e.id] = e; }
-    else if(e.end > h.end){ Object.assign(h, e); }
+    else if(e.end > h.end){ var id = h.id; Object.assign(h, e); h.id = id; }
   });
   HLOG.list.sort(function(a,b){ return a.start - b.start; });
   HLOG.dirty = true; hlogSave();
@@ -4875,6 +4922,7 @@ function fixCfg(){
   if(!Array.isArray(c.keys)) c.keys = c.key ? [c.key, "", ""] : ["", "", ""];
   while(c.keys.length < 3) c.keys.push("");
   if(c.prov === "aeroapi") c.keys = [c.keys[0], "", ""];
+  if(c.bulk == null) c.bulk = true;   // 預設開啟整批更新
   c.key = c.keys.filter(Boolean)[0] || "";
   return c;
 }
@@ -4961,7 +5009,8 @@ function fixFetch(cs, cfg){
         arr: utcMs(r.arr_actual_utc || r.arr_estimated_utc || r.arr_time_utc),
         landed: r.status === "landed" || !!r.arr_actual_utc,
         pos: r.lat != null && r.lng != null ? { lat:+r.lat, lon:+r.lng, ts: utcMs(r.updated) || Date.now(), alt: r.alt != null ? Math.round(r.alt*3.28084) : null, gs: r.speed != null ? Math.round(r.speed/1.852) : null, hdg: r.dir } : null,
-        from: r.dep_iata || "", to: r.arr_iata || "", status: r.status || ""
+        from: r.dep_iata || "", to: r.arr_iata || "", status: r.status || "",
+        notDeparted: r.status === "scheduled" && !r.dep_actual_utc
       };
     });
   }
@@ -5020,7 +5069,7 @@ function fixApply(e, now){
   if(!f || f.err) return e;
   var provName = f.prov === "airlabs" ? "AirLabs" : "FlightAware";
   var ago = fmtDur(now - f.t);
-  if(f.landed) return null;
+  if(f.landed || f.notDeparted) return null;
   var from = aptLL(f.from || (e.estRoute && e.estRoute.from) || ""), to = aptLL(f.to || (e.estRoute && e.estRoute.to) || (e.destIata || ""));
   if(!e.estRoute && f.from && f.to) e.estRoute = { from:f.from, to:f.to };
   // 1. API 有位置、而且比我們自己最後收到的 ADS-B 還新（6 小時內）：從該位置依地速往目的地推
@@ -5085,7 +5134,7 @@ function fixInit(){
   $("fixCap").value = c.cap || 30; $("fixEvery").value = c.every || 60;
   function syncKeys(){ var al = $("fixProv").value === "airlabs"; $("fixKey2").closest("label").hidden = !al; $("fixKey3").closest("label").hidden = !al; }
   syncKeys();
-  $("fixBulk").checked = !!c.bulk; $("fixBulkEvery").value = c.bulkEvery || 60;
+  $("fixBulk").checked = c.bulk !== false; $("fixBulkEvery").value = c.bulkEvery || 60;
   function save(){
     syncKeys();
     var n = { prov:$("fixProv").value, keys:[$("fixKey").value.trim(), $("fixKey2").value.trim(), $("fixKey3").value.trim()], cap: Math.max(1, +$("fixCap").value || 30), every: +$("fixEvery").value || 60,
@@ -5100,7 +5149,7 @@ function fixInit(){
     save();
     var cfg = fixCfg(), cs = ($("fixTestCs").value || "SJX12").toUpperCase().replace(/\s/g, "");
     if(!cfg.prov || !cfg.key){ $("fixMsg").textContent = "請先選擇服務並填入 API Key。"; return; }
-    if(!holdBridge()){ $("fixMsg").textContent = "需要 ADS-B 橋接擴充功能 v2.1。"; return; }
+    if(!holdBridge()){ $("fixMsg").textContent = "需要 ADS-B 橋接擴充功能 v2.1 以上。"; return; }
     $("fixMsg").textContent = "查詢中…";
     fixFetch(toCallsign(cs) || cs, cfg).then(function(r){
       if(cfg.prov !== "airlabs") fixCount(0);
@@ -5143,7 +5192,7 @@ function fixBulkFetch(cfg, hcfg){
             out.push({ hex: String(r.hex || "").toLowerCase(), cs: String(r.flight_icao || "").toUpperCase(), fno: r.flight_iata || "",
               lat: r.lat, lon: r.lng, alt: r.alt != null ? Math.round(r.alt*3.28084) : null, gs: r.speed != null ? Math.round(r.speed/1.852) : null,
               hdg: r.dir, ts: utcMs(r.updated), from: r.dep_iata || "", to: r.arr_iata || "", type: String(r.aircraft_icao || "").toUpperCase(),
-              reg: r.reg_number || "", landed: r.status === "landed" });
+              reg: r.reg_number || "", landed: r.status === "landed", sched: r.status === "scheduled" });
           });
         });
       });
@@ -5207,10 +5256,12 @@ function fixBulkRun(force){
   FIXALL.busy = true;
   $("fixBulkMsg").textContent = "整批更新中…";
   fixBulkFetch(cfg, hcfg).then(function(items){
-    FIXALL.t = Date.now(); FIXALL.key = key; FIXALL.items = items; fixIndex(); fixBulkApply();
+    FIXALL.t = Date.now(); FIXALL.key = key; FIXALL.items = items || []; fixIndex();
+    HMAP.pendingSweep = true;   // API 整批更新也掃一次
+    try{ fixBulkApply(); }catch(err){}
     try{ localStorage.setItem("fixBulk", JSON.stringify({ t:FIXALL.t, key:key, items:items })); }catch(e){}
     fixBulkPaint();
-    holdRender();
+    try{ holdRender(); }catch(err){}
   }, function(e){
     FIXALL.t = Date.now() - Math.max(0, (cfg.bulkEvery || 60)*60000 - 10*60000); FIXALL.key = key;   // 失敗：10 分鐘後再試
     $("fixBulkMsg").textContent = "整批更新失敗：" + e.message;
@@ -5233,7 +5284,7 @@ function fixBulkExtra(cfg, haveFno, estList, now){
   Object.keys(HOLD.tracks).forEach(function(k){ var t = HOLD.tracks[k]; if(t.cs) have[t.cs] = 1; if(t.fno) have[t.fno] = 1; });
   var re = new RegExp("^(" + cfg.gAl.join("|") + ")\\d");
   return FIXALL.items.filter(function(it){
-    return it.cs && re.test(it.cs) && !it.landed && !have[it.cs] && !haveFno[it.fno] && it.lat != null && it.ts && now - it.ts < 6*3600000;
+    return it.cs && re.test(it.cs) && !it.landed && !it.sched && !have[it.cs] && !haveFno[it.fno] && it.lat != null && it.ts && now - it.ts < 6*3600000;
   }).map(function(it){
     var e = { hex: it.hex || ("api-" + it.cs), cs: it.cs, fno: holdFlightNo(it.cs) || it.fno, lat: it.lat, lon: it.lon, trk: it.hdg, alt: it.alt || 0,
       gs: it.gs, type: it.type, reg: it.reg, level: 0, pts: [], est: true, estRoute: it.from && it.to ? { from:it.from, to:it.to } : null };
@@ -5347,7 +5398,14 @@ function holdTick(){
   var cfg = holdCfg();
   if(cfg.mode === "airline" && !cfg.gAl.length){ $("holdStatus").textContent = "請先輸入航空公司代碼"; holdRender(); clearTimeout(HOLD.timer); HOLD.timer = setTimeout(holdTick, HOLD.POLL); return; }
   HOLD.busy = true;
+  var gen = HOLD.gen || 0;
   holdFetch(cfg).then(function(list){
+    if(gen !== (HOLD.gen || 0)) return;   // 抓取期間改了監看設定：丟棄舊結果
+    if(list === null){
+      var tt = new Date();
+      $("holdStatus").textContent = "監看中・" + pad2(tt.getHours()) + ":" + pad2(tt.getMinutes()) + " 本輪略過（" + (HOLD.skipNote || "資料源冷卻中") + "），位置依速度推算";
+      return;
+    }
     HOLD.err = "";
     HOLD.lastOk = Date.now();
     HMAP.pendingSweep = true;   // 有真正的新資料，下次畫地圖時掃一次
@@ -5361,11 +5419,11 @@ function holdTick(){
     $("holdStatus").textContent = "抓取失敗，15 秒後重試";
   }).then(function(){
     HOLD.busy = false;
-    holdRender();
+    try{ holdRender(); }catch(err){ if(window.console) console.error(err); }
     if(HOLD.on){
       var n = cfg.mode === "airline" ? cfg.types.length : 1;
       clearTimeout(HOLD.timer);
-      var wait = Math.max(HOLD.POLL, n * 1300);
+      var wait = cfg.mode === "airline" ? Math.max(30000, n * 3000) : Math.max(HOLD.POLL, n * 1300);   // 依機型查全球：至少 30 秒一輪，避免 adsb.lol 限流
       // OpenSky 有每日額度：機場周邊 30 秒一次（1 credit），全球航空公司 90 秒一次（4 credits）
       if(cfg.mode === "airline" && (/OpenSky/.test(HOLD.lastSrc) || HOLD.usedOpenSkyGlobal)) wait = 90000;
       else if(/OpenSky/.test(HOLD.lastSrc)) wait = 30000;
@@ -5391,6 +5449,7 @@ function holdStop(){
   $("holdStatus").textContent = "已停止";
 }
 function holdReset(){
+  HOLD.gen = (HOLD.gen || 0) + 1;
   HOLD.tracks = {}; HOLD.notified = {}; HOLD.lastOk = 0; HOLD.focus = "";
   holdRender();
   if(HOLD.on && !HOLD.busy){ clearTimeout(HOLD.timer); holdTick(); }
