@@ -120,6 +120,37 @@ textarea{
 .kpi u::before{content:"";width:7px;height:7px;border-radius:2px;background:var(--line2);display:inline-block}
 .kpi b{font-size:26px;font-weight:400;letter-spacing:-.5px;display:block;margin-top:4px}
 .kpi.c u::before{background:var(--cyan)} .kpi.g u::before{background:var(--good)} .kpi.r u::before{background:var(--bad)}
+
+/* ── 空位查詢 ── */
+.seat-drop{outline:3px dashed var(--cyan);outline-offset:-6px;background:rgba(58,143,167,.08)!important}
+.seat-cap{margin-top:12px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.5)}
+.seat-cap summary{cursor:pointer;padding:10px 14px;font-size:13.5px}
+.seat-cap table{border-collapse:collapse;margin:0 14px 12px;font-size:13px}
+.seat-cap th,.seat-cap td{padding:4px 8px;text-align:center}
+.seat-cap input{width:58px;padding:4px 6px;text-align:center}
+.seat-day{margin-top:18px}
+.seat-day h3{margin:0 0 6px;font-size:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:baseline}
+.seat-day h3 .note{font-weight:400}
+.seat-tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+.seat-tbl th{position:sticky;top:0;background:rgba(245,249,252,.97);font-weight:500;color:var(--dim);font-size:12px;padding:8px 10px;text-align:left;z-index:1}
+.seat-tbl td{padding:8px 10px;border-top:1px solid var(--line);vertical-align:middle}
+.seat-tbl td.c,.seat-tbl th.c{text-align:center}
+.seat-tbl tr.us td{background:rgba(58,143,167,.07)}
+.seat-tbl tr.us td:first-child{box-shadow:inset 4px 0 0 var(--cyan)}
+.seat-n{font:700 16px ui-monospace,Menlo,monospace;display:block;line-height:1.1}
+.seat-b{font-size:10.5px;color:var(--dim);white-space:nowrap}
+.seat-x{color:#b9c3cc;font-size:12px}
+.seat-c.tight .seat-n{color:#b86e00}
+.seat-c.low{background:rgba(222,150,40,.14)}
+.seat-c.low .seat-n{color:#9a5d00}
+.seat-c.over{background:rgba(214,86,86,.13)}
+.seat-c.over .seat-n{color:#c0392b}
+.seat-tot{font:700 15px ui-monospace,monospace}
+.seat-us-tag{display:inline-block;background:var(--cyan);color:#fff;border-radius:6px;padding:0 6px;font-size:11px;margin-left:6px;vertical-align:1px}
+.seat-dly{display:inline-block;border-radius:6px;padding:0 5px;font-size:11px;margin-left:4px;background:rgba(214,86,86,.12);color:#b03a3a}
+.seat-sum{display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 8px}
+.seat-sum span{font-size:12.5px;background:rgba(58,143,167,.1);border-radius:8px;padding:3px 9px}
+.seat-sum b{font-family:ui-monospace,monospace}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{
   background:var(--glass);border:1px solid var(--glass-border);color:var(--dim);
@@ -317,7 +348,7 @@ ul.doc li{margin:6px 0}
 .hold-wx{margin:10px 0 0;padding:8px 14px;border-radius:12px;background:rgba(255,255,255,.6);border:1px solid var(--line);font-size:13px}
 .hold-wx[hidden]{display:none}
 .dg{display:inline-block;padding:1px 9px;border-radius:999px;font-size:12px;font-weight:600}
-.dg-ok{background:rgba(46,158,91,.15);color:#237a47}.dg-warn{background:rgba(222,150,40,.18);color:#9a5d00}.dg-bad{background:rgba(214,86,86,.15);color:#a33}
+.dg-ok{background:rgba(46,158,91,.15);color:#237a47}.dg-warn{background:rgba(222,150,40,.18);color:#9a5d00}.dg-bad{background:rgba(214,86,86,.15);color:#a33}.dg-idle{background:rgba(120,140,160,.15);color:#5d6f80}
 .hlbars{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;align-items:end;height:120px;padding:6px 4px 0;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.6)}
 .hlbar{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
 .hlbar i{display:block;width:100%;min-height:2px;border-radius:3px 3px 0 0;background:var(--cyan)}
@@ -465,7 +496,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-28t</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-28w</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -480,6 +511,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
     <button data-tab="sched" aria-selected="false">班表分析</button>
     <button data-tab="otd" aria-selected="false">準點分析</button>
     <button data-tab="map" aria-selected="false">航班地圖</button>
+    <button data-tab="seat" aria-selected="false">空位查詢</button>
     <button data-tab="cam" aria-selected="false">即時影像</button>
     <button data-tab="help" aria-selected="false">格式說明</button>
   </nav>
@@ -898,6 +930,40 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   </div>
 </section>
 
+<!-- ============ SEAT ============ -->
+<section id="tab-seat" hidden>
+  <div class="card">
+    <h2>空位查詢</h2>
+    <p>班機異常時，貼上訂位系統的 Flight Info 清單（要含 <b>Pax</b> 欄的已訂位人數），自動換算台北時間並計算各艙空位＝座位配置－已訂位。北美（美國）線置頂，超賣與座位緊張會標色。資料只存在這台電腦的瀏覽器。</p>
+    <textarea id="seatRaw" rows="7" placeholder="三種方式擇一：① 從系統複製整段貼在這裡（含表頭也可以）② 按下方「選擇記事本檔案」③ 把 .txt 檔直接拖曳到這個框。例如：
+1.	JX2	29Sep	J	SKD	29Sep 16:10	30Sep 04:10	29Sep 16:10  S	30Sep 04:10  S	TPE	LAX	B58504	JX  /  359	/ / /	0/18/29/94"></textarea>
+    <div class="row" style="margin-top:10px">
+      <button class="btn primary" id="btnSeatParse" type="button">解析</button>
+      <button class="btn ghost" id="btnSeatClip" type="button">📋 從剪貼簿貼上</button>
+      <label class="btn ghost" style="cursor:pointer">📄 選擇記事本檔案<input type="file" id="seatFile" accept=".txt,.tsv,.csv,text/plain" multiple hidden></label>
+      <button class="btn ghost" id="btnSeatClear" type="button">清除</button>
+      <label class="note" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="seatUtc" checked> 檔案時間為 UTC（自動 +8 換成台北時間）</label>
+      <label class="note" style="display:flex;gap:6px;align-items:center">緊張門檻 <input type="number" id="seatTight" min="1" max="99" value="20" style="width:64px"> 席</label>
+      <span class="note" id="seatMsg"></span>
+    </div>
+    <details class="seat-cap" id="seatCapBox">
+      <summary>座位配置（依機型，可自行修改）<span class="note" id="seatCapNote"></span></summary>
+      <div id="seatCapBody"></div>
+    </details>
+  </div>
+  <div class="card" id="seatResult" hidden>
+    <div class="kpis" id="seatKpis" style="margin-top:0"></div>
+    <div class="row" style="margin-top:14px;gap:14px;align-items:flex-start">
+      <div><div class="note" style="margin-bottom:4px">台北出發日</div><div class="chips" id="seatDates"></div></div>
+      <div><div class="note" style="margin-bottom:4px">區域</div><div class="chips" id="seatRegions"></div></div>
+      <div id="seatOrigWrap" hidden><div class="note" style="margin-bottom:4px">出發站</div><div class="chips" id="seatOrigs"></div></div>
+      <label class="note" style="display:flex;gap:6px;align-items:center;margin-top:20px"><input type="checkbox" id="seatOnlyAvail"> 只看經濟艙還有空位</label>
+    </div>
+    <div id="seatBody"></div>
+    <p class="note" style="margin-top:12px">空位＝座位配置－已訂位，未扣保留座與員工機位；負數為超賣。「—」表示該機型沒有這個艙等或未開放。灰字為已訂／座位數。</p>
+  </div>
+</section>
+
 <!-- ============ CAM ============ -->
 <section id="tab-cam" hidden>
   <div class="card">
@@ -1119,7 +1185,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
 <section id="tab-help" hidden>
   <div class="card">
     <h2>怎麼用</h2>
-    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-28t</b>（盤旋偵測：轉降偵測、目的地天氣、背景監看、資料來源狀態、盤旋紀錄統計）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
+    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-28w</b>（盤旋偵測：轉降偵測、目的地天氣、背景監看、資料來源狀態、盤旋紀錄統計）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
     <ul class="doc">
       <li>桃園機場走「<b>TDX 桃園機場</b>」頁籤最省事：填 Client ID／Secret 後按立即抓取，到場與離場會一次抓齊。</li>
       <li>TDX 的 <code>$top</code> 預設值只有 <b>30 筆</b>，不分頁就只會拿到 30 班。本頁已改成自動帶 <code>$top</code>／<code>$skip</code> 分頁抓到底。</li>
@@ -1174,6 +1240,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
         ② <b>Google Apps Script 代理</b>：把 adsb-proxy Apps Script 部署成網頁應用程式，網址填到「進階：自訂資料代理」。手機也能用，但 Google 的伺服器是否會被資料站擋下要實測。<br>
         機場周邊每 15 秒更新（改用 OpenSky 時 30 秒）；指定航空公司依機型逐一查 adsb.lol，機型越多更新越慢，改用 OpenSky 全球資料時 90 秒一次。</li>
       <li>「航班地圖」頁上方的<b>盤旋偵測</b>每 15 秒從 airplanes.live（備援 adsb.fi）抓機場周邊航機位置，追蹤每架航機近 12 分鐘的航向。同一方向累積轉 240° 以上列為「注意」，滿一圈且高度 1,500 呎以上、未落地列為「盤旋中」，盤旋超過 15 分鐘或滿 3 圈列為「長時間盤旋」；squawk 7700／7600／7500 直接列最高級。呼號會換算成航班號（例如 SJX762 → JX762）並對照看板上的 TDX 資料。「監看方式」改成<b>指定航空公司（全球）</b>時，輸入 IATA 或 ICAO 代碼（例如 JX 或 SJX，最多 3 家），就會列出該公司全球所有空中航機並判斷盤旋。公開 ADS-B API 沒有依航空公司查詢的功能，所以是依機型抓全球航機、再用呼號前綴篩選：「查詢機型」會自動帶入該公司機隊（不在內建表的公司用 21 種常見客機），機隊有新機型時可以自己補上。每種機型查詢間隔 1.1 秒，機型越多更新越慢。勾「只列出盤旋／注意」可以只看有狀況的航機。飛往台灣的航班會顯示距目的地機場的距離，其他顯示經緯度；遠洋航段沒有收訊站時會暫時消失。只要監看開著，切到其他頁籤也會繼續偵測，「航班地圖」頁籤上會出現紅色數字。這是依航跡推算，偶爾會把繞飛天氣或雷達引導的大轉彎判成注意，請以塔台／簽派資訊為準。</li>
+      <li><b>空位查詢</b>：把訂位系統的 Flight Info 清單（含 Pax 已訂位 F/C/W/Y 欄）整段貼上，會自動換算台北時間（系統時間為 UTC 時勾選 +8）、依機型座位配置算出各艙空位，依台北出發日分組，美國線置頂並加總商務／豪經／經濟空位；超賣顯示紅色、經濟艙低於門檻顯示橘色。調機（P）與取消班次不列入。座位配置可在頁面內修改，遇到未知機型會提示填寫。貼上內容只存在這台電腦。</li>
       <li>到離看板的航班列表上方有<b>區域</b>按鈕（國內、東北亞、港澳大陸、東南亞、南亞、北美、大洋洲、歐洲、中東非洲、其他），依航點代碼判斷所屬區域，按鈕旁數字是目前條件下的班次數；再點一次或點「全部」即取消。區域篩選會跟方向、日期、狀態、場站、航空公司條件一起生效，關島、塞班歸在大洋洲。</li>
       <li>定期班表的「航點篩選」可依國家快速選取：展開面板後上方會列出目前航點涵蓋的國家／地區，點一下就勾選該國所有航點，再點一次取消；也可以在下方逐一勾選單一航點，兩種方式可以混用。</li>
       <li>各航班表的「可比對班次」門檻可調；準點率低於 60% 的航班會以紅底標示。</li>
@@ -3575,16 +3642,16 @@ function holdFetchFlights(cfg){
       if(okAny){ LOL.backoff = 0; HOLD.lastSrc = (ch === "bridge" ? "擴充功能・" : "") + "adsb.lol"; HOLD.partial = true; return pick(out); }
       if(ch !== "bridge") return Promise.reject(new Error(HOLD_CORS_HINT));
       // 備援：OpenSky 全球（4 credits／次）；90 秒內打過或今日額度快用完就先不打，沿用現有資料
-      var osWait = Date.now() - (HOLD.lastOS || 0) < 88000, osLow = HOLD.osRemain != null && HOLD.osRemain < 40;
+      var osWait = Date.now() - (HOLD.lastOS || 0) < 88000 || Date.now() < OSK.until, osLow = HOLD.osRemain != null && HOLD.osRemain < 40;
       if(osWait || osLow){
         HOLD.skipNote = (now0 < LOL.until ? "adsb.lol 限流冷卻中（" + fixHm(LOL.until) + " 恢復）" : "adsb.lol 無資料") +
-          (osLow ? "，OpenSky 今日額度快用完" : "，等待 OpenSky 下一輪");
+          (osLow ? "，OpenSky 今日額度快用完" : Date.now() < OSK.until ? "，OpenSky 被限流（" + fixHm(OSK.until) + " 後再試）" : "，等待 OpenSky 下一輪");
         return null;   // 這一輪不更新，飛機依速度與航向繼續推算
       }
       HOLD.usedOpenSkyGlobal = true; HOLD.lastOS = Date.now();
       return holdTrySources([{ name:"OpenSky", url:"https://opensky-network.org/api/states/all?extended=1" }], get)
-        .then(function(l){ HOLD.lastSrc = "擴充功能・" + HOLD.lastSrc; return pick(l); },
-              function(e2){ throw new Error(errs.concat(e2).join("；")); });
+        .then(function(l){ OSK.backoff = 0; oskSave(); HOLD.lastSrc = "擴充功能・" + HOLD.lastSrc; return pick(l); },
+              function(e2){ if(/429/.test(String(e2 && e2.message || e2))) oskHit(); throw new Error(errs.concat(e2).join("；")); });
     }
     var t = types[i++];
     return get("https://api.adsb.lol/v2/type/" + t).then(function(j){
@@ -3606,6 +3673,16 @@ function holdFetchFlights(cfg){
   return Promise.resolve(step());
 }
 var LOL = { until:0, backoff:0, rr:0, yield:{} };
+/* OpenSky 被限流（429，多半是當日額度用完）：30 分鐘 → 1 → 2 → 4 小時，最晚到隔天 08:00（UTC 0 點額度重置）；重新整理也記得 */
+var OSK = { until:0, backoff:0 };
+(function(){ try{ var o = JSON.parse(localStorage.getItem("oskState") || "null"); if(o){ OSK.until = o.until || 0; OSK.backoff = o.backoff || 0; } }catch(e){} })();
+function oskSave(){ try{ localStorage.setItem("oskState", JSON.stringify(OSK)); }catch(e){} if(DIAG.OpenSky) DIAG.OpenSky.pauseUntil = OSK.until; }
+function oskHit(){
+  var now = Date.now(), reset = (Math.floor(now / 86400000) + 1) * 86400000;   // 下一個 UTC 0 點＝台灣 08:00
+  OSK.backoff = Math.min(4*3600000, Math.max(30*60000, (OSK.backoff || 15*60000) * 2));
+  OSK.until = Math.min(now + OSK.backoff, reset + 60000);
+  oskSave();
+}
 
 function holdCallsign(a){ return String(a.flight || a.callsign || "").trim().toUpperCase(); }
 function holdFlightNo(cs){
@@ -4794,10 +4871,12 @@ function diagName(url){
 }
 function diagRec(url, ok, ms, err){
   var n = diagName(url), d = DIAG[n] || (DIAG[n] = { ok:0, fail:0, ms:0, lastOk:0, lastFail:0, err:"" });
+  if(n === "OpenSky" && typeof OSK !== "undefined") d.pauseUntil = OSK.until;
   if(ok){ d.ok++; d.lastOk = Date.now(); d.ms = d.ms ? Math.round(d.ms * 0.7 + ms * 0.3) : ms; }
   else{ d.fail++; d.lastFail = Date.now(); d.err = String(err || "失敗").slice(0, 80); }
 }
 function diagState(d){
+  if(d.pauseUntil && Date.now() < d.pauseUntil) return ["idle", "備援暫停"];   // 備援來源冷卻中，不算異常
   if(d.lastOk >= d.lastFail) return ["ok", "正常"];
   if(/429/.test(d.err)) return ["warn", "被限流"];
   if(/403|CORS|跨站|無法連線|不允許/.test(d.err)) return ["bad", "被擋"];
@@ -4812,11 +4891,13 @@ function diagRender(){
   var names = Object.keys(DIAG).sort();
   box.innerHTML = '<p class="note" style="margin:0 0 8px">目前通道：<b>' + (ch === "bridge" ? "ADS-B 橋接擴充功能" : ch === "proxy" ? "自訂代理" : "直接連線（多半會被瀏覽器擋下）") + "</b>" +
     (HOLD.lastSrc ? "　最近一次資料來源：<b>" + esc(HOLD.lastSrc) + "</b>" : "") + "</p>" +
-    (names.length ? '<div class="tbox" style="margin-top:0"><table><thead><tr><th>來源</th><th>狀態</th><th>最後成功</th><th>成功／失敗</th><th>平均回應</th><th>最後錯誤</th></tr></thead><tbody>' +
+    (names.length ? '<div class="tbox" style="margin-top:0"><table><thead><tr><th>來源</th><th>狀態</th><th>最後成功</th><th>成功／失敗</th><th>平均回應</th></tr></thead><tbody>' +
       names.map(function(n){
         var d = DIAG[n], st = diagState(d);
-        return "<tr><td>" + esc(n) + '</td><td><span class="dg dg-' + st[0] + '">' + st[1] + "</span></td><td>" + diagAgo(d.lastOk) + "</td><td>" + d.ok + "／" + d.fail +
-          "</td><td>" + (d.ms ? d.ms + " ms" : "—") + '</td><td class="note">' + esc(d.lastFail ? d.err + "（" + diagAgo(d.lastFail) + "）" : "—") + "</td></tr>";
+        var why = d.pauseUntil && Date.now() < d.pauseUntil ? "被限流，" + esc(fixHm(d.pauseUntil)) + " 前不再呼叫（主要來源正常時用不到它）"
+          : (d.lastFail && d.lastFail > d.lastOk ? esc(d.err) + "（" + diagAgo(d.lastFail) + "）" : "");
+        return "<tr><td>" + esc(n) + (why ? '<br><span class="note" style="white-space:normal">' + why + "</span>" : "") + '</td><td><span class="dg dg-' + st[0] + '">' + st[1] + "</span></td><td>" + diagAgo(d.lastOk) + "</td><td>" + d.ok + "／" + d.fail +
+          "</td><td>" + (d.ms ? d.ms + " ms" : "—") + "</td></tr>";
       }).join("") + "</tbody></table></div>"
     : '<div class="empty">開始監看後會顯示各資料來源的狀態。</div>');
 }
@@ -5059,7 +5140,7 @@ function bgInit(){
   });
   $("diagBox").addEventListener("toggle", diagRender);
   setInterval(function(){
-    var bad = Object.keys(DIAG).filter(function(n){ return diagState(DIAG[n])[0] !== "ok"; }).length;
+    var bad = Object.keys(DIAG).filter(function(n){ var k = diagState(DIAG[n])[0]; return k !== "ok" && k !== "idle"; }).length;
     $("diagPill").textContent = Object.keys(DIAG).length ? (bad ? bad + " 個異常" : "全部正常") : "—";
     $("hlogPill").textContent = HLOG.list.length + " 筆";
     diagRender();
@@ -5810,13 +5891,228 @@ function openFmapNewTab(){
 /* =========================================================
    分頁
    ========================================================= */
+
+/* =========================================================
+   空位查詢：解析 Flight Info 貼上內容 → 各艙空位
+   ========================================================= */
+var SEAT_CAP_DEFAULT = { "359":[4,26,36,240], "351":[4,40,36,270], "339":[0,28,0,269], "32Q":[0,8,0,180] };
+var SEAT_TYPE_NAME = { "359":"A350-900", "351":"A350-1000", "339":"A330-900", "32Q":"A321neo" };
+var SEAT = { rows:[], date:"all", region:"all", orig:"all", skipped:0, bad:0 };
+var MON3 = { JAN:0, FEB:1, MAR:2, APR:3, MAY:4, JUN:5, JUL:6, AUG:7, SEP:8, OCT:9, NOV:10, DEC:11 };
+function seatCaps(){
+  var c = {}; Object.keys(SEAT_CAP_DEFAULT).forEach(function(k){ c[k] = SEAT_CAP_DEFAULT[k].slice(); });
+  try{ var u = JSON.parse(localStorage.getItem("seatCap") || "{}"); Object.keys(u).forEach(function(k){ c[k] = u[k]; }); }catch(e){}
+  return c;
+}
+/* "29Sep" + "16:10" → 毫秒（台北時間的 UTC 表示）；年份取離今天最近的那一年 */
+function seatTime(dm, hm, utc){
+  var m = /^(\d{1,2})([A-Za-z]{3})$/.exec(dm), t = /^(\d{1,2}):(\d{2})$/.exec(hm);
+  if(!m || !t) return null;
+  var mon = MON3[m[2].toUpperCase()]; if(mon == null) return null;
+  var now = new Date(), best = null;
+  [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].forEach(function(y){
+    var ms = Date.UTC(y, mon, +m[1], +t[1], +t[2]) - (utc ? 0 : 8*3600000);
+    if(best == null || Math.abs(ms - now) < Math.abs(best - now)) best = ms;
+  });
+  return best;
+}
+function twParts(ms){ var d = new Date(ms + 8*3600000); return { y:d.getUTCFullYear(), mo:d.getUTCMonth()+1, d:d.getUTCDate(), dow:d.getUTCDay(), hm:pad2(d.getUTCHours()) + ":" + pad2(d.getUTCMinutes()) }; }
+function twKey(ms){ var p = twParts(ms); return p.y + "-" + pad2(p.mo) + "-" + pad2(p.d); }
+var SEAT_RE = /^\s*\d+\.\s+([A-Z0-9]{2}\d{1,4}[A-Z]?)\s+(\d{1,2}[A-Za-z]{3})\s+(\S)\s+(\S+)\s+(\d{1,2}[A-Za-z]{3})\s+(\d{1,2}:\d{2})\s+(\d{1,2}[A-Za-z]{3})\s+(\d{1,2}:\d{2})\s+(\d{1,2}[A-Za-z]{3})\s+(\d{1,2}:\d{2})(?:\s+([A-Z]))?\s+(\d{1,2}[A-Za-z]{3})\s+(\d{1,2}:\d{2})(?:\s+([A-Z]))?\s+([A-Z]{3})\s+([A-Z]{3})\s+(\S+)\s+([A-Z0-9]{2})\s*\/\s*([A-Z0-9]{2,4})\b(.*?)((?:[\d-]+\/){2,3}[\d-]+)\s*$/;
+function seatParse(text, utc){
+  var caps = seatCaps(), rows = [], skipped = 0, bad = 0, unknown = {};
+  String(text || "").split(/\r?\n/).forEach(function(line){
+    if(!/^\s*\d+\.\s/.test(line)) return;
+    var m = SEAT_RE.exec(line.replace(/\t/g, " "));
+    if(!m){ bad++; return; }
+    var st = m[3], state = m[4].toUpperCase();
+    if(st === "P" || /CNL|CXL|CAN/.test(state)){ skipped++; return; }   // 調機／取消不列入
+    var std = seatTime(m[5], m[6], utc), best = seatTime(m[9], m[10], utc);
+    var pax = m[21].split("/").map(function(x){ return x === "-" ? null : parseInt(x, 10); });
+    if(pax.length === 3) pax = [pax[0], pax[1], null, pax[2]];
+    var type = m[19], cap = caps[type];
+    if(!cap){ unknown[type] = 1; cap = [0,0,0,0]; }
+    var rem = [0,1,2,3].map(function(i){ return pax[i] == null || !cap[i] ? null : cap[i] - pax[i]; });
+    rows.push({ flt:m[1], st:st, state:state, std:std, dep: best || std, delay: best && std ? Math.round((best - std)/60000) : 0,
+      from:m[15], to:m[16], reg:m[17], type:type, pax:pax, cap:cap, rem:rem, noCap: !caps[type] });
+  });
+  rows.sort(function(a,b){ return a.dep - b.dep; });
+  return { rows:rows, skipped:skipped, bad:bad, unknown:Object.keys(unknown) };
+}
+function seatIsUS(r){ return airportCountry(r.to) === "美國" && !AIRPORT_REGION_OVERRIDE[r.to]; }
+function seatRun(){
+  var raw = $("seatRaw").value, utc = $("seatUtc").checked;
+  try{ localStorage.setItem("seatRaw", raw); localStorage.setItem("seatOpt", JSON.stringify({ utc:utc, tight:+$("seatTight").value || 20, t:Date.now() })); }catch(e){}
+  var p = seatParse(raw, utc);
+  SEAT.rows = p.rows; SEAT.skipped = p.skipped; SEAT.bad = p.bad; SEAT.unknown = p.unknown;
+  var msg = p.rows.length ? "已解析 " + p.rows.length + " 班" : (raw.trim() ? "看不懂這段內容，請確認是否含航班編號與 Pax 欄。" : "");
+  if(p.skipped) msg += "，略過調機／取消 " + p.skipped + " 班";
+  if(p.bad) msg += "，" + p.bad + " 行格式不符";
+  $("seatMsg").textContent = msg;
+  seatCapRender();
+  if(SEAT.date !== "all" && !p.rows.some(function(r){ return twKey(r.dep) === SEAT.date; })) SEAT.date = "all";
+  seatRender();
+}
+function seatCapRender(){
+  var caps = seatCaps(), types = Object.keys(caps);
+  (SEAT.unknown || []).forEach(function(t){ if(types.indexOf(t) < 0) types.push(t); });
+  $("seatCapNote").textContent = SEAT.unknown && SEAT.unknown.length ? "　⚠ 未知機型：" + SEAT.unknown.join("、") + "，請填座位數" : "";
+  if(SEAT.unknown && SEAT.unknown.length) $("seatCapBox").open = true;
+  $("seatCapBody").innerHTML = "<table><thead><tr><th>機型</th><th>頭等 F</th><th>商務 C</th><th>豪經 W</th><th>經濟 Y</th><th>合計</th></tr></thead><tbody>" +
+    types.map(function(t){
+      var c = caps[t] || ["","","",""];
+      return "<tr><td><b>" + esc(t) + "</b></td>" + [0,1,2,3].map(function(i){ return '<td><input type="number" min="0" data-cap="' + esc(t) + '" data-i="' + i + '" value="' + (c[i] === "" ? "" : c[i]) + '"></td>'; }).join("") +
+        "<td>" + (caps[t] ? caps[t].reduce(function(a,b){ return a + (+b || 0); }, 0) : "—") + "</td></tr>";
+    }).join("") + '</tbody></table><p class="note" style="margin:0 14px 12px">預設值為公開座位圖：A350-900 4／26／36／240、A350-1000 4／40／36／270、A330-900 28／269、A321neo 8／180。沒有的艙等填 0。<button class="btn ghost" id="btnSeatCapReset" type="button" style="margin-left:8px">恢復預設</button></p>';
+}
+function seatCell(r, i, tight){
+  if(r.rem[i] == null){
+    return '<td class="c"><span class="seat-x">' + (r.pax[i] != null && r.noCap ? "訂 " + r.pax[i] : "—") + "</span></td>";
+  }
+  var v = r.rem[i], cls = v < 0 ? "over" : i === 0 ? "" : v <= (i === 3 ? 5 : 2) ? "low" : v <= tight && i === 3 ? "tight" : "";   // 頭等座位本來就少，不標色
+  return '<td class="c seat-c ' + cls + '"><span class="seat-n">' + (v < 0 ? "超賣 " + (-v) : v) + '</span><span class="seat-b">' + r.pax[i] + "／" + r.cap[i] + "</span></td>";
+}
+function seatRender(){
+  var box = $("seatResult");
+  if(!SEAT.rows.length){ box.hidden = true; return; }
+  box.hidden = false;
+  var tight = Math.max(1, +$("seatTight").value || 20), only = $("seatOnlyAvail").checked;
+  var all = SEAT.rows;
+  // 出發站
+  var origs = {}; all.forEach(function(r){ origs[r.from] = (origs[r.from] || 0) + 1; });
+  var ol = Object.keys(origs);
+  $("seatOrigWrap").hidden = ol.length < 2;
+  if(ol.length < 2) SEAT.orig = "all";
+  $("seatOrigs").innerHTML = ['<button type="button" class="chip tiny" data-so="all" aria-pressed="' + (SEAT.orig === "all") + '">全部</button>'].concat(ol.map(function(o){
+    return '<button type="button" class="chip tiny" data-so="' + o + '" aria-pressed="' + (SEAT.orig === o) + '">' + o + '<span class="n">' + origs[o] + "</span></button>"; })).join("");
+  var base = all.filter(function(r){ return SEAT.orig === "all" || r.from === SEAT.orig; });
+  // 日期
+  var days = {}; base.forEach(function(r){ var k = twKey(r.dep); days[k] = (days[k] || 0) + 1; });
+  var today = twKey(Date.now()), tmr = twKey(Date.now() + 86400000), dat = twKey(Date.now() + 2*86400000);
+  function dayLabel(k){ var p = k.split("-"); var d = new Date(Date.UTC(+p[0], +p[1]-1, +p[2])); return (+p[1]) + "/" + (+p[2]) + "（" + DOW[d.getUTCDay()] + "）" + (k === today ? "今天" : k === tmr ? "明天" : k === dat ? "後天" : ""); }
+  $("seatDates").innerHTML = ['<button type="button" class="chip tiny" data-sd="all" aria-pressed="' + (SEAT.date === "all") + '">全部<span class="n">' + base.length + "</span></button>"].concat(Object.keys(days).sort().map(function(k){
+    return '<button type="button" class="chip tiny" data-sd="' + k + '" aria-pressed="' + (SEAT.date === k) + '">' + dayLabel(k) + '<span class="n">' + days[k] + "</span></button>"; })).join("");
+  var inDay = base.filter(function(r){ return SEAT.date === "all" || twKey(r.dep) === SEAT.date; });
+  // 區域（北美置前）
+  var rc = {}; inDay.forEach(function(r){ var g = airportRegion(r.to); rc[g] = (rc[g] || 0) + 1; });
+  var order = ["北美"].concat(REGIONS.filter(function(g){ return g !== "北美"; }));
+  $("seatRegions").innerHTML = ['<button type="button" class="chip tiny" data-sr="all" aria-pressed="' + (SEAT.region === "all") + '">全部</button>'].concat(order.filter(function(g){ return rc[g] || SEAT.region === g; }).map(function(g){
+    return '<button type="button" class="chip tiny" data-sr="' + g + '" aria-pressed="' + (SEAT.region === g) + '">' + (g === "北美" ? "🇺🇸 北美" : g) + '<span class="n">' + (rc[g] || 0) + "</span></button>"; })).join("");
+  var list = inDay.filter(function(r){ return (SEAT.region === "all" || airportRegion(r.to) === SEAT.region) && (!only || (r.rem[3] != null && r.rem[3] > 0)); });
+  // KPI
+  function pos(v){ return v != null && v > 0 ? v : 0; }
+  var us = list.filter(seatIsUS);
+  var over = list.filter(function(r){ return r.rem.some(function(v){ return v != null && v < 0; }); });
+  var tightN = list.filter(function(r){ return r.rem[3] != null && r.rem[3] >= 0 && r.rem[3] <= tight; });
+  $("seatKpis").innerHTML =
+    kpi("", "航班數", list.length + " 班") +
+    kpi("c", "美國線空位（C／W／Y）", us.length ? us.reduce(function(a,r){ return a + pos(r.rem[1]); }, 0) + "／" + us.reduce(function(a,r){ return a + pos(r.rem[2]); }, 0) + "／" + us.reduce(function(a,r){ return a + pos(r.rem[3]); }, 0) : "—") +
+    kpi("", "經濟艙空位合計", list.reduce(function(a,r){ return a + pos(r.rem[3]); }, 0) + " 席") +
+    kpi("r", "超賣班次", over.length + " 班") +
+    kpi("", "經濟艙緊張（≤" + tight + "）", tightN.length + " 班");
+  // 依台北日期分組，每天內美國線置頂
+  var groups = {}; list.forEach(function(r){ var k = twKey(r.dep); (groups[k] = groups[k] || []).push(r); });
+  var head = '<thead><tr><th>台北出發</th><th>航班</th><th>目的地</th><th>機型／機號</th><th class="c">頭等</th><th class="c">商務</th><th class="c">豪經</th><th class="c">經濟</th><th class="c">合計空位</th></tr></thead>';
+  $("seatBody").innerHTML = Object.keys(groups).sort().map(function(k){
+    var g = groups[k].slice().sort(function(a,b){ return (seatIsUS(b) - seatIsUS(a)) || (a.dep - b.dep); });
+    var gu = g.filter(seatIsUS);
+    var sum = gu.length ? '<div class="seat-sum"><span>美國線 ' + gu.length + " 班：商務 <b>" + gu.reduce(function(a,r){ return a + pos(r.rem[1]); }, 0) +
+      "</b>・豪經 <b>" + gu.reduce(function(a,r){ return a + pos(r.rem[2]); }, 0) + "</b>・經濟 <b>" + gu.reduce(function(a,r){ return a + pos(r.rem[3]); }, 0) + "</b></span></div>" : "";
+    return '<div class="seat-day"><h3>' + dayLabel(k) + ' <span class="note">台北出發 ' + g.length + " 班</span></h3>" + sum +
+      '<div class="tbox" style="margin-top:0;max-height:none"><table class="seat-tbl">' + head + "<tbody>" + g.map(function(r){
+        var p = twParts(r.dep), u = seatIsUS(r), tot = r.rem.reduce(function(a,v){ return a + pos(v); }, 0), ov = r.rem.some(function(v){ return v != null && v < 0; });
+        return '<tr class="' + (u ? "us" : "") + '"><td class="mono"><b>' + p.hm + "</b>" + (r.delay ? '<span class="seat-dly">' + (r.delay > 0 ? "晚 " : "早 ") + fmtDur(Math.abs(r.delay)*60000) + "</span>" : "") +
+            (r.from !== "TPE" ? '<br><span class="note">自 ' + esc(r.from) + "</span>" : "") + "</td>" +
+          '<td class="mono" style="font-weight:600">' + esc(r.flt) + (r.st !== "J" ? ' <span class="note">(' + esc(r.st) + ")</span>" : "") + "</td>" +
+          "<td><b>" + esc(r.to) + "</b> " + esc(aptName(r.to)) + (u ? '<span class="seat-us-tag">美國</span>' : "") + "</td>" +
+          "<td>" + esc(SEAT_TYPE_NAME[r.type] || r.type) + (r.noCap ? ' <span style="color:var(--bad)">未設配置</span>' : "") + '<br><span class="note">' + esc(r.reg) + "</span></td>" +
+          [0,1,2,3].map(function(i){ return seatCell(r, i, tight); }).join("") +
+          '<td class="c"><span class="seat-tot">' + tot + "</span>" + (ov ? '<br><span class="seat-b" style="color:#c0392b">含超賣艙等</span>' : "") + "</td></tr>";
+      }).join("") + "</tbody></table></div></div>";
+  }).join("") || '<div class="empty">沒有符合條件的航班。</div>';
+}
+function seatInit(){
+  if(!$("seatRaw")) return;
+  try{
+    $("seatRaw").value = localStorage.getItem("seatRaw") || "";
+    var o = JSON.parse(localStorage.getItem("seatOpt") || "null");
+    if(o){ $("seatUtc").checked = o.utc !== false; $("seatTight").value = o.tight || 20; }
+  }catch(e){}
+  var tmr = null;
+  $("seatRaw").addEventListener("input", function(){ clearTimeout(tmr); tmr = setTimeout(seatRun, 500); });
+  $("btnSeatParse").addEventListener("click", seatRun);
+  $("btnSeatClear").addEventListener("click", function(){ $("seatRaw").value = ""; seatRun(); });
+  $("seatUtc").addEventListener("change", seatRun);
+  $("seatTight").addEventListener("change", seatRun);
+  $("seatOnlyAvail").addEventListener("change", seatRender);
+  // 讀記事本：自動判斷 UTF-8／UTF-16（記事本「Unicode」存檔）／Big5（ANSI）
+  function readTxt(file){
+    return new Promise(function(res, rej){
+      var fr = new FileReader();
+      fr.onerror = function(){ rej(new Error("無法讀取 " + file.name)); };
+      fr.onload = function(){
+        var b = new Uint8Array(fr.result), enc = "utf-8";
+        if(b[0] === 0xFF && b[1] === 0xFE) enc = "utf-16le";
+        else if(b[0] === 0xFE && b[1] === 0xFF) enc = "utf-16be";
+        else if(b.length > 3 && b[1] === 0 && b[3] === 0) enc = "utf-16le";
+        var txt;
+        try{ txt = new TextDecoder(enc, { fatal: enc === "utf-8" }).decode(b); }
+        catch(e){ try{ txt = new TextDecoder("big5").decode(b); }catch(e2){ txt = new TextDecoder("utf-8").decode(b); } }
+        res(txt.replace(/^\uFEFF/, ""));
+      };
+      fr.readAsArrayBuffer(file);
+    });
+  }
+  function loadFiles(files){
+    files = Array.prototype.slice.call(files || []).filter(function(f){ return /\.(txt|tsv|csv)$/i.test(f.name) || /^text\//.test(f.type); });
+    if(!files.length){ $("seatMsg").textContent = "請選擇 .txt 記事本檔案。"; return; }
+    $("seatMsg").textContent = "讀取中…";
+    Promise.all(files.map(readTxt)).then(function(arr){
+      $("seatRaw").value = arr.join("\n"); seatRun();
+      $("seatMsg").textContent = "已載入 " + files.map(function(f){ return f.name; }).join("、") + "｜" + $("seatMsg").textContent;
+    }, function(e){ $("seatMsg").textContent = e.message; });
+  }
+  $("seatFile").addEventListener("change", function(){ loadFiles(this.files); this.value = ""; });
+  var ta = $("seatRaw");
+  ["dragenter","dragover"].forEach(function(ev){ ta.addEventListener(ev, function(e){ e.preventDefault(); ta.classList.add("seat-drop"); }); });
+  ["dragleave","drop"].forEach(function(ev){ ta.addEventListener(ev, function(){ ta.classList.remove("seat-drop"); }); });
+  ta.addEventListener("drop", function(e){ if(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length){ e.preventDefault(); loadFiles(e.dataTransfer.files); } });
+  $("btnSeatClip").addEventListener("click", function(){
+    if(!navigator.clipboard || !navigator.clipboard.readText){ ta.focus(); $("seatMsg").textContent = "這個瀏覽器不支援直接讀剪貼簿，請在框內按 Ctrl+V（Mac：⌘V）。"; return; }
+    navigator.clipboard.readText().then(function(t){
+      if(!t.trim()){ $("seatMsg").textContent = "剪貼簿是空的，請先在系統畫面全選並複製。"; return; }
+      ta.value = t; seatRun();
+    }, function(){ ta.focus(); $("seatMsg").textContent = "瀏覽器沒有允許讀取剪貼簿，請在框內按 Ctrl+V（Mac：⌘V）。"; });
+  });
+  $("tab-seat").addEventListener("click", function(e){
+    var b = e.target.closest("[data-sd],[data-sr],[data-so]");
+    if(b){
+      if(b.hasAttribute("data-sd")) SEAT.date = b.getAttribute("data-sd");
+      if(b.hasAttribute("data-sr")){ var r = b.getAttribute("data-sr"); SEAT.region = (r === SEAT.region && r !== "all") ? "all" : r; }
+      if(b.hasAttribute("data-so")) SEAT.orig = b.getAttribute("data-so");
+      seatRender(); return;
+    }
+    if(e.target.id === "btnSeatCapReset"){ try{ localStorage.removeItem("seatCap"); }catch(err){} seatRun(); }
+  });
+  $("seatCapBody").addEventListener("change", function(e){
+    var inp = e.target.closest("[data-cap]"); if(!inp) return;
+    var caps = {}; try{ caps = JSON.parse(localStorage.getItem("seatCap") || "{}"); }catch(err){}
+    var t = inp.getAttribute("data-cap"), cur = caps[t] || (SEAT_CAP_DEFAULT[t] ? SEAT_CAP_DEFAULT[t].slice() : [0,0,0,0]);
+    cur[+inp.getAttribute("data-i")] = Math.max(0, parseInt(inp.value, 10) || 0);
+    caps[t] = cur;
+    try{ localStorage.setItem("seatCap", JSON.stringify(caps)); }catch(err){}
+    seatRun();
+  });
+  if($("seatRaw").value.trim()) seatRun(); else seatCapRender();
+}
+
 function switchTab(name){
   var btns = $("nav").querySelectorAll("button");
   for(var i=0;i<btns.length;i++){
     var on = btns[i].getAttribute("data-tab") === name;
     btns[i].setAttribute("aria-selected", on ? "true" : "false");
   }
-  ["tdx","board","airline","sched","otd","cam","map","help"].forEach(function(t){
+  ["tdx","board","airline","sched","otd","seat","cam","map","help"].forEach(function(t){
     $("tab-" + t).hidden = (t !== name);
   });
   // 離開即時影像就移除直播，回來時重新自動播放（避免背景持續吃頻寬）
@@ -7129,6 +7425,7 @@ function shift(hhmm, mins){
   bgInit();
   fixInit();
   hsInit();
+  seatInit();
 
   switchTab("tdx");
   refreshAll();
