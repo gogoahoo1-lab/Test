@@ -381,6 +381,68 @@ ul.doc li{margin:6px 0}
 .hmap-cyber .hmap-fit{background:#061420;color:#00f0ff;border-color:rgba(0,240,255,.5);box-shadow:0 0 10px rgba(0,240,255,.25)}
 
 .leaflet-control-layers label{margin:3px 0}
+
+/* ── 台灣視角側欄（盤旋偵測地圖）：A 版面＋C 霓虹配色 ── */
+.tw-panel{--tw-o:#33ccff;--tw-i:#ff3cf0;--tw-r:#ff3355;--tw-w:#c8ff00;--tw-line:#1d4a63;--tw-dim:#7fa9ba;
+  position:absolute;top:0;right:0;bottom:0;width:330px;max-width:88%;z-index:900;display:flex;flex-direction:column;
+  background:radial-gradient(circle at 50% 0%,rgba(15,42,61,.96),rgba(4,16,26,.96) 72%);border-left:1px solid var(--tw-line);color:#d6f3ff;
+  font:12.5px system-ui,-apple-system,"Noto Sans TC",sans-serif;box-shadow:-8px 0 30px rgba(0,0,0,.45),0 0 24px rgba(0,200,255,.12);
+  transform:translateX(100%);transition:transform .28s ease;backdrop-filter:blur(8px)}
+.tw-panel.open{transform:none}
+.tw-tab{position:absolute;right:100%;bottom:34px;display:flex;align-items:center;gap:8px;white-space:nowrap;cursor:pointer;
+  background:rgba(4,16,26,.94);color:#6ff;border:1px solid var(--tw-line);border-right:0;border-radius:12px 0 0 12px;padding:8px 13px;
+  font:700 12.5px ui-monospace,Menlo,monospace;letter-spacing:1px;box-shadow:-3px 2px 14px rgba(0,0,0,.4),0 0 12px rgba(0,200,255,.18)}
+.tw-tab b{font:800 13px ui-monospace,monospace}
+.tw-tab .o{color:var(--tw-o);text-shadow:0 0 6px rgba(51,204,255,.7)}.tw-tab .i{color:var(--tw-i);text-shadow:0 0 6px rgba(255,60,240,.8)}
+.tw-hd{padding:14px 14px 4px}
+.tw-hd h4{margin:0;font:700 14px ui-monospace,Menlo,monospace;letter-spacing:2px;color:#6ff;display:flex;justify-content:space-between;align-items:center;text-shadow:0 0 8px rgba(0,255,255,.35)}
+.tw-hd h4 button{background:none;border:0;color:var(--tw-dim);font-size:16px;cursor:pointer;padding:0 4px}
+.tw-sub{font-size:11px;color:var(--tw-dim);margin:3px 0 12px;font-family:ui-monospace,monospace}
+.tw-sum{display:flex;gap:10px}
+.tw-card{flex:1;border-radius:12px;padding:11px 12px;cursor:pointer;background:rgba(0,40,60,.35);border:1px solid var(--tw-line);transition:border-color .15s,background .15s}
+.tw-card:hover{background:rgba(0,60,90,.4)}
+.tw-card.sel{border-color:currentColor;box-shadow:0 0 12px -2px currentColor inset}
+.tw-card.o{color:var(--tw-o)}.tw-card.i{color:var(--tw-i)}
+.tw-card .t{font-size:12px;color:#c9e6f2;margin-bottom:4px}
+.tw-card .n{font:800 34px ui-monospace,monospace;line-height:1}
+.tw-card.o .n{text-shadow:0 0 12px rgba(51,204,255,.6)}.tw-card.i .n{text-shadow:0 0 12px rgba(255,60,240,.75)}
+.tw-card .by{font-size:11px;color:var(--tw-dim);margin-top:6px;line-height:1.35}
+.tw-chips{display:flex;margin:12px 0 6px;background:rgba(0,40,60,.45);border:1px solid var(--tw-line);border-radius:10px;padding:3px}
+.tw-chips button{flex:1;background:none;border:0;color:#9cc4d3;border-radius:8px;padding:5px 2px;font:600 11.5px ui-monospace,monospace;cursor:pointer}
+.tw-chips button em{font-style:normal;opacity:.7;margin-left:3px}
+.tw-chips button.on{background:#6ff;color:#04101a;box-shadow:0 0 10px rgba(0,255,255,.45)}
+.tw-list{flex:1;overflow:auto;padding:2px 0 8px;scrollbar-width:thin;scrollbar-color:#1d4a63 transparent}
+.tw-sec{padding:10px 16px 6px;font:700 11px ui-monospace,monospace;letter-spacing:1px;color:var(--tw-dim);display:flex;justify-content:space-between}
+.tw-row{margin:0 12px 8px;padding:10px 12px;border-radius:12px;background:rgba(0,40,60,.3);border:1px solid rgba(29,74,99,.7);cursor:pointer;transition:border-color .15s,background .15s}
+.tw-row:hover{background:rgba(0,60,90,.38)}
+.tw-row.sel{border-color:#6ff;box-shadow:0 0 12px rgba(0,255,255,.2)}
+.tw-l1{display:flex;align-items:center;gap:7px}
+.tw-l1 .f{font:700 14px ui-monospace,monospace;color:#fff}
+.tw-l1 .ty{font:600 10px ui-monospace,monospace;color:#ffd24a;background:rgba(255,210,74,.12);border-radius:5px;padding:1px 5px}
+.tw-l1 .api{font-size:10px;color:var(--tw-dim);border:1px dashed var(--tw-dim);border-radius:5px;padding:0 4px}
+.tw-l1 .rt{margin-left:auto;font:600 12px ui-monospace,monospace;color:#bfe9f7}
+.tw-bar{height:4px;background:#0d2635;border-radius:3px;margin:8px 0 5px;overflow:hidden}
+.tw-bar i{display:block;height:100%;border-radius:3px}
+.tw-row.o .tw-bar i{background:var(--tw-o);box-shadow:0 0 8px var(--tw-o)}
+.tw-row.i .tw-bar i{background:var(--tw-i);box-shadow:0 0 8px rgba(255,60,240,.9)}
+.tw-row.alert .tw-bar i{background:var(--tw-r);box-shadow:0 0 8px var(--tw-r)}
+.tw-l2{display:flex;justify-content:space-between;color:var(--tw-dim);font-size:11px}
+.tw-l2 .lv{color:var(--tw-r);font-weight:700;text-shadow:0 0 6px rgba(255,51,85,.5)}
+.tw-l2 .lv.w{color:var(--tw-w);text-shadow:0 0 6px rgba(200,255,0,.5)}
+.tw-row.warn .tw-bar i{background:var(--tw-w);box-shadow:0 0 8px var(--tw-w)}
+/* 賽博底圖：同樣的近黑底＋青色格線＋掃描線＋等寬字 */
+.hmap-cyber .tw-panel{background:
+  repeating-linear-gradient(180deg,transparent 0,transparent 2px,rgba(0,0,0,.18) 2px,rgba(0,0,0,.18) 3px),
+  linear-gradient(rgba(0,240,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(0,240,255,.05) 1px,transparent 1px),
+  rgba(2,6,13,.95);background-size:auto,48px 48px,48px 48px,auto;border-left:1px solid rgba(0,240,255,.55);
+  box-shadow:-1px 0 0 rgba(0,240,255,.25),-10px 0 30px rgba(0,0,0,.6),-2px 0 18px rgba(0,240,255,.25)}
+.hmap-cyber .tw-tab{background:rgba(2,6,13,.95);border-color:rgba(0,240,255,.55)}
+.hmap-cyber .tw-card,.hmap-cyber .tw-row,.hmap-cyber .tw-chips{background:rgba(0,30,45,.35);border-color:rgba(0,240,255,.22)}
+.hmap-cyber .tw-panel .tw-hd h4,.hmap-cyber .tw-card .n,.hmap-cyber .tw-l1 .f,.hmap-cyber .tw-l1 .rt,.hmap-cyber .tw-tab,.hmap-cyber .tw-chips button,.hmap-cyber .tw-sub,.hmap-cyber .tw-sec{font-family:"Share Tech Mono",ui-monospace,Consolas,monospace}
+.tw-empty{margin:0 12px 8px;padding:14px 12px;color:var(--tw-dim);text-align:center;border:1px dashed var(--tw-line);border-radius:12px}
+.tw-foot{padding:7px 14px;font-size:10.5px;color:#5f8798;border-top:1px solid var(--tw-line)}
+#holdMap.tw-open .leaflet-top.leaflet-right{right:330px}
+@media (max-width:720px){.tw-panel{width:88%}#holdMap.tw-open .leaflet-top.leaflet-right{display:none}}
 .hmap-fit{display:block;margin-bottom:6px;background:#fff;border:1px solid rgba(0,0,0,.2);border-radius:6px;padding:5px 10px;font:12px system-ui,sans-serif;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15)}
 .fmap-toolbar [hidden],.hold-radar[hidden]{display:none!important}
 .hold-radar{border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.65);padding:8px}
@@ -403,7 +465,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-28o</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-28t</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -940,6 +1002,9 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
           <label class="f" style="flex:1;min-width:180px">第 4 組（備援）
             <input type="password" id="fixKey4" autocomplete="off" style="width:100%" placeholder="選填">
           </label>
+          <label class="f" style="flex-basis:100%">共用資料網址（選填・Cloudflare Worker）
+            <input type="url" id="fixShare" autocomplete="off" style="width:100%" placeholder="例：https://airlabs-share.你的帳號.workers.dev　填了就改讀共用資料，本機不再打 API">
+          </label>
           <label class="f">每組每日上限
             <input type="number" id="fixCap" min="1" max="500" value="30" style="width:80px">
           </label>
@@ -1054,7 +1119,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
 <section id="tab-help" hidden>
   <div class="card">
     <h2>怎麼用</h2>
-    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-28o</b>（盤旋偵測：轉降偵測、目的地天氣、背景監看、資料來源狀態、盤旋紀錄統計）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
+    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-28t</b>（盤旋偵測：轉降偵測、目的地天氣、背景監看、資料來源狀態、盤旋紀錄統計）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
     <ul class="doc">
       <li>桃園機場走「<b>TDX 桃園機場</b>」頁籤最省事：填 Client ID／Secret 後按立即抓取，到場與離場會一次抓齊。</li>
       <li>TDX 的 <code>$top</code> 預設值只有 <b>30 筆</b>，不分頁就只會拿到 30 班。本頁已改成自動帶 <code>$top</code>／<code>$skip</code> 分頁抓到底。</li>
@@ -4305,6 +4370,29 @@ function holdMapInit(){
     return b;
   }});
   HMAP.map.addControl(new Fit());
+  // 台灣視角側欄：往外站／返台航班
+  var tw = document.createElement("div");
+  tw.className = "tw-panel"; tw.id = "twPanel";
+  tw.innerHTML = '<button type="button" class="tw-tab" id="twTab">台灣視角<b class="o" id="twTabO">↗0</b><b class="i" id="twTabI">↙0</b></button>' +
+    '<div class="tw-hd"><h4>◎ 台灣視角 <button type="button" id="twClose" aria-label="收合">✕</button></h4><div id="twHead"></div></div>' +
+    '<div class="tw-list" id="twList"></div>';
+  tw.title = "以 TPE／RMQ／KHH 為基地。航線來自 TDX 看板、API 或 adsb.lol／hexdb；剩餘距離為目前位置到目的地的大圓距離。點航班可在地圖上定位。";
+  HMAP.map.getContainer().appendChild(tw);
+  L.DomEvent.disableClickPropagation(tw); L.DomEvent.disableScrollPropagation(tw);
+  function twSet(open){
+    tw.classList.toggle("open", open); HMAP.map.getContainer().classList.toggle("tw-open", open);
+    try{ localStorage.setItem("twOpen", open ? "1" : "0"); }catch(e){}
+  }
+  var twOpen = false; try{ twOpen = localStorage.getItem("twOpen") === "1"; }catch(e){}
+  twSet(twOpen);
+  $("twTab").addEventListener("click", function(){ twSet(!tw.classList.contains("open")); });
+  $("twClose").addEventListener("click", function(){ twSet(false); });
+  tw.addEventListener("click", function(e){
+    var c = e.target.closest("[data-twv]"), b = e.target.closest("[data-twb]"), r = e.target.closest("[data-hex]");
+    if(c){ TW.view = TW.view === c.getAttribute("data-twv") ? "all" : c.getAttribute("data-twv"); twPaint(); }
+    else if(b){ TW.base = b.getAttribute("data-twb"); twPaint(); }
+    else if(r){ HOLD.focus = r.getAttribute("data-hex"); HMAP.openFocus = true; holdRender(); }
+  });
 }
 function holdPlaneIcon(tr){
   var col = tr.level >= 3 ? "#d65656" : tr.level === 2 ? "#e0892a" : tr.level === 1 ? "#3a8fa7" : "#1f4e79";
@@ -4937,7 +5025,7 @@ function hsInit(){
     var items = [
       [holdBridge() || holdCfg().proxy ? (bad ? "bad" : warn ? "warn" : "on") : "bad", "資料來源"],
       [tc.on && tc.token && tc.chat ? "on" : "", "Telegram"],
-      [fc.prov && fc.key ? "on" : "", "航班資料 API"],
+      [fc.share || (fc.prov && fc.key) ? "on" : "", "航班資料 API"],
       [BG.active ? "on" : "", "背景監看"]
     ];
     $("hsDots").innerHTML = items.map(function(x){ return '<i class="' + x[0] + '" title="' + x[1] + '"></i>'; }).join("");
@@ -5003,6 +5091,7 @@ function fixCfg(){
   if(c.win == null){ c.win = true; c.winFrom = 11; c.winTo = 22; if(!c.bulkEvery || c.bulkEvery === 60) c.bulkEvery = 10; }
   if(c.winFrom == null) c.winFrom = 11;
   if(c.winTo == null) c.winTo = 22;
+  c.share = String(c.share || "").trim().replace(/\/+$/, "");
   c.key = c.keys.filter(Boolean)[0] || "";
   return c;
 }
@@ -5198,7 +5287,7 @@ function fixPaint(){
   if(!$("fixPill")) return;
   var c = fixCfg(), u = fixUsage();
   var nk = c.keys.filter(Boolean).length;
-  $("fixPill").textContent = c.prov && c.key ? (c.prov === "airlabs" ? "AirLabs" + (nk > 1 ? "×" + nk : "") : "FlightAware") + "・今日 " + u.n + "／" + fixCapTotal(c) : "未設定";
+  $("fixPill").textContent = c.share ? "共用資料（Worker）" : c.prov && c.key ? (c.prov === "airlabs" ? "AirLabs" + (nk > 1 ? "×" + nk : "") : "FlightAware") + "・今日 " + u.n + "／" + fixCapTotal(c) : "未設定";
   $("fixUse").textContent = "今日已呼叫 " + u.n + " 次，本月 " + u.month.n + " 次。";
   keyPaint();
 }
@@ -5220,7 +5309,7 @@ function keyPaint(){
 function fixInit(){
   if(!$("fixProv")) return;
   var c = fixCfg();
-  $("fixProv").value = c.prov || ""; $("fixKey").value = c.keys[0] || ""; $("fixKey2").value = c.keys[1] || ""; $("fixKey3").value = c.keys[2] || ""; $("fixKey4").value = c.keys[3] || "";
+  $("fixProv").value = c.prov || ""; $("fixKey").value = c.keys[0] || ""; $("fixKey2").value = c.keys[1] || ""; $("fixKey3").value = c.keys[2] || ""; $("fixKey4").value = c.keys[3] || ""; $("fixShare").value = c.share || "";
   $("fixCap").value = c.cap || 30; $("fixEvery").value = c.every || 60;
   function syncKeys(){ var al = $("fixProv").value === "airlabs"; $("fixKey2").closest("label").hidden = !al; $("fixKey3").closest("label").hidden = !al; $("fixKey4").closest("label").hidden = !al; }
   syncKeys();
@@ -5230,11 +5319,11 @@ function fixInit(){
     syncKeys();
     var n = { prov:$("fixProv").value, keys:[$("fixKey").value.trim(), $("fixKey2").value.trim(), $("fixKey3").value.trim(), $("fixKey4").value.trim()], cap: Math.max(1, +$("fixCap").value || 30), every: +$("fixEvery").value || 60,
       bulk: $("fixBulk").checked, bulkEvery: +$("fixBulkEvery").value || 60,
-      win: $("fixWin").checked, winFrom: +$("fixWinFrom").value, winTo: +$("fixWinTo").value };
+      win: $("fixWin").checked, winFrom: +$("fixWinFrom").value, winTo: +$("fixWinTo").value, share: $("fixShare").value.trim() };
     try{ localStorage.setItem("fixCfg", JSON.stringify(n)); }catch(e){}
     fixPaint(); fixBulkPaint();
   }
-  ["fixProv","fixKey","fixKey2","fixKey3","fixKey4","fixCap","fixEvery","fixBulk","fixBulkEvery","fixWin","fixWinFrom","fixWinTo"].forEach(function(id){ $(id).addEventListener("change", save); });
+  ["fixProv","fixKey","fixKey2","fixKey3","fixKey4","fixShare","fixCap","fixEvery","fixBulk","fixBulkEvery","fixWin","fixWinFrom","fixWinTo"].forEach(function(id){ $(id).addEventListener("change", save); });
   $("btnFixBulkNow").addEventListener("click", function(){ save(); fixBulkRun(true); });
   fixBulkPaint();
   $("btnFixTest").addEventListener("click", function(){
@@ -5269,6 +5358,47 @@ function fixIndex(){
   FIXALL.byHex = {}; FIXALL.byCs = {};
   FIXALL.items.forEach(function(it){ if(it.hex) FIXALL.byHex[it.hex] = it; if(it.cs) FIXALL.byCs[it.cs] = it; });
 }
+/* AirLabs 一筆航班 → 看板內部格式（本機查詢與共用 Worker 共用） */
+function airlabsRow(r){
+  return { hex: String(r.hex || "").toLowerCase(), cs: String(r.flight_icao || "").toUpperCase(), fno: r.flight_iata || "",
+    lat: r.lat, lon: r.lng, alt: r.alt != null ? Math.round(r.alt*3.28084) : null, gs: r.speed != null ? Math.round(r.speed/1.852) : null,
+    hdg: r.dir, ts: utcMs(r.updated), from: r.dep_iata || "", to: r.arr_iata || "", type: String(r.aircraft_icao || "").toUpperCase(),
+    reg: r.reg_number || "", landed: r.status === "landed", sched: r.status === "scheduled" };
+}
+/* 共用資料（Cloudflare Worker）：Worker 定時打 AirLabs，所有人讀同一份，不消耗本機額度。每分鐘最多檢查一次 */
+var FIXSHARE = { checkT:0, busy:false, err:"", srvT:0 };
+function fixShareRun(force){
+  var cfg = fixCfg(), hcfg = holdCfg();
+  if(hcfg.mode !== "airline"){ $("fixBulkMsg").textContent = "共用資料只支援「指定航空公司」模式。"; return; }
+  if(!hcfg.gAl.length || FIXSHARE.busy) return;
+  if(!force && (document.hidden || Date.now() - FIXSHARE.checkT < 60000)) return;
+  FIXSHARE.busy = true; FIXSHARE.checkT = Date.now();
+  var key = "share|" + hcfg.gAl.join(",");
+  fetch(cfg.share + "/?airline=" + encodeURIComponent(hcfg.gAl.join(",")), { cache:"no-store" })
+    .then(function(r){ if(!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    .then(function(j){
+      var items = [], ts = [], miss = [];
+      hcfg.gAl.forEach(function(a){
+        var d = j.airlines && j.airlines[a];
+        if(!d || !d.t){ miss.push(a); return; }
+        ts.push(d.t);
+        (d.response || []).forEach(function(r){ items.push(airlabsRow(r)); });
+      });
+      FIXSHARE.err = miss.length ? "Worker 沒有 " + miss.join("、") + " 的資料（請在 Worker 的 AIRLINES 加入）" : "";
+      if(!ts.length) throw new Error(FIXSHARE.err || "Worker 尚無資料");
+      var t = Math.min.apply(null, ts);
+      FIXSHARE.srvT = t;
+      if(force || FIXALL.key !== key || t > (FIXALL.t || 0)){
+        FIXALL.t = t; FIXALL.key = key; FIXALL.items = items; fixIndex();
+        HMAP.pendingSweep = true;
+        try{ fixBulkApply(); }catch(err){}
+        try{ localStorage.setItem("fixBulk", JSON.stringify({ t:t, key:key, items:items })); }catch(e){}
+        try{ holdRender(); }catch(err){}
+      }
+      fixBulkPaint();
+    }, function(e){ FIXSHARE.err = "讀取共用資料失敗：" + e.message; fixBulkPaint(); })
+    .then(function(){ FIXSHARE.busy = false; });
+}
 function fixBulkFetch(cfg, hcfg){
   var out = [];
   if(cfg.prov === "airlabs"){
@@ -5280,12 +5410,7 @@ function fixBulkFetch(cfg, hcfg){
     return urls.reduce(function(ch, u){
       return ch.then(function(){
         return airlabsGet(function(key){ return u + encodeURIComponent(key); }).then(function(j){
-          (j.response || []).forEach(function(r){
-            out.push({ hex: String(r.hex || "").toLowerCase(), cs: String(r.flight_icao || "").toUpperCase(), fno: r.flight_iata || "",
-              lat: r.lat, lon: r.lng, alt: r.alt != null ? Math.round(r.alt*3.28084) : null, gs: r.speed != null ? Math.round(r.speed/1.852) : null,
-              hdg: r.dir, ts: utcMs(r.updated), from: r.dep_iata || "", to: r.arr_iata || "", type: String(r.aircraft_icao || "").toUpperCase(),
-              reg: r.reg_number || "", landed: r.status === "landed", sched: r.status === "scheduled" });
-          });
+          (j.response || []).forEach(function(r){ out.push(airlabsRow(r)); });
         });
       });
     }, Promise.resolve()).then(function(){ return out; });
@@ -5339,11 +5464,18 @@ function fixBulkApply(){
 }
 function fixBulkRun(force){
   var cfg = fixCfg(), hcfg = holdCfg();
+  if(cfg.share && cfg.bulk) return fixShareRun(force);   // 有共用資料網址就只讀 Worker，不自己打 API
   if(!cfg.prov || !cfg.key || !cfg.bulk || FIXALL.busy || !holdBridge()) return;
   if(hcfg.mode === "airline" && !hcfg.gAl.length) return;
   var key = cfg.prov + "|" + hcfg.mode + "|" + (hcfg.mode === "airline" ? hcfg.gAl.join(",") : hcfg.code + hcfg.r);
   // 換了監看範圍就立刻更新一次，否則依間隔
   if(!force && !fixInWin(cfg)){ fixBulkPaint(); return; }   // 時段外暫停自動更新（手動按鈕不受限）
+  if(!force && document.hidden) return;   // 分頁在背景（沒人在看）就不打 API
+  // 同一台電腦開了多個分頁：直接採用其他分頁剛抓到的結果
+  try{
+    var sh = JSON.parse(localStorage.getItem("fixBulk") || "null");
+    if(sh && sh.key === key && sh.t > (FIXALL.t || 0)){ FIXALL.t = sh.t; FIXALL.key = key; FIXALL.items = sh.items || []; fixIndex(); try{ fixBulkApply(); }catch(err){} fixBulkPaint(); }
+  }catch(e){}
   if(!force && FIXALL.key === key && Date.now() - FIXALL.t < (cfg.bulkEvery || 60)*60000) return;
   if(fixUsage().n >= fixCapTotal(cfg)){ $("fixMsg").textContent = "今天所有金鑰都已達呼叫上限，整批更新暫停。"; return; }
   FIXALL.busy = true;
@@ -5363,6 +5495,12 @@ function fixBulkRun(force){
 function fixBulkPaint(){
   if(!$("fixBulkMsg")) return;
   var cfg = fixCfg();
+  if(cfg.share){
+    $("fixBulkMsg").textContent = FIXSHARE.err ? FIXSHARE.err : FIXALL.t && FIXALL.key && FIXALL.key.indexOf("share|") === 0
+      ? "共用資料：Worker " + fixHm(FIXALL.t) + " 更新（" + FIXALL.items.length + " 架），每分鐘檢查一次" : "共用資料：等待讀取…";
+    $("fixBulkEst").textContent = "使用共用資料：API 由 Worker 統一呼叫，這台電腦不消耗任何額度，看的人再多也一樣。間隔與時段依 Worker 的排程設定。";
+    return;
+  }
   $("fixBulkMsg").textContent = FIXALL.t ? "上次整批更新：" + fixHm(FIXALL.t) + "（" + FIXALL.items.length + " 架）" +
     (cfg.bulk ? (fixInWin(cfg) ? "，下次約 " + fixHm(FIXALL.t + (cfg.bulkEvery || 60)*60000) : "，目前在自動更新時段外，" + ("0" + cfg.winFrom).slice(-2) + ":00 恢復") : "") :
     (cfg.bulk && !fixInWin(cfg) ? "目前在自動更新時段外，" + ("0" + cfg.winFrom).slice(-2) + ":00 恢復" : "尚未整批更新");
@@ -5454,6 +5592,7 @@ function holdDrawMap(cfg, list, estList){
       HMAP.map.setView(HMAP.markers[HOLD.focus].getLatLng(), Math.max(HMAP.map.getZoom(), 6));
       HMAP.markers[HOLD.focus].openPopup();
     }
+    try{ twRender(list, estList); }catch(err){}
     $("holdMapErr").textContent = "";
     setTimeout(routeLookup, 50);
     setTimeout(acLookup, 400);
@@ -5461,6 +5600,73 @@ function holdDrawMap(cfg, list, estList){
     if(HMAP.pendingSweep){ HMAP.pendingSweep = false; holdSweep(); }
   }, function(e){ $("holdMapErr").textContent = e.message + "，請確認網路可連到 cdnjs.cloudflare.com。"; });
 }
+/* =========================================================
+   台灣視角：以 TPE／RMQ／KHH 為基地，統計往外站與返台的空中航班
+   ========================================================= */
+var TW = { bases:["TPE","RMQ","KHH"], view:"all", base:"ALL", rows:[] };
+function twIsBase(x){ return TW.bases.indexOf(String(x || "").toUpperCase()) >= 0; }
+function twCollect(list, estList){
+  var rows = [], unknown = 0, domestic = 0, other = 0;
+  list.concat(estList || []).forEach(function(t){
+    if(t.onGround || t.lat == null) return;
+    var r = t.estRoute || holdRoute(t);
+    if(!r || !r.from || !r.to || r.from === "?" || r.to === "?"){ unknown++; return; }
+    var fb = twIsBase(r.from), tb = twIsBase(r.to);
+    if(fb && tb){ domestic++; return; }
+    if(!fb && !tb){ other++; return; }
+    var dir = fb ? "o" : "i", dest = aptLL(r.to), orig = aptLL(r.from), remain = null, prog = null;
+    if(dest){
+      remain = nm(t.lat, t.lon, dest.lat, dest.lon);
+      if(orig){ var tot = nm(orig.lat, orig.lon, dest.lat, dest.lon); if(tot > 50) prog = Math.max(0, Math.min(1, 1 - remain / tot)); }
+    }
+    var m = t.match, eta = m && (m.est || m.sched) ? (m.est || m.sched) : "";
+    rows.push({ hex:t.hex, dir:dir, fno:t.fno || t.cs || t.hex.toUpperCase(), type:t.type || "", from:r.from, to:r.to,
+      base: fb ? r.from : r.to, remain:remain, prog:prog, alt:t.alt, api:!!t.est, level:t.level || 0, divert:!!t.divert, eta:eta, etaLbl: m && m.est ? "預計" : "表定" });
+  });
+  rows.sort(function(a,b){ return (a.remain == null ? 1e9 : a.remain) - (b.remain == null ? 1e9 : b.remain); });
+  TW.rows = rows; TW.unknown = unknown; TW.domestic = domestic; TW.other = other;
+}
+function twPaint(){
+  if(!$("twHead")) return;
+  var rows = TW.rows || [], all = TW.base === "ALL";
+  var inBase = rows.filter(function(r){ return all || r.base === TW.base; });
+  var o = inBase.filter(function(r){ return r.dir === "o"; }), i = inBase.filter(function(r){ return r.dir === "i"; });
+  function by(arr, key){
+    var c = {}; arr.forEach(function(r){ c[r[key]] = (c[r[key]] || 0) + 1; });
+    return Object.keys(c).sort(function(a,b){ return c[b] - c[a]; }).map(function(k){ return k + " " + c[k]; }).join("・") || "—";
+  }
+  var oAll = rows.filter(function(r){ return r.dir === "o"; }).length, iAll = rows.filter(function(r){ return r.dir === "i"; }).length;
+  $("twTabO").textContent = "↗" + oAll; $("twTabI").textContent = "↙" + iAll;
+  var chips = ["ALL"].concat(TW.bases).map(function(b){
+    var n = b === "ALL" ? rows.length : rows.filter(function(r){ return r.base === b; }).length;
+    return '<button type="button" data-twb="' + b + '" class="' + (TW.base === b ? "on" : "") + '">' + (b === "ALL" ? "全部" : b) + "<em>" + n + "</em></button>";
+  }).join("");
+  var hm = new Date(), hms = ("0" + hm.getHours()).slice(-2) + ":" + ("0" + hm.getMinutes()).slice(-2);
+  $("twHead").innerHTML = '<div class="tw-sub">TPE・RMQ・KHH　' + hms + ' 更新・空中 ' + rows.length + " 架</div>" + '<div class="tw-sum">' +
+    '<div class="tw-card o' + (TW.view === "o" ? " sel" : "") + '" data-twv="o"><div class="t">↗ 往外站</div><div class="n">' + o.length + '</div><div class="by">' + esc(all ? "自 " + by(o, "from") : "目的地 " + by(o, "to")) + "</div></div>" +
+    '<div class="tw-card i' + (TW.view === "i" ? " sel" : "") + '" data-twv="i"><div class="t">↙ 返台</div><div class="n">' + i.length + '</div><div class="by">' + esc(all ? "往 " + by(i, "to") : "出發地 " + by(i, "from")) + "</div></div>" +
+    "</div>" + '<div class="tw-chips">' + chips + "</div>";
+  function row(r){
+    var lv = r.divert ? "疑似轉降" : r.level >= 2 ? "盤旋中" : r.level === 1 ? "注意" : "";
+    return '<div class="tw-row ' + r.dir + (r.divert || r.level >= 2 ? " alert" : r.level === 1 ? " warn" : "") + (HOLD.focus === r.hex ? " sel" : "") + '" data-hex="' + esc(r.hex) + '">' +
+      '<div class="tw-l1"><span class="f">' + esc(r.fno) + "</span>" + (r.type ? '<span class="ty">' + esc(r.type) + "</span>" : "") +
+        (r.api ? '<span class="api">API</span>' : "") + '<span class="rt">' + esc(r.from) + "→" + esc(r.to) + "</span></div>" +
+      (r.prog != null ? '<div class="tw-bar"><i style="width:' + Math.round(r.prog * 100) + '%"></i></div>' : "") +
+      '<div class="tw-l2"><span>' + (r.remain != null ? "剩 " + Math.round(r.remain).toLocaleString() + " 浬" : "距離未知") +
+        (r.alt ? "・" + fmtAlt(r.alt) : "") + (lv ? '・<span class="lv' + (!r.divert && r.level === 1 ? " w" : "") + '">' + lv + "</span>" : "") + "</span>" +
+        "<span>" + (r.eta ? r.etaLbl + " " + esc(r.eta) : "") + "</span></div></div>";
+  }
+  var html = "";
+  if(TW.view !== "i") html += '<div class="tw-sec"><span>↗ 往外站（依剩餘距離）</span><span>' + o.length + " 架</span></div>" + (o.length ? o.map(row).join("") : '<div class="tw-empty">目前沒有往外站的航班</div>');
+  if(TW.view !== "o") html += '<div class="tw-sec"><span>↙ 返台（依剩餘距離）</span><span>' + i.length + " 架</span></div>" + (i.length ? i.map(row).join("") : '<div class="tw-empty">目前沒有返台的航班</div>');
+  var extra = [];
+  if(TW.unknown) extra.push("航線未知 " + TW.unknown);
+  if(TW.other) extra.push("外站之間 " + TW.other);
+  if(TW.domestic) extra.push("台灣國內 " + TW.domestic);
+  if(extra.length) html += '<div class="tw-sec"><span>未列入：' + esc(extra.join("・")) + "</span><span></span></div>";
+  $("twList").innerHTML = html;
+}
+function twRender(list, estList){ twCollect(list, estList); twPaint(); }
 /* 動畫迴圈：每 0.25 秒依地速與航向把飛機往前推（最多推到下次更新時間的 2 倍，避免失聯時一直飛） */
 function holdAnimStart(){
   if(HMAP.animTimer) return;
