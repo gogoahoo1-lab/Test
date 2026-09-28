@@ -506,7 +506,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-29a</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-29b</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -1195,7 +1195,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
 <section id="tab-help" hidden>
   <div class="card">
     <h2>怎麼用</h2>
-    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-29a</b>（盤旋偵測：轉降偵測、目的地天氣、背景監看、資料來源狀態、盤旋紀錄統計）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
+    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-29b</b>（盤旋偵測：轉降偵測、目的地天氣、背景監看、資料來源狀態、盤旋紀錄統計）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
     <ul class="doc">
       <li>桃園機場走「<b>TDX 桃園機場</b>」頁籤最省事：填 Client ID／Secret 後按立即抓取，到場與離場會一次抓齊。</li>
       <li>TDX 的 <code>$top</code> 預設值只有 <b>30 筆</b>，不分頁就只會拿到 30 班。本頁已改成自動帶 <code>$top</code>／<code>$skip</code> 分頁抓到底。</li>
@@ -1270,6 +1270,19 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
     <section class="hs-sec" id="hsGeneral">
       <h4>一般</h4>
       <div class="hs-row" id="hsGeneralRow"></div>
+    </section>
+    <section class="hs-sec" id="hsOsp">
+      <h4>即時性：OpenSky 全球快照（指定航空公司模式）</h4>
+      <div class="hs-row" style="flex-direction:column;align-items:stretch;gap:8px">
+        <label class="note" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="ospOn"> 在時段內改用 OpenSky 全球快照為主要來源（每架飛機約每分鐘更新）</label>
+        <div class="row" style="gap:8px">
+          <label class="note" style="display:flex;gap:6px;align-items:center">間隔
+            <select id="ospEvery"><option value="45">45 秒</option><option value="60">60 秒</option><option value="90">90 秒</option><option value="120">2 分鐘</option></select></label>
+          <label class="note" style="display:flex;gap:6px;align-items:center">時段 <select id="ospFrom"><option value="0">00:00</option><option value="1">01:00</option><option value="2">02:00</option><option value="3">03:00</option><option value="4">04:00</option><option value="5">05:00</option><option value="6">06:00</option><option value="7">07:00</option><option value="8">08:00</option><option value="9">09:00</option><option value="10">10:00</option><option value="11">11:00</option><option value="12">12:00</option><option value="13">13:00</option><option value="14">14:00</option><option value="15">15:00</option><option value="16">16:00</option><option value="17">17:00</option><option value="18">18:00</option><option value="19">19:00</option><option value="20">20:00</option><option value="21">21:00</option><option value="22">22:00</option><option value="23">23:00</option><option value="24">24:00</option></select> 至 <select id="ospTo"><option value="0">00:00</option><option value="1">01:00</option><option value="2">02:00</option><option value="3">03:00</option><option value="4">04:00</option><option value="5">05:00</option><option value="6">06:00</option><option value="7">07:00</option><option value="8">08:00</option><option value="9">09:00</option><option value="10">10:00</option><option value="11">11:00</option><option value="12">12:00</option><option value="13">13:00</option><option value="14">14:00</option><option value="15">15:00</option><option value="16">16:00</option><option value="17">17:00</option><option value="18">18:00</option><option value="19">19:00</option><option value="20">20:00</option><option value="21">21:00</option><option value="22">22:00</option><option value="23">23:00</option><option value="24">24:00</option></select></label>
+        </div>
+        <p class="note" id="ospMsg" style="margin:0"></p>
+        <p class="note" style="margin:0">需要在 ADS-B 橋接擴充功能的設定頁填入 OpenSky 的 Client ID／Secret（帳號每日 4,000 點，查一次全球 4 點；匿名只有 400 點，不會啟用）。會依「今日剩餘點數」自動拉長間隔並保留 400 點，確保時段內不會用光；時段外、被限流或額度保留時自動改回 adsb.lol 輪查。</p>
+      </div>
     </section>
   </div>
 </aside>
@@ -3625,7 +3638,7 @@ function holdTrySources(srcs, get){
     return get(s.url).then(function(j){
       var list = holdNormalize(j);
       HOLD.lastSrc = s.name + (j.src ? "・" + j.src : "") + (j.__remaining || j.remaining ? "（今日剩 " + (j.__remaining || j.remaining) + " credits）" : "");
-      if(/OpenSky/.test(s.name) && (j.__remaining || j.remaining)) HOLD.osRemain = parseInt(j.__remaining || j.remaining, 10);
+      if(/OpenSky/.test(s.name) && (j.__remaining || j.remaining)) ospSaveRemain(parseInt(j.__remaining || j.remaining, 10));
       return list;
     }, function(e){ errs.push(s.name + "：" + e.message); return next(); });
   }
@@ -3697,6 +3710,7 @@ function holdFetchFlights(cfg){
       if(ch !== "bridge") return Promise.reject(new Error(HOLD_CORS_HINT));
       // 備援：OpenSky 全球（4 credits／次）；90 秒內打過或今日額度快用完就先不打，沿用現有資料
       var osWait = Date.now() - (HOLD.lastOS || 0) < 88000 || Date.now() < OSK.until, osLow = HOLD.osRemain != null && HOLD.osRemain < 40;
+      if(!osWait && !osLow && ospCfg().on && ospInWin(ospCfg()) && !isFinite(ospInterval(ospCfg()))) osLow = true;   // 時段內保留額度
       if(osWait || osLow){
         HOLD.skipNote = (now0 < LOL.until ? "adsb.lol 限流冷卻中（" + fixHm(LOL.until) + " 恢復）" : "adsb.lol 無資料") +
           (osLow ? "，OpenSky 今日額度快用完" : Date.now() < OSK.until ? "，OpenSky 被限流（" + fixHm(OSK.until) + " 後再試）" : "，等待 OpenSky 下一輪");
@@ -3721,9 +3735,105 @@ function holdFetchFlights(cfg){
   }
   HOLD.usedOpenSkyGlobal = false;
   HOLD.partial = false;
+  HOLD.skipQuiet = false;
+  if(ch === "bridge"){
+    var op = ospPlan();
+    HOLD.ospWhy = op.use ? "" : op.why;
+    if(op.use){
+      if(op.due){
+        OSP.lastT = Date.now(); HOLD.lastOS = OSP.lastT;
+        try{ localStorage.setItem("ospLast", JSON.stringify(OSP.lastT)); }catch(e){}
+        return holdTrySources([{ name:"OpenSky", url:"https://opensky-network.org/api/states/all?extended=1" }], holdViaBridge).then(function(l){
+          OSK.backoff = 0; oskSave(); HOLD.usedOpenSkyGlobal = true;
+          HOLD.lastSrc = "擴充功能・OpenSky 全球" + (HOLD.osRemain != null ? "（今日剩 " + HOLD.osRemain + " 點）" : "");
+          ospPaint();
+          return pick(l);
+        }, function(e){ errs.push(String(e)); ospPaint(); return step(); });   // 失敗就改用 adsb.lol
+      }
+      // 兩次 OpenSky 之間：每 2 分鐘用 adsb.lol 補 1 種機型（補機型、補 OpenSky 收不到的航機）
+      // 若額度吃緊、OpenSky 間隔被拉長到 3 分鐘以上，就恢復 adsb.lol 每 30 秒輪查
+      if(Date.now() - (LOL.lastSup || 0) < (op.iv > 180000 ? 25000 : 120000) || now0 < LOL.until){
+        HOLD.skipQuiet = true; HOLD.skipNote = "下一次 OpenSky 全球更新 " + fixHm(op.next);
+        return Promise.resolve(null);
+      }
+      LOL.lastSup = Date.now();
+    }
+  }
   return Promise.resolve(step());
 }
 var LOL = { until:0, backoff:0, rr:0, yield:{} };
+/* =========================================================
+   OpenSky 全球快照為主要來源（指定航空公司模式）
+   ─ 時段內每 N 秒查一次全球（4 點／次），並依今日剩餘點數自動配速、保留 400 點
+   ─ 兩次之間每 2 分鐘用 adsb.lol 查 1 種機型補機型資料
+   ========================================================= */
+var OSP = { lastT:0 };
+(function(){
+  try{
+    var o = JSON.parse(localStorage.getItem("osRemain") || "null");
+    // OpenSky 額度在 UTC 0 點重置：只沿用今天（UTC）的剩餘點數
+    if(o && Math.floor(o.t / 86400000) === Math.floor(Date.now() / 86400000)) HOLD.osRemain = o.r;
+    var l = JSON.parse(localStorage.getItem("ospLast") || "0"); if(l) OSP.lastT = l;
+  }catch(e){}
+})();
+function ospCfg(){
+  var c = {}; try{ c = JSON.parse(localStorage.getItem("osPrimary") || "{}") || {}; }catch(e){}
+  if(c.on == null) c.on = true;
+  if(!c.every) c.every = 60;
+  if(c.from == null) c.from = 11;
+  if(c.to == null) c.to = 22;
+  return c;
+}
+function ospInWin(c){ return fixInWin({ win:true, winFrom:c.from, winTo:c.to }); }
+function ospWinEnd(c){
+  var d = new Date(), end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), c.to, 0, 0).getTime();
+  if(c.to <= c.from && d.getHours() >= c.from) end += 86400000;   // 跨午夜的時段
+  var reset = (Math.floor(Date.now() / 86400000) + 1) * 86400000;   // 額度重置（台灣 08:00）
+  return Math.min(end, reset);
+}
+function ospSaveRemain(r){
+  if(!isFinite(r)) return;
+  HOLD.osRemain = r;
+  try{ localStorage.setItem("osRemain", JSON.stringify({ r:r, t:Date.now() })); }catch(e){}
+}
+/* 下一次可以查 OpenSky 的間隔（毫秒）；Infinity＝今天不再用 OpenSky 當主要來源 */
+function ospInterval(c){
+  var base = (c.every || 60) * 1000, R = HOLD.osRemain;
+  if(R == null) return base;
+  var calls = Math.floor((R - 400) / 4);   // 保留 400 點給背景監看與緊急
+  if(calls <= 0) return Infinity;
+  var left = Math.max(60000, ospWinEnd(c) - Date.now());
+  return Math.max(base, left / calls);
+}
+function ospPlan(){
+  var c = ospCfg();
+  if(!c.on) return { use:false, why:"未啟用" };
+  if(!ospInWin(c)) return { use:false, why:"不在時段內（" + pad2(c.from) + ":00–" + pad2(c.to) + ":00）" };
+  if(Date.now() < OSK.until) return { use:false, why:"OpenSky 被限流，" + fixHm(OSK.until) + " 後再試" };
+  var iv = ospInterval(c);
+  if(!isFinite(iv)) return { use:false, why:"今日剩餘點數不足 400（或未登入帳號），改用 adsb.lol" };
+  var next = (OSP.lastT || 0) + iv;
+  return { use:true, due: Date.now() >= next - 3000, next:next, iv:iv };
+}
+function ospPaint(){
+  if(!$("ospMsg")) return;
+  var c = ospCfg(), p = ospPlan(), R = HOLD.osRemain;
+  $("ospMsg").innerHTML = (R != null ? "今日（08:00 起）剩 <b>" + R.toLocaleString() + "</b> 點・" : "尚未取得剩餘點數・") +
+    (p.use ? "使用中，目前間隔 <b>" + Math.round(p.iv / 1000) + " 秒</b>" + (OSP.lastT ? "，上次 " + fixHm(OSP.lastT) : "") : "未使用：" + esc(p.why));
+}
+function ospInit(){
+  if(!$("ospOn")) return;
+  var c = ospCfg();
+  $("ospOn").checked = c.on; $("ospEvery").value = c.every; $("ospFrom").value = c.from; $("ospTo").value = c.to;
+  ["ospOn","ospEvery","ospFrom","ospTo"].forEach(function(id){
+    $(id).addEventListener("change", function(){
+      try{ localStorage.setItem("osPrimary", JSON.stringify({ on:$("ospOn").checked, every:+$("ospEvery").value, from:+$("ospFrom").value, to:+$("ospTo").value })); }catch(e){}
+      ospPaint();
+    });
+  });
+  ospPaint(); setInterval(ospPaint, 10000);
+}
+
 /* OpenSky 被限流（429，多半是當日額度用完）：30 分鐘 → 1 → 2 → 4 小時，最晚到隔天 08:00（UTC 0 點額度重置）；重新整理也記得 */
 var OSK = { until:0, backoff:0 };
 (function(){ try{ var o = JSON.parse(localStorage.getItem("oskState") || "null"); if(o){ OSK.until = o.until || 0; OSK.backoff = o.backoff || 0; } }catch(e){} })();
@@ -4958,7 +5068,8 @@ function diagRender(){
   var cfg = holdCfg(), ch = holdChannel(cfg);
   var names = Object.keys(DIAG).sort();
   box.innerHTML = '<p class="note" style="margin:0 0 8px">目前通道：<b>' + (ch === "bridge" ? "ADS-B 橋接擴充功能" : ch === "proxy" ? "自訂代理" : "直接連線（多半會被瀏覽器擋下）") + "</b>" +
-    (HOLD.lastSrc ? "　最近一次資料來源：<b>" + esc(HOLD.lastSrc) + "</b>" : "") + "</p>" +
+    (HOLD.lastSrc ? "　最近一次資料來源：<b>" + esc(HOLD.lastSrc) + "</b>" : "") +
+    (HOLD.osRemain != null ? "　OpenSky 今日剩 <b>" + HOLD.osRemain.toLocaleString() + "</b> 點" : "") + "</p>" +
     (names.length ? '<div class="tbox" style="margin-top:0"><table><thead><tr><th>來源</th><th>狀態</th><th>最後成功</th><th>成功／失敗</th><th>平均回應</th></tr></thead><tbody>' +
       names.map(function(n){
         var d = DIAG[n], st = diagState(d, d.host);
@@ -5957,6 +6068,11 @@ function holdTick(){
   var gen = HOLD.gen || 0;
   holdFetch(cfg).then(function(list){
     if(gen !== (HOLD.gen || 0)) return;   // 抓取期間改了監看設定：丟棄舊結果
+    if(list === null && HOLD.skipQuiet){
+      var tq = new Date(HOLD.lastOk || Date.now());
+      $("holdStatus").textContent = "監看中・" + pad2(tq.getHours()) + ":" + pad2(tq.getMinutes()) + ":" + pad2(tq.getSeconds()) + " 更新（" + HOLD.lastSrc + "）・" + HOLD.skipNote + "，其間位置依速度推算";
+      return;
+    }
     if(list === null){
       var tt = new Date();
       $("holdStatus").textContent = "監看中・" + pad2(tt.getHours()) + ":" + pad2(tt.getMinutes()) + " 本輪略過（" + (HOLD.skipNote || "資料源冷卻中") + "），位置依速度推算";
@@ -7600,6 +7716,7 @@ function shift(hhmm, mins){
   fixInit();
   hsInit();
   seatInit();
+  ospInit();
   // 切回分頁時立即更新一次（背景時可能暫停了抓取）
   document.addEventListener("visibilitychange", function(){
     if(!document.hidden && HOLD.on && !HOLD.busy && Date.now() - (HOLD.lastOk || 0) > 20000){ clearTimeout(HOLD.timer); holdTick(); }
