@@ -498,7 +498,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-28x</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-28z</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -1187,7 +1187,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
 <section id="tab-help" hidden>
   <div class="card">
     <h2>怎麼用</h2>
-    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-28x</b>（盤旋偵測：轉降偵測、目的地天氣、背景監看、資料來源狀態、盤旋紀錄統計）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
+    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-28z</b>（盤旋偵測：轉降偵測、目的地天氣、背景監看、資料來源狀態、盤旋紀錄統計）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
     <ul class="doc">
       <li>桃園機場走「<b>TDX 桃園機場</b>」頁籤最省事：填 Client ID／Secret 後按立即抓取，到場與離場會一次抓齊。</li>
       <li>TDX 的 <code>$top</code> 預設值只有 <b>30 筆</b>，不分頁就只會拿到 30 班。本頁已改成自動帶 <code>$top</code>／<code>$skip</code> 分頁抓到底。</li>
@@ -3486,10 +3486,49 @@ window.addEventListener("message", function(ev){
   q.done(m);
 });
 /* 經由擴充功能抓一個網址，回傳解析後的 JSON；失敗丟出錯誤 */
+/* =========================================================
+   統一的來源冷卻閘門：任何來源回 429（限流）或連續失敗，就在冷卻時間內直接跳過、不再打，
+   冷卻狀態存在 localStorage，同一台電腦的其他分頁也一起遵守。
+   ========================================================= */
+var GATE = { s:{} };
+(function(){ try{ GATE.s = JSON.parse(localStorage.getItem("hostGate") || "{}") || {}; }catch(e){ GATE.s = {}; } })();
+function gateHost(url){ var m = /^https?:\/\/([^\/?#]+)/.exec(url || ""); return m ? m[1].toLowerCase() : ""; }
+function gateLoad(){ try{ var o = JSON.parse(localStorage.getItem("hostGate") || "{}") || {}; Object.keys(o).forEach(function(h){ if(!GATE.s[h] || (o[h].until || 0) > (GATE.s[h].until || 0)) GATE.s[h] = o[h]; }); }catch(e){} }
+function gateSave(){ try{ localStorage.setItem("hostGate", JSON.stringify(GATE.s)); }catch(e){} }
+function gateUntil(host){ gateLoad(); var g = GATE.s[host]; return g && g.until > Date.now() ? g.until : 0; }
+/* 429：1 → 2 → 4 → 8 → 15 分鐘；逾時／5xx／格式錯誤連續 3 次：2 分鐘 */
+function gateFail(url, msg){
+  var h = gateHost(url); if(!h) return;
+  var g = GATE.s[h] || (GATE.s[h] = { until:0, backoff:0, soft:0 }), now = Date.now();
+  if(/429/.test(msg)){
+    g.backoff = Math.min(15*60000, Math.max(60000, (g.backoff || 30000) * 2));
+    g.until = now + g.backoff; g.why = "被限流";
+  }else if(/逾時|HTTP 5\d\d|格式不符|沒有回應/.test(msg)){
+    g.soft = (g.soft || 0) + 1;
+    if(g.soft >= 3){ g.until = now + 2*60000; g.soft = 0; g.why = "連續失敗"; }
+  }else return;
+  if(h === "api.adsb.lol"){ LOL.until = Math.max(LOL.until || 0, g.until); LOL.backoff = g.backoff; }
+  if(h === "opensky-network.org" && /429/.test(msg)){ oskHit(); g.until = Math.max(g.until, OSK.until); }   // OpenSky 多半是當日額度用完，冷卻更久
+  gateSave();
+}
+function gateOk(url){
+  var h = gateHost(url), g = GATE.s[h];
+  if(g && (g.backoff || g.soft)){ g.backoff = 0; g.soft = 0; gateSave(); }
+}
+function gateCheck(url){
+  var u = gateUntil(gateHost(url));
+  return u ? new Error("冷卻中（" + fixHm(u) + " 恢復，期間不呼叫）") : null;
+}
 function holdViaBridge(url, opt){
-  var t0 = Date.now();
-  return holdViaBridgeRaw(url, opt).then(function(j){ diagRec(url, true, Date.now() - t0); return j; },
-    function(e){ diagRec(url, false, 0, e && e.message); throw e; });
+  var t0 = Date.now(), ge = gateCheck(url);
+  if(ge) return Promise.reject(ge);
+  return holdViaBridgeRaw(url, opt).then(function(j){ diagRec(url, true, Date.now() - t0); gateOk(url); return j; },
+    function(e){
+      var nf = /hexdb\.io/.test(url) && /HTTP 404/.test(e && e.message);   // hexdb 回 404＝資料庫沒有這班，屬正常「查無」
+      diagRec(url, nf, Date.now() - t0, e && e.message);
+      if(!nf) gateFail(url, e && e.message);
+      throw e;
+    });
 }
 function holdViaBridgeRaw(url, opt){
   return new Promise(function(resolve, reject){
@@ -3498,11 +3537,12 @@ function holdViaBridgeRaw(url, opt){
       to: setTimeout(function(){ delete HOLD_BRIDGE_Q[id]; reject(new Error("擴充功能沒有回應")); }, 20000),
       done: function(m){
         if(!m.ok) return reject(new Error(m.error || ("HTTP " + m.status)));
+        if(!String(m.body || "").trim()){ resolve({}); return; }
         try{
           var j = JSON.parse(m.body);
           if(m.remaining) j.__remaining = m.remaining;
           resolve(j);
-        }catch(e){ reject(new Error("格式不符")); }
+        }catch(e){ reject(new Error("格式不符（回應：" + String(m.body || "空白").replace(/\s+/g, " ").slice(0, 40) + "）")); }
       }
     };
     window.postMessage({ __adsb:"req", id:id, url:url, method:(opt && opt.method) || "GET", body:(opt && opt.body) || null, headers:(opt && opt.headers) || null }, "*");
@@ -3510,9 +3550,10 @@ function holdViaBridgeRaw(url, opt){
 }
 /* 直接 fetch（給代理或直接連線用） */
 function holdViaFetch(url){
-  var t0 = Date.now();
-  return holdViaFetchRaw(url).then(function(j){ diagRec(url, true, Date.now() - t0); return j; },
-    function(e){ diagRec(url, false, 0, e && e.message); throw e; });
+  var t0 = Date.now(), ge = gateCheck(url);
+  if(ge) return Promise.reject(ge);
+  return holdViaFetchRaw(url).then(function(j){ diagRec(url, true, Date.now() - t0); gateOk(url); return j; },
+    function(e){ diagRec(url, false, 0, e && e.message); gateFail(url, e && e.message); throw e; });
 }
 function holdViaFetchRaw(url){
   var ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
@@ -3595,7 +3636,9 @@ function holdFetch(cfg){
       { name:"adsb.lol", url:"https://api.adsb.lol/v2/point/" + lat + "/" + lon + "/" + r },
       { name:"adsb.fi", url:"https://opendata.adsb.fi/api/v2/lat/" + lat + "/lon/" + lon + "/dist/" + r }
     ];
-    if(ch === "bridge") srcs.push({ name:"OpenSky", url:"https://opensky-network.org/api/states/all?extended=1&" + holdBbox(lat, lon, r) });
+    if(ch === "bridge" && Date.now() >= OSK.until) srcs.push({ name:"OpenSky", url:"https://opensky-network.org/api/states/all?extended=1&" + holdBbox(lat, lon, r) });
+    // 冷卻中的來源排到最後（實際上會被閘門直接跳過，不發出請求）
+    srcs.sort(function(a, b){ return (gateUntil(gateHost(a.url)) ? 1 : 0) - (gateUntil(gateHost(b.url)) ? 1 : 0); });
     get = ch === "bridge" ? holdViaBridge : holdViaFetch;
   }
   return holdTrySources(srcs, get).then(function(l){
@@ -3638,6 +3681,7 @@ function holdFetchFlights(cfg){
   HOLD.rrType = types[0] || "";
   function wait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
   // adsb.lol 被限流（429）時退避：1 → 2 → 4 → 8 → 最多 15 分鐘不打它
+  LOL.until = Math.max(LOL.until || 0, gateUntil("api.adsb.lol"));   // 其他分頁剛被限流也一起退避
   if(now0 < LOL.until) i = types.length;
   function step(){
     if(i >= types.length){
@@ -3653,7 +3697,7 @@ function holdFetchFlights(cfg){
       HOLD.usedOpenSkyGlobal = true; HOLD.lastOS = Date.now();
       return holdTrySources([{ name:"OpenSky", url:"https://opensky-network.org/api/states/all?extended=1" }], get)
         .then(function(l){ OSK.backoff = 0; oskSave(); HOLD.lastSrc = "擴充功能・" + HOLD.lastSrc; return pick(l); },
-              function(e2){ if(/429/.test(String(e2 && e2.message || e2))) oskHit(); throw new Error(errs.concat(e2).join("；")); });
+              function(e2){ throw new Error(errs.concat(e2).join("；")); });
     }
     var t = types[i++];
     return get("https://api.adsb.lol/v2/type/" + t).then(function(j){
@@ -3663,10 +3707,7 @@ function holdFetchFlights(cfg){
       out = out.concat(got);
     }, function(e){
       errs.push(t + " " + e.message);
-      if(/429/.test(e.message)){
-        LOL.backoff = Math.min(15*60000, Math.max(60000, (LOL.backoff || 30000) * 2));
-        LOL.until = Date.now() + LOL.backoff;
-      }
+      // 429 的退避由統一閘門（gateFail）處理，這裡不重複計算
       if(ch === "direct" || /429|沒有回應|重新整理/.test(e.message)) i = types.length;   // 跨站被擋、被限流或擴充功能沒回應就不再連打
     }).then(function(){ return i < types.length ? wait(2000).then(step) : step(); });
   }
@@ -4230,19 +4271,27 @@ function routeLong(r){
 function routeLookup(){
   var list = Object.keys(ROUTES.pending);
   if(!list.length || ROUTES.busy || !holdBridge()) return;
+  if(Date.now() - (ROUTES.lastRun || 0) < 30000) return;   // 最多 30 秒查一輪，避免畫面重繪時連續觸發
+  ROUTES.lastRun = Date.now();
   ROUTES.busy = true;
   var batch = list.slice(0, 40), pend = {};
   batch.forEach(function(cs){ pend[cs] = ROUTES.pending[cs]; delete ROUTES.pending[cs]; });
   var body = JSON.stringify({ planes: batch.map(function(cs){ return { callsign:cs, lat:pend[cs].lat, lng:pend[cs].lon }; }) });
   var found = {};
-  holdViaBridge("https://api.adsb.lol/api/0/routeset", { method:"POST", body:body }).then(function(arr){
+  var rsSkip = Date.now() < (ROUTES.rsUntil || 0);
+  (rsSkip ? Promise.reject(new Error("skip")) : holdViaBridge("https://api.adsb.lol/api/0/routeset", { method:"POST", body:body })).then(function(arr){
     (Array.isArray(arr) ? arr : []).forEach(function(r){
       var cs = String(r.callsign || "").toUpperCase(), codes = String(r._airport_codes_iata || "");
       if(!cs || !codes || codes === "unknown" || r.plausible === false) return;
       var p = codes.split("-");
       if(p.length >= 2){ found[cs] = 1; ROUTES.cache[cs] = { from:p[0], to:p[p.length-1], t:Date.now(), src:"adsb.lol" }; }
     });
-  }, function(){}).then(function(){
+  }, function(e){
+    if(!rsSkip && !/冷卻中/.test(e && e.message)){
+      ROUTES.rsUntil = Date.now() + 30*60000;   // 航線批次查詢故障：30 分鐘內不再打，改由 hexdb 逐筆補
+      if(DIAG["adsb.lol 航線"]){ DIAG["adsb.lol 航線"].pauseUntil = ROUTES.rsUntil; DIAG["adsb.lol 航線"].pauseLabel = "輔助暫停"; }
+    }
+  }).then(function(){
     var rest = batch.filter(function(cs){ return !found[cs]; }).slice(0, 6);
     return rest.reduce(function(chain, cs){
       return chain.then(function(){
@@ -4339,6 +4388,8 @@ function acFill(tr){
 function acLookup(){
   var list = Object.keys(ACINFO.pending);
   if(!list.length || ACINFO.busy || !holdBridge()) return;
+  if(Date.now() - (ACINFO.lastRun || 0) < 30000) return;
+  ACINFO.lastRun = Date.now();
   ACINFO.busy = true;
   var batch = list.slice(0, 10);
   batch.forEach(function(h){ delete ACINFO.pending[h]; });
@@ -4353,8 +4404,9 @@ function acLookup(){
         return holdViaBridge("https://api.adsb.lol/v2/hex/" + encodeURIComponent(hex)).then(function(j){
           var a = ((j && j.ac) || [])[0] || {};
           return a.t ? { type: String(a.t).toUpperCase(), reg: a.r || (r && r.reg) || "", name: a.desc || (r && r.name) || "" } : r;
-        }, function(){ return r; });
+        }, function(e){ return /冷卻中/.test(e && e.message) ? { retry:true } : r; });
       }).then(function(r){
+        if(r && r.retry){ ACINFO.pending[hex] = 1; return; }   // 來源冷卻中：稍後再查，不當成查無
         if(r && r.type) ACINFO.cache[hex] = { type: r.type, reg: r.reg, name: r.name, t: Date.now() };
         else ACINFO.cache[hex] = { reg: r ? r.reg : "", t: Date.now() - (30*86400000 - 6*3600000) };   // 查不到：6 小時後再試
       });
@@ -4570,6 +4622,8 @@ function aptLL(iata){
 function aptLookup(){
   var list = Object.keys(APTLL.pending);
   if(!list.length || APTLL.busy || !holdBridge()) return;
+  if(Date.now() - (APTLL.lastRun || 0) < 30000) return;
+  APTLL.lastRun = Date.now();
   APTLL.busy = true;
   var batch = list.slice(0, 8);
   batch.forEach(function(i){ delete APTLL.pending[i]; });
@@ -4579,7 +4633,7 @@ function aptLookup(){
         j = j || {};
         var lat = parseFloat(j.latitude), lon = parseFloat(j.longitude);
         APTLL.cache[iata] = isFinite(lat) && isFinite(lon) ? { lat:lat, lon:lon } : { none:1 };
-      }, function(){});
+      }, function(e){ if(/404/.test(e && e.message)) APTLL.cache[iata] = { none:1 }; });   // 查無就記住，不重查
     });
   }, Promise.resolve()).catch(function(){}).then(function(){
     APTLL.busy = false;
@@ -4872,13 +4926,16 @@ function diagName(url){
   return "自訂代理";
 }
 function diagRec(url, ok, ms, err){
+  if(/^冷卻中/.test(err || "")) return;   // 被閘門擋下的呼叫沒有真的發出去，不計入
   var n = diagName(url), d = DIAG[n] || (DIAG[n] = { ok:0, fail:0, ms:0, lastOk:0, lastFail:0, err:"" });
+  d.host = gateHost(url); d.name = n;
   if(n === "OpenSky" && typeof OSK !== "undefined") d.pauseUntil = OSK.until;
   if(ok){ d.ok++; d.lastOk = Date.now(); d.ms = d.ms ? Math.round(d.ms * 0.7 + ms * 0.3) : ms; }
   else{ d.fail++; d.lastFail = Date.now(); d.err = String(err || "失敗").slice(0, 80); }
 }
-function diagState(d){
-  if(d.pauseUntil && Date.now() < d.pauseUntil) return ["idle", "備援暫停"];   // 備援來源冷卻中，不算異常
+function diagState(d, name){
+  if(name && d.lastFail > d.lastOk){ var gu = gateUntil(name); if(gu) return [/依機型|機場周邊|^adsb\.fi$/.test(d.name || "") ? "warn" : "idle", "冷卻中"]; }
+  if(d.pauseUntil && Date.now() < d.pauseUntil) return ["idle", d.pauseLabel || "備援暫停"];   // 備援來源冷卻中，不算異常
   if(d.lastOk >= d.lastFail) return ["ok", "正常"];
   if(/429/.test(d.err)) return ["warn", "被限流"];
   if(/403|CORS|跨站|無法連線|不允許/.test(d.err)) return ["bad", "被擋"];
@@ -4895,9 +4952,9 @@ function diagRender(){
     (HOLD.lastSrc ? "　最近一次資料來源：<b>" + esc(HOLD.lastSrc) + "</b>" : "") + "</p>" +
     (names.length ? '<div class="tbox" style="margin-top:0"><table><thead><tr><th>來源</th><th>狀態</th><th>最後成功</th><th>成功／失敗</th><th>平均回應</th></tr></thead><tbody>' +
       names.map(function(n){
-        var d = DIAG[n], st = diagState(d);
-        var why = d.pauseUntil && Date.now() < d.pauseUntil ? "被限流，" + esc(fixHm(d.pauseUntil)) + " 前不再呼叫（主要來源正常時用不到它）"
-          : (d.lastFail && d.lastFail > d.lastOk ? esc(d.err) + "（" + diagAgo(d.lastFail) + "）" : "");
+        var d = DIAG[n], st = diagState(d, d.host);
+        var why = d.pauseUntil && Date.now() < d.pauseUntil ? (d.pauseLabel ? esc(d.err) + "；" + esc(fixHm(d.pauseUntil)) + " 前暫停，改由 hexdb 補查航線" : "被限流，" + esc(fixHm(d.pauseUntil)) + " 前不再呼叫（主要來源正常時用不到它）")
+          : (d.lastFail && d.lastFail > d.lastOk ? esc(d.err) + "（" + diagAgo(d.lastFail) + "）" + (gateUntil(d.host) ? "；" + fixHm(gateUntil(d.host)) + " 前暫停呼叫，到時自動恢復" : "") : "");
         return "<tr><td>" + esc(n) + (why ? '<br><span class="note" style="white-space:normal">' + why + "</span>" : "") + '</td><td><span class="dg dg-' + st[0] + '">' + st[1] + "</span></td><td>" + diagAgo(d.lastOk) + "</td><td>" + d.ok + "／" + d.fail +
           "</td><td>" + (d.ms ? d.ms + " ms" : "—") + "</td></tr>";
       }).join("") + "</tbody></table></div>"
@@ -5103,8 +5160,8 @@ function hsInit(){
   window.hsOpen = open;
   // 按鈕上的小燈：資料來源／Telegram／API／背景監看
   function dots(){
-    var tc = tgCfg(), fc = fixCfg(), bad = Object.keys(DIAG).some(function(n){ return diagState(DIAG[n])[0] === "bad"; }),
-        warn = Object.keys(DIAG).some(function(n){ return diagState(DIAG[n])[0] === "warn"; });
+    var tc = tgCfg(), fc = fixCfg(), bad = Object.keys(DIAG).some(function(n){ return diagState(DIAG[n], DIAG[n].host)[0] === "bad"; }),
+        warn = Object.keys(DIAG).some(function(n){ return diagState(DIAG[n], DIAG[n].host)[0] === "warn"; });
     var items = [
       [holdBridge() || holdCfg().proxy ? (bad ? "bad" : warn ? "warn" : "on") : "bad", "資料來源"],
       [tc.on && tc.token && tc.chat ? "on" : "", "Telegram"],
@@ -5142,7 +5199,7 @@ function bgInit(){
   });
   $("diagBox").addEventListener("toggle", diagRender);
   setInterval(function(){
-    var bad = Object.keys(DIAG).filter(function(n){ var k = diagState(DIAG[n])[0]; return k !== "ok" && k !== "idle"; }).length;
+    var bad = Object.keys(DIAG).filter(function(n){ var k = diagState(DIAG[n], DIAG[n].host)[0]; return k !== "ok" && k !== "idle"; }).length;
     $("diagPill").textContent = Object.keys(DIAG).length ? (bad ? bad + " 個異常" : "全部正常") : "—";
     $("hlogPill").textContent = HLOG.list.length + " 筆";
     diagRender();
@@ -5784,6 +5841,11 @@ function holdTick(){
   if(!HOLD.on || HOLD.busy) return;
   var cfg = holdCfg();
   if(cfg.mode === "airline" && !cfg.gAl.length){ $("holdStatus").textContent = "請先輸入航空公司代碼"; holdRender(); clearTimeout(HOLD.timer); HOLD.timer = setTimeout(holdTick, HOLD.POLL); return; }
+  // 分頁在背景、而且擴充功能的背景監看已開：交給背景監看，這個分頁先不打，減少重複請求
+  if(document.hidden && typeof BG !== "undefined" && BG.active){
+    $("holdStatus").textContent = "分頁在背景，由背景監看負責偵測；切回來會立即更新";
+    clearTimeout(HOLD.timer); HOLD.timer = setTimeout(holdTick, 30000); return;
+  }
   HOLD.busy = true;
   var gen = HOLD.gen || 0;
   holdFetch(cfg).then(function(list){
@@ -5803,7 +5865,10 @@ function holdTick(){
   }).catch(function(e){
     HOLD.err = e.message || String(e);
     if(!cfg.proxy && !holdBridge()){ var dp = $("holdProxy").closest("details"); if(dp) dp.open = true; if(window.hsOpen && !HOLD.hsShown){ HOLD.hsShown = true; window.hsOpen(); } }
-    $("holdStatus").textContent = "抓取失敗，15 秒後重試";
+    var cool = [];
+    ["api.adsb.lol","opendata.adsb.fi","opensky-network.org"].forEach(function(h){ var u = gateUntil(h); if(u) cool.push(h.replace(/^api\.|^opendata\./, "").replace("-network.org", "") + " " + fixHm(u)); });
+    $("holdStatus").textContent = cool.length ? "資料源冷卻中（" + cool.join("、") + " 恢復），期間不打以免延長限流；地圖沿用最後位置" :
+      "抓取失敗，" + (cfg.mode === "airline" ? 30 : Math.round(HOLD.POLL/1000)) + " 秒後重試";
   }).then(function(){
     HOLD.busy = false;
     try{ holdRender(); }catch(err){ if(window.console) console.error(err); }
@@ -7428,6 +7493,10 @@ function shift(hhmm, mins){
   fixInit();
   hsInit();
   seatInit();
+  // 切回分頁時立即更新一次（背景時可能暫停了抓取）
+  document.addEventListener("visibilitychange", function(){
+    if(!document.hidden && HOLD.on && !HOLD.busy && Date.now() - (HOLD.lastOk || 0) > 20000){ clearTimeout(HOLD.timer); holdTick(); }
+  });
 
   switchTab("tdx");
   refreshAll();
