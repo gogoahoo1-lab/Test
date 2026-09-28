@@ -138,7 +138,9 @@ textarea{
 .seat-tbl tr.us td{background:rgba(58,143,167,.07)}
 .seat-tbl tr.us td:first-child{box-shadow:inset 4px 0 0 var(--cyan)}
 .seat-n{font:700 16px ui-monospace,Menlo,monospace;display:block;line-height:1.1}
-.seat-b{font-size:10.5px;color:var(--dim);white-space:nowrap}
+.seat-b{font-size:11px;color:var(--dim);white-space:nowrap}
+.seat-k{font:500 11px system-ui,"Noto Sans TC",sans-serif;color:#2e8b57;margin-right:3px}
+.seat-c.over .seat-k,.seat-c.low .seat-k{color:inherit}
 .seat-x{color:#b9c3cc;font-size:12px}
 .seat-c.tight .seat-n{color:#b86e00}
 .seat-c.low{background:rgba(222,150,40,.14)}
@@ -496,7 +498,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-28w</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-28x</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -960,7 +962,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
       <label class="note" style="display:flex;gap:6px;align-items:center;margin-top:20px"><input type="checkbox" id="seatOnlyAvail"> 只看經濟艙還有空位</label>
     </div>
     <div id="seatBody"></div>
-    <p class="note" style="margin-top:12px">空位＝座位配置－已訂位，未扣保留座與員工機位；負數為超賣。「—」表示該機型沒有這個艙等或未開放。灰字為已訂／座位數。</p>
+    <p class="note" style="margin-top:12px">每格大字「空 N」為空位數＝座位數－已訂位（未扣保留座與員工機位）；下方小字「已訂 N／共 N」為已訂位人數／該艙座位數。紅底「超賣」表示已訂超過座位數；「—」表示該機型沒有這個艙等或未開放。</p>
   </div>
 </section>
 
@@ -1185,7 +1187,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
 <section id="tab-help" hidden>
   <div class="card">
     <h2>怎麼用</h2>
-    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-28w</b>（盤旋偵測：轉降偵測、目的地天氣、背景監看、資料來源狀態、盤旋紀錄統計）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
+    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-28x</b>（盤旋偵測：轉降偵測、目的地天氣、背景監看、資料來源狀態、盤旋紀錄統計）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
     <ul class="doc">
       <li>桃園機場走「<b>TDX 桃園機場</b>」頁籤最省事：填 Client ID／Secret 後按立即抓取，到場與離場會一次抓齊。</li>
       <li>TDX 的 <code>$top</code> 預設值只有 <b>30 筆</b>，不分頁就只會拿到 30 班。本頁已改成自動帶 <code>$top</code>／<code>$skip</code> 分頁抓到底。</li>
@@ -5967,10 +5969,10 @@ function seatCapRender(){
 }
 function seatCell(r, i, tight){
   if(r.rem[i] == null){
-    return '<td class="c"><span class="seat-x">' + (r.pax[i] != null && r.noCap ? "訂 " + r.pax[i] : "—") + "</span></td>";
+    return '<td class="c"><span class="seat-x">' + (r.pax[i] != null && r.noCap ? "已訂 " + r.pax[i] : "—") + "</span></td>";
   }
   var v = r.rem[i], cls = v < 0 ? "over" : i === 0 ? "" : v <= (i === 3 ? 5 : 2) ? "low" : v <= tight && i === 3 ? "tight" : "";   // 頭等座位本來就少，不標色
-  return '<td class="c seat-c ' + cls + '"><span class="seat-n">' + (v < 0 ? "超賣 " + (-v) : v) + '</span><span class="seat-b">' + r.pax[i] + "／" + r.cap[i] + "</span></td>";
+  return '<td class="c seat-c ' + cls + '"><span class="seat-n">' + (v < 0 ? "超賣 " + (-v) : '<small class="seat-k">空</small>' + v) + '</span><span class="seat-b">已訂 ' + r.pax[i] + "／共 " + r.cap[i] + "</span></td>";
 }
 function seatRender(){
   var box = $("seatResult");
