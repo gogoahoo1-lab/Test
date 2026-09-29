@@ -2403,6 +2403,58 @@ const DATA = {
    "filled": 0
   },
   {
+   "code": "BOS",
+   "region": "北美",
+   "items": {
+    "curfew": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "catering": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "fuel": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "divert": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "deplane": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "entry": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "duty": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "crew": {
+     "status": null,
+     "time": null,
+     "note": ""
+    },
+    "other": {
+     "status": null,
+     "time": null,
+     "note": ""
+    }
+   },
+   "filled": 0
+  },
+  {
    "code": "PRG",
    "region": "歐洲",
    "items": {
@@ -2772,7 +2824,7 @@ const TZMAP = {
   KUL:"Asia/Kuala_Lumpur", SIN:"Asia/Singapore",
   CGK:"Asia/Jakarta", DPS:"Asia/Makassar",
   LAX:"America/Los_Angeles", SFO:"America/Los_Angeles", ONT:"America/Los_Angeles", SEA:"America/Los_Angeles",
-  PHX:"America/Phoenix", DFW:"America/Chicago", IAD:"America/New_York",
+  PHX:"America/Phoenix", DFW:"America/Chicago", IAD:"America/New_York", BOS:"America/New_York",
   PRG:"Europe/Prague", SYD:"Australia/Sydney", AKL:"Pacific/Auckland"
 };
 const WD = ["週日","週一","週二","週三","週四","週五","週六"];
@@ -3198,6 +3250,7 @@ SEA:{n:"SEATTLE-TACOMA",ll:[47.45,-122.31],r:[[160,3627,-.25,0,"L"],[160,2873,0,
 PHX:{n:"PHOENIX SKY HARBOR",ll:[33.43,-112.01],r:[[80,3502,-1,0,"8"],[70,3353,.55,.1,"7L"],[70,2377,.8,.2,"7R"]],t:[[0,-.2,1.4,.35,.05]],m:[[190,8,4],[20,7,1.2]],c:[[330,4,3],[80,4.5,2.5]],rv:[[250,3.5,190,2,120,2,75,4]]},
 DFW:{n:"DALLAS/FORT WORTH",ll:[32.9,-97.04],r:[[170,4085,-1.62,0,"C"],[170,4085,-.92,0,"R"],[170,4085,-2.28,.3,"L"],[180,4085,.9,0,"L"],[180,4085,1.6,0,"R"],[130,2835,2.44,-1.35,"R"],[130,2743,-1.2,3.3,"L"]],t:[[-1.2,0,.45,.45,.05],[-.6,0,.45,.45,.05],[0,0,.45,.45,.05],[.6,0,.45,.45,.05],[1.2,0,.45,.45,.05]],w:[["c",0,7,1.6]],c:[[300,8,3],[100,9,3]]},
 IAD:{n:"WASHINGTON DULLES",ll:[38.95,-77.46],r:[[10,3505,-.8,0,"C"],[10,3505,.8,0,"R"],[10,2865,-2.2,.3,"L"],[120,3200,-1.6,-2.43]],t:[[-.9,0,1,.3,.05],[0,0,.9,.25,.05],[.5,0,.9,.25,.05]],c:[[320,6,2.5],[20,6,2]]},
+BOS:{n:"BOSTON LOGAN",ll:[42.36,-71.01],r:[[40,3050,0,0,"R"],[40,2396,-.5,.45,"L"],[150,3073,.1,.2,"R"],[90,2134,-.3,.7],[140,1524,.6,-.9]],t:[[.2,-1.1,1.2,.4,.05]],w:[["S"],["I",.25],["C",255,3.2,1.6],["C",330,2.4,1.5]],c:[[255,3.2,1.2]]},
 PRG:{n:"PRAGUE",ll:[50.1,14.26],r:[[60,3715,0,0],[120,3250,-.9,-.2]],t:[[1,-1.1,.9,.3,.05]],c:[[100,7,3]],rv:[[20,9,80,7,140,9]],m:[[200,6,2]]},
 SYD:{n:"SYDNEY",ll:[-33.95,151.18],r:[[160,3962,.52,.3,"R"],[160,2438,-.52,-.3,"L"],[70,2530,-1.05,-.25]],t:[[-.6,1.4,.4,.8,.05],[-.9,-1.2,.5,.6,.05]],w:[["h",170,1.1],["I",.12,1]],c:[[10,6,2.5],[45,2,1.2]]},
 AKL:{n:"AUCKLAND",ll:[-37.01,174.79],r:[[50,3635,0,0,"5R"]],t:[[0,.5,.9,.3,.05]],w:[["h",310,1.3],["c",235,3.2,2.2]],c:[[20,8,3]],m:[[330,3.8,.6],[25,9,1]]}
