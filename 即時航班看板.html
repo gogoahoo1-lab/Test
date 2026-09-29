@@ -506,7 +506,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-29b</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-29c</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -1195,7 +1195,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
 <section id="tab-help" hidden>
   <div class="card">
     <h2>怎麼用</h2>
-    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-29b</b>（盤旋偵測：轉降偵測、目的地天氣、背景監看、資料來源狀態、盤旋紀錄統計）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
+    <p class="note" style="margin:0 0 12px">目前檔案版本：<b>2026-09-29c</b>（盤旋偵測：轉降偵測、目的地天氣、背景監看、資料來源狀態、盤旋紀錄統計）。版本不符時請重新下載檔案，舊檔不會自動更新。</p>
     <ul class="doc">
       <li>桃園機場走「<b>TDX 桃園機場</b>」頁籤最省事：填 Client ID／Secret 後按立即抓取，到場與離場會一次抓齊。</li>
       <li>TDX 的 <code>$top</code> 預設值只有 <b>30 筆</b>，不分頁就只會拿到 30 班。本頁已改成自動帶 <code>$top</code>／<code>$skip</code> 分頁抓到底。</li>
@@ -3870,7 +3870,8 @@ function holdMatchFlight(fno, iataApt){
 
 /* 分析一架航機的航跡：回傳同向最大累積轉角、盤旋持續時間 */
 function holdAnalyze(tr, now){
-  var pts = tr.pts, n = pts.length;
+  // 只用空中、1,000 呎以上的點：地面滑行的轉彎（常常一次好幾個 90°）不能算進盤旋
+  var pts = tr.pts.filter(function(p){ return p.alt >= 1000; }), n = pts.length;
   if(n < 3) return { turn:0, dur:0, dir:0 };
   // 由新往舊累加相鄰航向差；若相鄰點間隔 > 90 秒就視為斷點
   var sum = 0, best = 0, bestIdx = n-1;
@@ -3884,6 +3885,7 @@ function holdAnalyze(tr, now){
   var seg = pts.slice(bestIdx), alts = seg.map(function(p){ return p.alt || 0; }).filter(function(a){ return a > 0; });
   var altRange = alts.length ? Math.max.apply(null, alts) - Math.min.apply(null, alts) : 0;
   var altDrop = alts.length ? alts[0] - alts[alts.length - 1] : 0;
+  var altRise = -altDrop;
   var bigTurns = 0, legs = 0, runTurn = 0, runStraight = 0, dts = [];
   for(var j = 1; j < seg.length; j++){
     var dt = (seg[j].t - seg[j-1].t) / 1000, dh = angDiff(seg[j-1].trk, seg[j].trk);
@@ -3905,12 +3907,12 @@ function holdAnalyze(tr, now){
   var recentTurn = 0, rc = 0;
   for(var k = n-1; k > 0 && now - pts[k-1].t <= 4*60000; k--){ recentTurn += angDiff(pts[k-1].trk, pts[k].trk); rc++; }
   return { turn: Math.abs(best), dir: best > 0 ? 1 : (best < 0 ? -1 : 0), dur: now - pts[bestIdx].t,
-           altRange: altRange, altDrop: altDrop, racetrack: racetrack, recentTurn: Math.abs(recentTurn), recentN: rc };
+           altRange: altRange, altDrop: altDrop, altRise: altRise, racetrack: racetrack, recentTurn: Math.abs(recentTurn), recentN: rc };
 }
 
 function holdLevel(tr){
   if(tr.emerg || tr.divert) return 3;
-  if(!tr.holding) return tr.turn >= 240 ? 1 : 0;
+  if(!tr.holding) return tr.turn >= 240 && !tr.climbTurn ? 1 : 0;   // 爬升中的轉向（離場）不列注意
   var holdMin = (Date.now() - tr.holdSince) / 60000;
   if(holdMin >= 15 || tr.turn >= 1080) return 3;
   return 2;
@@ -3966,20 +3968,24 @@ function holdIngest(list, cfg){
     var eligible = !tr.onGround && tr.alt >= 1500 && (tr.gs == null || tr.gs >= 90);
     // 滿一圈後再分類：高度大致維持（±1,500 呎）或呈跑馬場形 → 盤旋；邊轉圈邊大幅下降 → 繞圈下降（多為雷達引導），只列注意
     var orbitDescent = r.turn >= 360 && !r.racetrack && r.altRange > 1500 && r.altDrop > 3000;
-    tr.holdKind = r.turn >= 360 ? (r.racetrack ? "跑馬場等待" : orbitDescent ? "繞圈下降" : "定高繞圈") : "";
+    // 起飛後邊爬升邊轉向（離場程序、雷達引導）不是盤旋；盤旋要高度大致維持（±1,250 呎）或呈跑馬場形
+    var climbing = r.altRise > 3000 && !r.racetrack;
+    var levelOk = r.racetrack || r.altRange <= 2500;
+    tr.climbTurn = climbing;
+    tr.holdKind = r.turn >= 360 ? (r.racetrack ? "跑馬場等待" : orbitDescent ? "繞圈下降" : climbing ? "爬升轉向" : levelOk ? "定高繞圈" : "變高度繞圈") : (climbing && r.turn >= 240 ? "爬升轉向" : "");
     // 最近 4 分鐘幾乎沒轉：已改直飛（取樣要夠密才判斷，OpenSky 90 秒一點時改靠整體轉角判斷，避免誤判脫離）
     var stopped = r.recentN >= 5 && r.recentTurn < 90;
     // 剛判定的盤旋（10 分鐘內）後來看出其實是繞圈下降：撤回，並刪除那筆紀錄
-    if(tr.holding && orbitDescent && now - tr.holdSince < 10*60000){
+    if(tr.holding && (orbitDescent || climbing) && now - tr.holdSince < 10*60000){
       tr.holding = false;
       if(tr.logId){ HLOG.list = HLOG.list.filter(function(x){ return x.id !== tr.logId; }); HLOG.dirty = true; tr.logId = null; }
     }
     // 取樣夠密時，還要求最近 4 分鐘確實在轉（避免把前一次盤旋的圈數算進來而太早判定）
     var turningNow = r.recentN < 5 || r.recentTurn >= 180;
-    if(eligible && r.turn >= 360 && !orbitDescent && !stopped && (tr.holding || turningNow)){
+    if(eligible && r.turn >= 360 && !orbitDescent && !climbing && levelOk && !stopped && (tr.holding || turningNow)){
       if(!tr.holding){ tr.holding = true; tr.holdSince = Math.max(now - r.dur, tr.exitAt || 0); }
       tr.lastHold = now;
-    }else if(tr.holding && (r.turn < 180 || !eligible || stopped || orbitDescent)){
+    }else if(tr.holding && (r.turn < 180 || !eligible || stopped || orbitDescent || climbing || !levelOk)){
       // 近期不再同向轉圈 → 視為已脫離；保留 20 分鐘紀錄
       tr.holding = false; tr.exitAt = now;
       delete HOLD.notified[tr.hex + ":2"]; delete HOLD.notified[tr.hex + ":3"];   // 之後再盤旋還會提醒
