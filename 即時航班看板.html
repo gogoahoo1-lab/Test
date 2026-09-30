@@ -511,7 +511,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-30b</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-30c</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -962,8 +962,12 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
       <span class="note" id="seatMsg"></span>
     </div>
     <div class="row" style="margin-top:8px">
-      <label class="note" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="seatAuto" checked> 自動同步公司系統（需在 ADS-B 橋接擴充功能 v2.7 設定頁啟用）</label>
+      <label class="note" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="seatAuto" checked> 自動同步公司系統（需在 ADS-B 橋接擴充功能設定頁啟用）</label>
       <span class="note" id="seatSyncMsg"></span>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <button class="btn ghost" id="btnAutoLegs" type="button">🔄 立即從 OpsLink 更新</button>
+      <span class="note" id="autoLegsMsg"></span>
     </div>
     <details class="seat-cap" id="seatCapBox">
       <summary>座位配置（依機型，可自行修改）<span class="note" id="seatCapNote"></span></summary>
@@ -6587,7 +6591,34 @@ function seatInit(){
     }, function(){ $("seatSyncMsg").textContent = "擴充功能版本不支援自動同步（需 v2.7）"; });
   }
   setTimeout(seatSync, 2500); setInterval(seatSync, 20000);
-  document.addEventListener("visibilitychange", function(){ if(!document.hidden) seatSync(); });
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden){ seatSync(); alStatus(); } });
+  // OpsLink 自動查詢（擴充功能 v2.8）：顯示排程狀態，也可手動立即查一次
+  function alWhen(t){ return t ? (twKey(t) === twKey(Date.now()) ? "今天 " : twKey(t).slice(5).replace("-", "/") + " ") + fixHm(t) : ""; }
+  function alStatus(){
+    if(!holdBridge() || document.hidden) return;
+    bgCmd("autoLegsStatus").then(function(r){
+      var st = r.stat || {}, m;
+      if(r.running) m = "⏳ 正在 OpsLink 背景分頁查詢…";
+      else if(!r.url) m = "尚未設定：擴充功能設定頁 → OpsLink 自動查詢";
+      else {
+        m = r.on ? "自動查詢：" + (r.every >= 1440 ? "每天" : "每 " + (r.every >= 60 ? (r.every / 60) + " 小時" : r.every + " 分鐘")) + "一次" : "自動查詢未開啟（可手動更新）";
+        if(st.lastOk) m += "｜上次成功 " + alWhen(st.lastOk);
+        if(st.lastErr) m += "｜⚠ " + st.lastErr + "（" + alWhen(st.lastRun) + "）";
+      }
+      $("autoLegsMsg").textContent = m;
+      $("btnAutoLegs").disabled = !!r.running;
+    }, function(){ $("autoLegsMsg").textContent = holdBridge() ? "需要 ADS-B 橋接擴充功能 v2.8 才能自動查詢 OpsLink" : ""; });
+  }
+  $("btnAutoLegs").addEventListener("click", function(){
+    if(!holdBridge()){ $("autoLegsMsg").textContent = "需要安裝 ADS-B 橋接擴充功能 v2.8"; return; }
+    SEAT.manual = false; $("seatAuto").checked = true; try{ localStorage.setItem("seatAuto", "1"); }catch(e){}
+    bgCmd("autoLegsRun").then(function(r){
+      if(r && r.ok === false){ $("autoLegsMsg").textContent = "⚠ " + (r.error || "無法開始"); return; }
+      $("autoLegsMsg").textContent = "⏳ 已在背景分頁開啟 OpsLink 查詢…"; $("btnAutoLegs").disabled = true;
+      var n = 0, iv = setInterval(function(){ seatSync(); alStatus(); if(++n > 50) clearInterval(iv); }, 5000);
+    }, function(){ $("autoLegsMsg").textContent = "需要 ADS-B 橋接擴充功能 v2.8 才能自動查詢 OpsLink"; });
+  });
+  setTimeout(alStatus, 3000); setInterval(alStatus, 60000);
 }
 
 function switchTab(name){
