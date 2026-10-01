@@ -149,6 +149,9 @@ textarea{
 .seat-c.over .seat-n{color:#c0392b}
 .seat-tot{font:700 15px ui-monospace,monospace}
 .seat-us-tag{display:inline-block;background:var(--cyan);color:#fff;border-radius:6px;padding:0 6px;font-size:11px;margin-left:6px;vertical-align:1px}
+.seat-leg{display:block;font-size:11.5px;margin-top:3px;white-space:nowrap;color:var(--muted,#6b7a86)}
+.seat-leg b{font-weight:600;color:inherit}
+.seat-leg.ok{color:#2f7a55}.seat-leg.warn{color:#b7791f}.seat-leg.bad{color:#c0392b;font-weight:600}.seat-leg.none{opacity:.75}
 .seat-dly{display:inline-block;border-radius:6px;padding:0 5px;font-size:11px;margin-left:4px;background:rgba(214,86,86,.12);color:#b03a3a}
 .seat-sum{display:flex;gap:10px;flex-wrap:wrap;margin:4px 0 8px}
 .seat-sum span{font-size:12.5px;background:rgba(58,143,167,.1);border-radius:8px;padding:3px 9px}
@@ -321,6 +324,10 @@ ul.doc li{margin:6px 0}
 .hmap-icon svg{display:block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
 .hmap-lbl{position:absolute;left:100%;top:50%;transform:translate(3px,-50%);font:600 11px/1 system-ui,sans-serif;white-space:nowrap;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff}
 .hmap-pop{font-size:12.5px;line-height:1.6}
+.hmap-next{display:block;margin-top:4px;padding:3px 7px;border-radius:7px;background:rgba(47,122,85,.12);color:#2f7a55;font-weight:600}
+.hmap-next.warn{background:rgba(214,158,46,.16);color:#a86b0c}.hmap-next.bad{background:rgba(214,86,86,.15);color:#c0392b}
+.hmap-next.none{background:rgba(120,130,140,.12);color:inherit;font-weight:500;opacity:.85}
+.hmap-next small{font-weight:500;opacity:.8}
 /* ── 盤旋偵測設定抽屜 ── */
 .hs-open{position:relative}
 .hs-dots{display:inline-flex;gap:3px;margin-left:6px;vertical-align:middle}
@@ -511,7 +518,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-01b</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-01d</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -4789,6 +4796,24 @@ function holdPlaneIcon(tr){
         (rt ? '<i>' + esc(rt) + "</i>" : "") + "</span>"
   });
 }
+/* 地圖彈出框：這架飛機落地後有沒有接飛（用 OpsLink 清單的機號串起來） */
+function holdNextHtml(tr, rt){
+  var fno = String(tr.fno || holdFlightNo(tr.cs) || "");
+  var has = SEAT && SEAT.rows && SEAT.rows.length;
+  if(!has) return /^JX/i.test(fno) ? '<span class="hmap-next none">串飛：尚未載入 OpsLink 清單（空位查詢）</span>' : "";
+  if(!rt) return "";
+  var nx = null;
+  try{ nx = twNext(tr, rt, twTimes(tr, rt)); }catch(e){ return ""; }
+  if(!nx) return "";
+  if(nx.none){
+    var hasOut = SEAT.rows.some(function(x){ return x.from === rt.to; });
+    return '<span class="hmap-next none">➡ ' + (hasOut ? "落地後清單內沒有接飛" : "看不到下一段（需在擴充功能勾「也查回程」）") + " <small>" + esc(nx.reg) + "</small></span>";
+  }
+  var t = nx.turn, cls = t == null || t > 720 ? "" : t < 45 ? "bad" : t < 75 ? "warn" : "";
+  var tt = t == null ? "" : t < 0 ? "・⚠ 來不及（差 " + Math.floor(-t/60) + "h" + pad2(-t % 60) + "m）" : (t > 720 ? "・停留 " : "・過站 ") + Math.floor(t/60) + "h" + pad2(t % 60) + "m";
+  return '<span class="hmap-next ' + cls + '">➡ ' + (t != null && t > 720 ? "下一段 " : "接飛 ") + esc(nx.flt) + " " + esc(nx.from) + "→" + esc(nx.to) + " " + twHmOf(nx.std) + tt +
+    " <small>" + esc(nx.reg) + "</small></span>";
+}
 function holdPopupHtml(tr){
   if(tr.est){
     var r0 = tr.estRoute || holdRoute(tr), m0 = tr.match;
@@ -4799,7 +4824,7 @@ function holdPopupHtml(tr){
       (tr.alt ? "<br>高度 " + fmtAlt(tr.alt) + (tr.gs ? "・" + tr.gs + " kt" : "") : "") +
       (tr.lostEl != null ? "<br>最後收到訊號：" + fmtDur(tr.lostEl) + "前，" + fmtAlt(tr.alt) + (tr.gs ? "・" + tr.gs + " kt" : "") : "") +
       (m0 ? "<br>表定 " + esc(m0.sched || "—") + (m0.act ? "・實際 " + esc(m0.act) : (m0.est ? "・預估 " + esc(m0.est) : "")) : "") +
-      '</div>';
+      holdNextHtml(tr, r0) + '</div>';
   }
   var m = tr.match, lv = ["飛行中","注意","盤旋中","長時間盤旋"][tr.level] || "";
   return '<div class="hmap-pop"><b>' + esc(tr.fno || tr.cs || tr.hex.toUpperCase()) + "</b>" +
@@ -4817,7 +4842,7 @@ function holdPopupHtml(tr){
     (tr.divert ? '<br><b style="color:#d65656">⚠ 疑似轉降</b>：原目的地 ' + esc(tr.divert.from) + (tr.divert.to ? " → 可能備降 " + esc(aptLabel(tr.divert.to)) : "") : "") +
     (tr.destIata && metarForIata(tr.destIata) ? "<br>" + metarBadge(metarForIata(tr.destIata), IATA_TO_ICAO[tr.destIata]) : "") +
     (m ? "<br>表定 " + esc(m.sched || "—") + (m.est ? "・預估 " + esc(m.est) : "") + "<br>" + (m.dir === "A" ? "自 " : "往 ") + esc(m.peer || "") + " " + esc(aptName(m.peer) || "") : "") +
-    "</div>";
+    holdNextHtml(tr, holdRoute(tr)) + "</div>";
 }
 /* 掃描波：由左往右約 2.4 秒掃過，經過每架航機時讓它閃一下 */
 var SWEEP_MS = 2400;
@@ -6117,9 +6142,9 @@ function twNext(t, r, tm){
   // 以「目前這一段的 STD」為起點找下一段（不用抵達時間，避免飛機晚到時把真正的下一段漏掉），且要從本段目的地出發
   var after = cur && cur.std ? cur.std : (tm && tm.std ? tm.std : Date.now() - 6*3600000);
   var cand = SEAT.rows.filter(function(x){
-    return regNorm(x.reg) === reg && x.std && x.std > after && x.std < base + 30*3600000 && twFnoNorm(x.flt) !== fno && (!r.to || !x.from || x.from === r.to);
+    return regNorm(x.reg) === reg && x.std && x.std > after && x.std < base + 30*3600000 && twFnoNorm(x.flt) !== fno;
   }).sort(function(a, b){ return a.std - b.std; });
-  if(!cand.length) return { reg:reg, none:true };
+  if(!cand.length || (r.to && cand[0].from && cand[0].from !== r.to)) return { reg:reg, none:true };   // 只認緊接著、航點接得上的那一段
   var n = cand[0];
   return { reg:reg, flt:n.flt, from:n.from, to:n.to, std:n.std, turn: arr ? Math.round((n.std - arr) / 60000) : null };
 }
@@ -6444,6 +6469,34 @@ function seatCell(r, i, tight){
   var v = r.rem[i], cls = v < 0 ? "over" : i === 0 ? "" : v <= (i === 3 ? 5 : 2) ? "low" : v <= tight && i === 3 ? "tight" : "";   // 頭等座位本來就少，不標色
   return '<td class="c seat-c ' + cls + '"><span class="seat-n">' + (v < 0 ? "超賣 " + (-v) : '<small class="seat-k">空</small>' + v) + '</span><span class="seat-b">已訂 ' + r.pax[i] + "／共 " + r.cap[i] + "</span></td>";
 }
+/* 串飛：用機號在清單中找同一架飛機的前一段（飛來本站）與下一段（從目的地接著飛） */
+function seatHm(ms){ return Math.floor(ms/60) + "h" + pad2(ms % 60) + "m"; }
+function seatLinks(r){
+  var reg = regNorm(r.reg);
+  if(!reg || /^(TBA|TBD|XXX)/.test(reg)) return "";
+  var same = SEAT.rows.filter(function(x){ return x !== r && regNorm(x.reg) === reg && x.std; });
+  var arr = r.sta ? r.sta + (r.delay || 0)*60000 : 0;
+  // 只認「緊接著」的那一段：同機號時間上最近的一段，而且航點要接得上（中間缺資料時不硬湊）
+  var nx = same.filter(function(x){ return x.std > r.std && x.std - r.std < 40*3600000; }).sort(function(a,b){ return a.std - b.std; })[0];
+  var pv = same.filter(function(x){ return x.std < r.std && r.std - x.std < 40*3600000; }).sort(function(a,b){ return b.std - a.std; })[0];
+  var gapN = nx && nx.from !== r.to, gapP = pv && pv.to !== r.from;
+  if(gapN) nx = null; if(gapP) pv = null;
+  function cls(m){ return m == null || m > 12*60 ? "" : m < 45 ? "bad" : m < 75 ? "warn" : "ok"; }
+  function turnTxt(m){ return m == null ? "" : m < 0 ? "　⚠ 來不及（差 " + seatHm(-m) + "）" : m > 12*60 ? "　停留 " + seatHm(m) : "　過站 " + seatHm(m); }
+  var out = "";
+  if(pv){
+    var pa = pv.sta ? pv.sta + (pv.delay || 0)*60000 : 0, pm = pa ? Math.round((r.dep - pa)/60000) : null;
+    out += '<span class="seat-leg ' + cls(pm) + '" title="這架飛機的前一段（時間為台北時間）">⬅ ' + esc(pv.flt) + " " + esc(pv.from) + "→" + esc(pv.to) + (pa ? " " + twParts(pa).hm + "到" : "") + turnTxt(pm) + "</span>";
+  }
+  if(nx){
+    var nm = arr ? Math.round((nx.dep - arr)/60000) : null;
+    out += '<span class="seat-leg ' + cls(nm) + '" title="這架飛機的下一段（時間為台北時間）">➡ ' + (nm != null && nm > 12*60 ? "下一段 " : "接飛 ") + esc(nx.flt) + " " + esc(nx.from) + "→" + esc(nx.to) + " " + twParts(nx.dep).hm + "飛" + turnTxt(nm) + "</span>";
+  } else {
+    var hasOut = SEAT.rows.some(function(x){ return x.from === r.to; });   // 清單裡有沒有從目的地出發的航班（沒查回程時就沒有）
+    out += '<span class="seat-leg none">➡ ' + (!hasOut ? "看不到下一段（需查回程：擴充功能勾「也查回程」）" : gapN ? "下一段航點接不上（中間可能缺資料）" : "清單內沒有接飛") + "</span>";
+  }
+  return out;
+}
 function seatRender(){
   var box = $("seatResult");
   if(!SEAT.rows.length){ box.hidden = true; return; }
@@ -6484,7 +6537,7 @@ function seatRender(){
     kpi("", "經濟艙緊張（≤" + tight + "）", tightN.length + " 班");
   // 依台北日期分組，每天內美國線置頂
   var groups = {}; list.forEach(function(r){ var k = twKey(r.dep); (groups[k] = groups[k] || []).push(r); });
-  var head = '<thead><tr><th>台北出發</th><th>航班</th><th>目的地</th><th>機型／機號</th><th class="c">頭等</th><th class="c">商務</th><th class="c">豪經</th><th class="c">經濟</th><th class="c">合計空位</th></tr></thead>';
+  var head = '<thead><tr><th>台北出發</th><th>航班</th><th>目的地</th><th>機型／機號／串飛</th><th class="c">頭等</th><th class="c">商務</th><th class="c">豪經</th><th class="c">經濟</th><th class="c">合計空位</th></tr></thead>';
   $("seatBody").innerHTML = Object.keys(groups).sort().map(function(k){
     var g = groups[k].slice().sort(function(a,b){ return (seatIsUS(b) - seatIsUS(a)) || (a.dep - b.dep); });
     var gu = g.filter(seatIsUS);
@@ -6497,7 +6550,7 @@ function seatRender(){
             (r.from !== "TPE" ? '<br><span class="note">自 ' + esc(r.from) + "</span>" : "") + "</td>" +
           '<td class="mono" style="font-weight:600">' + esc(r.flt) + (r.st !== "J" ? ' <span class="note">(' + esc(r.st) + ")</span>" : "") + "</td>" +
           "<td><b>" + esc(r.to) + "</b> " + esc(aptName(r.to)) + (u ? '<span class="seat-us-tag">美國</span>' : "") + "</td>" +
-          "<td>" + esc(SEAT_TYPE_NAME[r.type] || r.type) + (r.noCap ? ' <span style="color:var(--bad)">未設配置</span>' : "") + '<br><span class="note">' + esc(r.reg) + "</span></td>" +
+          "<td>" + esc(SEAT_TYPE_NAME[r.type] || r.type) + (r.noCap ? ' <span style="color:var(--bad)">未設配置</span>' : "") + '<br><span class="note">' + esc(r.reg) + "</span>" + seatLinks(r) + "</td>" +
           [0,1,2,3].map(function(i){ return seatCell(r, i, tight); }).join("") +
           '<td class="c"><span class="seat-tot">' + tot + "</span>" + (ov ? '<br><span class="seat-b" style="color:#c0392b">含超賣艙等</span>' : "") + "</td></tr>";
       }).join("") + "</tbody></table></div></div>";
