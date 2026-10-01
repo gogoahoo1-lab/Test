@@ -511,7 +511,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-09-30c</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-01a</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -6588,10 +6588,19 @@ function seatInit(){
       if(SEAT.manual){ $("seatSyncMsg").textContent = "偵測到手動貼上，自動同步暫停（取消再勾選「自動同步」即可恢復）｜公司系統最新 " + fixHm(f.t) + "（" + f.n + " 班）"; return; }
       SEAT.feedT = f.t; try{ localStorage.setItem("seatFeedT", String(f.t)); }catch(e){}
       $("seatRaw").value = f.text; seatRun();
-    }, function(){ $("seatSyncMsg").textContent = "擴充功能版本不支援自動同步（需 v2.7）"; });
+    }, function(e){ $("seatSyncMsg").textContent = "⚠ 無法同步：" + alErr(e); });
   }
   setTimeout(seatSync, 2500); setInterval(seatSync, 20000);
   document.addEventListener("visibilitychange", function(){ if(!document.hidden){ seatSync(); alStatus(); } });
+  // 把擴充功能回覆的錯誤翻成看得懂的原因
+  function alErr(e){
+    var m = String(e && e.message || e || "");
+    if(/未知指令/.test(m)) return "擴充功能是舊版，請到 chrome://extensions 移除舊版後載入 v2.8.0，再重新整理本頁";
+    if(/重新整理|context invalidated|Receiving end/i.test(m)) return "擴充功能剛更新過，請按 Ctrl+F5 重新整理本頁";
+    if(/無權/.test(m)) return "這個網址的看板不能讀取公司資料（本機檔案的檔名需含「航班看板」）";
+    if(/沒有回應/.test(m)) return "擴充功能沒有回應，請到 chrome://extensions 確認已啟用 v2.8.0，再重新整理本頁";
+    return m || "擴充功能沒有回應";
+  }
   // OpsLink 自動查詢（擴充功能 v2.8）：顯示排程狀態，也可手動立即查一次
   function alWhen(t){ return t ? (twKey(t) === twKey(Date.now()) ? "今天 " : twKey(t).slice(5).replace("-", "/") + " ") + fixHm(t) : ""; }
   function alStatus(){
@@ -6607,7 +6616,7 @@ function seatInit(){
       }
       $("autoLegsMsg").textContent = m;
       $("btnAutoLegs").disabled = !!r.running;
-    }, function(){ $("autoLegsMsg").textContent = holdBridge() ? "需要 ADS-B 橋接擴充功能 v2.8 才能自動查詢 OpsLink" : ""; });
+    }, function(e){ $("autoLegsMsg").textContent = holdBridge() ? "⚠ " + alErr(e) : ""; });
   }
   $("btnAutoLegs").addEventListener("click", function(){
     if(!holdBridge()){ $("autoLegsMsg").textContent = "需要安裝 ADS-B 橋接擴充功能 v2.8"; return; }
@@ -6616,7 +6625,7 @@ function seatInit(){
       if(r && r.ok === false){ $("autoLegsMsg").textContent = "⚠ " + (r.error || "無法開始"); return; }
       $("autoLegsMsg").textContent = "⏳ 已在背景分頁開啟 OpsLink 查詢…"; $("btnAutoLegs").disabled = true;
       var n = 0, iv = setInterval(function(){ seatSync(); alStatus(); if(++n > 50) clearInterval(iv); }, 5000);
-    }, function(){ $("autoLegsMsg").textContent = "需要 ADS-B 橋接擴充功能 v2.8 才能自動查詢 OpsLink"; });
+    }, function(e){ $("autoLegsMsg").textContent = "⚠ " + alErr(e); });
   });
   setTimeout(alStatus, 3000); setInterval(alStatus, 60000);
 }
