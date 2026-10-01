@@ -538,7 +538,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-01i</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-01j</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -1330,8 +1330,9 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
 </aside>
 <script>
 "use strict";
-/* 分享版開關：true 時拿掉空位查詢與 OpsLink 串飛等公司資料功能（由完整版自動產生，請勿手動修改） */
+/* 分享版開關：true 時只保留到離看板、班表分析、航班地圖、空位查詢（空位只能手動貼上，不連 OpsLink）。由完整版自動產生，請勿手動修改 */
 var LITE = false;
+var LITE_TABS = ["board","sched","map","seat"];
 /* =========================================================
    狀態
    ========================================================= */
@@ -4822,10 +4823,9 @@ function holdPlaneIcon(tr){
 }
 /* 地圖彈出框：這架飛機落地後有沒有接飛（用 OpsLink 清單的機號串起來） */
 function holdNextHtml(tr, rt){
-  if(LITE) return "";
   var fno = String(tr.fno || holdFlightNo(tr.cs) || "");
   var has = SEAT && SEAT.rows && SEAT.rows.length;
-  if(!has) return /^JX/i.test(fno) ? '<span class="hmap-next none">串飛：尚未載入 OpsLink 清單（空位查詢）</span>' : "";
+  if(!has) return /^JX/i.test(fno) ? '<span class="hmap-next none">' + (LITE ? "串飛：在「空位查詢」貼上航班清單後顯示" : "串飛：尚未載入 OpsLink 清單（空位查詢）") + '</span>' : "";
   if(!rt) return "";
   var nx = null;
   try{ nx = twNext(tr, rt, twTimes(tr, rt)); }catch(e){ return ""; }
@@ -4835,7 +4835,7 @@ function holdNextHtml(tr, rt){
   if(nx.ret) out += '<span class="hmap-next none">↩ 外站折返 ' + esc(nx.ret.flt) + " " + esc(nx.ret.from) + "→" + esc(nx.ret.to) + " " + twHmOf(nx.ret.std) + "飛" + (nx.ret.sta ? "・" + twHmOf(nx.ret.sta) + "到" : "") + "</span>";
   if(nx.none){
     var hasOut = SEAT.rows.some(function(x){ return x.from === rt.to; });
-    var msg = nx.ret ? (nx.gap ? "回台後的下一段航點接不上（可能缺資料）" : "回台後清單內沒有接飛") : hasOut ? "落地後清單內沒有接飛" : "看不到下一段（需在擴充功能勾「也查回程」）";
+    var msg = nx.ret ? (nx.gap ? "回台後的下一段航點接不上（可能缺資料）" : "回台後清單內沒有接飛") : hasOut ? "落地後清單內沒有接飛" : (LITE ? "看不到下一段（請一併貼上回程航班清單）" : "看不到下一段（需在擴充功能勾「也查回程」）");
     return out + '<span class="hmap-next ' + (nx.ret ? "ret" : "none") + '">➡ ' + msg + " <small>" + esc(nx.reg) + "</small></span>";
   }
   var t = nx.turn, cls = t == null || t > 720 ? "" : t < 45 ? "bad" : t < 75 ? "warn" : "";
@@ -6163,7 +6163,6 @@ function fixSchedRun(force){
 /* ---------- 下一段：用機號在系統清單中找這架飛機接下來要飛的航班 ---------- */
 function regNorm(x){ return String(x || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); }
 function twNext(t, r, tm){
-  if(LITE) return null;
   if(!SEAT || !SEAT.rows || !SEAT.rows.length || !r) return null;
   var fno = twFnoNorm(t.fno || holdFlightNo(t.cs) || "");
   var cur = fno ? twSeat(fno, r.to) : null;
@@ -6549,7 +6548,7 @@ function seatLinks(r){
     out += '<span class="seat-leg ' + cls(nm) + '" title="這架飛機的下一段（時間為台北時間）">➡ ' + (nm != null && nm > 12*60 ? "下一段 " : "接飛 ") + esc(nx.flt) + " " + esc(nx.from) + "→" + esc(nx.to) + " " + twParts(nx.dep).hm + "飛" + turnTxt(nm) + "</span>";
   } else {
     var hasOut = SEAT.rows.some(function(x){ return x.from === r.to; });   // 清單裡有沒有從目的地出發的航班（沒查回程時就沒有）
-    out += '<span class="seat-leg none">➡ ' + (!hasOut ? "看不到下一段（需查回程：擴充功能勾「也查回程」）" : gapN ? "下一段航點接不上（中間可能缺資料）" : "清單內沒有接飛") + "</span>";
+    out += '<span class="seat-leg none">➡ ' + (!hasOut ? (LITE ? "看不到下一段（請一併貼上回程航班清單）" : "看不到下一段（需查回程：擴充功能勾「也查回程」）") : gapN ? "下一段航點接不上（中間可能缺資料）" : "清單內沒有接飛") + "</span>";
   }
   return out;
 }
@@ -6736,6 +6735,10 @@ function seatInit(){
     seatRun();
   });
   if($("seatRaw").value.trim()) seatRun(); else seatCapRender();
+  if(LITE){   // 分享版：只能手動貼上／選檔，不連公司系統
+    [$("seatAuto"), $("btnAutoLegs")].forEach(function(el){ var row = el && el.closest(".row"); if(row) row.remove(); });
+    return;
+  }
   // 公司系統自動同步：擴充功能在你開啟公司系統頁面時收集清單，這裡每 20 秒取一次
   try{ SEAT.feedT = +(localStorage.getItem("seatFeedT") || 0); $("seatAuto").checked = localStorage.getItem("seatAuto") !== "0"; }catch(e){}
   $("seatAuto").addEventListener("change", function(){ try{ localStorage.setItem("seatAuto", this.checked ? "1" : "0"); }catch(e){} if(this.checked){ SEAT.manual = false; SEAT.feedT = 0; seatSync(); } });
@@ -6791,7 +6794,7 @@ function seatInit(){
 }
 
 function switchTab(name){
-  if(LITE && name === "seat") name = "board";
+  if(LITE && LITE_TABS.indexOf(name) < 0) name = "board";
   var btns = $("nav").querySelectorAll("button");
   for(var i=0;i<btns.length;i++){
     var on = btns[i].getAttribute("data-tab") === name;
@@ -7890,9 +7893,20 @@ function shift(hhmm, mins){
    綁定
    ========================================================= */
 (function init(){
-  if(LITE){   // 分享版：移除公司資料相關的分頁與功能
-    var sb = document.querySelector('#nav button[data-tab="seat"]'); if(sb) sb.remove();
-    var ss = $("tab-seat"); if(ss) ss.remove();
+  if(LITE){   // 分享版：只留四個分頁；TDX 金鑰設定移到到離看板最上方
+    Array.prototype.forEach.call(document.querySelectorAll("#nav button"), function(b){ if(LITE_TABS.indexOf(b.getAttribute("data-tab")) < 0) b.remove(); });
+    var tdxSec = $("tab-tdx"), boardSec = $("tab-board");
+    if(tdxSec && boardSec){
+      var det = document.createElement("details");
+      det.className = "card"; det.style.marginBottom = "16px";
+      det.innerHTML = '<summary style="cursor:pointer;font-weight:600">⚙ TDX 連線設定（第一次使用請填 Client ID／Secret）<span class="note" id="liteTdxNote" style="margin-left:8px"></span></summary>';
+      var keep = $("btnTdxNow") && $("btnTdxNow").closest(".row");   // 只留金鑰、場站與抓取按鈕，其餘（自動存檔、說明）在分享版拿掉
+      if(keep && keep.parentNode === tdxSec){ for(var nx = keep.nextElementSibling; nx; nx = nx.nextElementSibling) nx.style.display = "none"; }
+      tdxSec.removeAttribute("id"); tdxSec.hidden = false; tdxSec.classList.remove("card"); tdxSec.style.margin = "10px 0 0";
+      det.appendChild(tdxSec);
+      boardSec.insertBefore(det, boardSec.firstChild);
+      det.id = "liteTdx";
+    }
     document.title = "即時航班看板（分享版）";
     var bt = $("buildTag"); if(bt) bt.textContent += "・分享版";
   }
@@ -8116,15 +8130,20 @@ function shift(hhmm, mins){
   bgInit();
   fixInit();
   hsInit();
-  if(!LITE) seatInit();
+  seatInit();
   ospInit();
   // 切回分頁時立即更新一次（背景時可能暫停了抓取）
   document.addEventListener("visibilitychange", function(){
     if(!document.hidden && HOLD.on && !HOLD.busy && Date.now() - (HOLD.lastOk || 0) > 20000){ clearTimeout(HOLD.timer); holdTick(); }
   });
 
-  switchTab("tdx");
+  switchTab(LITE ? "board" : "tdx");
   refreshAll();
+  if(LITE){   // 分享版：有金鑰就自動開始抓 TDX，沒有就展開設定區
+    var hasKey = $("tdxClientId") && $("tdxClientId").value.trim() && $("tdxClientSecret").value.trim();
+    if(hasKey) startTDXAuto(); else if($("liteTdx")) $("liteTdx").open = true;
+    if($("liteTdxNote")) $("liteTdxNote").textContent = hasKey ? "已設定，每 5 分鐘自動更新" : "尚未設定";
+  }
 })();
 </script>
 
