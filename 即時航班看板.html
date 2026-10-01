@@ -149,6 +149,16 @@ textarea{
 .seat-c.over .seat-n{color:#c0392b}
 .seat-tot{font:700 15px ui-monospace,monospace}
 .seat-us-tag{display:inline-block;background:var(--cyan);color:#fff;border-radius:6px;padding:0 6px;font-size:11px;margin-left:6px;vertical-align:1px}
+.seat-filter{margin-top:14px;border:1px solid var(--line,#dde6ec);border-radius:14px;padding:12px 14px;background:rgba(255,255,255,.55);display:flex;flex-direction:column;gap:9px}
+.seat-dir{display:flex;gap:8px;flex-wrap:wrap;padding-bottom:9px;border-bottom:1px dashed var(--line,#dde6ec)}
+.seat-dir button{border:1px solid var(--line,#cfdbe3);background:#fff;border-radius:11px;padding:8px 18px;font-size:14px;cursor:pointer;color:var(--muted,#5b6b77)}
+.seat-dir button .n{margin-left:8px;font-size:12px;opacity:.65}
+.seat-dir button[aria-pressed="true"]{background:var(--cyan,#3a8fa7);border-color:var(--cyan,#3a8fa7);color:#fff;font-weight:600;box-shadow:0 2px 14px rgba(58,143,167,.25)}
+.seat-frow{display:grid;grid-template-columns:78px 1fr;gap:10px;align-items:start}
+.seat-flab{font-size:12px;color:var(--muted,#6b7a86);padding-top:5px;white-space:nowrap}
+.seat-hint{font-size:12px;color:var(--muted,#6b7a86);padding-top:4px}
+.chip.tiny.empty{opacity:.45}
+@media (max-width:640px){.seat-frow{grid-template-columns:1fr;gap:4px}.seat-flab{padding-top:0}}
 .seat-leg{display:block;font-size:11.5px;margin-top:3px;white-space:nowrap;color:var(--muted,#6b7a86)}
 .seat-leg b{font-weight:600;color:inherit}
 .seat-leg.ok{color:#2f7a55}.seat-leg.warn{color:#b7791f}.seat-leg.bad{color:#c0392b;font-weight:600}.seat-leg.none{opacity:.75}
@@ -528,7 +538,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-01g</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-01h</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -993,11 +1003,12 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   </div>
   <div class="card" id="seatResult" hidden>
     <div class="kpis" id="seatKpis" style="margin-top:0"></div>
-    <div class="row" style="margin-top:14px;gap:14px;align-items:flex-start">
-      <div><div class="note" style="margin-bottom:4px">台北出發日</div><div class="chips" id="seatDates"></div></div>
-      <div><div class="note" style="margin-bottom:4px">區域</div><div class="chips" id="seatRegions"></div></div>
-      <div id="seatOrigWrap" hidden><div class="note" style="margin-bottom:4px">出發站</div><div class="chips" id="seatOrigs"></div></div>
-      <label class="note" style="display:flex;gap:6px;align-items:center;margin-top:20px"><input type="checkbox" id="seatOnlyAvail"> 只看經濟艙還有空位</label>
+    <div class="seat-filter">
+      <div class="seat-dir" id="seatDir" role="tablist"></div>
+      <div class="seat-frow"><span class="seat-flab">日期</span><div class="chips" id="seatDates"></div></div>
+      <div class="seat-frow" id="seatRowA"><span class="seat-flab" id="seatLabA">出發場站</span><div class="chips" id="seatChipsA"></div></div>
+      <div class="seat-frow" id="seatRowB"><span class="seat-flab" id="seatLabB">目的地區域</span><div class="chips" id="seatChipsB"></div></div>
+      <div class="seat-frow"><span class="seat-flab"></span><label class="note" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="seatOnlyAvail"> 只看經濟艙還有空位</label></div>
     </div>
     <div id="seatBody"></div>
     <p class="note" style="margin-top:12px">每格大字「空 N」為空位數＝座位數－已訂位（未扣保留座與員工機位）；下方小字「已訂 N／共 N」為已訂位人數／該艙座位數。紅底「超賣」表示已訂超過座位數；「—」表示該機型沒有這個艙等或未開放。</p>
@@ -1318,6 +1329,8 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
 </aside>
 <script>
 "use strict";
+/* 分享版開關：true 時拿掉空位查詢與 OpsLink 串飛等公司資料功能（由完整版自動產生，請勿手動修改） */
+var LITE = false;
 /* =========================================================
    狀態
    ========================================================= */
@@ -4808,6 +4821,7 @@ function holdPlaneIcon(tr){
 }
 /* 地圖彈出框：這架飛機落地後有沒有接飛（用 OpsLink 清單的機號串起來） */
 function holdNextHtml(tr, rt){
+  if(LITE) return "";
   var fno = String(tr.fno || holdFlightNo(tr.cs) || "");
   var has = SEAT && SEAT.rows && SEAT.rows.length;
   if(!has) return /^JX/i.test(fno) ? '<span class="hmap-next none">串飛：尚未載入 OpsLink 清單（空位查詢）</span>' : "";
@@ -6148,6 +6162,7 @@ function fixSchedRun(force){
 /* ---------- 下一段：用機號在系統清單中找這架飛機接下來要飛的航班 ---------- */
 function regNorm(x){ return String(x || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); }
 function twNext(t, r, tm){
+  if(LITE) return null;
   if(!SEAT || !SEAT.rows || !SEAT.rows.length || !r) return null;
   var fno = twFnoNorm(t.fno || holdFlightNo(t.cs) || "");
   var cur = fno ? twSeat(fno, r.to) : null;
@@ -6425,7 +6440,9 @@ function openFmapNewTab(){
    ========================================================= */
 var SEAT_CAP_DEFAULT = { "359":[4,26,36,240], "351":[4,40,36,270], "339":[0,28,0,269], "32Q":[0,8,0,180] };
 var SEAT_TYPE_NAME = { "359":"A350-900", "351":"A350-1000", "339":"A330-900", "32Q":"A321neo" };
-var SEAT = { rows:[], date:"all", region:"all", orig:"all", skipped:0, bad:0 };
+var SEAT = { rows:[], date:"all", region:"all", orig:"all", dir:"out", ostn:"all", ireg:"all", istn:"all", skipped:0, bad:0 };
+try{ (function(v){ if(v){ SEAT.dir = v.dir === "in" ? "in" : "out"; SEAT.ostn = v.ostn || "all"; SEAT.ireg = v.ireg || "all"; } })(JSON.parse(localStorage.getItem("seatView") || "null")); }catch(e){}
+function seatViewSave(){ try{ localStorage.setItem("seatView", JSON.stringify({ dir:SEAT.dir, ostn:SEAT.ostn, ireg:SEAT.ireg })); }catch(e){} }
 var MON3 = { JAN:0, FEB:1, MAR:2, APR:3, MAY:4, JUN:5, JUL:6, AUG:7, SEP:8, OCT:9, NOV:10, DEC:11 };
 function seatCaps(){
   var c = {}; Object.keys(SEAT_CAP_DEFAULT).forEach(function(k){ c[k] = SEAT_CAP_DEFAULT[k].slice(); });
@@ -6467,7 +6484,7 @@ function seatParse(text, utc){
   rows.sort(function(a,b){ return a.dep - b.dep; });
   return { rows:rows, skipped:skipped, bad:bad, unknown:Object.keys(unknown) };
 }
-function seatIsUS(r){ return airportCountry(r.to) === "美國" && !AIRPORT_REGION_OVERRIDE[r.to]; }
+function seatIsUS(r){ var x = twIsBase(r.from) ? r.to : r.from; return airportCountry(x) === "美國" && !AIRPORT_REGION_OVERRIDE[x]; }   // 看外站那一端
 function seatRun(){
   var raw = $("seatRaw").value, utc = $("seatUtc").checked;
   try{ localStorage.setItem("seatRaw", raw); localStorage.setItem("seatOpt", JSON.stringify({ utc:utc, tight:+$("seatTight").value || 20, t:Date.now() })); }catch(e){}
@@ -6541,27 +6558,63 @@ function seatRender(){
   box.hidden = false;
   var tight = Math.max(1, +$("seatTight").value || 20), only = $("seatOnlyAvail").checked;
   var all = SEAT.rows;
-  // 出發站
-  var origs = {}; all.forEach(function(r){ origs[r.from] = (origs[r.from] || 0) + 1; });
-  var ol = Object.keys(origs);
-  $("seatOrigWrap").hidden = ol.length < 2;
-  if(ol.length < 2 || (SEAT.orig !== "all" && !origs[SEAT.orig])) SEAT.orig = "all";
-  $("seatOrigs").innerHTML = ['<button type="button" class="chip tiny" data-so="all" aria-pressed="' + (SEAT.orig === "all") + '">全部</button>'].concat(ol.map(function(o){
-    return '<button type="button" class="chip tiny" data-so="' + o + '" aria-pressed="' + (SEAT.orig === o) + '">' + o + '<span class="n">' + origs[o] + "</span></button>"; })).join("");
-  var base = all.filter(function(r){ return SEAT.orig === "all" || r.from === SEAT.orig; });
-  // 日期
+  function chip(attr, val, cur, label, n, empty){
+    return '<button type="button" class="chip tiny' + (empty ? " empty" : "") + '" ' + attr + '="' + esc(val) + '" aria-pressed="' + (cur === val) + '">' + label + (n != null ? '<span class="n">' + n + "</span>" : "") + "</button>";
+  }
+  var order = ["北美"].concat(REGIONS.filter(function(g){ return g !== "北美"; }));
+  function regLabel(g){ return g === "北美" ? "🇺🇸 北美" : g; }
+  // ① 方向：台灣出發／外站回台
+  var outAll = all.filter(function(r){ return twIsBase(r.from); }), inAll = all.filter(function(r){ return !twIsBase(r.from); });
+  $("seatDir").innerHTML =
+    '<button type="button" data-sdir="out" aria-pressed="' + (SEAT.dir === "out") + '">🛫 台灣出發<span class="n">' + outAll.length + "</span></button>" +
+    '<button type="button" data-sdir="in" aria-pressed="' + (SEAT.dir === "in") + '">🛬 外站回台<span class="n">' + inAll.length + "</span></button>";
+  var base;
+  if(SEAT.dir === "out"){
+    // ② 台灣出發：場站固定 TPE／RMQ／KHH
+    var sc = {}; outAll.forEach(function(r){ sc[r.from] = (sc[r.from] || 0) + 1; });
+    if(SEAT.ostn !== "all" && !sc[SEAT.ostn]) SEAT.ostn = "all";
+    $("seatLabA").textContent = "出發場站";
+    $("seatChipsA").innerHTML = chip("data-sostn", "all", SEAT.ostn, "全部", outAll.length) +
+      TW.bases.map(function(b){ return chip("data-sostn", b, SEAT.ostn, b + " " + esc(aptName(b) || ""), sc[b] || 0, !sc[b]); }).join("");
+    base = outAll.filter(function(r){ return SEAT.ostn === "all" || r.from === SEAT.ostn; });
+  } else {
+    // ② 外站回台：先選地區，再選該地區的站
+    var rc0 = {}; inAll.forEach(function(r){ var g = airportRegion(r.from); rc0[g] = (rc0[g] || 0) + 1; });
+    if(SEAT.ireg !== "all" && !rc0[SEAT.ireg]) SEAT.ireg = "all";
+    $("seatLabA").textContent = "出發地區";
+    $("seatChipsA").innerHTML = chip("data-sireg", "all", SEAT.ireg, "全部", inAll.length) +
+      order.filter(function(g){ return rc0[g]; }).map(function(g){ return chip("data-sireg", g, SEAT.ireg, regLabel(g), rc0[g]); }).join("");
+    var inReg = inAll.filter(function(r){ return SEAT.ireg === "all" || airportRegion(r.from) === SEAT.ireg; });
+    base = inReg;
+  }
+  // ③ 日期（依目前的方向與場站計數）
   var days = {}; base.forEach(function(r){ var k = twKey(r.dep); days[k] = (days[k] || 0) + 1; });
   var today = twKey(Date.now()), tmr = twKey(Date.now() + 86400000), dat = twKey(Date.now() + 2*86400000);
   function dayLabel(k){ var p = k.split("-"); var d = new Date(Date.UTC(+p[0], +p[1]-1, +p[2])); return (+p[1]) + "/" + (+p[2]) + "（" + DOW[d.getUTCDay()] + "）" + (k === today ? "今天" : k === tmr ? "明天" : k === dat ? "後天" : ""); }
-  $("seatDates").innerHTML = ['<button type="button" class="chip tiny" data-sd="all" aria-pressed="' + (SEAT.date === "all") + '">全部<span class="n">' + base.length + "</span></button>"].concat(Object.keys(days).sort().map(function(k){
-    return '<button type="button" class="chip tiny" data-sd="' + k + '" aria-pressed="' + (SEAT.date === k) + '">' + dayLabel(k) + '<span class="n">' + days[k] + "</span></button>"; })).join("");
+  if(SEAT.date !== "all" && !days[SEAT.date]) SEAT.date = "all";
+  $("seatDates").innerHTML = chip("data-sd", "all", SEAT.date, "全部", base.length) +
+    Object.keys(days).sort().map(function(k){ return chip("data-sd", k, SEAT.date, dayLabel(k), days[k]); }).join("");
   var inDay = base.filter(function(r){ return SEAT.date === "all" || twKey(r.dep) === SEAT.date; });
-  // 區域（北美置前）
-  var rc = {}; inDay.forEach(function(r){ var g = airportRegion(r.to); rc[g] = (rc[g] || 0) + 1; });
-  var order = ["北美"].concat(REGIONS.filter(function(g){ return g !== "北美"; }));
-  $("seatRegions").innerHTML = ['<button type="button" class="chip tiny" data-sr="all" aria-pressed="' + (SEAT.region === "all") + '">全部</button>'].concat(order.filter(function(g){ return rc[g] || SEAT.region === g; }).map(function(g){
-    return '<button type="button" class="chip tiny" data-sr="' + g + '" aria-pressed="' + (SEAT.region === g) + '">' + (g === "北美" ? "🇺🇸 北美" : g) + '<span class="n">' + (rc[g] || 0) + "</span></button>"; })).join("");
-  var list = inDay.filter(function(r){ return (SEAT.region === "all" || airportRegion(r.to) === SEAT.region) && (!only || (r.rem[3] != null && r.rem[3] > 0)); });
+  var list;
+  if(SEAT.dir === "out"){
+    // ④ 目的地區域
+    var rc = {}; inDay.forEach(function(r){ var g = airportRegion(r.to); rc[g] = (rc[g] || 0) + 1; });
+    if(SEAT.region !== "all" && !rc[SEAT.region]) SEAT.region = "all";
+    $("seatLabB").textContent = "目的地區域";
+    $("seatChipsB").innerHTML = chip("data-sr", "all", SEAT.region, "全部", inDay.length) +
+      order.filter(function(g){ return rc[g]; }).map(function(g){ return chip("data-sr", g, SEAT.region, regLabel(g), rc[g]); }).join("");
+    list = inDay.filter(function(r){ return SEAT.region === "all" || airportRegion(r.to) === SEAT.region; });
+  } else {
+    // ④ 該地區的外站
+    var st = {}; inDay.forEach(function(r){ st[r.from] = (st[r.from] || 0) + 1; });
+    if(SEAT.istn !== "all" && !st[SEAT.istn]) SEAT.istn = "all";
+    $("seatLabB").textContent = "出發站";
+    $("seatChipsB").innerHTML = SEAT.ireg === "all" ? '<span class="seat-hint">先在上面選一個地區，這裡會列出該地區的外站</span>' :
+      chip("data-sistn", "all", SEAT.istn, "全部", inDay.length) +
+      Object.keys(st).sort(function(a, b){ return st[b] - st[a] || (a < b ? -1 : 1); }).map(function(c){ return chip("data-sistn", c, SEAT.istn, c + " " + esc(aptName(c) || ""), st[c]); }).join("");
+    list = inDay.filter(function(r){ return SEAT.ireg === "all" || SEAT.istn === "all" || r.from === SEAT.istn; });
+  }
+  if(only) list = list.filter(function(r){ return r.rem[3] != null && r.rem[3] > 0; });
   // KPI
   function pos(v){ return v != null && v > 0 ? v : 0; }
   var us = list.filter(seatIsUS);
@@ -6575,19 +6628,21 @@ function seatRender(){
     kpi("", "經濟艙緊張（≤" + tight + "）", tightN.length + " 班");
   // 依台北日期分組，每天內美國線置頂
   var groups = {}; list.forEach(function(r){ var k = twKey(r.dep); (groups[k] = groups[k] || []).push(r); });
-  var head = '<thead><tr><th>台北出發</th><th>航班</th><th>目的地</th><th>機型／機號／串飛</th><th class="c">頭等</th><th class="c">商務</th><th class="c">豪經</th><th class="c">經濟</th><th class="c">合計空位</th></tr></thead>';
+  var inb = SEAT.dir === "in";
+  var head = '<thead><tr><th>' + (inb ? "出發（台北時間）" : "台北出發") + '</th><th>航班</th><th>' + (inb ? "航線" : "目的地") + '</th><th>機型／機號／串飛</th><th class="c">頭等</th><th class="c">商務</th><th class="c">豪經</th><th class="c">經濟</th><th class="c">合計空位</th></tr></thead>';
   $("seatBody").innerHTML = Object.keys(groups).sort().map(function(k){
     var g = groups[k].slice().sort(function(a,b){ return (seatIsUS(b) - seatIsUS(a)) || (a.dep - b.dep); });
     var gu = g.filter(seatIsUS);
     var sum = gu.length ? '<div class="seat-sum"><span>美國線 ' + gu.length + " 班：商務 <b>" + gu.reduce(function(a,r){ return a + pos(r.rem[1]); }, 0) +
       "</b>・豪經 <b>" + gu.reduce(function(a,r){ return a + pos(r.rem[2]); }, 0) + "</b>・經濟 <b>" + gu.reduce(function(a,r){ return a + pos(r.rem[3]); }, 0) + "</b></span></div>" : "";
-    return '<div class="seat-day"><h3>' + dayLabel(k) + ' <span class="note">台北出發 ' + g.length + " 班</span></h3>" + sum +
+    return '<div class="seat-day"><h3>' + dayLabel(k) + ' <span class="note">' + (SEAT.dir === "in" ? "外站出發（台北時間）" : "台北出發") + " " + g.length + " 班</span></h3>" + sum +
       '<div class="tbox" style="margin-top:0;max-height:none"><table class="seat-tbl">' + head + "<tbody>" + g.map(function(r){
         var p = twParts(r.dep), u = seatIsUS(r), tot = r.rem.reduce(function(a,v){ return a + pos(v); }, 0), ov = r.rem.some(function(v){ return v != null && v < 0; });
         return '<tr class="' + (u ? "us" : "") + '"><td class="mono"><b>' + p.hm + "</b>" + (r.delay ? '<span class="seat-dly">' + (r.delay > 0 ? "晚 " : "早 ") + fmtDur(Math.abs(r.delay)*60000) + "</span>" : "") +
-            (r.from !== "TPE" ? '<br><span class="note">自 ' + esc(r.from) + "</span>" : "") + "</td>" +
+            (!inb && r.from !== "TPE" ? '<br><span class="note">自 ' + esc(r.from) + "</span>" : "") + "</td>" +
           '<td class="mono" style="font-weight:600">' + esc(r.flt) + (r.st !== "J" ? ' <span class="note">(' + esc(r.st) + ")</span>" : "") + "</td>" +
-          "<td><b>" + esc(r.to) + "</b> " + esc(aptName(r.to)) + (u ? '<span class="seat-us-tag">美國</span>' : "") + "</td>" +
+          (inb ? "<td><b>" + esc(r.from) + "</b> " + esc(aptName(r.from)) + ' <span class="note">→ ' + esc(r.to) + "</span>" :
+                 "<td><b>" + esc(r.to) + "</b> " + esc(aptName(r.to))) + (u ? '<span class="seat-us-tag">美國</span>' : "") + "</td>" +
           "<td>" + esc(SEAT_TYPE_NAME[r.type] || r.type) + (r.noCap ? ' <span style="color:var(--bad)">未設配置</span>' : "") + '<br><span class="note">' + esc(r.reg) + "</span>" + seatLinks(r) + "</td>" +
           [0,1,2,3].map(function(i){ return seatCell(r, i, tight); }).join("") +
           '<td class="c"><span class="seat-tot">' + tot + "</span>" + (ov ? '<br><span class="seat-b" style="color:#c0392b">含超賣艙等</span>' : "") + "</td></tr>";
@@ -6648,12 +6703,15 @@ function seatInit(){
     }, function(){ ta.focus(); $("seatMsg").textContent = "瀏覽器沒有允許讀取剪貼簿，請在框內按 Ctrl+V（Mac：⌘V）。"; });
   });
   $("tab-seat").addEventListener("click", function(e){
-    var b = e.target.closest("[data-sd],[data-sr],[data-so]");
+    var b = e.target.closest("[data-sd],[data-sr],[data-sdir],[data-sostn],[data-sireg],[data-sistn]");
     if(b){
       if(b.hasAttribute("data-sd")) SEAT.date = b.getAttribute("data-sd");
       if(b.hasAttribute("data-sr")){ var r = b.getAttribute("data-sr"); SEAT.region = (r === SEAT.region && r !== "all") ? "all" : r; }
-      if(b.hasAttribute("data-so")) SEAT.orig = b.getAttribute("data-so");
-      seatRender(); return;
+      if(b.hasAttribute("data-sdir")) SEAT.dir = b.getAttribute("data-sdir");
+      if(b.hasAttribute("data-sostn")) SEAT.ostn = b.getAttribute("data-sostn");
+      if(b.hasAttribute("data-sireg")){ SEAT.ireg = b.getAttribute("data-sireg"); SEAT.istn = "all"; }
+      if(b.hasAttribute("data-sistn")) SEAT.istn = b.getAttribute("data-sistn");
+      seatViewSave(); seatRender(); return;
     }
     if(e.target.id === "btnSeatCapReset"){ try{ localStorage.removeItem("seatCap"); }catch(err){} seatRun(); }
   });
@@ -6722,13 +6780,14 @@ function seatInit(){
 }
 
 function switchTab(name){
+  if(LITE && name === "seat") name = "board";
   var btns = $("nav").querySelectorAll("button");
   for(var i=0;i<btns.length;i++){
     var on = btns[i].getAttribute("data-tab") === name;
     btns[i].setAttribute("aria-selected", on ? "true" : "false");
   }
   ["tdx","board","airline","sched","otd","seat","cam","map","help"].forEach(function(t){
-    $("tab-" + t).hidden = (t !== name);
+    var el = $("tab-" + t); if(el) el.hidden = (t !== name);
   });
   // 離開即時影像就移除直播，回來時重新自動播放（避免背景持續吃頻寬）
   if(activeTab === "cam" && name !== "cam" && $("camGrid")){ $("camGrid").innerHTML = ""; tabDirty.cam = true; }
@@ -7820,6 +7879,12 @@ function shift(hhmm, mins){
    綁定
    ========================================================= */
 (function init(){
+  if(LITE){   // 分享版：移除公司資料相關的分頁與功能
+    var sb = document.querySelector('#nav button[data-tab="seat"]'); if(sb) sb.remove();
+    var ss = $("tab-seat"); if(ss) ss.remove();
+    document.title = "即時航班看板（分享版）";
+    var bt = $("buildTag"); if(bt) bt.textContent += "・分享版";
+  }
   var navBtns = $("nav").querySelectorAll("button");
   for(var i=0;i<navBtns.length;i++){
     navBtns[i].addEventListener("click", function(){ switchTab(this.getAttribute("data-tab")); });
@@ -8040,7 +8105,7 @@ function shift(hhmm, mins){
   bgInit();
   fixInit();
   hsInit();
-  seatInit();
+  if(!LITE) seatInit();
   ospInit();
   // 切回分頁時立即更新一次（背景時可能暫停了抓取）
   document.addEventListener("visibilitychange", function(){
