@@ -542,7 +542,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-01m</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-01n</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -4248,7 +4248,7 @@ function tgText(tr, kind){
   if(wxm) lines.push("🌦 " + tgEsc(metarPlain(wxm)));
   try{
     if(rt){ var nx = twNext(tr, rt, twTimes(tr, rt));
-      if(nx && !nx.none) lines.push("➡️ " + (nx.ret ? "回台後接飛 " : "下一段 ") + tgEsc(nx.flt) + " " + nx.from + "→" + nx.to + " " + twHmOf(nx.std) + "（" + nx.reg + "）" +
+      if(nx && !nx.none) lines.push("➡️ " + (nx.ret ? "回台後接飛 " : "下一段 ") + tgEsc(nx.flt) + (nx.ferry ? "（調機）" : "") + " " + tgEsc(nx.from) + "→" + tgEsc(nx.to) + " " + twHmOf(nx.std) + "（" + tgEsc(nx.reg) + "）" +
         (nx.turn != null ? "｜過站 " + (nx.turn < 0 ? "不足" : Math.floor(nx.turn/60) + "h" + pad2(nx.turn % 60) + "m") + (nx.turn < 45 ? " ⚠️" : "") : "")); }
   }catch(e){}
   lines.push("🕒 " + tgHm() + "　<a href=\"https://globe.adsb.fi/?icao=" + tr.hex + "\">看航跡</a>");
@@ -4831,7 +4831,7 @@ function holdPlaneIcon(tr){
 /* 地圖彈出框：這架飛機落地後有沒有接飛（用 OpsLink 清單的機號串起來） */
 function holdNextHtml(tr, rt){
   var fno = String(tr.fno || holdFlightNo(tr.cs) || "");
-  var has = SEAT && SEAT.rows && SEAT.rows.length;
+  var has = seatLegs().length;
   if(!has) return /^JX/i.test(fno) ? '<span class="hmap-next none">' + (LITE ? "串飛：在「空位查詢」貼上航班清單後顯示" : "串飛：尚未載入 OpsLink 清單（空位查詢）") + '</span>' : "";
   if(!rt) return "";
   var nx = null;
@@ -6204,7 +6204,7 @@ function seatNextRow(reg, row){
 }
 function twNextLine(nx){
   if(!nx) return "";
-  if(nx.none) return nx.ret ? '<div class="tw-l4 ret"><b>回台後</b> 清單內沒有接飛<span class="tw-src">' + esc(nx.reg) + "</span></div>" : "";
+  if(nx.none) return nx.ret ? '<div class="tw-l4 ret"><b>回台後</b> ' + (nx.gap ? "下一段航點接不上（可能缺資料）" : "清單內沒有接飛") + '<span class="tw-src">' + esc(nx.reg) + "</span></div>" : "";
   var cls = nx.turn == null ? "" : nx.turn < 45 ? "bad" : nx.turn < 75 ? "warn" : "";
   if(nx.ret) cls = "ret" + (cls === "bad" ? " bad" : "");
   return '<div class="tw-l4 ' + cls + '"><b>' + (nx.ret ? "回台後接飛" : "下一段") + "</b> " + legFlt(nx) + " " + esc(nx.from) + "→" + esc(nx.to) + " " + twHmOf(nx.std) +
@@ -6284,7 +6284,7 @@ function twPaint(){
   var oAll = rows.filter(function(r){ return r.dir === "o"; }).length, iAll = rows.filter(function(r){ return r.dir === "i"; }).length;
   $("twTabO").textContent = "↗" + oAll; $("twTabI").textContent = "↙" + iAll;
   var chips = ["ALL"].concat(TW.bases).map(function(b){
-    var n = b === "ALL" ? rows.length : rows.filter(function(r){ return r.base === b; }).length;
+    var n = b === "ALL" ? rows.length : rows.filter(function(r){ return r.dir === "d" ? (r.from === b || r.to === b) : r.base === b; }).length;
     return '<button type="button" data-twb="' + b + '" class="' + (TW.base === b ? "on" : "") + '">' + (b === "ALL" ? "全部" : b) + "<em>" + n + "</em></button>";
   }).join("");
   var hms = fixHm(Date.now());
@@ -6306,14 +6306,14 @@ function twPaint(){
   if(TW.view !== "i") html += '<div class="tw-sec"><span>↗ 往外站（依剩餘距離）</span><span>' + o.length + " 架</span></div>" + (o.length ? o.map(row).join("") : '<div class="tw-empty">目前沒有往外站的航班</div>');
   if(TW.view !== "o") html += '<div class="tw-sec"><span>↙ 返台（依剩餘距離）</span><span>' + i.length + " 架</span></div>" + (i.length ? i.map(row).join("") : '<div class="tw-empty">目前沒有返台的航班</div>');
   var dRows = rows.filter(function(r){ return r.dir === "d" && (all || r.from === TW.base || r.to === TW.base); });
-  if(dRows.length) html += '<div class="tw-sec"><span>⇄ 本站之間（TPE／RMQ／KHH，多為調機）</span><span>' + dRows.length + " 架</span></div>" + dRows.map(row).join("");
+  if(dRows.length && TW.view !== "o" && TW.view !== "i") html += '<div class="tw-sec"><span>⇄ 本站之間（TPE／RMQ／KHH，多為調機）</span><span>' + dRows.length + " 架</span></div>" + dRows.map(row).join("");
   var unkL = (TW.unk || []).filter(function(u){ return !u.near || u.near.d < 400; }).slice(0, 12);   // 台灣附近、航線不明的航機（例如調機）
   if(unkL.length) html += '<div class="tw-sec"><span>❔ 航線不明（調機／包機等，依離本站距離）</span><span>' + unkL.length + " 架</span></div>" + unkL.map(function(u){
     return '<div class="tw-row unk' + (HOLD.focus === u.hex ? " sel" : "") + '" data-hex="' + esc(u.hex) + '"><div class="tw-l1"><span class="f">' + esc(u.fno) + "</span>" +
       (u.type ? '<span class="ty">' + esc(u.type) + "</span>" : "") + (u.api ? '<span class="api">API</span>' : "") + '<span class="rt">?→?</span></div>' +
       '<div class="tw-l2"><span>' + (u.near ? "距 " + u.near.b + " " + Math.round(u.near.d) + " 浬" : "位置未知") + (u.alt ? "・" + fmtAlt(u.alt) : "") + (u.gs ? "・" + u.gs + " kt" : "") + "</span></div>" +
       '<div class="tw-l3"><span class="tw-na">' + (LITE ? "公開資料查不到航線；在「空位查詢」貼上含這班的航班清單後會自動補上" :
-        TWAL.msg && TWAL.flts.indexOf(twFnoNorm(holdFlightNo(u.fno) || u.fno)) >= 0 ? esc(TWAL.msg) + "，查到後會自動補上航線" :
+        TWAL.msg && TWAL.flts.split("、").indexOf(twFnoNorm(holdFlightNo(u.fno) || u.fno)) >= 0 ? esc(TWAL.msg) + "，查到後會自動補上航線" :
         "公開資料查不到航線；OpsLink 清單更新後會自動補上（30 分鐘內最多自動補查一次）") + "</span></div></div>";
   }).join("");
   var extra = [];
@@ -6725,7 +6725,7 @@ function seatInit(){
   var tmr = null;
   $("seatRaw").addEventListener("input", function(){ SEAT.manual = true; clearTimeout(tmr); tmr = setTimeout(seatRun, 500); });
   $("btnSeatParse").addEventListener("click", seatRun);
-  $("btnSeatClear").addEventListener("click", function(){ $("seatRaw").value = ""; seatRun(); });
+  $("btnSeatClear").addEventListener("click", function(){ $("seatRaw").value = ""; SEAT.feedT = 0; SEAT.manual = false; try{ localStorage.removeItem("seatFeedT"); }catch(e){} seatRun(); });
   $("seatUtc").addEventListener("change", seatRun);
   $("seatTight").addEventListener("change", seatRun);
   $("seatOnlyAvail").addEventListener("change", seatRender);
