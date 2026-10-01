@@ -328,6 +328,14 @@ ul.doc li{margin:6px 0}
 .hmap-next.warn{background:rgba(214,158,46,.16);color:#a86b0c}.hmap-next.bad{background:rgba(214,86,86,.15);color:#c0392b}
 .hmap-next.none{background:rgba(120,130,140,.12);color:inherit;font-weight:500;opacity:.85}
 .hmap-next small{font-weight:500;opacity:.8}
+/* 回台後接飛：最重要的資訊，一律黃色醒目；過站太短時改紅字但保留黃框 */
+.hmap-next.ret{background:#ffe066;color:#5a4300;font-weight:700;border:1px solid #f2c200;padding:4px 8px}
+.hmap-next.ret.bad{background:#ffe066;color:#b3001b;border-color:#e0a800}
+.hmap-next.ret small{color:inherit;opacity:.75}
+.hmap-cyber .hmap-next.ret{background:rgba(255,214,0,.16);color:#ffd60a;border-color:rgba(255,214,0,.6);box-shadow:0 0 10px rgba(255,214,0,.25)}
+.hmap-cyber .hmap-next.ret.bad{color:#ff5a6e;border-color:#ffd60a}
+.seat-leg.ret{display:inline-block;background:#fff3b0;border:1px solid #f2c200;color:#5a4300;border-radius:6px;padding:1px 6px;font-weight:700}
+.seat-leg.ret.bad{color:#b3001b}
 /* ── 盤旋偵測設定抽屜 ── */
 .hs-open{position:relative}
 .hs-dots{display:inline-flex;gap:3px;margin-left:6px;vertical-align:middle}
@@ -490,6 +498,8 @@ ul.doc li{margin:6px 0}
 .tw-l4{display:flex;align-items:baseline;gap:6px;margin-top:4px;font:600 11.5px ui-monospace,Menlo,monospace;color:#bfe9f7}
 .tw-l4 b{font:700 10px ui-monospace,monospace;color:var(--tw-dim)}
 .tw-l4 .tw-turn{font:500 10.5px system-ui;color:var(--tw-dim)}
+.tw-l4.ret{color:#ffd60a;background:rgba(255,214,0,.1);border:1px solid rgba(255,214,0,.45);border-radius:6px;padding:2px 6px}
+.tw-l4.ret b{color:#ffd60a}.tw-l4.ret .tw-turn{color:#ffe680}.tw-l4.ret.bad .tw-turn{color:#ff7a90}
 .tw-l4.warn .tw-turn{color:#ffd24a}.tw-l4.bad .tw-turn{color:#ff7a90;font-weight:700}
 .tw-l4 .tw-src{margin-left:auto;font:500 9.5px ui-monospace,monospace;color:#5f8798}
 .tw-empty{margin:0 12px 8px;padding:14px 12px;color:var(--tw-dim);text-align:center;border:1px dashed var(--tw-line);border-radius:12px}
@@ -518,7 +528,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-01f</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-01g</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -4811,11 +4821,12 @@ function holdNextHtml(tr, rt){
   if(nx.none){
     var hasOut = SEAT.rows.some(function(x){ return x.from === rt.to; });
     var msg = nx.ret ? (nx.gap ? "回台後的下一段航點接不上（可能缺資料）" : "回台後清單內沒有接飛") : hasOut ? "落地後清單內沒有接飛" : "看不到下一段（需在擴充功能勾「也查回程」）";
-    return out + '<span class="hmap-next none">➡ ' + msg + " <small>" + esc(nx.reg) + "</small></span>";
+    return out + '<span class="hmap-next ' + (nx.ret ? "ret" : "none") + '">➡ ' + msg + " <small>" + esc(nx.reg) + "</small></span>";
   }
   var t = nx.turn, cls = t == null || t > 720 ? "" : t < 45 ? "bad" : t < 75 ? "warn" : "";
   var tt = t == null ? "" : t < 0 ? "・⚠ 來不及（差 " + dur(-t) + "）" : (t > 720 ? "・停留 " : "・過站 ") + dur(t);
   var lab = nx.ret ? (t != null && t > 720 ? "回台後下一段 " : "回台後接飛 ") : (t != null && t > 720 ? "下一段 " : "接飛 ");
+  if(nx.ret) cls = "ret" + (cls === "bad" ? " bad" : "");
   return out + '<span class="hmap-next ' + cls + '">➡ ' + lab + esc(nx.flt) + " " + esc(nx.from) + "→" + esc(nx.to) + " " + twHmOf(nx.std) + tt + " <small>" + esc(nx.reg) + "</small></span>";
 }
 function holdPopupHtml(tr){
@@ -6168,8 +6179,9 @@ function seatNextRow(reg, row){
 }
 function twNextLine(nx){
   if(!nx) return "";
-  if(nx.none) return nx.ret ? '<div class="tw-l4"><b>回台後</b> 清單內沒有接飛<span class="tw-src">' + esc(nx.reg) + "</span></div>" : "";
+  if(nx.none) return nx.ret ? '<div class="tw-l4 ret"><b>回台後</b> 清單內沒有接飛<span class="tw-src">' + esc(nx.reg) + "</span></div>" : "";
   var cls = nx.turn == null ? "" : nx.turn < 45 ? "bad" : nx.turn < 75 ? "warn" : "";
+  if(nx.ret) cls = "ret" + (cls === "bad" ? " bad" : "");
   return '<div class="tw-l4 ' + cls + '"><b>' + (nx.ret ? "回台後接飛" : "下一段") + "</b> " + esc(nx.flt) + " " + esc(nx.from) + "→" + esc(nx.to) + " " + twHmOf(nx.std) +
     (nx.turn != null ? '<span class="tw-turn">過站 ' + (nx.turn < 0 ? "已不足（晚 " + fmtDur(-nx.turn*60000) + "）" : Math.floor(nx.turn/60) + "h" + pad2(nx.turn % 60) + "m") + "</span>" : "") +
     '<span class="tw-src">' + esc(nx.reg) + "</span></div>";
@@ -6512,8 +6524,8 @@ function seatLinks(r){
     out += '<span class="seat-leg none" title="外站折返段（台北時間）">↩ 折返 ' + esc(nx.flt) + " " + esc(nx.from) + "→" + esc(nx.to) + (ra ? " " + twParts(ra).hm + "到" : "") + "</span>";
     if(n2 && !n2.gap){
       var m2 = ra ? Math.round((n2.dep - ra)/60000) : null;
-      out += '<span class="seat-leg ' + cls(m2) + '" title="回台後接飛（台北時間）">➡ 回台後' + (m2 != null && m2 > 720 ? "下一段 " : "接飛 ") + esc(n2.flt) + " " + esc(n2.from) + "→" + esc(n2.to) + " " + twParts(n2.dep).hm + "飛" + turnTxt(m2) + "</span>";
-    } else out += '<span class="seat-leg none">➡ ' + (n2 && n2.gap ? "回台後的下一段航點接不上" : "回台後清單內沒有接飛") + "</span>";
+      out += '<span class="seat-leg ret' + (cls(m2) === "bad" ? " bad" : "") + '" title="回台後接飛（台北時間）">➡ 回台後' + (m2 != null && m2 > 720 ? "下一段 " : "接飛 ") + esc(n2.flt) + " " + esc(n2.from) + "→" + esc(n2.to) + " " + twParts(n2.dep).hm + "飛" + turnTxt(m2) + "</span>";
+    } else out += '<span class="seat-leg ret">➡ ' + (n2 && n2.gap ? "回台後的下一段航點接不上" : "回台後清單內沒有接飛") + "</span>";
   } else if(nx){
     var nm = arr ? Math.round((nx.dep - arr)/60000) : null;
     out += '<span class="seat-leg ' + cls(nm) + '" title="這架飛機的下一段（時間為台北時間）">➡ ' + (nm != null && nm > 12*60 ? "下一段 " : "接飛 ") + esc(nx.flt) + " " + esc(nx.from) + "→" + esc(nx.to) + " " + twParts(nx.dep).hm + "飛" + turnTxt(nm) + "</span>";
