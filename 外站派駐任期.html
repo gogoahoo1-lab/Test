@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>外站派駐任期看板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+html{-webkit-text-size-adjust:100%}body{margin:0}[hidden]{display:none!important}img{max-width:100%}
+/* Layout: ops-board header + summary strip, three tabs (查詢 / 派返月曆 / 待開航); station codes set like airport signage */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --surface-2:#f6f8fa; --line:#d8dee6;
+  --ink:#152030; --ink-2:#4a5869; --ink-3:#7d8a99;
+  --accent:#1d5d7d; --accent-soft:#dcebf2;
+  --ok:#2f7a4f; --ok-soft:#e0f0e6;
+  --warn:#a86a00; --warn-soft:#fbefd6;
+  --crit:#b23a2e; --crit-soft:#f8e1de;
+  --mute-soft:#e7ebef;
+  --sel:#7a4fa8; --sel-soft:#eee5f7;
+  color-scheme:light;
+  --f-display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 48px}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;padding-bottom:16px;border-bottom:2px solid var(--ink)}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+h1{font-size:clamp(22px,4vw,30px);margin:2px 0 0;font-weight:700;letter-spacing:.02em;text-wrap:balance}
+.asof{font-family:var(--f-mono);font-size:12px;color:var(--ink-2);text-align:right}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin:16px 0}
+.stat{background:var(--surface);padding:12px 14px;min-width:0;cursor:pointer;border:0;text-align:left;color:inherit;font:inherit}
+.stat:hover{background:var(--surface-2)}
+.stat:focus-visible,.tab:focus-visible,.chip:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.stat b{display:block;font-family:var(--f-display);font-size:34px;line-height:1;font-weight:600;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--ink-2)}
+.stat.warn b{color:var(--warn)} .stat.crit b{color:var(--crit)} .stat.acc b{color:var(--accent)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow-x:auto}
+.tab{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;font:inherit;font-weight:500;color:var(--ink-2);cursor:pointer;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-color:var(--accent);font-weight:700}
+.tab .n{font-family:var(--f-mono);font-size:11px;background:var(--mute-soft);border-radius:8px;padding:1px 6px;margin-left:4px}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.search{flex:1 1 240px;min-width:0;position:relative}
+.search input{width:100%;padding:10px 12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;border-radius:6px}
+select{padding:9px 10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;border-radius:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--ink-2);padding:4px 11px;border-radius:999px;font:inherit;font-size:13px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.chip .k{font-family:var(--f-mono);font-size:11px;opacity:.65;margin-left:4px}
+.scope{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.scope-row{display:flex;gap:10px;align-items:flex-start}
+.scope-l{font-size:12px;color:var(--ink-3);padding-top:5px;flex:none;width:30px}
+.scope .chips{margin:0;flex:1;min-width:0}
+#cchips .chip{font-size:12.5px;padding:3px 10px}
+#cchips .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.scope-tag{font-size:12px;color:var(--accent);margin:-6px 0 12px}
+.count{font-size:12px;color:var(--ink-3);margin:-4px 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;min-width:0;display:flex;flex-direction:column;gap:10px}
+.card.hl{box-shadow:0 0 0 2px var(--accent)}
+.c-head{display:flex;gap:12px;align-items:flex-start}
+.code{font-family:var(--f-display);font-weight:700;font-size:36px;line-height:.9;letter-spacing:.03em;min-width:64px}
+.who{flex:1;min-width:0}
+.who .nm{font-weight:700;font-size:15px}
+.who .meta{font-size:12px;color:var(--ink-3)}
+.badge{font-size:11.5px;font-weight:500;padding:3px 8px;border-radius:4px;white-space:nowrap;background:var(--mute-soft);color:var(--ink-2)}
+.b-ok{background:var(--ok-soft);color:var(--ok)} .b-warn{background:var(--warn-soft);color:var(--warn)}
+.b-crit{background:var(--crit-soft);color:var(--crit)} .b-acc{background:var(--accent-soft);color:var(--accent)}
+.bar{position:relative;height:8px;background:var(--mute-soft);border-radius:4px;margin:22px 0 2px}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--accent)}
+.bar .sel{position:absolute;top:-16px;bottom:-3px;width:2px;margin-left:-1px;background:var(--sel)}
+.bar .sel-l{position:absolute;bottom:13px;font-family:var(--f-mono);font-size:10.5px;line-height:1;white-space:nowrap;color:var(--sel);font-weight:500;padding:2px 5px 2px 6px;background:var(--sel-soft);border-radius:3px 3px 3px 0}
+.bar .sel-l.r{transform:translateX(-100%);border-radius:3px 3px 0 3px;padding:2px 6px 2px 5px}
+.bar .sel-l.on{background:var(--sel);color:var(--surface)}
+.bar-l{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3)}
+dl.kv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 10px;margin:0}
+dl.kv div{min-width:0}
+dl.kv .kv-sel dt,dl.kv .kv-sel dd{color:var(--sel)}
+dl.kv .kv-end{margin:-4px -6px;padding:4px 6px;border-radius:5px;background:var(--hl-bg);--hl-bg:var(--accent-soft);--hl-fg:var(--accent)}
+dl.kv .kv-end dt{color:var(--hl-fg);font-weight:700}
+dl.kv .kv-end dd{color:var(--hl-fg);font-weight:600;font-size:14px}
+dl.kv .lv-warn{--hl-bg:var(--warn-soft);--hl-fg:var(--warn)}
+dl.kv .lv-crit{--hl-bg:var(--crit-soft);--hl-fg:var(--crit)}
+dl.kv .lv-none{--hl-bg:var(--mute-soft);--hl-fg:var(--ink-2)} dl.kv dt{font-size:11px;color:var(--ink-3)} dl.kv dd{margin:0;font-family:var(--f-mono);font-size:12.5px;font-variant-numeric:tabular-nums}
+.note{font-size:12.5px;background:var(--surface-2);border-left:3px solid var(--ink-3);padding:6px 9px;color:var(--ink-2)}
+.cmt{font-size:12px;color:var(--ink-2);border:1px dashed var(--line);border-radius:4px;padding:6px 9px;display:flex;flex-direction:column;gap:2px}
+.cmt span{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em;color:var(--ink-3)}
+.clear{border:0;background:none;color:var(--accent);font:inherit;font-size:12px;cursor:pointer;padding:0 0 0 8px;text-decoration:underline}
+.plan{font-size:12.5px;background:var(--accent-soft);padding:6px 9px;border-radius:4px}
+.plan b{color:var(--accent)}
+details{font-size:12.5px;color:var(--ink-2)} summary{cursor:pointer;color:var(--ink-3)}
+details ol{margin:6px 0 0;padding-left:20px}
+.dm{border-top:1px dashed var(--line);padding-top:8px;font-size:12.5px;display:flex;flex-direction:column;gap:3px}
+.dm .lbl{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;color:var(--ink-3)}
+.empty{padding:40px;text-align:center;color:var(--ink-3);grid-column:1/-1}
+.fallback{grid-column:1/-1;font-size:13px;color:var(--warn);background:var(--warn-soft);padding:8px 12px;border-radius:6px}
+/* calendar */
+.cal-opts{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:12px;font-size:13px;color:var(--ink-2)}
+.legend{display:flex;gap:12px;flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.year{margin-bottom:22px}
+.year h2{display:flex;align-items:baseline;gap:10px;margin:0 0 8px;font-family:var(--f-display);font-size:28px;font-weight:600;letter-spacing:.03em}
+.year h2 small{font-family:var(--f-body);font-size:13px;font-weight:400;color:var(--ink-2)}
+.months{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.mon{background:var(--surface);padding:8px;min-height:84px;min-width:0}
+.mon.past{background:var(--surface-2)}
+.mon.now{box-shadow:inset 0 3px 0 var(--accent)}
+.mon .ml{font-family:var(--f-mono);font-size:11px;color:var(--ink-3);margin-bottom:5px;display:flex;justify-content:space-between}
+.mon.has .ml{color:var(--ink);font-weight:500}
+.ent{display:flex;flex-direction:column;gap:4px}
+.ret{display:flex;align-items:center;gap:6px;border:0;width:100%;text-align:left;font:inherit;padding:4px 6px;border-radius:4px;cursor:pointer;background:var(--mute-soft);color:var(--ink)}
+.ret:hover{filter:brightness(.96)}
+.ret b{font-family:var(--f-display);font-size:18px;line-height:1;font-weight:700;letter-spacing:.03em}
+.ret small{font-size:11px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.ret.crit{background:var(--crit-soft)} .ret.warn{background:var(--warn-soft)} .ret.ok{background:var(--accent-soft)}
+.ret .tag{font-family:var(--f-mono);font-size:9.5px;padding:0 3px;border:1px solid currentColor;border-radius:2px;color:var(--ink-2)}
+/* pending */
+.plist{display:flex;flex-direction:column;gap:8px}
+.prow{display:grid;grid-template-columns:110px 90px minmax(0,1fr) minmax(0,1.2fr);gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.dday{font-family:var(--f-display);font-size:30px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.dday small{display:block;font-family:var(--f-mono);font-size:11px;font-weight:400;color:var(--ink-3);margin-top:3px}
+.prow .code{font-size:34px}
+.prow .sub{font-size:12px;color:var(--ink-3)}
+.sect{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;color:var(--ink-3);margin:18px 0 8px;text-transform:uppercase}
+footer{margin-top:28px;font-size:12px;color:var(--ink-3);border-top:1px solid var(--line);padding-top:12px}
+@media (max-width:760px){
+  .asof{text-align:left}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stats .stat:last-child{grid-column:1/-1}
+  .months{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .prow{grid-template-columns:80px minmax(0,1fr);gap:8px 12px}
+  .prow .p3,.prow .p4{grid-column:1/-1}
+  .grid{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:420px){.months{grid-template-columns:repeat(2,minmax(0,1fr))} dl.kv{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (prefers-reduced-motion:no-preference){.card,.prow{transition:box-shadow .2s}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Station Manager Tenure Control</div>
+      <h1>外站派駐任期看板</h1>
+    </div>
+    <div class="asof">資料來源：外站人員派駐任期管控表 2026/10/01<br>剩餘天數以今天 <span id="today"></span> 即時計算</div>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="scope">
+    <div class="scope-row"><span class="scope-l">區域</span><div class="chips" id="rchips"></div></div>
+    <div class="scope-row" id="crow" hidden><span class="scope-l">國家</span><div class="chips" id="cchips"></div></div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="t-q" data-tab="q" aria-selected="true">場站查詢</button>
+    <button class="tab" role="tab" id="t-c" data-tab="c" aria-selected="false">派返月曆 <span class="n" id="n-c"></span></button>
+    <button class="tab" role="tab" id="t-p" data-tab="p" aria-selected="false">待開航 <span class="n" id="n-p"></span></button>
+  </div>
+
+  <section id="v-q">
+    <div class="controls">
+      <div class="search"><input id="q" type="search" placeholder="搜尋場站代碼、SM / DM 姓名、歷任人員、備註…" autocomplete="off"></div>
+      <select id="fs" aria-label="狀態篩選">
+        <option value="all">全部狀態</option>
+        <option value="expat">外派中</option>
+        <option value="y1">一年內派返</option>
+        <option value="y2">12–24 個月內派返</option>
+        <option value="sel">已進入遴選期（含逾期）</option>
+        <option value="local">當地雇員 / 任期不適用</option>
+        <option value="pending">待開航</option>
+        <option value="closed">已關場站</option>
+      </select>
+      <select id="so" aria-label="排序">
+        <option value="region">依區域排序</option>
+        <option value="end">依任期結束（近→遠）</option>
+      </select>
+    </div>
+    <div class="count" id="cnt"></div>
+    <div class="grid" id="list"></div>
+  </section>
+
+  <section id="v-c" hidden>
+    <div class="cal-opts">
+      <label><input type="checkbox" id="incDM" checked> 含 DM</label>
+      <label><input type="checkbox" id="incPast"> 顯示已過月份</label>
+      <select id="calRange" aria-label="派返期間"><option value="0">全部期間</option><option value="365">12 個月內</option><option value="730">12–24 個月</option></select>
+      <div class="legend">
+        <span><i style="background:var(--crit-soft);border:1px solid var(--crit)"></i>已進入遴選期</span>
+        <span><i style="background:var(--warn-soft);border:1px solid var(--warn)"></i>一年內派返</span>
+        <span><i style="background:var(--accent-soft);border:1px solid var(--accent)"></i>一年以上</span>
+      </div>
+    </div>
+    <div id="cal"></div>
+  </section>
+
+  <section id="v-p" hidden>
+    <div id="pend"></div>
+  </section>
+
+  <footer>
+    派返日以表中「任期結束」為準；遴選日為「候選人遴選」欄。派返月曆僅列外派人員（當地雇員、任期不適用及已關場站不列入）。
+    點月曆或待開航中的場站可跳到該站詳細資料。
+  </footer>
+</div>
+
+<script>
+const SM = [
+ // 東北亞
+ {r:"東北亞",s:"TPE",g:"協理",n:"Grace Chen",open:"2020-01-23",type:"local"},
+ {r:"東北亞",s:"RMQ",g:"經理",n:"Kelly Lo",open:"2024-03-31",type:"local",note:"2024/1/15晉用"},
+ {r:"東北亞",s:"KHH",g:"經理",n:"Sammi Huang",open:"2027-01-01",type:"local",note:"(待開航)"},
+ {r:"東北亞",s:"NRT",g:"經理",n:"Ya-Hsin Ko",open:"2020-12-06",start:"2023-10-01",end:"2027-09-30",sel:"2027-03-30",hist:["桑原","Real Huo（2023/6/15接任NRT）2020/10/22-2024/10/22","Ya-Hsin Ko 2024/10/25接任"]},
+ {r:"東北亞",s:"FUK",g:"資專",n:"Sean Li",open:"2022-02-17",start:"2025-03-24",end:"2029-03-23",sel:"2028-09-23",hist:["Jerry Hu 2022/4/7-2025/4/7"]},
+ {r:"東北亞",s:"CTS",g:"課長",n:"Carrie Liu",open:"2022-10-28",start:"2024-10-01",end:"2028-09-30",sel:"2028-03-30",hist:["Wen-Chieh Lo 2022/9/30-2026/10/1","Carrie 2026/9/17接任"]},
+ {r:"東北亞",s:"OKA",g:"課長",n:"Zoe Wang",open:"2022-10-28",start:"2023-03-15",end:"2028-03-14",sel:"2027-09-14",note:"2025/9/15接任；擬延長一年至2028/3/14",hist:["Ryo Suehiro SM任期至2024/4/30","Jerry Liu 2024/4/1-2025/9/21","Zoe Wang 2025/9/15接任"]},
+ {r:"東北亞",s:"SDJ",g:"資專",n:"Heather Chen",open:"2023-04-01",start:"2024-01-15",end:"2028-01-14",sel:"2027-07-14",hist:["Zoe Wang 2023/3/15-2024/1/31"]},
+ {r:"東北亞",s:"KIX",g:"課長",n:"Angel Liu",open:"2020-12-15",start:"2023-07-01",end:"2027-06-30",sel:"2026-12-30",hist:["Real Huo 2020/4/22-2023/6/14"]},
+ {r:"東北亞",s:"KMJ",g:"課長",n:"Naomi Lai",open:"2023-09-01",start:"2023-10-01",end:"2027-09-30",sel:"2027-03-30",note:"擬由EJ接任"},
+ {r:"東北亞",s:"NGO",g:"課長",n:"Nami N.",open:"2023-12-01",start:"2024-03-01",end:"2028-02-29",sel:"2027-08-29",hist:["Ya-Hsin Ko 2023/10/1-2024/10/24","Nami N. 2024/10/16接任"]},
+ {r:"東北亞",s:"HKD",g:"資專",n:"Yi-Ju Lu",open:"2024-02-01",start:"2024-01-04",end:"2028-01-03",sel:"2027-07-03"},
+ {r:"東北亞",s:"TAK",g:"資專",n:"Raimy Wu",open:"2024-03-31",start:"2026-09-01",end:"2030-08-31",sel:"2030-03-03",hist:["Nami N. 2024/3/1-2024/10/15","Carrie Liu 2024/10/1-2026/9/16","Raimy 2026/9/1接任"]},
+ {r:"東北亞",s:"UKB",g:"資專",n:"John Wu",open:"2025-04-18",start:"2025-02-10",end:"2029-02-09",sel:"2028-08-09"},
+ {r:"東北亞",s:"HKG",g:"課長",n:"Ian Kao",open:"2024-07-08",start:"2024-04-01",end:"2028-03-31",sel:"2027-10-01"},
+ {r:"東北亞",s:"MFM",g:"經理",n:"Esmond Ng",open:"2020-01-23",type:"local"},
+ {r:"東北亞",s:"SHI",g:"資專",n:"Meng Shan Tsai",open:"2026-02-12",start:"2026-01-01",end:"2027-12-31",sel:"2027-07-01"},
+ {r:"東北亞",s:"PUS",g:"資專",n:"Victor Chang",open:"2026-06-01",start:"2026-05-27",end:"2030-05-26",sel:"2029-11-26"},
+ {r:"東北亞",s:"CJU",n:"TBD",open:"2027-05-01",type:"tbd",note:"待CPD通知是否籌設"},
+ // 東南亞
+ {r:"東南亞",s:"MNL",g:"資專",n:"Yu-Te Lee",open:"2025-12-16",start:"2025-09-01",end:"2029-08-31",sel:"2029-03-03",hist:["Zach Wang 2021/10/1-2024/3/23"]},
+ {r:"東南亞",s:"CRK",g:"課長",n:"York Wu",open:"2023-08-15",start:"2023-06-01",end:"2027-05-31",sel:"2026-12-01",note:"黃超詣預計1/18接任"},
+ {r:"東南亞",s:"CEB",g:"資專",n:"Wallace Huang",open:"2023-01-17",start:"2022-12-12",end:"2027-12-11",sel:"2027-06-11",note:"已延長至2027/12/11；接任者待定"},
+ {r:"東南亞",s:"HAN",g:"資專",n:"Nelson Huang",open:"2023-01-13",start:"2026-04-17",end:"2028-03-31",sel:"2027-10-01",hist:["Sam Chung 2022/12/12-2026/5/1"]},
+ {r:"東南亞",s:"DAD",g:"資專",n:"Jacob Pham",open:"2020-01-23",start:"2026-04-15",type:"local",hist:["Peter Fu 2019/11/1-2023/3/18","Elvis Chao 2023/3/1-2026/4/15"]},
+ {r:"東南亞",s:"SGN",g:"課長",n:"David Ting",open:"2021-05-13",start:"2026-02-01",end:"2030-01-31",sel:"2029-07-31",hist:["Peter Fu 2021/5/13-2022/10/1","Barnett Chang 2022/10/3-2026/2/15"]},
+ {r:"東南亞",s:"PQC",g:"資專",n:"Leo Chang",open:"2024-06-20",start:"2026-04-01",end:"2030-03-31",sel:"2029-10-01",hist:["Nelson Huang 2024/4/1-2026/4/17"]},
+ {r:"東南亞",s:"BKK",g:"課長",n:"Mickey Lee",open:"2020-12-01",start:"2024-02-01",end:"2028-01-31",sel:"2027-07-31",hist:["Leo Tsao 2020/11/9-2024/2/16"]},
+ {r:"東南亞",s:"CNX",g:"資專",n:"Chia-Yi Lin",open:"2024-01-18",start:"2026-04-01",end:"2030-03-31",sel:"2029-10-01",hist:["Eric Hsiao 2023/11/1-2026/4/15"]},
+ {r:"東南亞",s:"KUL",g:"資專",n:"David Ding",open:"2021-01-05",start:"2026-04-09",end:"2030-04-08",sel:"2029-10-08",hist:["Wei-Chao Chen 2019/11/1-2024/3/24","Jeffrey Chung 2024/3/18-2026/4/23"]},
+ {r:"東南亞",s:"SIN",g:"資專",n:"Joseph Wu",open:"2021-09-23",start:"2025-01-03",end:"2029-01-02",sel:"2028-07-02",hist:["Eason Lin 2021/11/9-2025/1/17"]},
+ {r:"東南亞",s:"CGK",g:"課長",n:"Tom Yeh",open:"2024-09-01",start:"2024-06-24",end:"2028-06-23",sel:"2027-12-23"},
+ {r:"東南亞",s:"DPS",g:"資專",n:"Nivek Yu",open:"2026-10-01",start:"2026-05-02",end:"2030-05-01",sel:"2029-11-01"},
+ {r:"東南亞",s:"DEL",g:"資專",n:"Chung-Che Wei",open:"2027-09-01",start:"2027-03-01",end:"2030-02-28",sel:"2029-08-28",note:"(待開航) 人資：此站任期為3年"},
+ // 北美
+ {r:"北美",s:"LAX",g:"課長",n:"Danny Sin",open:"2023-04-26",start:"2026-05-04",type:"na",hist:["Jessica Lin 2023/4/26-2025/7/15","Leo Tsao 2024/2/26-2026/1/9"]},
+ {r:"北美",s:"SFO",g:"課長",n:"Wei-Chao Chen",open:"2023-12-15",start:"2025-05-18",end:"2029-05-17",sel:"2028-11-17",hist:["Allen Chou 2023/7/1-2025/7/7"]},
+ {r:"北美",s:"SEA",g:"課長",n:"Eason Lin",open:"2024-08-16",start:"2025-06-16",end:"2029-06-15",sel:"2028-12-15",hist:["Leo Tsao 2024/2/26-2024/6/3"]},
+ {r:"北美",s:"ONT",g:"課長",n:"Barnett Chang",open:"2025-06-02",start:"2026-04-20",end:"2030-04-19",sel:"2029-10-19",hist:["Danny Sin 2023/4/26-2026/5/4"]},
+ {r:"北美",s:"PHX",g:"資專",n:"Ryan Pao",open:"2026-01-15",start:"2024-08-15",end:"2028-08-14",sel:"2028-02-14",note:"2025/7/1轉派駐PHX"},
+ {r:"北美",s:"BOS",n:"TBD",open:"2027-08-01",type:"tbd",note:"(待開航) 預計Barnett接任"},
+ {r:"北美",s:"DFW",n:"TBD",open:"2027-12-01",type:"tbd",note:"(待開航)"},
+ {r:"北美",s:"IAD",n:"TBD",openText:"TBD",type:"tbd",note:"(評估中)"},
+ // 歐洲
+ {r:"歐洲",s:"PRG",g:"課長",n:"Johnny Chen",open:"2026-08-01",start:"2026-01-01",end:"2029-12-31",sel:"2029-07-01"},
+ {r:"歐洲",s:"ZRH",n:"TBD",openText:"暫緩開航",type:"tbd",note:"暫緩開航"},
+ // 紐澳
+ {r:"紐澳",s:"SYD",g:"課長",n:"Eric Hsiao",open:"2027-03-23",start:"2026-10-01",end:"2030-09-30",sel:"2030-03-30",note:"(待開航)"},
+ {r:"紐澳",s:"AKL",g:"資專",n:"Lumi Lu",open:"2027-03-23",start:"2026-10-01",end:"2030-09-30",sel:"2030-03-30",note:"(待開航)"},
+ // 已關
+ {r:"已關場站",s:"PEN",n:"關站",open:"2020-01-13",start:"2023-03-01",end:"2027-02-28",type:"closed",note:"2025/3/27關站",hist:["Wei-Chao Chen 2019/11/1-2024/3/17","Phoenix Lee 2023/3/1-2025/4/26"]},
+];
+const DM = [
+ {s:"NRT",g:"資專",n:"Bill Pao",start:"2025-11-01",end:"2029-10-31",sel:"2029-05-01",hist:["Zoe Wang 2024/2/1-2025/9/14"]},
+ {s:"NRT",n:"Suehiro Ryo",type:"local",note:"2024/6/1接任NRT DM"},
+ {s:"MFM",n:"Josephine Chong",type:"local"},
+ {s:"BKK",n:"Metinee Watthanasopon",type:"local"},
+ {s:"LAX",n:"Vivian Lau",type:"local"},
+];
+// 「(TBD)未來規劃」工作表，僅保留仍對應現任 SM 的項目
+const PLAN = {
+ OKA:{ret:"期望延長",st:"完成"},
+ CRK:{ret:"(擬)提早派返",lv:"LV1",st:"規劃中"},
+ KIX:{next:"TPE",st:"待辦"},
+ NRT:{succ:"Wen-Chieh Lo",st:"待辦"},
+ KMJ:{next:"TPE",succ:"Lynn or TBD",when:"2026/7/1",st:"規劃中"},
+ SHI:{next:"(擬)日本其他站",st:"待辦"},
+ CEB:{st:"待辦"},
+};
+const REGIONS=["全部","東北亞","東南亞","北美","歐洲","紐澳","已關場站"];
+const CTRY={
+ TPE:"台灣",RMQ:"台灣",KHH:"台灣",
+ NRT:"日本",FUK:"日本",CTS:"日本",OKA:"日本",SDJ:"日本",KIX:"日本",KMJ:"日本",NGO:"日本",HKD:"日本",TAK:"日本",UKB:"日本",SHI:"日本",
+ HKG:"香港",MFM:"澳門",PUS:"韓國",CJU:"韓國",
+ MNL:"菲律賓",CRK:"菲律賓",CEB:"菲律賓",HAN:"越南",DAD:"越南",SGN:"越南",PQC:"越南",
+ BKK:"泰國",CNX:"泰國",KUL:"馬來西亞",PEN:"馬來西亞",SIN:"新加坡",CGK:"印尼",DPS:"印尼",DEL:"印度",
+ LAX:"美國",SFO:"美國",SEA:"美國",ONT:"美國",PHX:"美國",BOS:"美國",DFW:"美國",IAD:"美國",
+ PRG:"捷克",ZRH:"瑞士",SYD:"澳洲",AKL:"紐西蘭"};
+// 原表「SM派任時程」的儲存格註解
+const CMT={
+ OKA:["任期結束：之後須回歸原本計算公式，目前額外 +1 年"],
+ KIX:["任期結束：註解寫「之後須回歸原本計算公式，有額外 +1 年」，但目前公式已是標準 4 年"],
+ KMJ:["派駐日：原始資訊 2023/7/17，但應從 2023/10/1 取得簽證起算"],
+ SHI:["任期結束：之後須回歸原本計算公式，目前額外 −2 年","2025/8/22 執行第一班季節性航班"],
+ MNL:["2021/7/8 開站，2024/3/30 關站，2025/12/16 復航"],
+ CEB:["任期結束：之後須回歸原本計算公式，目前額外 +1 年"],
+ HAN:["2026/4/17 自 PQC 調任，初始派駐日 2024/4/1"],
+ DEL:["人資：此站任期為 3 年"],
+ ZRH:["人資：此站任期為 3 年"],
+};
+SM.forEach(p=>{p.c=CTRY[p.s]||"其他";p.cmt=CMT[p.s]||[]});
+const regionOf=s=>(SM.find(x=>x.s===s)||{});
+
+// ---- dates ----
+const now=new Date(); const TODAY=Date.UTC(now.getFullYear(),now.getMonth(),now.getDate());
+const ms=d=>{const [y,m,dd]=d.split("-").map(Number);return Date.UTC(y,m-1,dd)};
+const days=d=>Math.round((ms(d)-TODAY)/864e5);
+const fmt=d=>d?d.replace(/-/g,"/"):"—";
+const ym=d=>d.slice(0,7);
+document.getElementById("today").textContent=new Date(TODAY).toISOString().slice(0,10).replace(/-/g,"/");
+
+function status(p){
+  if(p.type==="closed")return {k:"closed",t:"已關站",c:""};
+  if(p.type==="local")return {k:"local",t:"當地雇員",c:""};
+  if(p.type==="na")return {k:"local",t:"任期不適用",c:""};
+  if(p.type==="tbd"||!p.end)return {k:"tbd",t:"人選未定",c:""};
+  const rd=days(p.end), sd=p.sel?days(p.sel):null;
+  if(rd<0)return {k:"over",t:`已逾期 ${-rd} 天`,c:"b-crit",lvl:"crit"};
+  if(sd!==null&&sd<=0)return {k:"sel",t:`遴選期・剩 ${rd} 天`,c:"b-crit",lvl:"crit"};
+  if(rd<=365)return {k:"y1",t:`剩 ${rd} 天`,c:"b-warn",lvl:"warn"};
+  return {k:"ok",t:`剩 ${rd} 天`,c:"b-ok",lvl:"ok"};
+}
+const isPending=p=>p.type!=="closed"&&(p.openText||(p.open&&days(p.open)>0));
+const isExpat=p=>!p.type&&!!p.end;
+
+// ---- stats ----
+function renderStats(){
+  const ex=[...SM.filter(isExpat),...DM.filter(isExpat)].filter(p=>inScope(p.s));
+  const y1=ex.filter(p=>days(p.end)>=0&&days(p.end)<=365).length;
+  const y2=ex.filter(p=>days(p.end)>365&&days(p.end)<=730).length;
+  const sel=ex.filter(p=>p.sel&&days(p.sel)<=0).length;
+  const over=ex.filter(p=>days(p.end)<0).length;
+  const pend=SM.filter(p=>isPending(p)&&inScope(p.s)).length;
+  const sc=scopeLabel();
+  document.getElementById("stats").innerHTML=`
+   <button class="stat acc" data-go="expat"><b>${ex.length}</b><span>${sc?sc+" ":""}外派中 SM / DM</span></button>
+   <button class="stat warn" data-go="y1"><b>${y1}</b><span>${sc?sc+" ":""}12 個月內派返</span></button>
+   <button class="stat warn" data-go="y2"><b>${y2}</b><span>${sc?sc+" ":""}12–24 個月內派返</span></button>
+   <button class="stat crit" data-go="sel"><b>${sel}</b><span>${sc?sc+" ":""}已進入遴選期${over?`（含逾期 ${over}）`:""}</span></button>
+   <button class="stat" data-go="pending"><b>${pend}</b><span>${sc?sc+" ":""}待開航場站</span></button>`;
+  document.querySelectorAll(".stat").forEach(b=>b.onclick=()=>{
+    if(b.dataset.go==="pending"){show("p");return}
+    fs.value=b.dataset.go; qi.value=""; show("q"); renderList();
+  });
+}
+
+// ---- query view ----
+let region="全部", country="全部";
+const qi=document.getElementById("q"), fs=document.getElementById("fs"), so=document.getElementById("so");
+const inScope=s=>{const p=regionOf(s);return (region==="全部"||p.r===region)&&(country==="全部"||p.c===country)};
+function renderChips(){
+  const cnt=r=>r==="全部"?SM.length:SM.filter(p=>p.r===r).length;
+  document.getElementById("rchips").innerHTML=REGIONS.map(r=>`<button class="chip" aria-pressed="${r===region}" data-r="${r}">${r}<span class="k">${cnt(r)}</span></button>`).join("");
+  document.querySelectorAll("#rchips .chip").forEach(c=>c.onclick=()=>{region=c.dataset.r;country="全部";fs.value="all";renderChips();renderAll()});
+  const crow=document.getElementById("crow");
+  if(region==="全部"){crow.hidden=true;return}
+  const list=[];SM.filter(p=>p.r===region).forEach(p=>{const e=list.find(x=>x[0]===p.c);e?e[1]++:list.push([p.c,1])});
+  crow.hidden=false;
+  document.getElementById("cchips").innerHTML=[["全部",list.reduce((a,b)=>a+b[1],0)],...list].map(([c,n])=>`<button class="chip" aria-pressed="${c===country}" data-c="${c}">${c==="全部"?"全部國家":c}<span class="k">${n}</span></button>`).join("");
+  document.querySelectorAll("#cchips .chip").forEach(b=>b.onclick=()=>{country=b.dataset.c;fs.value="all";renderChips();renderAll()});
+}
+const scopeLabel=()=>region==="全部"?"":country==="全部"?region:`${region} › ${country}`;
+function renderAll(){renderStats();renderList();renderCal();renderPend()}
+function hay(p){
+  const dms=DM.filter(d=>d.s===p.s);
+  return [p.s,p.r,p.n,p.g,p.note,...(p.hist||[]),...dms.map(d=>d.n+" "+(d.hist||[]).join(" ")),...p.cmt].join(" ").toLowerCase();
+}
+function matchFilter(p){
+  const f=fs.value, st=status(p);
+  const dmEx=DM.filter(d=>d.s===p.s&&isExpat(d));
+  const anyY2=[p,...dmEx].some(x=>isExpat(x)&&days(x.end)>365&&days(x.end)<=730);
+  const anyY1=[p,...dmEx].some(x=>isExpat(x)&&days(x.end)>=0&&days(x.end)<=365);
+  const anySel=[p,...dmEx].some(x=>isExpat(x)&&x.sel&&days(x.sel)<=0);
+  switch(f){
+    case "expat":return isExpat(p)||dmEx.length>0;
+    case "y1":return anyY1;
+    case "y2":return anyY2;
+    case "sel":return anySel;
+    case "local":return st.k==="local";
+    case "pending":return isPending(p);
+    case "closed":return st.k==="closed";
+  }return true;
+}
+function tenureBar(p){
+  if(!p.start||!p.end)return "";
+  const a=ms(p.start),b=ms(p.end),t=Math.min(Math.max((TODAY-a)/(b-a),0),1);
+  const s=p.sel?(ms(p.sel)-a)/(b-a):null;
+  return `<div><div class="bar" title="任期進度 ${Math.round(t*100)}%"><i style="width:${(t*100).toFixed(1)}%"></i>${s!==null?`<span class="sel" style="left:${(s*100).toFixed(1)}%" title="候選人遴選 ${fmt(p.sel)}"></span><span class="sel-l${s>.6?" r":""}${TODAY>=ms(p.sel)?" on":""}" style="left:${(s*100).toFixed(1)}%">遴選 ${fmt(p.sel)}</span>`:""}</div>
+   <div class="bar-l mono"><span>${fmt(p.start)}</span><span>進度 ${Math.round(t*100)}%</span><span>${fmt(p.end)}</span></div></div>`;
+}
+function card(p){
+  const st=status(p), pend=isPending(p), pl=PLAN[p.s], dms=DM.filter(d=>d.s===p.s);
+  const openTxt=p.openText||fmt(p.open);
+  const rd=p.end&&!p.type?days(p.end):null, sd=p.sel&&!p.type?days(p.sel):null;
+  let badges=`<span class="badge ${st.c}">${st.t}</span>`;
+  if(pend)badges=`<span class="badge b-acc">待開航</span> `+badges;
+  const planHtml=pl?`<div class="plan"><b>後續規劃</b>　${[pl.ret&&"預計派返："+pl.ret,pl.lv&&"未來級別："+pl.lv,pl.next&&"後續任務："+pl.next,pl.succ&&"接任人選："+pl.succ,pl.when&&"派駐時程："+pl.when,"狀態："+pl.st].filter(Boolean).join("；")}</div>`:"";
+  const dmHtml=dms.length?`<div class="dm"><span class="lbl">DM</span>${dms.map(d=>{const s2=status(d);return `<div><b>${d.n}</b>${d.g?` · ${d.g}`:""}　${d.end?`<span class="mono">${fmt(d.start)} → ${fmt(d.end)}</span>　遴選 <span class="mono">${fmt(d.sel)}</span>　`:""}<span class="badge ${s2.c}">${s2.t}</span>${d.note?`<div class="sub" style="color:var(--ink-3)">${d.note}</div>`:""}</div>`}).join("")}</div>`:"";
+  return `<article class="card" id="st-${p.s}">
+   <div class="c-head"><div class="code">${p.s}</div>
+    <div class="who"><div class="nm">${p.n}</div><div class="meta">${p.r} · ${p.c}${p.g?" · "+p.g:""}</div></div>
+    <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">${badges}</div></div>
+   ${tenureBar(p)}
+   <dl class="kv">
+    <div><dt>開航日</dt><dd>${openTxt}</dd></div>
+    <div><dt>派駐日</dt><dd>${p.start?fmt(p.start):(p.type==="local"?"當地雇員":"—")}</dd></div>
+    <div class="kv-end ${st.lvl?"lv-"+st.lvl:"lv-none"}"><dt>任期結束</dt><dd>${p.end?fmt(p.end):(p.type==="local"?"當地雇員":p.type==="na"?"不適用":"—")}</dd></div>
+    <div class="kv-sel"><dt>候選人遴選</dt><dd>${p.sel?fmt(p.sel):"—"}</dd></div>
+    <div><dt>剩餘任期</dt><dd>${rd===null?"—":rd<0?`已逾期 ${-rd} 天`:rd+" 天"}</dd></div>
+    <div><dt>距遴選</dt><dd>${sd!==null?(sd>0?sd+" 天":"已到"):"—"}</dd></div>
+   </dl>
+   ${p.note?`<div class="note">${p.note}</div>`:""}
+   ${p.cmt.length?`<div class="cmt"><span>表格註解</span>${p.cmt.map(c=>`<div>${c}</div>`).join("")}</div>`:""}
+   ${p.hist?`<details><summary>歷任 SM（${p.hist.length}）</summary><ol>${p.hist.map(h=>`<li>${h}</li>`).join("")}</ol></details>`:""}
+   ${dmHtml}
+  </article>`;
+}
+function renderList(){
+  const q=qi.value.trim().toLowerCase();
+  let arr=SM.filter(p=>inScope(p.s)&&(!q||hay(p).includes(q))&&matchFilter(p));
+  if(so.value==="end")arr=[...arr].sort((a,b)=>(a.end&&!a.type?ms(a.end):9e15)-(b.end&&!b.type?ms(b.end):9e15));
+  const conds=[scopeLabel(),fs.value!=="all"&&fs.options[fs.selectedIndex].text,qi.value.trim()&&`搜尋「${qi.value.trim()}」`].filter(Boolean);
+  document.getElementById("cnt").innerHTML=`${conds.length?conds.join("・")+"：":""}共 ${arr.length} 個場站${conds.length?`<button class="clear" id="clr">清除所有條件</button>`:""}`;
+  const clr=document.getElementById("clr"); if(clr)clr.onclick=()=>{qi.value="";fs.value="all";region="全部";country="全部";renderChips();renderAll()};
+  let html;
+  if(arr.length)html=arr.map(card).join("");
+  else{
+    const inS=SM.filter(p=>inScope(p.s)&&(!q||hay(p).includes(q)));
+    html=inS.length&&fs.value!=="all"
+      ?`<div class="fallback">${scopeLabel()||"目前範圍"}的 ${inS.length} 個場站都不屬於「${fs.options[fs.selectedIndex].text}」，以下列出全部場站。</div>`+inS.map(card).join("")
+      :`<div class="empty">目前的條件下沒有場站。按上方「清除所有條件」重新查詢。</div>`;
+  }
+  document.getElementById("list").innerHTML=html;
+}
+[qi,fs,so].forEach(el=>el.addEventListener("input",renderList));
+
+function goStation(code){
+  qi.value=code; fs.value="all"; region="全部"; country="全部"; renderChips(); show("q"); renderAll();
+  const el=document.getElementById("st-"+code);
+  if(el){el.classList.add("hl");el.scrollIntoView({behavior:"smooth",block:"center"});}
+}
+
+function localNote(){
+  const l=SM.filter(p=>inScope(p.s)&&(p.type==="local"||p.type==="na"));
+  return l.length?`<br><small>${l.map(p=>{const d=DM.filter(x=>x.s===p.s).map(x=>x.n).join("、");return `${p.s}（SM ${p.n}${d?"／DM "+d:""}）`}).join("、")}為當地雇員或任期不適用，沒有派返時程。</small>`:"";
+}
+// ---- calendar view ----
+function renderCal(){
+  const incDM=document.getElementById("incDM").checked, incPast=document.getElementById("incPast").checked;
+  let ents=SM.filter(isExpat).map(p=>({...p,role:"SM"}));
+  if(incDM)ents=ents.concat(DM.filter(isExpat).map(d=>({...d,role:"DM",r:(SM.find(x=>x.s===d.s)||{}).r})));
+  const curYM=new Date(TODAY).toISOString().slice(0,7);
+  const overdue=ents.filter(e=>inScope(e.s)&&days(e.end)<0);
+  ents=ents.filter(e=>inScope(e.s));
+  const rg=+document.getElementById("calRange").value; if(rg)ents=ents.filter(e=>days(e.end)<=rg&&(rg===730?days(e.end)>365:true));
+  if(!incPast)ents=ents.filter(e=>ym(e.end)>=curYM);
+  ents.sort((a,b)=>ms(a.end)-ms(b.end));
+  document.getElementById("n-c").textContent=ents.length;
+  const years=[...new Set(ents.map(e=>+e.end.slice(0,4)))].sort();
+  document.getElementById("cal").innerHTML=(scopeLabel()?`<div class="scope-tag">目前範圍：${scopeLabel()}</div>`:"")+(overdue.length?`<div class="fallback" style="margin-bottom:12px">任期已過但表格尚未更新：${overdue.map(e=>`${e.s}${e.role==="DM"?"(DM)":""} ${e.n}（${fmt(e.end)}）`).join("、")}</div>`:"")+(years.length?years.map(y=>{
+    const ye=ents.filter(e=>+e.end.slice(0,4)===y);
+    const cells=Array.from({length:12},(_,i)=>{
+      const key=`${y}-${String(i+1).padStart(2,"0")}`;
+      const me=ye.filter(e=>ym(e.end)===key);
+      const past=key<curYM, cur=key===curYM;
+      return `<div class="mon${me.length?" has":""}${past?" past":""}${cur?" now":""}"><div class="ml"><span>${i+1} 月</span>${me.length?`<span>${me.length}</span>`:""}</div>
+        <div class="ent">${me.map(e=>{const s=status(e);return `<button class="ret ${s.lvl||""}" data-s="${e.s}" title="${e.s} ${e.role} ${e.n}｜任期結束 ${fmt(e.end)}｜遴選 ${fmt(e.sel)}"><b>${e.s}</b>${e.role==="DM"?'<span class="tag">DM</span>':""}<small>${e.n}・${+e.end.slice(8)}日</small></button>`}).join("")}</div></div>`;
+    }).join("");
+    return `<div class="year"><h2>${y}<small>${ye.length} 人預計派返：${ye.map(e=>e.s+(e.role==="DM"?"(DM)":"")).join("、")}</small></h2><div class="months">${cells}</div></div>`;
+  }).join(""):`<div class="empty">這個範圍內沒有預計派返的外派人員。${localNote()}</div>`);
+  document.querySelectorAll("#cal .ret").forEach(b=>b.onclick=()=>goStation(b.dataset.s));
+}
+["incDM","incPast","calRange"].forEach(id=>document.getElementById(id).addEventListener("change",renderCal));
+
+// ---- pending view ----
+function renderPend(){
+  const arr=SM.filter(p=>isPending(p)&&inScope(p.s));
+  document.getElementById("n-p").textContent=arr.length;
+  const dated=arr.filter(p=>!p.openText).sort((a,b)=>ms(a.open)-ms(b.open));
+  const und=arr.filter(p=>p.openText);
+  const row=p=>{
+    const d=p.open?days(p.open):null;
+    const smTxt=p.n==="TBD"?`<span class="badge b-warn">SM 人選未定</span>`:`<b>${p.n}</b>${p.g?" · "+p.g:""}${p.type==="local"?" · 當地雇員":""}`;
+    const dep=p.start?`派駐 <span class="mono">${fmt(p.start)}</span>${days(p.start)>0?`（${days(p.start)} 天後）`:"（已到任）"}`:"";
+    return `<div class="prow">
+      <div class="dday">${d!==null?"D-"+d:"—"}<small>${p.openText||"開航 "+fmt(p.open)}</small></div>
+      <button class="code" style="background:none;border:0;color:inherit;cursor:pointer;text-align:left;padding:0" data-s="${p.s}">${p.s}</button>
+      <div class="p3">${smTxt}<div class="sub">${p.r} · ${p.c}${dep?"　"+dep:""}</div></div>
+      <div class="p4 sub">${p.note||""}</div></div>`;
+  };
+  // group dated ones by year-month
+  const groups={};dated.forEach(p=>{const k=p.open.slice(0,7);(groups[k]=groups[k]||[]).push(p)});
+  document.getElementById("pend").innerHTML=(scopeLabel()?`<div class="scope-tag">目前範圍：${scopeLabel()}</div>`:"")+(arr.length?"":`<div class="empty">這個範圍內沒有待開航場站。</div>`)+
+    Object.keys(groups).map(k=>`<div class="sect">${k.slice(0,4)} 年 ${+k.slice(5)} 月開航</div><div class="plist">${groups[k].map(row).join("")}</div>`).join("")+
+    (und.length?`<div class="sect">開航日未定</div><div class="plist">${und.map(row).join("")}</div>`:"");
+  document.querySelectorAll("#pend [data-s]").forEach(b=>b.onclick=()=>goStation(b.dataset.s));
+}
+
+// ---- tabs ----
+function show(t){
+  document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===t));
+  ["q","c","p"].forEach(k=>document.getElementById("v-"+k).hidden=k!==t);
+  try{localStorage.setItem("tenure-tab",t)}catch(e){}
+}
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>show(b.dataset.tab));
+
+renderChips();renderAll();
+const h=location.hash.slice(1);
+let start="q";try{start=localStorage.getItem("tenure-tab")||"q"}catch(e){}
+if(["q","c","p"].includes(h))start=h;
+show(start);
+</script>
+
+</body>
+</html>
