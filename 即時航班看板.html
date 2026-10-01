@@ -511,7 +511,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-01a</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-01b</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -6611,8 +6611,8 @@ function seatInit(){
       else if(!r.url) m = "尚未設定：擴充功能設定頁 → OpsLink 自動查詢";
       else {
         m = r.on ? "自動查詢：" + (r.every >= 1440 ? "每天" : "每 " + (r.every >= 60 ? (r.every / 60) + " 小時" : r.every + " 分鐘")) + "一次" : "自動查詢未開啟（可手動更新）";
-        if(st.lastOk) m += "｜上次成功 " + alWhen(st.lastOk);
-        if(st.lastErr) m += "｜⚠ " + st.lastErr + "（" + alWhen(st.lastRun) + "）";
+        if(st.lastOk) m += "｜上次成功 " + alWhen(st.lastOk) + (st.lastRows && !st.lastErr ? "（" + st.lastRows + " 班）" : "");
+        if(st.lastErr) m += "｜⚠ " + st.lastErr + "（" + alWhen(st.lastRun) + "）" + (r.hint ? "｜" + r.hint : "");
       }
       $("autoLegsMsg").textContent = m;
       $("btnAutoLegs").disabled = !!r.running;
