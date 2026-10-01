@@ -479,11 +479,14 @@ ul.doc li{margin:6px 0}
 .tw-l1 .f{font:700 14px ui-monospace,monospace;color:#fff}
 .tw-l1 .ty{font:600 10px ui-monospace,monospace;color:#ffd24a;background:rgba(255,210,74,.12);border-radius:5px;padding:1px 5px}
 .tw-l1 .api{font-size:10px;color:var(--tw-dim);border:1px dashed var(--tw-dim);border-radius:5px;padding:0 4px}
+.tw-l1 .fy{font-size:10px;color:#ff9f43;border:1px solid rgba(255,159,67,.6);border-radius:5px;padding:0 4px}
+.tw-row.unk{opacity:.9;border-style:dashed}
 .tw-l1 .rt{margin-left:auto;font:600 12px ui-monospace,monospace;color:#bfe9f7}
 .tw-bar{height:4px;background:#0d2635;border-radius:3px;margin:8px 0 5px;overflow:hidden}
 .tw-bar i{display:block;height:100%;border-radius:3px}
 .tw-row.o .tw-bar i{background:var(--tw-o);box-shadow:0 0 8px var(--tw-o)}
 .tw-row.i .tw-bar i{background:var(--tw-i);box-shadow:0 0 8px rgba(255,60,240,.9)}
+.tw-row.d .tw-bar i{background:#ff9f43;box-shadow:0 0 8px rgba(255,159,67,.8)}
 .tw-row.alert .tw-bar i{background:var(--tw-r);box-shadow:0 0 8px var(--tw-r)}
 .tw-l2{display:flex;justify-content:space-between;color:var(--tw-dim);font-size:11px}
 .tw-l2 .lv{color:var(--tw-r);font-weight:700;text-shadow:0 0 6px rgba(255,51,85,.5)}
@@ -539,7 +542,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-01k</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-01m</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -4521,6 +4524,9 @@ function holdRoute(tr){
   }
   var c = ROUTES.cache[tr.cs];
   if(c && c.from) return { from:c.from, to:c.to };
+  // 公開資料查不到航線（例如調機班）：用 OpsLink 清單的同航班號補上
+  var lf = tr.fno || holdFlightNo(tr.cs);
+  if(lf && seatLegs().length){ var lg = twSeat(lf); if(lg && lg.from && lg.to) return { from:lg.from, to:lg.to, ferry: !!lg.ferry, src:"OpsLink" }; }
   if(tr.cs && (!c || Date.now() - (c.t || 0) > 12*3600000) && !ROUTES.pending[tr.cs]) ROUTES.pending[tr.cs] = { lat:tr.lat, lon:tr.lon };   // 查無／失敗的紀錄到期後再查
   return null;
 }
@@ -4833,9 +4839,9 @@ function holdNextHtml(tr, rt){
   if(!nx) return "";
   function dur(m){ return Math.floor(m/60) + "h" + pad2(m % 60) + "m"; }
   var out = "";
-  if(nx.ret) out += '<span class="hmap-next none">↩ 外站折返 ' + esc(nx.ret.flt) + " " + esc(nx.ret.from) + "→" + esc(nx.ret.to) + " " + twHmOf(nx.ret.std) + "飛" + (nx.ret.sta ? "・" + twHmOf(nx.ret.sta) + "到" : "") + "</span>";
+  if(nx.ret) out += '<span class="hmap-next none">↩ 外站折返 ' + legFlt(nx.ret) + " " + esc(nx.ret.from) + "→" + esc(nx.ret.to) + " " + twHmOf(nx.ret.std) + "飛" + (nx.ret.sta ? "・" + twHmOf(nx.ret.sta) + "到" : "") + "</span>";
   if(nx.none){
-    var hasOut = SEAT.rows.some(function(x){ return x.from === rt.to; });
+    var hasOut = seatLegs().some(function(x){ return x.from === rt.to; });
     var msg = nx.ret ? (nx.gap ? "回台後的下一段航點接不上（可能缺資料）" : "回台後清單內沒有接飛") : hasOut ? "落地後清單內沒有接飛" : (LITE ? "看不到下一段（請一併貼上回程航班清單）" : "看不到下一段（需在擴充功能勾「也查回程」）");
     return out + '<span class="hmap-next ' + (nx.ret ? "ret" : "none") + '">➡ ' + msg + " <small>" + esc(nx.reg) + "</small></span>";
   }
@@ -4843,7 +4849,7 @@ function holdNextHtml(tr, rt){
   var tt = t == null ? "" : t < 0 ? "・⚠ 來不及（差 " + dur(-t) + "）" : (t > 720 ? "・停留 " : "・過站 ") + dur(t);
   var lab = nx.ret ? (t != null && t > 720 ? "回台後下一段 " : "回台後接飛 ") : (t != null && t > 720 ? "下一段 " : "接飛 ");
   if(nx.ret) cls = "ret" + (cls === "bad" ? " bad" : "");
-  return out + '<span class="hmap-next ' + cls + '">➡ ' + lab + esc(nx.flt) + " " + esc(nx.from) + "→" + esc(nx.to) + " " + twHmOf(nx.std) + tt + " <small>" + esc(nx.reg) + "</small></span>";
+  return out + '<span class="hmap-next ' + cls + '">➡ ' + lab + legFlt(nx) + " " + esc(nx.from) + "→" + esc(nx.to) + " " + twHmOf(nx.std) + tt + " <small>" + esc(nx.reg) + "</small></span>";
 }
 function holdPopupHtml(tr){
   if(tr.est){
@@ -6067,10 +6073,13 @@ function twTdx(fno, dir, stn){
   return best;
 }
 /* 空位查詢貼上的清單（含 STD／STA，為系統資料） */
+/* 所有航段（含調機），串飛與航線判斷用 */
+function legFlt(x){ return esc(x.flt) + (x.ferry ? "（調機）" : ""); }
+function seatLegs(){ return (SEAT && (SEAT.legs || SEAT.rows)) || []; }
 function twSeat(fno, to){
-  if(!SEAT || !SEAT.rows || !SEAT.rows.length) return null;
+  if(!seatLegs().length) return null;
   var want = twFnoNorm(fno), now = Date.now(), best = null, bd = 1e15;
-  SEAT.rows.forEach(function(r){
+  seatLegs().forEach(function(r){
     if(twFnoNorm(r.flt) !== want || (to && r.to !== to) || !r.std) return;
     var d = Math.abs(r.std - now);
     if(r.std < now + 3*3600000 && d < 20*3600000 && d < bd){ bd = d; best = r; }
@@ -6164,7 +6173,7 @@ function fixSchedRun(force){
 /* ---------- 下一段：用機號在系統清單中找這架飛機接下來要飛的航班 ---------- */
 function regNorm(x){ return String(x || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); }
 function twNext(t, r, tm){
-  if(!SEAT || !SEAT.rows || !SEAT.rows.length || !r) return null;
+  if(!seatLegs().length || !r) return null;
   var fno = twFnoNorm(t.fno || holdFlightNo(t.cs) || "");
   var cur = fno ? twSeat(fno, r.to) : null;
   var reg = (cur && regNorm(cur.reg)) || regNorm(t.reg);   // 系統清單的排班機號優先
@@ -6172,24 +6181,24 @@ function twNext(t, r, tm){
   var arr = (tm && (tm.eta || tm.sta)) || (cur && cur.sta) || 0, base = arr || Date.now();
   // 以「目前這一段的 STD」為起點找下一段（不用抵達時間，避免飛機晚到時把真正的下一段漏掉），且要從本段目的地出發
   var after = cur && cur.std ? cur.std : (tm && tm.std ? tm.std : Date.now() - 6*3600000);
-  var cand = SEAT.rows.filter(function(x){
+  var cand = seatLegs().filter(function(x){
     return regNorm(x.reg) === reg && x.std && x.std > after && x.std < base + 30*3600000 && twFnoNorm(x.flt) !== fno;
   }).sort(function(a, b){ return a.std - b.std; });
   if(!cand.length || (r.to && cand[0].from && cand[0].from !== r.to)) return { reg:reg, none:true };   // 只認緊接著、航點接得上的那一段
   var n = cand[0], nd = n.dep || n.std;
   // 台灣出發往外站：下一段一定是外站折返回台，真正要看的是「回台後」接飛哪一班
   if(r.to && !twIsBase(r.to) && twIsBase(n.to)){
-    var ret = { flt:n.flt, from:n.from, to:n.to, std:nd, sta: n.sta ? n.sta + (n.delay || 0)*60000 : 0 };
+    var ret = { ferry: !!n.ferry, flt:n.flt, from:n.from, to:n.to, std:nd, sta: n.sta ? n.sta + (n.delay || 0)*60000 : 0 };
     var n2 = seatNextRow(reg, n);
     if(!n2 || n2.gap) return { reg:reg, ret:ret, none:true, gap: !!(n2 && n2.gap) };
     var d2 = n2.dep || n2.std;
-    return { reg:reg, ret:ret, flt:n2.flt, from:n2.from, to:n2.to, std:d2, turn: ret.sta ? Math.round((d2 - ret.sta) / 60000) : null };
+    return { reg:reg, ret:ret, ferry: !!n2.ferry, flt:n2.flt, from:n2.from, to:n2.to, std:d2, turn: ret.sta ? Math.round((d2 - ret.sta) / 60000) : null };
   }
-  return { reg:reg, flt:n.flt, from:n.from, to:n.to, std:nd, turn: arr ? Math.round((nd - arr) / 60000) : null };
+  return { reg:reg, ferry: !!n.ferry, flt:n.flt, from:n.from, to:n.to, std:nd, turn: arr ? Math.round((nd - arr) / 60000) : null };
 }
 /* 同一機號、緊接在 row 之後的那一段（航點接不上時回傳 gap） */
 function seatNextRow(reg, row){
-  var c = SEAT.rows.filter(function(x){ return x !== row && regNorm(x.reg) === reg && x.std > row.std && x.std - row.std < 40*3600000; }).sort(function(a,b){ return a.std - b.std; })[0];
+  var c = seatLegs().filter(function(x){ return x !== row && regNorm(x.reg) === reg && x.std > row.std && x.std - row.std < 40*3600000; }).sort(function(a,b){ return a.std - b.std; })[0];
   if(!c) return null;
   return c.from === row.to ? c : { gap:true };
 }
@@ -6198,22 +6207,28 @@ function twNextLine(nx){
   if(nx.none) return nx.ret ? '<div class="tw-l4 ret"><b>回台後</b> 清單內沒有接飛<span class="tw-src">' + esc(nx.reg) + "</span></div>" : "";
   var cls = nx.turn == null ? "" : nx.turn < 45 ? "bad" : nx.turn < 75 ? "warn" : "";
   if(nx.ret) cls = "ret" + (cls === "bad" ? " bad" : "");
-  return '<div class="tw-l4 ' + cls + '"><b>' + (nx.ret ? "回台後接飛" : "下一段") + "</b> " + esc(nx.flt) + " " + esc(nx.from) + "→" + esc(nx.to) + " " + twHmOf(nx.std) +
+  return '<div class="tw-l4 ' + cls + '"><b>' + (nx.ret ? "回台後接飛" : "下一段") + "</b> " + legFlt(nx) + " " + esc(nx.from) + "→" + esc(nx.to) + " " + twHmOf(nx.std) +
     (nx.turn != null ? '<span class="tw-turn">過站 ' + (nx.turn < 0 ? "已不足（晚 " + fmtDur(-nx.turn*60000) + "）" : Math.floor(nx.turn/60) + "h" + pad2(nx.turn % 60) + "m") + "</span>" : "") +
     '<span class="tw-src">' + esc(nx.reg) + "</span></div>";
 }
 var TW = { bases:["TPE","RMQ","KHH"], view:"all", base:"ALL", rows:[] };
 function twIsBase(x){ return TW.bases.indexOf(String(x || "").toUpperCase()) >= 0; }
 function twCollect(list, estList){
-  var rows = [], unknown = 0, domestic = 0, other = 0, need = [];
+  var rows = [], unknown = 0, domestic = 0, other = 0, need = [], unk = [];
   list.concat(estList || []).forEach(function(t){
     if(t.onGround || t.lat == null) return;
     var r = t.estRoute || holdRoute(t);
-    if(!r || !r.from || !r.to || r.from === "?" || r.to === "?"){ unknown++; return; }
+    if(!r || !r.from || !r.to || r.from === "?" || r.to === "?"){
+      unknown++;
+      // 航線不明（常見於調機、包機）：仍列出來，依離台灣最近的本站距離排序
+      var nb = null; TW.bases.forEach(function(b){ var ll = aptLL(b); if(ll){ var d = nm(t.lat, t.lon, ll.lat, ll.lon); if(!nb || d < nb.d) nb = { b:b, d:d }; } });
+      if(t.fno || t.cs) unk.push({ hex:t.hex, fno:t.fno || t.cs, type:t.type || "", alt:t.alt, gs:t.gs, near:nb, api:!!t.est, level:t.level || 0 });
+      return;
+    }
     var fb = twIsBase(r.from), tb = twIsBase(r.to);
-    if(fb && tb){ domestic++; return; }
+    if(fb && tb) domestic++;   // 本站之間（多半是調機）：另外列一區
     if(!fb && !tb){ other++; return; }
-    var dir = fb ? "o" : "i", dest = aptLL(r.to), orig = aptLL(r.from), remain = null, prog = null;
+    var dir = fb && tb ? "d" : fb ? "o" : "i", dest = aptLL(r.to), orig = aptLL(r.from), remain = null, prog = null;
     if(dest){
       remain = nm(t.lat, t.lon, dest.lat, dest.lon);
       if(orig){ var tot = nm(orig.lat, orig.lon, dest.lat, dest.lon); if(tot > 50) prog = Math.max(0, Math.min(1, 1 - remain / tot)); }
@@ -6221,12 +6236,33 @@ function twCollect(list, estList){
     var tm = twTimes(t, r);
     if((!tm.std || !tm.sta) && tm.src !== "AirLabs" && (t.fno || t.cs)) need.push(t.fno || holdFlightNo(t.cs));
     rows.push({ tm:tm, nx: twNext(t, r, tm), hex:t.hex, dir:dir, fno:t.fno || t.cs || t.hex.toUpperCase(), type:t.type || "", from:r.from, to:r.to,
-      base: fb ? r.from : r.to, remain:remain, prog:prog, alt:t.alt, api:!!t.est, level:t.level || 0, divert:!!t.divert });
+      base: fb && !tb ? r.from : r.to, remain:remain, prog:prog, alt:t.alt, api:!!t.est, level:t.level || 0, divert:!!t.divert, ferry:!!r.ferry });
   });
   rows.sort(function(a,b){ return (a.remain == null ? 1e9 : a.remain) - (b.remain == null ? 1e9 : b.remain); });
+  unk.sort(function(a,b){ return (a.near ? a.near.d : 1e9) - (b.near ? b.near.d : 1e9); });
+  TW.unk = unk;
+  twAutoLegs(unk);
   TW.rows = rows; TW.unknown = unknown; TW.domestic = domestic; TW.other = other;
   TW.need = need.filter(Boolean);
   if(TW.need.length) setTimeout(function(){ fixSchedRun(false); }, 1500);   // 有缺才查 AirLabs
+}
+/* 台灣附近出現航線不明的 JX 航班（多為臨時調機），而且 OpsLink 清單裡沒有這班：自動在背景補查一次 OpsLink
+   ─ 最多每 30 分鐘一次（多個看板分頁共用計時）；需要登入時只記錄，不跳出分頁打擾 */
+var TWAL = { t:0, flts:"" };
+function twAutoLegs(unk){
+  if(LITE || !holdBridge() || !$("seatAuto") || !$("seatAuto").checked || SEAT.manual) return;
+  var miss = (unk || []).filter(function(u){
+    var f = twFnoNorm(holdFlightNo(u.fno) || u.fno);
+    return /^JX/.test(f) && u.near && u.near.d < 400 && !twSeat(f);
+  }).map(function(u){ return twFnoNorm(holdFlightNo(u.fno) || u.fno); });
+  if(!miss.length) return;
+  var last = 0; try{ last = +(localStorage.getItem("twAutoLegsT") || 0); }catch(e){}
+  if(Date.now() - last < 30*60000) return;
+  try{ localStorage.setItem("twAutoLegsT", String(Date.now())); }catch(e){}
+  TWAL.t = Date.now(); TWAL.flts = miss.join("、");
+  bgCmd("autoLegsRun", { quiet:true }).then(function(r){
+    TWAL.msg = r && r.ok === false ? "自動補查未執行：" + (r.error || "") : "已自動在背景補查 OpsLink（" + fixHm(TWAL.t) + "）";
+  }, function(e){ TWAL.msg = "自動補查失敗：" + (e && e.message || ""); });
 }
 function twTimeLine(tm){
   if(!tm || (!tm.std && !tm.sta)) return '<div class="tw-l3"><span class="tw-na">STD／STA 暫無資料</span></div>';
@@ -6260,7 +6296,7 @@ function twPaint(){
     var lv = r.divert ? "疑似轉降" : r.level >= 2 ? "盤旋中" : r.level === 1 ? "注意" : "";
     return '<div class="tw-row ' + r.dir + (r.divert || r.level >= 2 ? " alert" : r.level === 1 ? " warn" : "") + (HOLD.focus === r.hex ? " sel" : "") + '" data-hex="' + esc(r.hex) + '">' +
       '<div class="tw-l1"><span class="f">' + esc(r.fno) + "</span>" + (r.type ? '<span class="ty">' + esc(r.type) + "</span>" : "") +
-        (r.api ? '<span class="api">API</span>' : "") + '<span class="rt">' + esc(r.from) + "→" + esc(r.to) + "</span></div>" +
+        (r.api ? '<span class="api">API</span>' : "") + (r.ferry ? '<span class="fy">調機</span>' : "") + '<span class="rt">' + esc(r.from) + "→" + esc(r.to) + "</span></div>" +
       (r.prog != null ? '<div class="tw-bar"><i style="width:' + Math.round(r.prog * 100) + '%"></i></div>' : "") +
       '<div class="tw-l2"><span>' + (r.remain != null ? "剩 " + Math.round(r.remain).toLocaleString() + " 浬" : "距離未知") +
         (r.alt ? "・" + fmtAlt(r.alt) : "") + (lv ? '・<span class="lv' + (!r.divert && r.level === 1 ? " w" : "") + '">' + lv + "</span>" : "") + "</span>" +
@@ -6269,10 +6305,21 @@ function twPaint(){
   var html = "";
   if(TW.view !== "i") html += '<div class="tw-sec"><span>↗ 往外站（依剩餘距離）</span><span>' + o.length + " 架</span></div>" + (o.length ? o.map(row).join("") : '<div class="tw-empty">目前沒有往外站的航班</div>');
   if(TW.view !== "o") html += '<div class="tw-sec"><span>↙ 返台（依剩餘距離）</span><span>' + i.length + " 架</span></div>" + (i.length ? i.map(row).join("") : '<div class="tw-empty">目前沒有返台的航班</div>');
+  var dRows = rows.filter(function(r){ return r.dir === "d" && (all || r.from === TW.base || r.to === TW.base); });
+  if(dRows.length) html += '<div class="tw-sec"><span>⇄ 本站之間（TPE／RMQ／KHH，多為調機）</span><span>' + dRows.length + " 架</span></div>" + dRows.map(row).join("");
+  var unkL = (TW.unk || []).filter(function(u){ return !u.near || u.near.d < 400; }).slice(0, 12);   // 台灣附近、航線不明的航機（例如調機）
+  if(unkL.length) html += '<div class="tw-sec"><span>❔ 航線不明（調機／包機等，依離本站距離）</span><span>' + unkL.length + " 架</span></div>" + unkL.map(function(u){
+    return '<div class="tw-row unk' + (HOLD.focus === u.hex ? " sel" : "") + '" data-hex="' + esc(u.hex) + '"><div class="tw-l1"><span class="f">' + esc(u.fno) + "</span>" +
+      (u.type ? '<span class="ty">' + esc(u.type) + "</span>" : "") + (u.api ? '<span class="api">API</span>' : "") + '<span class="rt">?→?</span></div>' +
+      '<div class="tw-l2"><span>' + (u.near ? "距 " + u.near.b + " " + Math.round(u.near.d) + " 浬" : "位置未知") + (u.alt ? "・" + fmtAlt(u.alt) : "") + (u.gs ? "・" + u.gs + " kt" : "") + "</span></div>" +
+      '<div class="tw-l3"><span class="tw-na">' + (LITE ? "公開資料查不到航線；在「空位查詢」貼上含這班的航班清單後會自動補上" :
+        TWAL.msg && TWAL.flts.indexOf(twFnoNorm(holdFlightNo(u.fno) || u.fno)) >= 0 ? esc(TWAL.msg) + "，查到後會自動補上航線" :
+        "公開資料查不到航線；OpsLink 清單更新後會自動補上（30 分鐘內最多自動補查一次）") + "</span></div></div>";
+  }).join("");
   var extra = [];
-  if(TW.unknown) extra.push("航線未知 " + TW.unknown);
+  if(TW.unknown > unkL.length) extra.push("航線未知 " + (TW.unknown - unkL.length));
   if(TW.other) extra.push("外站之間 " + TW.other);
-  if(TW.domestic) extra.push("台灣國內 " + TW.domestic);
+
   if(extra.length) html += '<div class="tw-sec"><span>未列入：' + esc(extra.join("・")) + "</span><span></span></div>";
   $("twList").innerHTML = html;
 }
@@ -6465,14 +6512,23 @@ function seatTime(dm, hm, utc){
 function twParts(ms){ var d = new Date(ms + 8*3600000); return { y:d.getUTCFullYear(), mo:d.getUTCMonth()+1, d:d.getUTCDate(), dow:d.getUTCDay(), hm:pad2(d.getUTCHours()) + ":" + pad2(d.getUTCMinutes()) }; }
 function twKey(ms){ var p = twParts(ms); return p.y + "-" + pad2(p.mo) + "-" + pad2(p.d); }
 var SEAT_RE = /^\s*\d+\.\s+([A-Z0-9]{2}\d{1,4}[A-Z]?)\s+(\d{1,2}[A-Za-z]{3})\s+(\S)\s+(\S+)\s+(\d{1,2}[A-Za-z]{3})\s+(\d{1,2}:\d{2})\s+(\d{1,2}[A-Za-z]{3})\s+(\d{1,2}:\d{2})\s+(\d{1,2}[A-Za-z]{3})\s+(\d{1,2}:\d{2})(?:\s+([A-Z]))?\s+(\d{1,2}[A-Za-z]{3})\s+(\d{1,2}:\d{2})(?:\s+([A-Z]))?\s+([A-Z]{3})\s+([A-Z]{3})\s+(\S+)\s+([A-Z0-9]{2})\s*\/\s*([A-Z0-9]{2,4})\b(.*?)((?:[\d-]+\/){2,3}[\d-]+)\s*$/;
+/* 調機（Ferry）班常沒有訂位數欄：用寬鬆版格式辨識，只用來判斷航線與串飛 */
+var SEAT_RE_LOOSE = new RegExp(SEAT_RE.source.replace("((?:[\\d-]+\\/){2,3}[\\d-]+)\\s*$", "((?:[\\d-]+\\/){2,3}[\\d-]+)?\\s*$"));
 function seatParse(text, utc){
-  var caps = seatCaps(), rows = [], skipped = 0, bad = 0, unknown = {};
+  var caps = seatCaps(), rows = [], ferry = [], skipped = 0, bad = 0, unknown = {};
   String(text || "").split(/\r?\n/).forEach(function(line){
     if(!/^\s*\d+\.\s/.test(line)) return;
-    var m = SEAT_RE.exec(line.replace(/\t/g, " "));
+    var ln = line.replace(/\t/g, " "), m = SEAT_RE.exec(ln) || SEAT_RE_LOOSE.exec(ln);
     if(!m){ bad++; return; }
     var st = m[3], state = m[4].toUpperCase();
-    if(st === "P" || /CNL|CXL|CAN/.test(state)){ skipped++; return; }   // 調機／取消不列入
+    if(/CNL|CXL|CAN/.test(state)){ skipped++; return; }   // 取消不列入
+    if(st === "P" || !m[21]){   // 調機：不列入空位表，但保留航線與機號給地圖、台灣視角與串飛使用
+      if(st === "P"){ var fs = seatTime(m[5], m[6], utc), fb = seatTime(m[9], m[10], utc);
+        ferry.push({ flt:m[1], st:st, state:state, std:fs, sta: seatTime(m[7], m[8], utc), dep: fb || fs, delay: fb && fs ? Math.round((fb - fs)/60000) : 0,
+          from:m[15], to:m[16], reg:m[17], type:m[19], ferry:true }); skipped++; }
+      else bad++;
+      return;
+    }
     var std = seatTime(m[5], m[6], utc), best = seatTime(m[9], m[10], utc);
     var pax = m[21].split("/").map(function(x){ return x === "-" ? null : parseInt(x, 10); });
     if(pax.length === 3) pax = [pax[0], pax[1], null, pax[2]];
@@ -6483,14 +6539,14 @@ function seatParse(text, utc){
       from:m[15], to:m[16], reg:m[17], type:type, pax:pax, cap:cap, rem:rem, noCap: !caps[type] });
   });
   rows.sort(function(a,b){ return a.dep - b.dep; });
-  return { rows:rows, skipped:skipped, bad:bad, unknown:Object.keys(unknown) };
+  return { rows:rows, ferry:ferry, skipped:skipped, bad:bad, unknown:Object.keys(unknown) };
 }
 function seatIsUS(r){ var x = twIsBase(r.from) ? r.to : r.from; return airportCountry(x) === "美國" && !AIRPORT_REGION_OVERRIDE[x]; }   // 看外站那一端
 function seatRun(){
   var raw = $("seatRaw").value, utc = $("seatUtc").checked;
   try{ localStorage.setItem("seatRaw", raw); localStorage.setItem("seatOpt", JSON.stringify({ utc:utc, tight:+$("seatTight").value || 20, t:Date.now() })); }catch(e){}
   var p = seatParse(raw, utc);
-  SEAT.rows = p.rows; SEAT.skipped = p.skipped; SEAT.bad = p.bad; SEAT.unknown = p.unknown;
+  SEAT.rows = p.rows; SEAT.ferry = p.ferry || []; SEAT.legs = p.rows.concat(SEAT.ferry); SEAT.skipped = p.skipped; SEAT.bad = p.bad; SEAT.unknown = p.unknown;
   var msg = p.rows.length ? "已解析 " + p.rows.length + " 班" : (raw.trim() ? "看不懂這段內容，請確認是否含航班編號與 Pax 欄。" : "");
   if(p.skipped) msg += "，略過調機／取消 " + p.skipped + " 班";
   if(p.bad) msg += "，" + p.bad + " 行格式不符";
@@ -6523,7 +6579,7 @@ function seatHm(ms){ return Math.floor(ms/60) + "h" + pad2(ms % 60) + "m"; }
 function seatLinks(r){
   var reg = regNorm(r.reg);
   if(!reg || /^(TBA|TBD|XXX)/.test(reg)) return "";
-  var same = SEAT.rows.filter(function(x){ return x !== r && regNorm(x.reg) === reg && x.std; });
+  var same = seatLegs().filter(function(x){ return x !== r && regNorm(x.reg) === reg && x.std; });
   var arr = r.sta ? r.sta + (r.delay || 0)*60000 : 0;
   // 只認「緊接著」的那一段：同機號時間上最近的一段，而且航點要接得上（中間缺資料時不硬湊）
   var nx = same.filter(function(x){ return x.std > r.std && x.std - r.std < 40*3600000; }).sort(function(a,b){ return a.std - b.std; })[0];
@@ -6535,20 +6591,20 @@ function seatLinks(r){
   var out = "";
   if(pv){
     var pa = pv.sta ? pv.sta + (pv.delay || 0)*60000 : 0, pm = pa ? Math.round((r.dep - pa)/60000) : null;
-    out += '<span class="seat-leg ' + cls(pm) + '" title="這架飛機的前一段（時間為台北時間）">⬅ ' + esc(pv.flt) + " " + esc(pv.from) + "→" + esc(pv.to) + (pa ? " " + twParts(pa).hm + "到" : "") + turnTxt(pm) + "</span>";
+    out += '<span class="seat-leg ' + cls(pm) + '" title="這架飛機的前一段（時間為台北時間）">⬅ ' + legFlt(pv) + " " + esc(pv.from) + "→" + esc(pv.to) + (pa ? " " + twParts(pa).hm + "到" : "") + turnTxt(pm) + "</span>";
   }
   if(nx && !twIsBase(r.to) && twIsBase(nx.to)){   // 往外站：下一段是折返，改看回台後接飛哪一班
     var ra = nx.sta ? nx.sta + (nx.delay || 0)*60000 : 0, n2 = seatNextRow(reg, nx);
-    out += '<span class="seat-leg none" title="外站折返段（台北時間）">↩ 折返 ' + esc(nx.flt) + " " + esc(nx.from) + "→" + esc(nx.to) + (ra ? " " + twParts(ra).hm + "到" : "") + "</span>";
+    out += '<span class="seat-leg none" title="外站折返段（台北時間）">↩ 折返 ' + legFlt(nx) + " " + esc(nx.from) + "→" + esc(nx.to) + (ra ? " " + twParts(ra).hm + "到" : "") + "</span>";
     if(n2 && !n2.gap){
       var m2 = ra ? Math.round((n2.dep - ra)/60000) : null;
-      out += '<span class="seat-leg ret' + (cls(m2) === "bad" ? " bad" : "") + '" title="回台後接飛（台北時間）">➡ 回台後' + (m2 != null && m2 > 720 ? "下一段 " : "接飛 ") + esc(n2.flt) + " " + esc(n2.from) + "→" + esc(n2.to) + " " + twParts(n2.dep).hm + "飛" + turnTxt(m2) + "</span>";
+      out += '<span class="seat-leg ret' + (cls(m2) === "bad" ? " bad" : "") + '" title="回台後接飛（台北時間）">➡ 回台後' + (m2 != null && m2 > 720 ? "下一段 " : "接飛 ") + legFlt(n2) + " " + esc(n2.from) + "→" + esc(n2.to) + " " + twParts(n2.dep).hm + "飛" + turnTxt(m2) + "</span>";
     } else out += '<span class="seat-leg ret">➡ ' + (n2 && n2.gap ? "回台後的下一段航點接不上" : "回台後清單內沒有接飛") + "</span>";
   } else if(nx){
     var nm = arr ? Math.round((nx.dep - arr)/60000) : null;
-    out += '<span class="seat-leg ' + cls(nm) + '" title="這架飛機的下一段（時間為台北時間）">➡ ' + (nm != null && nm > 12*60 ? "下一段 " : "接飛 ") + esc(nx.flt) + " " + esc(nx.from) + "→" + esc(nx.to) + " " + twParts(nx.dep).hm + "飛" + turnTxt(nm) + "</span>";
+    out += '<span class="seat-leg ' + cls(nm) + '" title="這架飛機的下一段（時間為台北時間）">➡ ' + (nm != null && nm > 12*60 ? "下一段 " : "接飛 ") + legFlt(nx) + " " + esc(nx.from) + "→" + esc(nx.to) + " " + twParts(nx.dep).hm + "飛" + turnTxt(nm) + "</span>";
   } else {
-    var hasOut = SEAT.rows.some(function(x){ return x.from === r.to; });   // 清單裡有沒有從目的地出發的航班（沒查回程時就沒有）
+    var hasOut = seatLegs().some(function(x){ return x.from === r.to; });   // 清單裡有沒有從目的地出發的航班（沒查回程時就沒有）
     out += '<span class="seat-leg none">➡ ' + (!hasOut ? (LITE ? "看不到下一段（請一併貼上回程航班清單）" : "看不到下一段（需查回程：擴充功能勾「也查回程」）") : gapN ? "下一段航點接不上（中間可能缺資料）" : "清單內沒有接飛") + "</span>";
   }
   return out;
