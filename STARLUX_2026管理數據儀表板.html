@@ -5122,6 +5122,31 @@
     }
   }
 
+  // On-time stats (ATD <= STD+15) grouped by a key function, over ALL flights in current filters
+  function bidOtMap(keyFn){
+    const map = {};
+    opsFilteredFlights().forEach(function(f){
+      if (bidTypeFilter !== 'ALL' && f.acType !== bidTypeFilter) return;
+      const d = opsDepDelay(f);
+      if (d === null) return;
+      const k = keyFn(f);
+      if (!map[k]) map[k] = {n:0, late:0, lateSum:0};
+      map[k].n++;
+      if (d > 15){ map[k].late++; map[k].lateSum += d; }
+    });
+    return map;
+  }
+  function bidOtCells(o){
+    if (!o || !o.n) return '<td class="num" style="color:var(--muted);">—</td><td class="num" style="color:var(--muted);">—</td>';
+    const rate = (o.n - o.late) / o.n * 100;
+    const col = rate >= 90 ? 'var(--good)' : (rate >= 80 ? 'var(--earth-gold)' : 'var(--warn)');
+    const bg = rate >= 90 ? 'rgba(111,143,106,.15)' : (rate >= 80 ? 'rgba(184,135,79,.15)' : 'rgba(181,87,63,.15)');
+    const avgLate = o.late ? Math.round(o.lateSum / o.late) : 0;
+    return '<td class="num"><span class="bid-heat-cell" style="background:'+bg+';color:'+col+';">'+rate.toFixed(1)+'%</span>'+
+      '<div style="font-size:11px;color:var(--muted);font-weight:500;">'+(o.n-o.late)+'/'+o.n+' 班</div></td>'+
+      '<td class="num">'+(o.late ? '<span style="color:var(--warn);">'+o.late+'</span><div style="font-size:11px;color:var(--muted);font-weight:500;">平均 '+avgLate+' 分</div>' : '<span style="color:var(--good);">0</span>')+'</td>';
+  }
+
   function renderBidTable(){
     const wrap = document.getElementById('bidTable');
     if (!wrap) return;
@@ -5136,9 +5161,12 @@
         '<th style="text-align:right;">最短</th>'+
         '<th style="text-align:right;">最長</th>'+
         '<th style="text-align:right;">標準差</th>'+
+        '<th style="text-align:right;">準點率</th>'+
+        '<th style="text-align:right;">延誤班數 (>15分)</th>'+
       '</tr></thead><tbody>';
+      const otMap = bidOtMap(function(f){ return f.dep || '?'; });
       if (!rows.length){
-        html += '<tr><td colspan="7" class="empty-note">無資料</td></tr>';
+        html += '<tr><td colspan="9" class="empty-note">無資料</td></tr>';
       } else {
         rows.forEach(function(r){
           const bg = bidHeatColor(r.avg, maxAvg);
@@ -5150,6 +5178,7 @@
             '<td class="num">'+r.min+'</td>'+
             '<td class="num">'+r.max+'</td>'+
             '<td class="num">'+r.std+'</td>'+
+            bidOtCells(otMap[r.dep])+
           '</tr>';
         });
       }
@@ -5169,9 +5198,12 @@
         '<th style="text-align:right;">最短</th>'+
         '<th style="text-align:right;">最長</th>'+
         '<th style="text-align:right;">標準差</th>'+
+        '<th style="text-align:right;">準點率</th>'+
+        '<th style="text-align:right;">延誤班數 (>15分)</th>'+
       '</tr></thead><tbody>';
+      const otMap = bidOtMap(function(f){ return f.flt+'|'+f.acType+'|'+(f.dep||'?'); });
       if (!rows.length){
-        html += '<tr><td colspan="9" class="empty-note">無資料</td></tr>';
+        html += '<tr><td colspan="11" class="empty-note">無資料</td></tr>';
       } else {
         rows.forEach(function(r){
           const bg = bidHeatColor(r.avg, maxAvg);
@@ -5186,6 +5218,7 @@
             '<td class="num">'+r.min+'</td>'+
             '<td class="num">'+r.max+'</td>'+
             '<td class="num">'+r.std+'</td>'+
+            bidOtCells(otMap[r.flt+'|'+r.acType+'|'+r.dep])+
           '</tr>';
         });
       }
