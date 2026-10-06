@@ -254,6 +254,8 @@ td.num{text-align:right}
 .hist .h .sa{background:var(--green);border-radius:3px 3px 0 0}
 .hist .h .sd{background:var(--cyan);opacity:.45;border-radius:3px 3px 0 0}
 .hist .h span{text-align:center;color:var(--dim);font-size:10.5px;padding-top:4px}
+.hist .h .hv{display:block;text-align:center;font:600 10px ui-monospace,Menlo,monospace;color:var(--txt);opacity:.8;margin-bottom:2px;white-space:nowrap}
+.hist{height:170px}
 .legend{display:flex;gap:18px;color:var(--dim);font-size:12.5px;margin-top:12px;flex-wrap:wrap}
 .legend i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:6px;vertical-align:-1px}
 .chart{width:100%;height:auto;display:block;margin-top:16px}
@@ -542,7 +544,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-02b</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-06a</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -1329,6 +1331,24 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
         </div>
         <p class="note" id="ospMsg" style="margin:0"></p>
         <p class="note" style="margin:0">需要在 ADS-B 橋接擴充功能的設定頁填入 OpenSky 的 Client ID／Secret（帳號每日 4,000 點，查一次全球 4 點；匿名只有 400 點，不會啟用）。會依「今日剩餘點數」自動拉長間隔並保留 400 點，確保時段內不會用光；時段外、被限流或額度保留時自動改回 adsb.lol 輪查。</p>
+      </div>
+    </section>
+    <section class="hs-sec" id="hsRelay">
+      <h4>📡 分享給同事（Cloudflare 中繼）</h4>
+      <div class="hs-row" style="flex-direction:column;align-items:stretch;gap:8px">
+        <p class="note" style="margin:0">把這個看板抓到的<b>公開資料</b>（地圖航機、盤旋／轉降紀錄、TDX 到離資料）上傳到你自己的 Cloudflare Worker，同事開分享版就直接看得到，不用填金鑰、不用裝擴充功能。<b>不會上傳</b> OpsLink 空位、串飛等公司資料，也不含任何金鑰。這個看板分頁要開著才會上傳。</p>
+        <label class="note" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="relayOn"> 啟用上傳</label>
+        <label class="f">Worker 網址<input type="text" id="relayUrl" placeholder="https://flight-relay.你的帳號.workers.dev"></label>
+        <label class="f">上傳密碼（PUSH_KEY）<input type="password" id="relayKey" placeholder="和 Worker 設定的 PUSH_KEY 相同"></label>
+        <label class="f">查看碼（VIEW_CODE，選填，只用來產生分享連結）<input type="text" id="relayCode" placeholder="沒設就留空"></label>
+        <label class="f">顯示名稱（同事看到「資料來自 ○○ 的看板」）<input type="text" id="relayName" placeholder="AMP值班台"></label>
+        <div class="row" style="gap:8px">
+          <label class="note" style="display:flex;gap:6px;align-items:center">地圖資料每 <select id="relayEvery"><option value="120">2 分鐘</option><option value="180">3 分鐘</option><option value="300">5 分鐘</option></select> 上傳</label>
+          <label class="note" style="display:flex;gap:6px;align-items:center">時段 <select id="relayFrom"><option value="0">00:00</option><option value="1">01:00</option><option value="2">02:00</option><option value="3">03:00</option><option value="4">04:00</option><option value="5">05:00</option><option value="6">06:00</option><option value="7">07:00</option><option value="8">08:00</option><option value="9">09:00</option><option value="10">10:00</option><option value="11">11:00</option><option value="12">12:00</option><option value="13">13:00</option><option value="14">14:00</option><option value="15">15:00</option><option value="16">16:00</option><option value="17">17:00</option><option value="18">18:00</option><option value="19">19:00</option><option value="20">20:00</option><option value="21">21:00</option><option value="22">22:00</option><option value="23">23:00</option><option value="24">24:00</option></select> 至 <select id="relayTo"><option value="0">00:00</option><option value="1">01:00</option><option value="2">02:00</option><option value="3">03:00</option><option value="4">04:00</option><option value="5">05:00</option><option value="6">06:00</option><option value="7">07:00</option><option value="8">08:00</option><option value="9">09:00</option><option value="10">10:00</option><option value="11">11:00</option><option value="12">12:00</option><option value="13">13:00</option><option value="14">14:00</option><option value="15">15:00</option><option value="16">16:00</option><option value="17">17:00</option><option value="18">18:00</option><option value="19">19:00</option><option value="20">20:00</option><option value="21">21:00</option><option value="22">22:00</option><option value="23">23:00</option><option value="24">24:00</option></select></label>
+        </div>
+        <div class="row" style="gap:8px"><button class="btn ghost" id="btnRelayTest" type="button">立即上傳一次</button><button class="btn ghost" id="btnRelayLink" type="button">複製分享連結</button></div>
+        <p class="note" id="relayMsg" style="margin:0"></p>
+        <p class="note" style="margin:0">Cloudflare 免費方案每天可寫入 1,000 次：每 2 分鐘上傳、時段 06:00–24:00 約 540 次，加上到離資料每 30 分鐘一次，都在免費額度內。</p>
       </div>
     </section>
   </div>
@@ -2441,23 +2461,30 @@ function renderSched(){
       (dowCount[d]/dowMax*100) + '%"></div></div><div class="v mono">' + dowCount[d] + "</div></div>";
   }).join("") + "</div>";
 
-  // 時段分布
-  var hA = new Array(24).fill(0), hD = new Array(24).fill(0);
+  // 時段分布：改成「每日平均班數」（資料天數不同時也能直接比較）
+  var hA = new Array(24).fill(0), hD = new Array(24).fill(0), dset = {};
   rows.forEach(function(f){
     if(!f.sched) return;
     var h = parseInt(f.sched.slice(0,2), 10);
     if(isNaN(h)) return;
+    if(f.date) dset[f.date] = 1;
     if(f.dir === "A") hA[h]++; else hD[h]++;
   });
+  var dl = Object.keys(dset).sort(), nd = Math.max(1, dl.length);
+  function avg(v){ var a = v / nd; return a >= 10 ? Math.round(a) : Math.round(a * 10) / 10; }
   var hMax = Math.max.apply(null, hA.map(function(v,i){ return v + hD[i]; })) || 1;
-  html += '<h3>到離時段分布</h3><div class="hist">' + hA.map(function(v,i){
-    var ha = v/hMax*100, hd = hD[i]/hMax*100;
-    return '<div class="h"><div class="col">' +
-      '<div class="sd" style="height:' + hd + '%" title="' + i + '時 離場 ' + hD[i] + '"></div>' +
-      '<div class="sa" style="height:' + ha + '%" title="' + i + '時 到場 ' + v + '"></div>' +
+  function md(d){ var p = d.split("-"); return (+p[1]) + "/" + (+p[2]); }
+  var span = dl.length ? (dl.length > 1 ? md(dl[0]) + "–" + md(dl[dl.length - 1]) : md(dl[0])) : "";
+  html += '<h3>到離時段分布 <span class="note" style="font-weight:400">每日平均班數・依排定時間（當地）・' + nd + " 天平均" + (span ? "（" + span + "）" : "") + "</span></h3>" +
+    '<div class="hist">' + hA.map(function(v,i){
+    var ha = v/hMax*100, hd = hD[i]/hMax*100, tot = v + hD[i];
+    return '<div class="h" title="' + i + " 時｜到場 共 " + v + " 班・平均 " + avg(v) + " 班／天｜離場 共 " + hD[i] + " 班・平均 " + avg(hD[i]) + ' 班／天"><div class="col">' +
+      (tot ? '<b class="hv">' + avg(tot) + "</b>" : "") +
+      '<div class="sd" style="height:' + hd + '%"></div>' +
+      '<div class="sa" style="height:' + ha + '%"></div>' +
       "</div><span>" + i + "</span></div>";
   }).join("") + "</div>" +
-  '<div class="legend"><span><i style="background:var(--green)"></i>到場</span><span><i style="background:rgba(58,143,167,.4)"></i>離場</span></div>';
+  '<div class="legend"><span><i style="background:var(--green)"></i>到場</span><span><i style="background:rgba(58,143,167,.4)"></i>離場</span><span class="note">柱上數字＝該小時每日平均班數（到場＋離場）</span></div>';
 
   // 明細
   html += "<h3>" + (groupBy === "flight" ? "航班班表" : "航點班表") + "</h3>";
@@ -6467,7 +6494,7 @@ function holdInit(){
   }
   pill();
   // 擴充功能在頁面載入時注入，稍候再確認一次
-  setTimeout(function(){ pill(); if(!HOLD.on) $("holdStatus").textContent = holdBridge() ? "尚未開始（已偵測到 ADS-B 橋接擴充功能）" : "尚未開始"; }, 800);
+  setTimeout(function(){ pill(); if(!HOLD.on && !RELAY.view) $("holdStatus").textContent = holdBridge() ? "尚未開始（已偵測到 ADS-B 橋接擴充功能）" : "尚未開始"; }, 800);
   $("btnHoldToggle").addEventListener("click", function(){ HOLD.on ? holdStop() : holdStart(); });
   $("holdApt").addEventListener("change", function(){ holdSave(); holdReset(); });
   function syncMode(){
@@ -6878,6 +6905,181 @@ function seatInit(){
     }, function(e){ $("autoLegsMsg").textContent = "⚠ " + alErr(e); });
   });
   setTimeout(alStatus, 3000); setInterval(alStatus, 60000);
+}
+
+
+/* =========================================================
+   分享給同事：Cloudflare 中繼
+   ─ 完整版：把公開資料（地圖航機、盤旋紀錄、TDX 到離）上傳到你自己的 Worker（不含 OpsLink 與任何金鑰）
+   ─ 分享版：網址帶 #relay=Worker網址&code=查看碼 時，直接讀中繼資料，不自己抓
+   ========================================================= */
+var RELAY = { view:false, lastLive:0, lastDb:0, dbSig:"", msg:"", liveT:0, dbT:0, busy:false, viewMsg:"" };
+function relayCfg(){
+  var c = {};
+  try{ c = JSON.parse(localStorage.getItem("relayCfg") || "{}") || {}; }catch(e){}
+  return { on: !!c.on, url: String(c.url || "").trim().replace(/\/+$/, ""), key: c.key || "", code: c.code || "", name: c.name || "AMP值班台",
+    every: +c.every || 120, from: c.from == null ? 6 : +c.from, to: c.to == null ? 24 : +c.to };
+}
+function relayInWin(c){ var h = new Date(Date.now() + 8*3600000).getUTCHours(); return c.from <= c.to ? (h >= c.from && h < c.to) : (h >= c.from || h < c.to); }
+function relayRound(x, d){ return x == null ? x : Math.round(x * d) / d; }
+function relayLiveSnap(c){
+  var now = Date.now(), routes = {};
+  var tracks = Object.keys(HOLD.tracks).map(function(k){
+    var t = HOLD.tracks[k], o = {};
+    Object.keys(t).forEach(function(f){ if(f !== "pts" && f.charAt(0) !== "_") o[f] = t[f]; });
+    o.pts = (t.pts || []).slice(-30).map(function(p){ return { t:p.t, lat:relayRound(p.lat, 1e4), lon:relayRound(p.lon, 1e4), trk:relayRound(p.trk, 10), alt:p.alt }; });
+    if(t.cs && ROUTES.cache[t.cs]) routes[t.cs] = ROUTES.cache[t.cs];
+    return o;
+  });
+  var metar = {};
+  Object.keys(METAR.cache || {}).forEach(function(k){ var m = METAR.cache[k]; if(m && (!m.t || now - m.t < 3*3600000)) metar[k] = m; });
+  return { v:1, t:now, name:c.name, okAt:HOLD.lastOk || 0, src:HOLD.lastSrc || "",
+    cfg:{ mode:$("holdMode").value, gal:$("holdGAl").value, apt:$("holdApt").value, r:$("holdRadius").value, al:$("holdAirline").value, only:$("holdOnlyHold").checked },
+    tracks:tracks, routes:routes, fix:FIXALL.items || [], fixT:FIXALL.t || 0, metar:metar,
+    hlog:(HLOG.list || []).slice(-300) };
+}
+function relayDbSnap(){
+  var cut = gsAddDays(twDate(), -2);
+  return packDB(DB.flights.filter(function(f){ return !f.date || f.date >= cut; }));
+}
+function relayPush(c, kind, obj){
+  return fetch(c.url + "/push?kind=" + kind, { method:"POST", headers:{ "X-Push-Key": c.key, "Content-Type":"text/plain;charset=utf-8" }, body: JSON.stringify(obj) })
+    .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ if(!r.ok) throw new Error(j.error || ("HTTP " + r.status)); return j; }); });
+}
+function relayTick(force){
+  if(LITE || RELAY.view || RELAY.busy) return;
+  var c = relayCfg();
+  if(!force && (!c.on || !relayInWin(c))){ relayPaint(); return; }
+  if(!c.url || !c.key){ RELAY.msg = "請填 Worker 網址與上傳密碼"; relayPaint(); return; }
+  var now = Date.now(), jobs = [];
+  var liveOk = HOLD.lastOk && now - HOLD.lastOk < 10*60000;
+  if(liveOk && (force || now - RELAY.lastLive >= c.every*1000 - 2000)) jobs.push("live");
+  var sig = DB.flights.length + "|" + ((DB.batches[DB.batches.length - 1] || {}).at || (DB.batches[DB.batches.length - 1] || {}).t || "");
+  if(DB.flights.length && (force || (sig !== RELAY.dbSig && now - RELAY.lastDb >= 30*60000) || now - RELAY.lastDb >= 3*3600000)) jobs.push("db");
+  if(!jobs.length){ if(force && !liveOk) RELAY.msg = "地圖還沒有資料：請先在航班地圖按「開始監看」"; relayPaint(); return; }
+  RELAY.busy = true;
+  jobs.reduce(function(p, kind){
+    return p.then(function(){
+      var obj = kind === "live" ? relayLiveSnap(c) : relayDbSnap();
+      return relayPush(c, kind, obj).then(function(j){
+        if(kind === "live") RELAY.lastLive = Date.now(); else { RELAY.lastDb = Date.now(); RELAY.dbSig = sig; }
+        RELAY.msg = "✓ 已上傳 " + fixHm(Date.now()) + "（" + (kind === "live" ? "地圖 " : "到離資料 ") + Math.round((j.size || 0)/1024) + " KB）";
+      });
+    });
+  }, Promise.resolve()).catch(function(e){
+    RELAY.msg = "⚠ 上傳失敗：" + e.message; if(!force){ RELAY.lastLive = Date.now(); }   // 失敗也等下一個間隔再試，避免狂打
+  }).then(function(){ RELAY.busy = false; relayPaint(); });
+}
+function relayLink(c){
+  var base = location.href.split("#")[0].replace(/[^\/]*$/, "") + "flight-share.html";
+  return base + "#relay=" + encodeURIComponent(c.url) + (c.code ? "&code=" + encodeURIComponent(c.code) : "");
+}
+function relayPaint(){
+  if(!$("relayMsg")) return;
+  var c = relayCfg();
+  $("relayMsg").textContent = !c.on ? "未啟用" : RELAY.msg || (relayInWin(c) ? "已啟用，等待下一次上傳" : "已啟用，目前不在上傳時段（" + pad2(c.from) + ":00–" + pad2(c.to) + ":00）");
+}
+function relayInit(){
+  if(LITE || !$("relayOn")) return;
+  var c = relayCfg();
+  $("relayOn").checked = c.on; $("relayUrl").value = c.url; $("relayKey").value = c.key; $("relayCode").value = c.code; $("relayName").value = c.name;
+  $("relayEvery").value = String(c.every); $("relayFrom").value = String(c.from); $("relayTo").value = String(c.to);
+  function save(){
+    var o = { on:$("relayOn").checked, url:$("relayUrl").value.trim(), key:$("relayKey").value, code:$("relayCode").value.trim(), name:$("relayName").value.trim(),
+      every:+$("relayEvery").value, from:+$("relayFrom").value, to:+$("relayTo").value };
+    if(o.url && !/^https:\/\//i.test(o.url)){ RELAY.msg = "⚠ Worker 網址要以 https:// 開頭"; relayPaint(); return; }
+    try{ localStorage.setItem("relayCfg", JSON.stringify(o)); }catch(e){}
+    RELAY.msg = ""; relayPaint();
+  }
+  ["relayOn","relayUrl","relayKey","relayCode","relayName","relayEvery","relayFrom","relayTo"].forEach(function(id){ $(id).addEventListener("change", save); });
+  $("btnRelayTest").addEventListener("click", function(){ save(); RELAY.msg = "上傳中…"; relayPaint(); relayTick(true); });
+  $("btnRelayLink").addEventListener("click", function(){
+    save(); var cc = relayCfg();
+    if(!cc.url){ RELAY.msg = "⚠ 請先填 Worker 網址"; relayPaint(); return; }
+    var link = relayLink(cc);
+    (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function(){ RELAY.msg = "✓ 已複製分享連結：" + link; relayPaint(); },
+      function(){ RELAY.msg = "分享連結：" + link; relayPaint(); });
+  });
+  relayPaint();
+  setInterval(function(){ relayTick(false); }, 20000);
+}
+
+/* ---------- 分享版：讀取中繼資料 ---------- */
+function relayViewCfg(){
+  var h = location.hash.replace(/^#/, ""), q = {};
+  h.split("&").forEach(function(kv){ var i = kv.indexOf("="); if(i > 0) q[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1)); });
+  if(q.relay && /^https:\/\//i.test(q.relay)){ try{ localStorage.setItem("relayView", JSON.stringify({ url:q.relay.replace(/\/+$/, ""), code:q.code || "" })); }catch(e){} }
+  var v = null; try{ v = JSON.parse(localStorage.getItem("relayView") || "null"); }catch(e){}
+  return v && v.url ? v : null;
+}
+function relayGet(v, kind, since){
+  return fetch(v.url + "/" + kind + "?code=" + encodeURIComponent(v.code || "") + "&since=" + (since || 0), { cache:"no-store" }).then(function(r){
+    if(r.status === 204) return null;
+    return r.json().catch(function(){ return {}; }).then(function(j){ if(!r.ok) throw new Error(j.error || ("HTTP " + r.status)); j.__t = +(r.headers.get("X-Relay-T") || 0); return j; });
+  });
+}
+function relayApplyLive(s){
+  var c = s.cfg || {};
+  if(c.mode) $("holdMode").value = c.mode;
+  if(c.gal != null) $("holdGAl").value = c.gal;
+  if(c.apt && HOLD_APT[c.apt]) $("holdApt").value = c.apt;
+  if(c.r) $("holdRadius").value = c.r;
+  if(c.al != null) $("holdAirline").value = c.al;
+  $("holdOnlyHold").checked = !!c.only;
+  var md = $("holdMode").value;
+  [].forEach.call(document.querySelectorAll("#tab-map .hold-g"), function(e){ e.hidden = md === "area"; });
+  [].forEach.call(document.querySelectorAll("#tab-map .hold-a"), function(e){ e.hidden = md === "airline"; });
+  var T = {};
+  (s.tracks || []).forEach(function(t){ if(t && t.hex) T[t.hex] = t; });
+  HOLD.tracks = T;
+  Object.keys(s.routes || {}).forEach(function(k){ ROUTES.cache[k] = s.routes[k]; });
+  FIXALL.items = s.fix || []; FIXALL.t = s.fixT || 0;
+  Object.keys(s.metar || {}).forEach(function(k){ METAR.cache[k] = s.metar[k]; });
+  HLOG.list = s.hlog || [];
+  HOLD.lastOk = s.okAt || s.t; HOLD.lastPollMs = 60000; HOLD.lastSrc = s.src || "";
+  try{ holdRender(); }catch(e){}
+  if($("holdStatus")) $("holdStatus").textContent = "中繼資料・" + fixHm(s.t) + " 更新" + (s.src ? "（分享者來源：" + s.src + "）" : "");
+}
+function relayViewPaint(){
+  var el = $("relayBanner"); if(!el) return;
+  el.innerHTML = "📡 資料來自 <b>" + esc(RELAY.name || "AMP值班台") + "</b> 的看板（中繼）・地圖更新 " + (RELAY.liveT ? fixHm(RELAY.liveT) : "—") +
+    "・到離資料 " + (RELAY.dbT ? fixHm(RELAY.dbT) : "—") + (RELAY.viewMsg ? '　<span style="color:var(--bad)">' + esc(RELAY.viewMsg) + "</span>" : "") +
+    (RELAY.liveT && Date.now() - RELAY.liveT > 15*60000 ? '　<span style="color:var(--bad)">（超過 15 分鐘沒有更新：分享者的看板可能沒開）</span>' : "");
+}
+function relayViewInit(){
+  if(!LITE) return false;
+  var v = relayViewCfg();
+  if(!v) return false;
+  RELAY.view = true;
+  // 中繼模式：資料都來自分享者，不存到這台電腦、不推播、不自己抓
+  saveFlightDB = function(){}; hlogSave = function(){}; tgCheck = function(){};
+  var bn = document.createElement("div");
+  bn.id = "relayBanner"; bn.className = "note";
+  bn.style.cssText = "margin:0 0 12px;padding:8px 12px;border-radius:10px;background:rgba(58,143,167,.1);border:1px solid rgba(58,143,167,.3)";
+  var nav = $("nav"); if(nav && nav.parentNode) nav.parentNode.insertBefore(bn, nav.nextSibling);
+  if($("liteTdx")) $("liteTdx").hidden = true;
+  if($("btnHoldToggle")) $("btnHoldToggle").hidden = true;
+  if($("btnHoldSettings")) $("btnHoldSettings").hidden = true;
+  ["holdMode","holdGAl","holdApt","holdRadius","holdAirline","holdOnlyHold"].forEach(function(id){ if($(id)) $(id).disabled = true; });
+  if($("holdStatus")) $("holdStatus").textContent = "中繼資料";
+  function live(){
+    relayGet(v, "live", RELAY.liveT).then(function(s){
+      if(s){ RELAY.liveT = s.__t || s.t; RELAY.name = s.name || RELAY.name; relayApplyLive(s); }
+      RELAY.viewMsg = ""; relayViewPaint();
+    }, function(e){ RELAY.viewMsg = "讀取失敗：" + e.message; relayViewPaint(); });
+  }
+  function db(){
+    relayGet(v, "db", RELAY.dbT).then(function(s){
+      if(s){ RELAY.dbT = s.__t || Date.now(); var d = unpackDB(s); if(d){ DB = d; refreshAll(); } }
+      relayViewPaint();
+    }, function(e){ RELAY.viewMsg = "讀取失敗：" + e.message; relayViewPaint(); });
+  }
+  relayViewPaint(); live(); db();
+  setInterval(function(){ if(!document.hidden) live(); }, 60000);
+  setInterval(function(){ if(!document.hidden) db(); }, 5*60000);
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden){ live(); } });
+  setInterval(relayViewPaint, 30000);
+  return true;
 }
 
 function switchTab(name){
@@ -7994,6 +8196,7 @@ function shift(hhmm, mins){
       boardSec.insertBefore(det, boardSec.firstChild);
       det.id = "liteTdx";
     }
+    var hr = $("hsRelay"); if(hr) hr.remove();   // 上傳設定只在完整版
     document.title = "即時航班看板（分享版）";
     var bt = $("buildTag"); if(bt) bt.textContent += "・分享版";
   }
@@ -8226,7 +8429,9 @@ function shift(hhmm, mins){
 
   switchTab(LITE ? "board" : "tdx");
   refreshAll();
-  if(LITE){   // 分享版：有金鑰就自動開始抓 TDX，沒有就展開設定區
+  relayInit();
+  if(LITE && relayViewInit()){ /* 分享版＋中繼：資料全部來自分享者，不自己抓 TDX */ }
+  else if(LITE){   // 分享版：有金鑰就自動開始抓 TDX，沒有就展開設定區
     var hasKey = $("tdxClientId") && $("tdxClientId").value.trim() && $("tdxClientSecret").value.trim();
     if(hasKey) startTDXAuto(); else if($("liteTdx")) $("liteTdx").open = true;
     if($("liteTdxNote")) $("liteTdxNote").textContent = hasKey ? "已設定，每 5 分鐘自動更新" : "尚未設定";
