@@ -4456,6 +4456,35 @@
   }
   let OPS = null;                 // {flights:[...], meta:{...}}
   let opsDepFilter = 'ALL';       // 'ALL' or a station code
+  let opsCountryFilter = 'ALL';   // 'ALL' or a country name
+  const OPS_COUNTRIES = [
+    {name:'台灣',     stations:['TPE','RMQ','KHH','TSA']},
+    {name:'日本',     stations:['NRT','HND','KIX','FUK','OKA','NGO','SDJ','CTS','UKB','KMJ','HKD','SHI','TAK','KOJ','AOJ']},
+    {name:'韓國',     stations:['PUS','ICN','GMP']},
+    {name:'港澳',     stations:['HKG','MFM']},
+    {name:'越南',     stations:['SGN','HAN','DAD','PQC']},
+    {name:'泰國',     stations:['BKK','CNX']},
+    {name:'菲律賓',   stations:['MNL','CEB','CRK']},
+    {name:'新加坡',   stations:['SIN']},
+    {name:'馬來西亞', stations:['KUL','PEN']},
+    {name:'印尼',     stations:['CGK','DPS']},
+    {name:'美國',     stations:['LAX','SFO','SEA','ONT','PHX']},
+    {name:'捷克',     stations:['PRG']}
+  ];
+  function opsCountryOf(sta){
+    for (var i=0;i<OPS_COUNTRIES.length;i++){ if (OPS_COUNTRIES[i].stations.indexOf(sta)>=0) return OPS_COUNTRIES[i].name; }
+    return '其他';
+  }
+  function opsDepMatch(f){
+    if (opsDepFilter !== 'ALL') return f.dep === opsDepFilter;
+    if (opsCountryFilter !== 'ALL') return opsCountryOf(f.dep) === opsCountryFilter;
+    return true;
+  }
+  function opsDepLabel(){
+    if (opsDepFilter !== 'ALL') return opsDepFilter;
+    if (opsCountryFilter !== 'ALL') return opsCountryFilter;
+    return '';
+  }
   let opsMetricFilter = 'cabinClean';
   let opsMonthFilter = 'all';     // 'all' or 0-11 (month index)
 
@@ -4526,7 +4555,7 @@
   function opsFilteredFlights(){
     if (!OPS || !OPS.flights) return [];
     return OPS.flights.filter(function(f){
-      if (opsDepFilter !== 'ALL' && f.dep !== opsDepFilter) return false;
+      if (!opsDepMatch(f)) return false;
       if (opsMonthFilter !== 'all' && f.monthIdx !== opsMonthFilter) return false;
       return true;
     });
@@ -4570,20 +4599,48 @@
       pool = pool.filter(function(f){ return f.monthIdx === opsMonthFilter; });
     }
     pool.forEach(function(f){ if (f.dep) counts[f.dep] = (counts[f.dep]||0)+1; });
-    const deps = Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]; });
-    let html = '<button class="pill'+(opsDepFilter==='ALL'?' active':'')+'" data-opsdep="ALL">'+
-      (currentLang==='en'?'All':(currentLang==='ja'?'すべて':'全部'))+'</button>';
-    deps.forEach(function(d){
-      html += '<button class="pill'+(opsDepFilter===d?' active':'')+'" data-opsdep="'+d+'">'+d+' ('+counts[d]+')</button>';
+    // Aggregate by country
+    const cCounts = {}, cStations = {};
+    Object.keys(counts).forEach(function(d){
+      const c = opsCountryOf(d);
+      cCounts[c] = (cCounts[c]||0) + counts[d];
+      (cStations[c] = cStations[c] || []).push(d);
     });
+    const order = OPS_COUNTRIES.map(function(c){return c.name;}).concat(['其他']);
+    const countries = order.filter(function(c){ return cCounts[c]; });
+    const allTxt = (currentLang==='en'?'All':(currentLang==='ja'?'すべて':'全部'));
+    let html = '<div class="pill-row" style="margin-bottom:0;">';
+    html += '<button class="pill'+(opsCountryFilter==='ALL'?' active':'')+'" data-opscountry="ALL">'+allTxt+'</button>';
+    countries.forEach(function(c){
+      html += '<button class="pill'+(opsCountryFilter===c?' active':'')+'" data-opscountry="'+c+'">'+c+' ('+cCounts[c]+')</button>';
+    });
+    html += '</div>';
+    if (opsCountryFilter !== 'ALL' && cStations[opsCountryFilter]){
+      const sts = cStations[opsCountryFilter].slice().sort(function(a,b){ return counts[b]-counts[a]; });
+      html += '<div class="pill-row" style="margin:10px 0 0;padding:10px 12px;background:var(--cream-2);border-radius:10px;">';
+      html += '<span style="font-size:12.5px;font-weight:700;color:var(--muted);align-self:center;margin-right:2px;">'+opsCountryFilter+' 航點：</span>';
+      html += '<button class="pill'+(opsDepFilter==='ALL'?' active':'')+'" data-opsdep="ALL" style="background:var(--paper);">'+allTxt+' '+opsCountryFilter+'</button>';
+      sts.forEach(function(d){
+        html += '<button class="pill'+(opsDepFilter===d?' active':'')+'" data-opsdep="'+d+'"'+(opsDepFilter===d?'':' style="background:var(--paper);"')+'>'+d+' ('+counts[d]+')</button>';
+      });
+      html += '</div>';
+    }
     bar.innerHTML = html;
+    bar.style.display = 'block';
     // Event delegation: bind ONCE on the bar container
     if (!bar._depBound){
       bar._depBound = true;
       bar.addEventListener('click', function(e){
         var pill = e.target.closest('.pill');
         if (!pill) return;
-        opsDepFilter = pill.getAttribute('data-opsdep');
+        var c = pill.getAttribute('data-opscountry');
+        if (c !== null){
+          // Clicking the active country again collapses it back to all
+          opsCountryFilter = (c === opsCountryFilter && c !== 'ALL') ? 'ALL' : c;
+          opsDepFilter = 'ALL';
+        } else {
+          opsDepFilter = pill.getAttribute('data-opsdep');
+        }
         renderOpsAfterFilter();
       });
     }
@@ -4617,7 +4674,7 @@
     // Update summary note with current filters
     const noteEl = document.getElementById('opsSummaryNote');
     if (noteEl){
-      const depLabel = opsDepFilter === 'ALL' ? '' : opsDepFilter;
+      const depLabel = opsDepLabel();
       const mLabel = opsMonthFilter === 'all' ? '全年' : MONTHS_ZH[opsMonthFilter];
       const typeLabel = bidTypeFilter === 'ALL' ? '' : bidTypeFilter;
       noteEl.textContent = [mLabel, depLabel, typeLabel].filter(Boolean).join('　') + '　共 ' + flights.length + ' 班';
@@ -4693,7 +4750,7 @@
     });
 
     if (noteEl){
-      var depLabel = opsDepFilter === 'ALL' ? '' : opsDepFilter;
+      var depLabel = opsDepLabel();
       var mLabel = opsMonthFilter === 'all' ? '全年' : MONTHS_ZH[opsMonthFilter];
       var typeLabel = bidTypeFilter === 'ALL' ? '' : bidTypeFilter;
       noteEl.textContent = [mLabel, depLabel, typeLabel].filter(Boolean).join('\u3000');
@@ -4793,7 +4850,7 @@
     const delayRate = totalValid > 0 ? (delayedCount / totalValid * 100).toFixed(1) : null;
 
     if (noteEl){
-      const depLabel = opsDepFilter === 'ALL' ? '' : opsDepFilter;
+      const depLabel = opsDepLabel();
       const mLabel = opsMonthFilter === 'all' ? '全年' : MONTHS_ZH[opsMonthFilter];
       const typeLabel = bidTypeFilter === 'ALL' ? '' : bidTypeFilter;
       noteEl.textContent = [mLabel, depLabel, typeLabel].filter(Boolean).join('\u3000') + '\u3000有效樣本 ' + totalValid + ' 班';
@@ -4857,8 +4914,8 @@
 
   function renderOpsPhaseChart(){
     const flights = opsFilteredFlights();
-    document.getElementById('opsChartTag').textContent = (opsDepFilter==='ALL'?
-      (currentLang==='en'?'all departures':(currentLang==='ja'?'全出発':'全出發站')) : opsDepFilter)+
+    document.getElementById('opsChartTag').textContent = (opsDepLabel()===''?
+      (currentLang==='en'?'all departures':(currentLang==='ja'?'全出発':'全出發站')) : opsDepLabel())+
       ' · '+fmt(flights.length)+(currentLang==='en'?' flights':(currentLang==='ja'?' 便':' 班'));
     const labels = OPS_METRICS.map(function(m){ return opsMetricLabel(m.key); });
     const avgData = OPS_METRICS.map(function(m){ const s = opsStats(flights, m.key); return s.avg!==null? Math.round(s.avg):0; });
@@ -4958,7 +5015,7 @@
   function bidValidFlights(){
     if (!OPS || !OPS.flights) return [];
     return OPS.flights.filter(function(f){
-      if (opsDepFilter !== 'ALL' && f.dep !== opsDepFilter) return false;
+      if (!opsDepMatch(f)) return false;
       if (opsMonthFilter !== 'all' && f.monthIdx !== opsMonthFilter) return false;
       const v = f.blockInToDoor;
       return v !== null && v !== undefined && v > 0 && !(f.outliers && f.outliers['blockInToDoor']);
@@ -5060,7 +5117,7 @@
     const allFlights = bidValidFlights();
     const metaEl = document.getElementById('bidMeta');
     if (metaEl){
-      const depLabel = opsDepFilter === 'ALL' ? '全出發站' : ('出發站：' + opsDepFilter);
+      const depLabel = opsDepLabel()==='' ? '全出發站' : ('出發站：' + opsDepLabel());
       metaEl.textContent = depLabel + '　有效樣本 ' + allFlights.length + ' 班（已排除負值及異常值）';
     }
   }
@@ -5276,7 +5333,7 @@
           return;
         }
         OPS = parsed;
-        opsDepFilter = 'ALL';
+        opsDepFilter = 'ALL'; opsCountryFilter = 'ALL';
         opsMonthFilter = 'all';
         renderOps();
         showBanner('航機作業資料已更新：'+file.name+'（共 '+parsed.flights.length+' 班）', false);
@@ -5544,7 +5601,7 @@
             return;
           }
           OPS = parsed;
-          opsDepFilter = 'ALL';
+          opsDepFilter = 'ALL'; opsCountryFilter = 'ALL';
           opsMonthFilter = 'all';
           renderOps();
           ohtStatus.textContent = '✅ 已更新：' + file.name + '（共 ' + parsed.flights.length + ' 班）';
