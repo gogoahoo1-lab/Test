@@ -544,7 +544,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-07a</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-08a</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -6475,6 +6475,7 @@ function holdTick(){
 function holdStart(){
   holdSave();
   HOLD.on = true;
+  try{ localStorage.setItem("holdOn", "1"); }catch(e){}   // 記住「監看中」：下次開啟看板自動繼續
   $("btnHoldToggle").textContent = "停止監看";
   $("holdStatus").textContent = "連線中…";
   if($("holdNotify").checked && window.Notification && Notification.permission === "default"){
@@ -6484,6 +6485,7 @@ function holdStart(){
 }
 function holdStop(){
   HOLD.on = false;
+  try{ localStorage.setItem("holdOn", "0"); }catch(e){}
   clearTimeout(HOLD.timer); HOLD.timer = null;
   $("btnHoldToggle").textContent = "開始監看";
   $("holdStatus").textContent = "已停止";
@@ -6504,6 +6506,9 @@ function holdInit(){
   pill();
   // 擴充功能在頁面載入時注入，稍候再確認一次
   setTimeout(function(){ pill(); if(!HOLD.on && !RELAY.view) $("holdStatus").textContent = holdBridge() ? "尚未開始（已偵測到 ADS-B 橋接擴充功能）" : "尚未開始"; }, 800);
+  // 上次是「監看中」就自動繼續（等擴充功能注入完成再開始）
+  var wasOn = false; try{ wasOn = localStorage.getItem("holdOn") === "1"; }catch(e){}
+  if(wasOn) setTimeout(function(){ if(!HOLD.on && !RELAY.view) holdStart(); }, 1500);
   $("btnHoldToggle").addEventListener("click", function(){ HOLD.on ? holdStop() : holdStart(); });
   $("holdApt").addEventListener("change", function(){ holdSave(); holdReset(); });
   function syncMode(){
@@ -8242,8 +8247,8 @@ function shift(hhmm, mins){
 
   if($("btnTdxNow")){
     $("btnTdxNow").addEventListener("click", updateTDX);
-    $("btnTdxAuto").addEventListener("click", startTDXAuto);
-    $("btnTdxStop").addEventListener("click", stopTDXAuto);
+    $("btnTdxAuto").addEventListener("click", function(){ try{ localStorage.setItem("tdxAutoOn", "1"); }catch(e){} startTDXAuto(); });
+    $("btnTdxStop").addEventListener("click", function(){ try{ localStorage.setItem("tdxAutoOn", "0"); }catch(e){} stopTDXAuto(); });
     $("tdxDate").value = twDate();
     try{
       var remember = localStorage.getItem(TDX_REMEMBER_KEY);
@@ -8439,6 +8444,9 @@ function shift(hhmm, mins){
   switchTab(LITE ? "board" : "tdx");
   refreshAll();
   relayInit();
+  // 完整版：上次有開「TDX 自動更新」就自動繼續
+  if(!LITE){ var tdxOn = false; try{ tdxOn = localStorage.getItem("tdxAutoOn") === "1"; }catch(e){}
+    if(tdxOn && $("tdxClientId") && $("tdxClientId").value.trim() && $("tdxClientSecret").value.trim()) setTimeout(startTDXAuto, 1000); }
   if(LITE && relayViewInit()){ /* 分享版＋中繼：資料全部來自分享者，不自己抓 TDX */ }
   else if(LITE){   // 分享版：有金鑰就自動開始抓 TDX，沒有就展開設定區
     var hasKey = $("tdxClientId") && $("tdxClientId").value.trim() && $("tdxClientSecret").value.trim();
