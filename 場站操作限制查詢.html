@@ -308,6 +308,10 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
 .sx-bar input{background:var(--panel2);border:1px solid var(--line);color:var(--text);font:inherit;font-size:16px;padding:5px 10px;border-radius:8px;width:150px}
 .sx-btn{appearance:none;border:1px solid var(--line);background:var(--raise);color:var(--text);font:inherit;font-size:13px;padding:6px 13px;border-radius:9px;cursor:pointer}
 .sx-btn:hover{border-color:rgba(220,192,134,.45);color:var(--gold)}
+.sx-freq{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--muted);margin:-6px 0 14px;padding:0 4px}
+.sx-freq b{color:var(--gold);font-weight:700}
+.sx-freq span b{color:var(--text);font-weight:700}
+.sx-freq em{flex-basis:100%;font-style:normal;color:var(--warn)}
 .sx-bar .sx-btn.ghost{margin-left:auto;background:transparent;color:var(--muted)}
 .sx-dir{display:flex;gap:6px;margin-bottom:12px}
 .sx-dir button{flex:1 1 0;appearance:none;border:1px solid var(--line);background:var(--panel);color:var(--muted);font:inherit;font-size:15px;font-weight:700;padding:10px 12px;border-radius:11px;cursor:pointer}
@@ -451,6 +455,10 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
 <!-- ===== 空位查詢 ===== -->
 <section id="p-seat" role="tabpanel" aria-labelledby="t-seat" class="hidden">
   <div class="sx-bar" id="sxBar">讀取中…</div>
+  <div class="sx-freq">
+    <span><b>更新頻率</b>　約每 4 小時更新一次；停在本頁時每 5 分鐘自動檢查，也可按「重新讀取」。</span>
+    <em>⚠ 此為定時更新的訂位資料，非最即時資訊，僅供參考。</em>
+  </div>
   <div id="sxMain" hidden>
     <div class="sx-dir" id="sxDir"></div>
     <div class="sx-f"><span>日期</span><div class="sx-chips" id="sxDates"></div></div>
@@ -4078,7 +4086,7 @@ current = DATA.stations.find(s=>s.code==="NRT") || DATA.stations[0];
 renderList(); renderDetail(); window.scrollTo({top:0});
 </script>
 <script>
-/* 空位查詢：讀取 AMP值班台 看板上傳到 Cloudflare 中繼的 OpsLink 空位清單（需查看碼） */
+/* 空位查詢：讀取 AMP值班台 看板上傳到 Cloudflare 中繼的空位清單（需查看碼） */
 (function(){
   var RELAY_URL = "https://flight-relay.gogoahoo.workers.dev";
   var SRC_NAME = "AMP值班台";
@@ -4153,7 +4161,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
   function hmDur(m){ return Math.floor(m/60) + "h" + pad2(m % 60) + "m"; }
   function clockOf(ms){ return ms ? new Intl.DateTimeFormat("en-GB", { timeZone:"Asia/Taipei", hour:"2-digit", minute:"2-digit", hour12:false }).format(new Date(ms)) : "—"; }
 
-  /* ---------- 解析 OpsLink 清單 ---------- */
+  /* ---------- 解析空位清單 ---------- */
   function seatTime(dm, hm, utc){
     var m = /^(\d{1,2})([A-Za-z]{3})$/.exec(dm), t = /^(\d{1,2}):(\d{2})$/.exec(hm);
     if(!m || !t) return null;
@@ -4374,7 +4382,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     }
     var stale = S.t && Date.now() - S.t > 6*3600000;
     el.innerHTML = '<span>📡 空位清單來自 <b>' + SRC_NAME + "</b>" +
-      (S.t ? "・系統清單 " + dayHm(S.t) + " 更新" + (stale ? '<span class="err">（超過 6 小時未更新）</span>' : "") : "") +
+      (S.t ? "・系統清單 " + dayHm(S.t) + " 更新" + (stale ? '<span class="err">（超過 6 小時未更新）</span>' : "・預計下次約 " + dayHm(S.t + 4*3600000)) : "") +
       (R.busy ? "・讀取中…" : "") + (R.err ? '・<span class="err">' + esc(R.err) + "</span>" : "") + "</span>" +
       '<button class="sx-btn ghost" id="sxReload" type="button">重新讀取</button>';
     $("sxReload").onclick = function(){ load(true); };
