@@ -456,7 +456,7 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
 <section id="p-seat" role="tabpanel" aria-labelledby="t-seat" class="hidden">
   <div class="sx-bar" id="sxBar">讀取中…</div>
   <div class="sx-freq">
-    <span><b>更新頻率</b>　約每 4 小時更新一次；停在本頁時每 5 分鐘自動檢查，也可按「重新讀取」。</span>
+    <span><b>更新頻率</b>　約每 3 小時更新一次；停在本頁時每 5 分鐘自動檢查，也可按「重新讀取」。</span>
     <em>⚠ 此為定時更新的訂位資料，非最即時資訊，僅供參考。</em>
   </div>
   <div id="sxMain" hidden>
@@ -4380,9 +4380,9 @@ renderList(); renderDetail(); window.scrollTo({top:0});
       $("sxCodeIn").onkeydown = function(e){ if(e.key === "Enter") $("sxCodeOk").click(); };
       return;
     }
-    var stale = S.t && Date.now() - S.t > 6*3600000;
+    var stale = S.t && Date.now() - S.t > 5*3600000;
     el.innerHTML = '<span>📡 空位清單來自 <b>' + SRC_NAME + "</b>" +
-      (S.t ? "・系統清單 " + dayHm(S.t) + " 更新" + (stale ? '<span class="err">（超過 6 小時未更新）</span>' : "・預計下次約 " + dayHm(S.t + 4*3600000)) : "") +
+      (S.t ? "・系統清單 " + dayHm(S.t) + " 更新" + (stale ? '<span class="err">（超過 5 小時未更新）</span>' : "・預計下次約 " + dayHm(S.t + 3*3600000)) : "") +
       (R.busy ? "・讀取中…" : "") + (R.err ? '・<span class="err">' + esc(R.err) + "</span>" : "") + "</span>" +
       '<button class="sx-btn ghost" id="sxReload" type="button">重新讀取</button>';
     $("sxReload").onclick = function(){ load(true); };
