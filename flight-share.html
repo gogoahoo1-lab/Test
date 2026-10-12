@@ -544,7 +544,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-12a</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-12b</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -1359,6 +1359,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
 /* 分享版開關：true 時只保留到離看板、班表分析、航班地圖、空位查詢（空位只能手動貼上，不連 OpsLink）。由完整版自動產生，請勿手動修改 */
 var LITE = true;
 var LITE_TABS = ["board","sched","map","seat"];
+var RELAY_DEFAULT_URL = "https://flight-relay.gogoahoo.workers.dev";   // 分享版預設的中繼網址（由產生分享版時自動填入，同事打開就直接讀資料，不用設定）
 /* =========================================================
    狀態
    ========================================================= */
@@ -6950,12 +6951,11 @@ function relayLiveSnap(c){
   Object.keys(METAR.cache || {}).forEach(function(k){ var m = METAR.cache[k]; if(m && (!m.t || now - m.t < 3*3600000)) metar[k] = m; });
   return { v:1, t:now, name:c.name, okAt:HOLD.lastOk || 0, src:HOLD.lastSrc || "",
     cfg:{ mode:$("holdMode").value, gal:$("holdGAl").value, apt:$("holdApt").value, r:$("holdRadius").value, al:$("holdAirline").value, only:$("holdOnlyHold").checked },
-    tracks:tracks, routes:routes, fix:FIXALL.items || [], fixT:FIXALL.t || 0, metar:metar,
+    tracks:tracks, routes:routes, fix:FIXALL.items || [], fixT:FIXALL.t || 0, metar:metar, sched:SCHED.byFlt || {},
     hlog:(HLOG.list || []).slice(-300) };
 }
 function relayDbSnap(c){
-  var cut = gsAddDays(twDate(), -2);
-  var o = packDB(DB.flights.filter(function(f){ return !f.date || f.date >= cut; }));
+  var o = packDB(flightsToKeep());   // 和管理員看板保留的天數相同（班表分析、時段分布才會一致）
   // 選用：空位查詢清單（OpsLink），只在勾選「也分享空位」時才帶上
   if(c && c.seat && $("seatRaw") && $("seatRaw").value.trim()) o.seat = { text: $("seatRaw").value, utc: !!($("seatUtc") && $("seatUtc").checked), t: SEAT.feedT || Date.now() };
   return o;
@@ -7030,6 +7030,7 @@ function relayViewCfg(){
   h.split("&").forEach(function(kv){ var i = kv.indexOf("="); if(i > 0) q[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1)); });
   if(q.relay && /^https:\/\//i.test(q.relay)){ try{ localStorage.setItem("relayView", JSON.stringify({ url:q.relay.replace(/\/+$/, ""), code:q.code || "" })); }catch(e){} }
   var v = null; try{ v = JSON.parse(localStorage.getItem("relayView") || "null"); }catch(e){}
+  if((!v || !v.url) && RELAY_DEFAULT_URL) v = { url: RELAY_DEFAULT_URL, code: "" };   // 沒有連結參數時用內建的中繼網址
   return v && v.url ? v : null;
 }
 function relayGet(v, kind, since){
@@ -7056,6 +7057,7 @@ function relayApplyLive(s){
   FIXALL.items = s.fix || []; FIXALL.t = s.fixT || 0;
   Object.keys(s.metar || {}).forEach(function(k){ METAR.cache[k] = s.metar[k]; });
   HLOG.list = s.hlog || [];
+  if(s.sched) SCHED.byFlt = s.sched;   // AirLabs 時刻表（台灣視角的 STD／STA 備援）
   HOLD.lastOk = s.okAt || s.t; HOLD.lastPollMs = 60000; HOLD.lastSrc = s.src || "";
   try{ holdRender(); }catch(e){}
   if($("holdStatus")) $("holdStatus").textContent = "中繼資料・" + fixHm(s.t) + " 更新" + (s.src ? "（分享者來源：" + s.src + "）" : "");
@@ -7079,6 +7081,16 @@ function relayApplySeat(seat){
 }
 function relayViewPaint(){
   var el = $("relayBanner"); if(!el) return;
+  if(RELAY.needCode){
+    el.innerHTML = '🔒 請輸入查看碼（向 ' + esc(RELAY.name || "AMP值班台") + ' 索取，只要輸入一次）：<input id="relayCodeIn" type="text" style="width:140px;margin:0 6px;padding:4px 8px;border-radius:6px;border:1px solid var(--line)"> <button class="btn" id="relayCodeOk" type="button">確定</button>' +
+      (RELAY.viewMsg ? ' <span style="color:var(--bad)">' + esc(RELAY.viewMsg) + "</span>" : "");
+    $("relayCodeOk").onclick = function(){
+      var v = relayViewCfg() || {}; v.code = $("relayCodeIn").value.trim();
+      try{ localStorage.setItem("relayView", JSON.stringify({ url: v.url, code: v.code })); }catch(e){}
+      RELAY.needCode = false; RELAY.viewMsg = ""; RELAY.liveT = 0; RELAY.dbT = 0; if(RELAY.reload) RELAY.reload();
+    };
+    return;
+  }
   el.innerHTML = "📡 資料來自 <b>" + esc(RELAY.name || "AMP值班台") + "</b> 的看板（中繼）・地圖更新 " + (RELAY.liveT ? fixHm(RELAY.liveT) : "—") +
     "・到離資料 " + (RELAY.dbT ? fixHm(RELAY.dbT) : "—") + (RELAY.viewMsg ? '　<span style="color:var(--bad)">' + esc(RELAY.viewMsg) + "</span>" : "") +
     (RELAY.liveT && Date.now() - RELAY.liveT > 15*60000 ? '　<span style="color:var(--bad)">（超過 15 分鐘沒有更新：分享者的看板可能沒開）</span>' : "");
@@ -7099,18 +7111,23 @@ function relayViewInit(){
   if($("btnHoldSettings")) $("btnHoldSettings").hidden = true;
   ["holdMode","holdGAl","holdApt","holdRadius","holdAirline","holdOnlyHold"].forEach(function(id){ if($(id)) $(id).disabled = true; });
   if($("holdStatus")) $("holdStatus").textContent = "中繼資料";
+  function cfgNow(){ return relayViewCfg() || v; }
+  function onErr(e){ if(/查看碼/.test(e.message)){ RELAY.needCode = true; RELAY.viewMsg = v.code ? "查看碼不正確" : ""; } else RELAY.viewMsg = "讀取失敗：" + e.message; relayViewPaint(); }
   function live(){
+    v = cfgNow();
     relayGet(v, "live", RELAY.liveT).then(function(s){
       if(s){ RELAY.liveT = s.__t || s.t; RELAY.name = s.name || RELAY.name; relayApplyLive(s); }
-      RELAY.viewMsg = ""; relayViewPaint();
-    }, function(e){ RELAY.viewMsg = "讀取失敗：" + e.message; relayViewPaint(); });
+      RELAY.viewMsg = ""; RELAY.needCode = false; relayViewPaint();
+    }, onErr);
   }
   function db(){
+    v = cfgNow();
     relayGet(v, "db", RELAY.dbT).then(function(s){
       if(s){ RELAY.dbT = s.__t || Date.now(); var d = unpackDB(s); if(d){ DB = d; refreshAll(); } relayApplySeat(s.seat); }
       relayViewPaint();
-    }, function(e){ RELAY.viewMsg = "讀取失敗：" + e.message; relayViewPaint(); });
+    }, onErr);
   }
+  RELAY.reload = function(){ live(); db(); };
   relayViewPaint(); live(); db();
   setInterval(function(){ if(!document.hidden) live(); }, 60000);
   setInterval(function(){ if(!document.hidden) db(); }, 5*60000);
