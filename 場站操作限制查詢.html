@@ -418,7 +418,19 @@ dialog.sr::backdrop{background:rgba(2,6,12,.72);backdrop-filter:blur(3px)}
 .srsec{margin-top:16px}
 .srsec h5{margin:0 0 8px;font-size:12.5px;color:var(--muted);font-weight:600;display:flex;gap:10px;align-items:center}
 .srsec h5::after{content:"";flex:1;height:1px;background:var(--line2)}
+.srsec h5 mark{background:var(--gold);color:#15202b;font-size:15px;font-weight:800;padding:4px 12px;border-radius:8px;letter-spacing:.04em;box-shadow:0 0 0 3px rgba(220,192,134,.22)}
+.srsec h5 small{font-size:12px;color:var(--gold);font-weight:600}
+.srsec h5:has(mark)::after{background:rgba(220,192,134,.45)}
 .srsum{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--no);border-radius:12px;padding:12px 15px}
+.srtype{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:9px}
+.srtype button{appearance:none;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:13px;padding:5px 12px;border-radius:999px;cursor:pointer}
+.srtype button:hover{color:var(--text);border-color:rgba(240,102,92,.5)}
+.srtype button[aria-pressed="true"]{background:var(--no);border-color:var(--no);color:#fff;font-weight:700}
+.srtime{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.srtime label{font-size:12.5px;color:var(--muted)}
+.srtime input{background:var(--panel2);border:1px solid var(--line);color:var(--text);font:inherit;font-size:16px;padding:6px 10px;border-radius:9px}
+.srtime input::-webkit-calendar-picker-indicator{filter:invert(.7)}
+#srTimeHint{font-size:12px;color:var(--gold)}
 .srsum .srt{font-size:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .srsum .srt b{color:var(--gold);letter-spacing:.03em}
 .srnote{font-size:12.8px;color:var(--muted);white-space:pre-line;margin:6px 0 0}
@@ -560,15 +572,23 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
     <div class="srform">
       <div class="f stn"><label for="srStn">事發場站（出發站）</label><input id="srStn" list="codes" maxlength="4" autocomplete="off" placeholder="NRT"></div>
       <div class="f"><label for="srFlt">航班</label><input id="srFlt" list="srFlts" autocomplete="off" placeholder="JX800"></div>
-      <div class="f"><label for="srType">狀況</label>
-        <select id="srType"><option value="DIV">轉降</option><option value="DLY">延誤</option><option value="CNL">取消</option><option value="RTB">回航</option><option value="AOG">AOG 地停待修</option></select></div>
-      <div class="f"><label for="srTime">事件時間（當地）</label><input id="srTime" type="time"></div>
       <div class="f stn"><label for="srDst">旅客目的地</label><input id="srDst" list="codes" maxlength="4" autocomplete="off" placeholder="自動"></div>
       <div class="f"><label for="srPax">受影響人數</label><input id="srPax" inputmode="numeric" autocomplete="off" placeholder="自動帶入"></div>
       <div class="f"><label for="srWin">替代航班範圍</label>
         <select id="srWin"><option value="12">12 小時內</option><option value="24" selected>24 小時內</option><option value="48">48 小時內</option></select></div>
     </div>
     <div class="srquick" id="srQuick"></div>
+    <input type="hidden" id="srType" value="DIV">
+    <div id="srOut1"></div>
+    <section class="srsec"><h5><mark>宵禁與剩餘裕度</mark></h5>
+      <div class="srtime">
+        <label for="srTime">預計起降時間（當地）</label>
+        <input id="srTime" type="time">
+        <button class="sx-btn" id="srNow" type="button">現在</button>
+        <span id="srTimeHint"></span>
+      </div>
+      <div id="srCf"></div>
+    </section>
     <div id="srOut"></div>
   </div>
   <div class="srfoot">
@@ -4543,7 +4563,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     var stale = S.t && Date.now() - S.t > 5*3600000;
     el.innerHTML = '<span>📡 空位清單來自 <b>' + SRC_NAME + "</b>" +
       (S.t ? "・系統清單 " + dayHm(S.t) + " 更新" + (stale ? '<span class="err">（超過 5 小時未更新）</span>' : "・預計下次約 " + dayHm(S.t + 3*3600000)) : "") +
-      (R.busy ? "・讀取中…" : "") + (R.err ? '・<span class="err">' + esc(R.err) + "</span>" : "") + "</span>" +
+      (R.cached ? '・<span class="err">連線失敗，顯示上次快取</span>' : "") + (R.busy ? "・讀取中…" : "") + (R.err ? '・<span class="err">' + esc(R.err) + "</span>" : "") + "</span>" +
       '<button class="sx-btn ghost" id="sxReload" type="button">重新讀取</button>';
     $("sxReload").onclick = function(){ load(true); };
   }
@@ -4565,7 +4585,8 @@ renderList(); renderDetail(); window.scrollTo({top:0});
         tdxIndex(j); airsIndex(j);
         if(j.seat && j.seat.text){
           var p = parse(j.seat.text, !!j.seat.utc);
-          S.rows = p.rows; S.legs = p.legs; S.t = j.seat.t || R.t;
+          S.rows = p.rows; S.legs = p.legs; S.t = j.seat.t || R.t; R.cached = false;
+          saveCache(j.seat.text, !!j.seat.utc, S.t, p.legs);
           if(!p.rows.length) R.err = "清單內容看不懂";
         } else {
           S.rows = []; S.legs = [];
@@ -4573,7 +4594,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
         }
         render();
       }
-    }, function(e){ R.err = "讀取失敗：" + (e && e.message || e); }).then(function(){ R.busy = false; bar(); });
+    }, function(e){ R.err = "讀取失敗：" + (e && e.message || e); if(useCache()) render(); }).then(function(){ R.busy = false; bar(); });
     return R.p;
   }
   function onShow(){ load(false); }
@@ -4581,6 +4602,27 @@ renderList(); renderDetail(); window.scrollTo({top:0});
   if(tb) tb.addEventListener("click", onShow);
   setInterval(function(){ if(!document.hidden && !$("p-seat").classList.contains("hidden")) load(false); }, 5*60000);
   document.addEventListener("visibilitychange", function(){ if(!document.hidden && !$("p-seat").classList.contains("hidden")) load(false); });
+  /* 快取：最後一次成功的空位清單＋班號航線對照，連不到中繼時仍可查 */
+  function saveCache(text, utc, t, legs){
+    try{ localStorage.setItem("sxSeatCache", JSON.stringify({ text:text, utc:utc, t:t })); }catch(e){}
+    try{
+      var m = JSON.parse(localStorage.getItem("sxRoutes") || "{}");
+      legs.forEach(function(x){ m[fnN(x.flt)] = [x.from, x.to]; });
+      localStorage.setItem("sxRoutes", JSON.stringify(m));
+    }catch(e){}
+  }
+  function useCache(){
+    if(S.rows.length) return false;
+    try{
+      var c = JSON.parse(localStorage.getItem("sxSeatCache") || "null");
+      if(!c || !c.text) return false;
+      var p = parse(c.text, !!c.utc);
+      if(!p.rows.length) return false;
+      S.rows = p.rows; S.legs = p.legs; S.t = c.t; R.cached = true;
+      return true;
+    }catch(e){ return false; }
+  }
+  useCache();
   bar();
   window.SeatX = { load:load, parse:parse, S:S, R:R, render:render };   // 測試用
 })();
@@ -4606,7 +4648,7 @@ const SR = (()=>{
   function tpe(ms){ const p={}; tpeF.formatToParts(new Date(ms)).forEach(x=>p[x.type]=x.value); return {md:p.month+"/"+p.day, hm:p.hour+":"+p.minute}; }
   const lnow = code=>TZMAP[code]?localParts(TZMAP[code]):null;
   const hmOf = m=>pad(Math.floor(m/60))+":"+pad(m%60);
-  const sec = (t,b)=>`<section class="srsec"><h5>${t}</h5>${b}</section>`;
+  const sec = (t,b,hl)=>`<section class="srsec${hl?" hl":""}"><h5>${t}</h5>${b}</section>`;
   const cfRow = o=>`<div class="cf cf-${o.k}"><span class="who">${E(o.who)}</span><span class="win">${E(o.win)}</span><span class="verdict">${E(o.v)}</span></div>`;
 
   /* 找航班：可輸入 JX800、800、或「JX800 10/13」；同班號取最接近現在的那一天 */
@@ -4619,7 +4661,9 @@ const SR = (()=>{
     if(m[2]){ const md=(+m[2])+"/"+(+m[3]); const c2=c.filter(r=>tpe(tsOf(r)).md===md); if(c2.length) c=c2; }
     const now = Date.now();
     c.sort((a,b)=>Math.abs(tsOf(a)-now)-Math.abs(tsOf(b)-now));
-    return c[0] || {flt:m[1].replace(/\s/g,""), missing:true};
+    if(c[0]) return c[0];
+    let rt=null; try{ rt = JSON.parse(localStorage.getItem("sxRoutes")||"{}")[k]; }catch(_){}
+    return rt ? {flt:m[1].replace(/\s/g,""), from:rt[0], to:rt[1], missing:true, routeOnly:true} : {flt:m[1].replace(/\s/g,""), missing:true};
   }
 
   /* 宵禁判斷（沿用場站限制頁的解析規則，含夏冬季、星期別） */
@@ -4663,12 +4707,12 @@ const SR = (()=>{
     const f = find($("srFlt").value), ok = f && !f.missing;
     if(fltChanged){ fltChanged=false; paxTouched=false; dstTouched=false; stnTouched=false; }
     /* 事發場站＝航班出發站（除非手動改過，例如改成轉降站） */
-    if(ok && !stnTouched && $("srStn").value.toUpperCase().trim()!==f.from){ $("srStn").value = f.from; flash("srStn"); flash("srPax"); }
+    if(f && f.from && !stnTouched && $("srStn").value.toUpperCase().trim()!==f.from){ $("srStn").value = f.from; flash("srStn"); flash("srPax"); }
     const stn=$("srStn").value.toUpperCase().trim(), type=$("srType").value, H=+$("srWin").value||24;
     const L = stn ? lnow(stn) : null;
     if(stn!==lastStn){ lastStn=stn; timeTouched=false; }
     if(!timeTouched) $("srTime").value = L ? L.label : "";
-    if(!dstTouched) $("srDst").value = ok ? f.to : "";
+    if(!dstTouched){ const nv = f && f.to ? f.to : ""; if($("srDst").value!==nv){ $("srDst").value = nv; if(nv) flash("srDst"); } }
     const dst = $("srDst").value.toUpperCase().trim();
 
     /* 航班清單（輸入提示） */
@@ -4695,10 +4739,11 @@ const SR = (()=>{
     /* 概況 */
     const fInfo = ok ? `${tpe(f.std).md} 表定 ${tpe(f.std).hm}（台北）・${TN[f.type]||f.type||""} ${f.reg||""}` : "";
     T.push("航班：" + (ok ? `${f.flt} ${f.from}→${f.to}（${fInfo}）` : f ? `${f.flt}（空位清單查無此班）` : "未指定"));
-    T.push(`狀況：${TYPES[type]}${stn?" @ "+stn:""}，${evHm} LT${nextDay?"（次日）":""}`);
-    html += `<div class="srsum"><div class="srt"><span class="tag t-no">${E(TYPES[type])}</span><b>${E(f?f.flt:"未指定航班")}</b>${ok?E(f.from+" → "+f.to):""}</div>
-      <p class="srnote">${ok?E(fInfo):f?"空位清單內查無此班，旅客人數可在上方手動輸入":"從上方快選或輸入航班號，即可帶出旅客人數與替代航班"}
-事發場站 ${E(stn||"—")}・${evHm} LT${nextDay?"（視為次日）":""}${L?"・當地現在 "+L.label:stn?"・查無時區":""}</p></div>`;
+    T.push(`狀況：${TYPES[type]}${stn?" @ "+stn:""}，預計起降 ${evHm} LT${nextDay?"（次日）":""}`);
+    html += `<div class="srsum"><div class="srtype">${Object.keys(TYPES).map(k=>`<button type="button" data-srtype="${k}" aria-pressed="${k===type}">${TYPES[k]}</button>`).join("")}</div><div class="srt"><b>${E(f?f.flt:"未指定航班")}</b>${f&&f.from?E(f.from+" → "+f.to):""}</div>
+      <p class="srnote">${ok?E(fInfo):f&&f.routeOnly?"空位清單暫時讀不到這班，航線依上次紀錄帶出；人數請手動輸入":f?"空位清單內查無此班，旅客人數可在上方手動輸入":"從上方快選或輸入航班號，即可帶出旅客人數與替代航班"}
+事發場站 ${E(stn||"—")}${L?"・當地現在 "+L.label:stn?"・查無時區":""}</p></div>`;
+    const h1 = html; html = "";
 
     /* 1. 宵禁 */
     const stObj = DATA.stations.find(x=>x.code===stn);
@@ -4706,8 +4751,9 @@ const SR = (()=>{
     let dr = [];
     if(dst && dst!==stn){ const DL=lnow(dst); dr = curfew(dst, DL?DL.min:null, DL?DL.wd:null, "目的地・現在"); }
     const allCf = cr.concat(dr);
-    html += sec("宵禁與剩餘裕度", (allCf.map(cfRow).join("") +
-      (stObj && stObj.items.curfew.note ? `<p class="livenote">${E(stObj.items.curfew.note)}</p>` : "")) || '<p class="srnote">請輸入事發場站</p>');
+    const cfHtml = (allCf.map(cfRow).join("") +
+      (stObj && stObj.items.curfew.note ? `<p class="livenote">${E(stObj.items.curfew.note)}</p>` : "")) || '<p class="srnote">請輸入事發場站</p>';
+    $("srTimeHint").textContent = !stn ? "" : timeTouched ? (nextDay ? "以次日計算" : "") : "＝當地現在";
     T.push("宵禁：" + (allCf.map(o=>`${o.who} ${o.win} → ${o.v}`).join("；") || "—"));
 
     /* 2. 場站作業 */
@@ -4768,12 +4814,12 @@ const SR = (()=>{
         g.rows.length ? g.rows.map(r=>{const t=tpe(tsOf(r)), tot=r.rem.reduce((a,v)=>a+posv(v),0);
           return `<div class="r"><span class="tm">${t.md} <b>${t.hm}</b></span><span class="fl"><b>${E(r.flt)}</b> ${E(r.from)}→${E(r.to)} <i>${E(TN[r.type]||r.type)}</i></span><span class="seats">${seatsHtml(r)}</span><span class="tot">${tot}</span></div>`;}).join("")
         : '<div class="r none">此範圍內沒有航班</div>'}</div>`).join("");
-      html += sec(`替代航班空位（${H} 小時內・台北時間）`, (gap ? `<p class="srnote" style="margin:0 0 6px">缺口以「${E(cntName)}」的空位計算</p>${gap}` : "") + list);
+      html += sec(`<mark>替代航班空位</mark><small>${H} 小時內・台北時間</small>`, (gap ? `<p class="srnote" style="margin:0 0 6px">缺口以「${E(cntName)}」的空位計算</p>${gap}` : "") + list);
       T.push(`替代航班（${H} 小時內，空位 ${CLS.join("/")}）：`);
       groups.forEach(g=>{ T.push(`〔${g.t.replace(/\s+/g," ")}〕` + (g.rows.length?"":"無"));
         g.rows.forEach(r=>{const t=tpe(tsOf(r)); T.push(`・${t.md} ${t.hm} ${r.flt} ${r.from}→${r.to} ${seatsTxt(r)}`);}); });
     } else {
-      html += sec("替代航班空位", `<p class="srnote">${stn ? dataMsg(R,true) : "請輸入事發場站"}</p>`);
+      html += sec("<mark>替代航班空位</mark>", `<p class="srnote">${stn ? dataMsg(R,true) : "請輸入事發場站"}</p>`);
       T.push("替代航班：" + (stn ? dataMsg(R,false) : "—"));
     }
 
@@ -4785,9 +4831,9 @@ const SR = (()=>{
       if(body) html += sec(`${E(stn)} 聯絡窗口`, `<div class="ccard">${body}</div>`);
     }
 
-    const foot = S.t ? `空位清單 ${tpe(S.t).md} ${tpe(S.t).hm} 更新` : "";
+    const foot = S.t ? `空位清單 ${tpe(S.t).md} ${tpe(S.t).hm} 更新${R.cached?"（連線失敗，使用快取）":""}` : "";
     T.push("資料：場站限制表" + (foot ? "；"+foot+"（約每 3 小時）" : "") + "。僅供參考，請與當站確認。");
-    $("srOut").innerHTML = html;
+    $("srOut1").innerHTML = h1; $("srCf").innerHTML = cfHtml; $("srOut").innerHTML = html;
     $("srStamp").textContent = `產生於 ${st.md} ${st.hm}（台北）` + (foot ? "・"+foot : "");
     txt = T.join("\n");
   }
@@ -4814,7 +4860,9 @@ const SR = (()=>{
   $("srFlt").addEventListener("input", ()=>{ fltChanged=true; render(); });
   $("srDst").addEventListener("input", e=>{ e.target.value=e.target.value.toUpperCase(); dstTouched=!!e.target.value.trim(); render(); });
   $("srTime").addEventListener("input", e=>{ timeTouched=!!e.target.value; render(); });
-  ["srType","srWin"].forEach(id=>$(id).addEventListener("change", render));
+  $("srWin").addEventListener("change", render);
+  $("srNow").onclick = ()=>{ timeTouched=false; render(); };
+  $("srOut1").addEventListener("click", e=>{ const b=e.target.closest("[data-srtype]"); if(!b) return; $("srType").value=b.dataset.srtype; render(); });
   $("srPax").addEventListener("input", e=>{ paxTouched=!!e.target.value.trim(); render(); });
   function flash(id){ const el=$(id); el.classList.remove("srflash"); void el.offsetWidth; el.classList.add("srflash"); }
   $("srQuick").addEventListener("click", e=>{ const b=e.target.closest("[data-srq]"); if(!b) return; $("srFlt").value=b.dataset.srq; fltChanged=true; render(); });
