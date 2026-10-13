@@ -616,7 +616,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-13 23:05（本班 STD）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-13 23:10（移除台北時間）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4917,7 +4917,7 @@ const SR = (()=>{
     /* 概況 */
     const fInfo = ok ? `${tpe(f.std).md} 表定 ${tpe(f.std).hm}（台北）・${TN[f.type]||f.type||""} ${f.reg||""}` : "";
     const sd = ok ? depT(f, f.std) : null, dd = x=>x===st.md ? "" : x+" ";
-    const stdTxt = sd ? (sd.loc ? `STD ${dd(sd.md)}${sd.hm}（當地｜台北 ${dd(sd.tp.md)}${sd.tp.hm}）` : `STD ${dd(sd.md)}${sd.hm}`) : "";
+    const stdTxt = sd ? (sd.loc ? `STD ${dd(sd.md)}${sd.hm}（當地）` : `STD ${dd(sd.md)}${sd.hm}`) : "";
     T.push("✈️ " + (ok ? `${f.flt} ${f.from}→${f.to}｜${stdTxt}｜${TN[f.type]||f.type||""} ${f.reg||""}` : f ? `${f.flt}${f.from?" "+f.from+"→"+f.to:""}` : "航班未指定"));
     T.push(`📍 ${stn||"—"} 當地 ${evHm}${L?"（"+WD[L.wd]+"）":""}`);
     const info = ok ? fInfo : f&&f.routeOnly ? (rows.length && !R.cached ? "清單內沒有這班的訂位資料（可能是調機、已取消或不在清單日期內），航線依過去紀錄帶出，人數請手動輸入" : "空位清單暫時讀不到這班，航線依上次紀錄帶出，人數請手動輸入") : f ? "空位清單內查無此班，人數可手動輸入" : "輸入航班號即可帶出場站、人數與替代航班";
@@ -4925,7 +4925,7 @@ const SR = (()=>{
     if(ok){
       const e = tsOf(f), dl = Math.round((e - f.std)/60000), ed = dl ? depT(f, e) : null;
       infoHtml = `<span class="srstd"><u>STD</u><small>${E(sd.md)}</small><b>${E(sd.hm)}</b>`
-        + (sd.loc ? `<i class="lt">當地</i><small>台北 ${E(sd.tp.md===sd.md?"":sd.tp.md+" ")}${E(sd.tp.hm)}</small>` : `<i class="lt">台北</i>`)
+        + (sd.loc ? `<i class="lt">當地</i>` : `<i class="lt">台北</i>`)
         + (ed ? `<em class="etd">${f.bf==="A"?"實際":"預計"} ${E(ed.hm)}</em>` : "")
         + `</span><span class="srac">${E(TN[f.type]||f.type||"")} <b>${E(f.reg||"")}</b></span>`;
     }
