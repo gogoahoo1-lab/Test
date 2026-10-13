@@ -558,7 +558,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
   </div>
   <div class="srbody">
     <div class="srform">
-      <div class="f stn"><label for="srStn">事發場站</label><input id="srStn" list="codes" maxlength="4" autocomplete="off" placeholder="NRT"></div>
+      <div class="f stn"><label for="srStn">事發場站（出發站）</label><input id="srStn" list="codes" maxlength="4" autocomplete="off" placeholder="NRT"></div>
       <div class="f"><label for="srFlt">航班</label><input id="srFlt" list="srFlts" autocomplete="off" placeholder="JX800"></div>
       <div class="f"><label for="srType">狀況</label>
         <select id="srType"><option value="DIV">轉降</option><option value="DLY">延誤</option><option value="CNL">取消</option><option value="RTB">回航</option><option value="AOG">AOG 地停待修</option></select></div>
@@ -4595,7 +4595,7 @@ const SR = (()=>{
   const TN = {"359":"A350-900","351":"A350-1000","339":"A330-900","32Q":"A321neo"};
   const BASE = ["TPE","RMQ","KHH"];
   const OPS = ["divert","deplane","entry","fuel","catering","crew"];
-  let dstTouched=false, timeTouched=false, paxTouched=false, fltChanged=false, lastStn=null, dlT=null, txt="";
+  let dstTouched=false, timeTouched=false, paxTouched=false, fltChanged=false, stnTouched=false, lastStn=null, dlT=null, txt="";
 
   const E = x=>esc(String(x==null?"":x));
   const fn = x=>String(x||"").toUpperCase().replace(/\s/g,"").replace(/^([A-Z0-9]{2})0*/,"$1");
@@ -4661,8 +4661,9 @@ const SR = (()=>{
     if(!dlg.open) return;
     const X=seat(), S=X.S||{rows:[]}, R=X.R||{}, rows=S.rows||[], now=Date.now();
     const f = find($("srFlt").value), ok = f && !f.missing;
-    if(fltChanged){ fltChanged=false; paxTouched=false; dstTouched=false;
-      if(ok){ $("srStn").value = f.from; flash("srStn"); flash("srPax"); } }
+    if(fltChanged){ fltChanged=false; paxTouched=false; dstTouched=false; stnTouched=false; }
+    /* 事發場站＝航班出發站（除非手動改過，例如改成轉降站） */
+    if(ok && !stnTouched && $("srStn").value.toUpperCase().trim()!==f.from){ $("srStn").value = f.from; flash("srStn"); flash("srPax"); }
     const stn=$("srStn").value.toUpperCase().trim(), type=$("srType").value, H=+$("srWin").value||24;
     const L = stn ? lnow(stn) : null;
     if(stn!==lastStn){ lastStn=stn; timeTouched=false; }
@@ -4793,7 +4794,7 @@ const SR = (()=>{
 
   function open(code){
     const c = (code || (typeof current!=="undefined" && current ? current.code : "") || "").toUpperCase();
-    $("srStn").value = c; lastStn = null; $("srMsg").textContent = "";
+    $("srStn").value = c; lastStn = null; stnTouched = false; $("srMsg").textContent = "";
     if(!dlg.open){ if(dlg.showModal) dlg.showModal(); else dlg.setAttribute("open",""); }
     render();
     const X = seat();
@@ -4809,7 +4810,7 @@ const SR = (()=>{
   $("srFab").onclick = ()=>open();
   $("srClose").onclick = close;
   dlg.addEventListener("click", e=>{ if(e.target===dlg) close(); });
-  $("srStn").addEventListener("input", e=>{ const el=e.target, p=el.selectionStart; el.value=el.value.toUpperCase(); try{el.setSelectionRange(p,p);}catch(_){} render(); });
+  $("srStn").addEventListener("input", e=>{ const el=e.target, p=el.selectionStart; el.value=el.value.toUpperCase(); stnTouched=!!el.value.trim(); try{el.setSelectionRange(p,p);}catch(_){} render(); });
   $("srFlt").addEventListener("input", ()=>{ fltChanged=true; render(); });
   $("srDst").addEventListener("input", e=>{ e.target.value=e.target.value.toUpperCase(); dstTouched=!!e.target.value.trim(); render(); });
   $("srTime").addEventListener("input", e=>{ timeTouched=!!e.target.value; render(); });
