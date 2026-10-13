@@ -4763,7 +4763,10 @@ const SR = (()=>{
       const notes = tags.filter(o=>stObj.items[o.k].note).map(o=>`<b>${FULL[o.k]}</b>\n${E(stObj.items[o.k].note)}`).join("\n\n");
       opsHtml = sec(`${E(stn)} 場站作業`, `<div class="srtags">${tags.map(o=>`<span class="tag t-${o.r.k}">${SHORT[o.k]}・${o.r.text}</span>`).join("")}</div>` +
         (notes ? `<details class="srd"><summary>展開場站備註</summary><p class="note">${notes}</p></details>` : ""));
-      opsTxt = "場站：" + tags.map(o=>SHORT[o.k]+({ok:"✓",warn:"△",no:"✕"}[o.r.k]||"–")).join(" ");
+      opsTxt = `${stn} 場站作業：\n` + tags.map(o=>{
+        const n = (stObj.items[o.k].note||"").replace(/\s*\n\s*/g," ").replace(/\s{2,}/g," ").trim();
+        return `・${SHORT[o.k]}：${o.r.text}${n ? "。"+n : ""}`;
+      }).join("\n");
     } else if(stn){
       opsHtml = sec("場站作業", `<p class="srnote">${E(stn)} 不在場站限制資料庫，請直接聯繫當站。</p>`);
     }
@@ -4782,7 +4785,7 @@ const SR = (()=>{
     }
     html += sec("受影響旅客", pb);
     T.push("旅客：" + (total==null ? "未知" : total+" 人") + (hasCls&&!manual ? "（" + [0,1,2,3].filter(i=>f.cap[i]||f.pax[i]).map(i=>CLS[i]+(f.pax[i]||0)).join(" ") + "）" : ""));
-    html += opsHtml; if(opsTxt) T.push(opsTxt);
+    html += opsHtml;
 
     /* 4. 替代航班空位 */
     if(rows.length && stn){
@@ -4825,6 +4828,7 @@ const SR = (()=>{
 
     const foot = S.t ? `空位清單 ${tpe(S.t).md} ${tpe(S.t).hm} 更新${R.cached?"（連線失敗，使用快取）":""}` : "";
     T.push("※" + (S.t ? `空位 ${tpe(S.t).md} ${tpe(S.t).hm} 更新${R.cached?"（快取）":""}，` : "") + "僅供參考");
+    if(opsTxt) T.push("", opsTxt);
     $("srOut1").innerHTML = h1; $("srCf").innerHTML = cfHtml; $("srOut").innerHTML = html;
     $("srStamp").textContent = `產生於 ${st.md} ${st.hm}（台北）` + (foot ? "・"+foot : "");
     txt = T.join("\n");
