@@ -350,6 +350,9 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
 .sx-k2{border-radius:6px;padding:0 6px;font-size:11px;font-weight:700}
 .sx-k2.act{background:rgba(63,196,146,.16);color:var(--ok)} .sx-k2.est{background:rgba(240,167,62,.16);color:var(--warn)} .sx-k2.sch{background:rgba(255,255,255,.06);color:var(--muted)}
 .sx-std{flex-basis:100%;font-size:12px;color:var(--muted)}
+.sx-lt{border-radius:6px;padding:0 6px;font-size:11px;font-weight:700;background:rgba(127,211,240,.14);color:#7FD3F0}
+.sx-ld{font-size:11px;color:var(--warn);margin-left:4px;font-weight:600}
+.sx-std.sx-tpe{color:var(--dim)}
 .sx-us{display:inline-block;background:#3A8FA7;color:#fff;border-radius:6px;padding:0 6px;font-size:11px;margin-left:6px;vertical-align:1px}
 .sx-ac{font-size:13px;min-width:0}
 .sx-ac .reg{color:var(--muted);font-size:12px;letter-spacing:.04em}
@@ -561,7 +564,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
     <div class="sx-f"><span></span><label class="sx-only"><input type="checkbox" id="sxOnly"> 只看經濟艙還有空位</label></div>
     <div class="sx-kpis" id="sxKpis"></div>
     <div id="sxBody"></div>
-    <p class="calcnote" style="margin-top:14px">時間一律為台北時間。座位數以公開座位圖計算：A350-900 4／26／36／240、A350-1000 4／40／36／270、A330-900 28／269、A321neo 8／180。黃底為「回台後接飛」的班次。</p>
+    <p class="calcnote" style="margin-top:14px">台灣出發與抵台時間為台北時間；外站回台的出發與表定時間為當地時間（下方附台北時間）。座位數以公開座位圖計算：A350-900 4／26／36／240、A350-1000 4／40／36／270、A330-900 28／269、A321neo 8／180。黃底為「回台後接飛」的班次。</p>
   </div>
 </section>
 
@@ -4441,18 +4444,65 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     if(tx && tx.est) return { ms: tx.est, kind:"est", live:true };
     return { ms: r.dep || r.std, kind: r.bf === "A" ? "act" : r.bf === "E" ? "est" : (r.dep && r.std && r.dep !== r.std ? "est" : "sch"), live:false };
   }
+  /* 各航點時區：外站出發時間以當地時間顯示 */
+  var APT_TZ = {};
+  function tzPut(tz, list){ list.split(" ").forEach(function(a){ APT_TZ[a] = tz; }); }
+  tzPut("Asia/Taipei","TPE TSA KHH RMQ CYI PIF MFK TNN HUN TTT MZG KNH LZN");
+  tzPut("Asia/Tokyo","NRT HND KIX ITM NGO FUK CTS OKA KOJ HIJ KMJ TAK OKJ KMQ SDJ AXT AOJ HKD SHI UKB ISG MMY FSZ TOY OIT NGS KKJ MYJ TKS KCZ SHM IBR");
+  tzPut("Asia/Seoul","ICN GMP PUS CJU TAE KWJ MWX"); tzPut("Asia/Ulaanbaatar","ULN");
+  tzPut("Asia/Hong_Kong","HKG"); tzPut("Asia/Macau","MFM");
+  tzPut("Asia/Shanghai","PVG SHA PEK PKX CAN SZX XMN FOC NKG HGH CTU CKG WUH CSX TAO TSN SYX HAK KMG XIY ZUH NGB HFE WUX TNA");
+  tzPut("Asia/Singapore","SIN"); tzPut("Asia/Kuala_Lumpur","KUL BKI PEN"); tzPut("Asia/Bangkok","BKK DMK HKT CNX CEI");
+  tzPut("Asia/Ho_Chi_Minh","SGN HAN DAD CXR PQC HPH"); tzPut("Asia/Manila","MNL CEB CRK KLO PPS");
+  tzPut("Asia/Jakarta","CGK SUB"); tzPut("Asia/Makassar","DPS"); tzPut("Asia/Yangon","RGN");
+  tzPut("Asia/Phnom_Penh","PNH REP"); tzPut("Asia/Vientiane","VTE");
+  tzPut("Asia/Kolkata","DEL BOM MAA"); tzPut("Asia/Colombo","CMB"); tzPut("Asia/Dhaka","DAC"); tzPut("Asia/Kathmandu","KTM");
+  tzPut("America/Los_Angeles","LAX SFO ONT SEA PDX LAS"); tzPut("America/Phoenix","PHX"); tzPut("America/Chicago","ORD DFW IAH");
+  tzPut("America/New_York","JFK EWR IAD BOS ATL"); tzPut("America/Anchorage","ANC"); tzPut("Pacific/Honolulu","HNL");
+  tzPut("America/Vancouver","YVR"); tzPut("America/Toronto","YYZ"); tzPut("America/Mexico_City","MEX GDL"); tzPut("America/Sao_Paulo","GRU");
+  tzPut("Pacific/Guam","GUM"); tzPut("Pacific/Saipan","SPN"); tzPut("Pacific/Palau","ROR");
+  tzPut("Australia/Sydney","SYD"); tzPut("Australia/Melbourne","MEL"); tzPut("Australia/Brisbane","BNE"); tzPut("Australia/Perth","PER");
+  tzPut("Pacific/Auckland","AKL CHC"); tzPut("Pacific/Fiji","NAN");
+  tzPut("Europe/London","LHR LGW MAN"); tzPut("Europe/Paris","CDG"); tzPut("Europe/Berlin","FRA MUC"); tzPut("Europe/Amsterdam","AMS");
+  tzPut("Europe/Vienna","VIE"); tzPut("Europe/Zurich","ZRH"); tzPut("Europe/Rome","MXP FCO"); tzPut("Europe/Madrid","MAD BCN");
+  tzPut("Europe/Moscow","SVO LED"); tzPut("Europe/Copenhagen","CPH"); tzPut("Europe/Stockholm","ARN"); tzPut("Europe/Helsinki","HEL");
+  tzPut("Europe/Warsaw","WAW"); tzPut("Europe/Prague","PRG"); tzPut("Europe/Istanbul","IST");
+  tzPut("Asia/Dubai","DXB AUH"); tzPut("Asia/Qatar","DOH"); tzPut("Asia/Riyadh","RUH JED");
+  tzPut("Africa/Johannesburg","JNB"); tzPut("Africa/Cairo","CAI"); tzPut("Africa/Addis_Ababa","ADD"); tzPut("Africa/Nairobi","NBO"); tzPut("Asia/Jerusalem","TLV");
+  var LFMT = {};
+  function aptTz(c){ return APT_TZ[c] || (typeof TZMAP !== "undefined" && TZMAP[c]) || ""; }
+  /* 該航點的當地時間：{hm, md}；查無時區回 null */
+  function localAt(ms, code){
+    var tz = aptTz(code); if(!tz || !ms) return null;
+    try{
+      var f = LFMT[tz] || (LFMT[tz] = new Intl.DateTimeFormat("en-GB", { timeZone:tz, month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit", hourCycle:"h23" }));
+      var p = {}; f.formatToParts(new Date(ms)).forEach(function(x){ p[x.type] = x.value; });
+      return { hm: p.hour + ":" + p.minute, md: p.month + "/" + p.day };
+    }catch(e){ return null; }
+  }
+  /* 外站出發用當地時間；與台北日期不同時附上日期 */
+  function depClock(ms, r){
+    if(isBase(r.from)) return parts(ms).hm;
+    var L = localAt(ms, r.from); if(!L) return parts(ms).hm;
+    var tp = parts(ms); return L.hm + (L.md !== tp.mo + "/" + tp.d ? '<small class="sx-ld">' + L.md + "</small>" : "");
+  }
   function depHtml(r){
     var d = depInfo(r); r._d = d;
-    return '<span class="hm">' + parts(d.ms).hm + '</span><span class="sx-k2 ' + d.kind + '" title="' + (d.live ? "機場即時資料" : "系統清單") + '">' + { act:"實際", est:"預估", sch:"表定" }[d.kind] + (d.live ? "・機場" : "") + "</span>";
+    var loc = !isBase(r.from) && localAt(d.ms, r.from);
+    return '<span class="hm">' + depClock(d.ms, r) + '</span>' + (loc ? '<span class="sx-lt">當地</span>' : "") + '<span class="sx-k2 ' + d.kind + '" title="' + (d.live ? "機場即時資料" : "系統清單") + '">' + { act:"實際", est:"預估", sch:"表定" }[d.kind] + (d.live ? "・機場" : "") + "</span>";
   }
   function depStd(r){
     var d = r._d; if(!d) return "";
     if(d.kind === "sch"){ var aa0 = !isBase(r.from) && r.sta ? airsFind("A", r.flt, r.sta) : null, at0 = aa0 && (aa0.a || aa0.e);
-      return at0 ? '<span class="sx-std">抵台 ' + dayHm(at0) + ' <span class="sx-k2 ' + (aa0.a ? "act" : "est") + '">' + (aa0.a ? "實際" : "預估") + "</span></span>" : ""; }
+      var loc0 = !isBase(r.from) && localAt(d.ms, r.from);
+      return (at0 ? '<span class="sx-std">抵台 ' + dayHm(at0) + ' <span class="sx-k2 ' + (aa0.a ? "act" : "est") + '">' + (aa0.a ? "實際" : "預估") + "</span></span>" : "") +
+        (loc0 ? '<span class="sx-std sx-tpe">台北 ' + parts(d.ms).hm + " 起飛</span>" : ""); }
     var dl = Math.round((d.ms - r.std)/60000);
     var aa = !isBase(r.from) && r.sta ? airsFind("A", r.flt, r.sta) : null, at = aa && (aa.a || aa.e);
-    return '<span class="sx-std">表定 ' + parts(r.std).hm + (dl ? '<span class="sx-dly' + (dl < 0 ? " early" : "") + '">' + (dl > 0 ? "晚 " : "早 ") + Math.abs(dl) + " 分</span>" : "") + "</span>" +
-      (at ? '<span class="sx-std">抵台 ' + dayHm(at) + ' <span class="sx-k2 ' + (aa.a ? "act" : "est") + '">' + (aa.a ? "實際" : "預估") + "</span></span>" : "");
+    var loc = !isBase(r.from) && localAt(r.std, r.from);
+    return '<span class="sx-std">表定 ' + (loc ? depClock(r.std, r) : parts(r.std).hm) + (dl ? '<span class="sx-dly' + (dl < 0 ? " early" : "") + '">' + (dl > 0 ? "晚 " : "早 ") + Math.abs(dl) + " 分</span>" : "") + "</span>" +
+      (at ? '<span class="sx-std">抵台 ' + dayHm(at) + ' <span class="sx-k2 ' + (aa.a ? "act" : "est") + '">' + (aa.a ? "實際" : "預估") + "</span></span>" : "") +
+      (loc ? '<span class="sx-std sx-tpe">台北 ' + parts(d.ms).hm + " 起飛</span>" : "");
   }
   function render(){
     if(!S.rows.length){ $("sxMain").hidden = true; return; }
@@ -4529,7 +4579,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
       var gu = g.filter(isUS);
       var sum = gu.length ? '<div class="sx-sum">美國線 ' + gu.length + " 班：商務 <b>" + gu.reduce(function(a, r){ return a + pos(r.rem[1]); }, 0) +
         "</b>・豪經 <b>" + gu.reduce(function(a, r){ return a + pos(r.rem[2]); }, 0) + "</b>・經濟 <b>" + gu.reduce(function(a, r){ return a + pos(r.rem[3]); }, 0) + "</b></div>" : "";
-      return '<div class="sx-day"><h3>' + dayLabel(k) + " <small>" + (inb ? "外站出發（台北時間）" : "台灣出發") + " " + g.length + " 班</small></h3>" + sum +
+      return '<div class="sx-day"><h3>' + dayLabel(k) + " <small>" + (inb ? "外站出發（出發時間為當地時間）" : "台灣出發") + " " + g.length + " 班</small></h3>" + sum +
         '<div class="sx-list">' + g.map(function(r){
           var u = isUS(r), tot = r.rem.reduce(function(a, v){ return a + pos(v); }, 0), ov = r.rem.some(function(v){ return v != null && v < 0; });
           return '<div class="sx-row' + (u ? " us" : "") + '">' +
