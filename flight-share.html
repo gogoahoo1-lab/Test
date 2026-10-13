@@ -1119,6 +1119,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
     <div class="row" style="margin-top:8px">
       <label class="note" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="seatAuto" checked> 自動同步公司系統（需在 ADS-B 橋接擴充功能設定頁啟用）</label>
       <span class="note" id="seatSyncMsg"></span>
+      <span class="note" id="airsSyncMsg"></span>
     </div>
     <div class="row" style="margin-top:6px">
       <button class="btn ghost" id="btnAutoLegs" type="button">🔄 立即從 OpsLink 更新</button>
@@ -6827,19 +6828,18 @@ function seatTdxIndex(){
   return idx;
 }
 function seatDepInfo(r, idx){
-  var ar = r.std && twIsBase(r.from) ? airsFind("D", r.flt, r.std) : null;
-  if(ar && (ar.a || ar.e)) return { ms: ar.a || ar.e, kind: ar.a ? "act" : "est", src:"AIRS" };
+  /* 取用順序：AIRS 實際 → 機場實際 → AIRS 預估 → 機場預估 → 系統清單（任一邊已起飛就顯示實際） */
+  var ar = r.std && twIsBase(r.from) ? airsFind("D", r.flt, r.std) : null, tx = { act:0, est:0 };
   if(idx && twIsBase(r.from) && r.std){
     var f = idx[r.from + "|" + twFnoNorm(r.flt) + "|" + twKey(r.std)];
-    var t = f && (f.act || f.est);
-    if(t){
-      var ms = Date.parse(f.date + "T" + t + ":00+08:00");
-      if(isFinite(ms)){
-        if(ms - r.std > 12*3600000) ms -= 86400000; else if(r.std - ms > 12*3600000) ms += 86400000;
-        return { ms:ms, kind: f.act ? "act" : "est", src:"機場即時" };
-      }
-    }
+    var cv = function(t){ if(!t) return 0; var ms = Date.parse(f.date + "T" + t + ":00+08:00"); if(!isFinite(ms)) return 0;
+      if(ms - r.std > 12*3600000) ms -= 86400000; else if(r.std - ms > 12*3600000) ms += 86400000; return ms; };
+    if(f){ tx.act = cv(f.act); tx.est = cv(f.est); }
   }
+  if(ar && ar.a) return { ms: ar.a, kind:"act", src:"AIRS" };
+  if(tx.act) return { ms: tx.act, kind:"act", src:"機場即時" };
+  if(ar && ar.e) return { ms: ar.e, kind:"est", src:"AIRS" };
+  if(tx.est) return { ms: tx.est, kind:"est", src:"機場即時" };
   var k = r.bf === "A" ? "act" : r.bf === "E" ? "est" : (r.dep && r.std && r.dep !== r.std ? "est" : "sch");
   return { ms: r.dep || r.std, kind:k, src:"系統清單" };
 }
@@ -7045,7 +7045,7 @@ function seatInit(){
   try{ SEAT.feedT = +(localStorage.getItem("seatFeedT") || 0); $("seatAuto").checked = localStorage.getItem("seatAuto") !== "0"; }catch(e){}
   $("seatAuto").addEventListener("change", function(){ try{ localStorage.setItem("seatAuto", this.checked ? "1" : "0"); }catch(e){} if(this.checked){ SEAT.manual = false; SEAT.feedT = 0; seatSync(); } });
   function seatSync(){
-    if(!$("seatAuto").checked || !holdBridge() || document.hidden) return;
+    if(!$("seatAuto").checked || !holdBridge()) return;   // 分頁在背景也照常同步，避免值班台不在前景時資料停住
     bgCmd("getSeatFeed").then(function(f){
       if(!f || !f.n){ $("seatSyncMsg").textContent = "尚未收到公司系統資料"; return; }
       $("seatSyncMsg").textContent = "已同步 " + fixHm(f.t) + "（" + f.n + " 班" + (f.host ? "，" + f.host : "") + "）";
@@ -7057,17 +7057,23 @@ function seatInit(){
   }
   setTimeout(seatSync, 2500); setInterval(seatSync, 20000);
   // AIRS iWatch 時間（擴充功能 v2.12）：每分鐘取一次，有新資料就重畫空位表
+  function airsMsg(t){ var el = $("airsSyncMsg"); if(!el) return; el.textContent = t; el.style.color = /^⚠/.test(t) ? "#F0665C" : ""; }
   function airsSync(){
-    if(!holdBridge() || document.hidden) return;
+    if(!holdBridge()){ airsMsg("⚠ AIRS：沒有偵測到擴充功能"); return; }   // 分頁在背景也照常同步
     bgCmd("getAirsFeed").then(function(f){
-      if(!f || !f.rows || !f.rows.length || f.t === AIRS.t) return;
+      if(!f || !f.rows || !f.rows.length){ airsMsg("⚠ AIRS 尚無資料：請在這個瀏覽器開啟 AIRS iWatch 頁面並登入"); return; }
+      var ft = f.t && f.t < 1e12 ? f.t*1000 : f.t, age = ft ? Math.round((Date.now() - ft)/60000) : null;
+      airsMsg(age != null && age > 60
+        ? "⚠ AIRS 最後資料 " + fixHm(ft) + "（已 " + age + " 分鐘沒有新資料，請確認 AIRS iWatch 頁面仍開著、登入未逾時）"
+        : "AIRS 已同步" + (ft ? " " + fixHm(ft) : "") + "（" + f.rows.length + " 筆）");
+      if(f.t === AIRS.t) return;
       airsSet(f.rows, f.t);
       try{ localStorage.setItem("airsCache", JSON.stringify({ t:f.t, rows:airsCompact() })); }catch(e){}
       if(SEAT.rows.length) seatRender();
-    }, function(){});
+    }, function(e){ airsMsg("⚠ AIRS 無法同步：" + alErr(e)); });
   }
   setTimeout(airsSync, 3000); setInterval(airsSync, 60000);
-  document.addEventListener("visibilitychange", function(){ if(!document.hidden){ seatSync(); alStatus(); } });
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden){ seatSync(); airsSync(); alStatus(); } });
   // 把擴充功能回覆的錯誤翻成看得懂的原因
   function alErr(e){
     var m = String(e && e.message || e || "");
@@ -7158,7 +7164,7 @@ function relayTick(force){
   if(liveOk && (force || now - RELAY.lastLive >= c.every*1000 - 2000)) jobs.push("live");
   var sig = DB.flights.length + "|" + ((DB.batches[DB.batches.length - 1] || {}).at || (DB.batches[DB.batches.length - 1] || {}).t || "") +
     "|" + (c.seat ? (SEAT.feedT || 0) + ":" + ($("seatRaw") ? $("seatRaw").value.length : 0) : "-") + "|" + (c.seat ? AIRS.t || 0 : "-");
-  var seatChanged = c.seat && sig.split("|")[2] !== String(RELAY.dbSig || "").split("|")[2];
+  var seatChanged = c.seat && sig.split("|").slice(2).join("|") !== String(RELAY.dbSig || "").split("|").slice(2).join("|");   // 空位清單或 AIRS 有新資料
   if(DB.flights.length && (force || (sig !== RELAY.dbSig && (now - RELAY.lastDb >= 15*60000 || (seatChanged && now - RELAY.lastDb >= 5*60000))) || now - RELAY.lastDb >= 3*3600000)) jobs.push("db");   // 空位清單一更新就（最快 5 分鐘內）上傳
   if(!jobs.length){ if(force && !liveOk) RELAY.msg = "地圖還沒有資料：請先在航班地圖按「開始監看」"; relayPaint(); return; }
   RELAY.busy = true;
