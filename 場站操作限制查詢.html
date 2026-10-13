@@ -410,6 +410,8 @@ dialog.sr::backdrop{background:rgba(2,6,12,.72);backdrop-filter:blur(3px)}
 .srform{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:10px}
 .srform select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);font:inherit;font-size:16px;padding:7px 10px;border-radius:9px}
 .srform input::placeholder{color:#66809a}
+.srflash{animation:srfl 1.2s ease-out}
+@keyframes srfl{0%{box-shadow:0 0 0 2px var(--gold);background:rgba(220,192,134,.22)}100%{box-shadow:0 0 0 0 transparent}}
 .srquick{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:12px 0 2px}
 .srquick .chip{font-size:12.5px;padding:5px 11px}
 .srlab{font-size:12px;color:var(--muted);margin-right:4px}
@@ -4593,7 +4595,7 @@ const SR = (()=>{
   const TN = {"359":"A350-900","351":"A350-1000","339":"A330-900","32Q":"A321neo"};
   const BASE = ["TPE","RMQ","KHH"];
   const OPS = ["divert","deplane","entry","fuel","catering","crew"];
-  let dstTouched=false, timeTouched=false, lastStn=null, dlT=null, txt="";
+  let dstTouched=false, timeTouched=false, paxTouched=false, fltChanged=false, lastStn=null, dlT=null, txt="";
 
   const E = x=>esc(String(x==null?"":x));
   const fn = x=>String(x||"").toUpperCase().replace(/\s/g,"").replace(/^([A-Z0-9]{2})0*/,"$1");
@@ -4658,11 +4660,13 @@ const SR = (()=>{
   function render(){
     if(!dlg.open) return;
     const X=seat(), S=X.S||{rows:[]}, R=X.R||{}, rows=S.rows||[], now=Date.now();
+    const f = find($("srFlt").value), ok = f && !f.missing;
+    if(fltChanged){ fltChanged=false; paxTouched=false; dstTouched=false;
+      if(ok){ $("srStn").value = f.from; flash("srStn"); flash("srPax"); } }
     const stn=$("srStn").value.toUpperCase().trim(), type=$("srType").value, H=+$("srWin").value||24;
     const L = stn ? lnow(stn) : null;
     if(stn!==lastStn){ lastStn=stn; timeTouched=false; }
     if(!timeTouched) $("srTime").value = L ? L.label : "";
-    const f = find($("srFlt").value), ok = f && !f.missing;
     if(!dstTouched) $("srDst").value = ok ? f.to : "";
     const dst = $("srDst").value.toUpperCase().trim();
 
@@ -4717,9 +4721,10 @@ const SR = (()=>{
     }
 
     /* 3. 受影響旅客 */
-    const man = parseInt($("srPax").value,10), manual = isFinite(man) && man>=0;
     let aff=[0,0,0,0], hasCls=false, total=null;
     if(ok && f.pax){ aff=f.pax.map(v=>v||0); hasCls=true; total=aff.reduce((a,b)=>a+b,0); }
+    if(!paxTouched) $("srPax").value = total==null ? "" : total;
+    const man = parseInt($("srPax").value,10), manual = paxTouched && isFinite(man) && man>=0;
     if(manual) total = man;
     let pb;
     if(total==null) pb = `<p class="srnote">${rows.length ? "尚未指定航班" : dataMsg(R,true)}</p>`;
@@ -4805,12 +4810,13 @@ const SR = (()=>{
   $("srClose").onclick = close;
   dlg.addEventListener("click", e=>{ if(e.target===dlg) close(); });
   $("srStn").addEventListener("input", e=>{ const el=e.target, p=el.selectionStart; el.value=el.value.toUpperCase(); try{el.setSelectionRange(p,p);}catch(_){} render(); });
-  $("srFlt").addEventListener("input", ()=>{ dstTouched=false; render(); });
+  $("srFlt").addEventListener("input", ()=>{ fltChanged=true; render(); });
   $("srDst").addEventListener("input", e=>{ e.target.value=e.target.value.toUpperCase(); dstTouched=!!e.target.value.trim(); render(); });
   $("srTime").addEventListener("input", e=>{ timeTouched=!!e.target.value; render(); });
   ["srType","srWin"].forEach(id=>$(id).addEventListener("change", render));
-  $("srPax").addEventListener("input", render);
-  $("srQuick").addEventListener("click", e=>{ const b=e.target.closest("[data-srq]"); if(!b) return; $("srFlt").value=b.dataset.srq; dstTouched=false; render(); });
+  $("srPax").addEventListener("input", e=>{ paxTouched=!!e.target.value.trim(); render(); });
+  function flash(id){ const el=$(id); el.classList.remove("srflash"); void el.offsetWidth; el.classList.add("srflash"); }
+  $("srQuick").addEventListener("click", e=>{ const b=e.target.closest("[data-srq]"); if(!b) return; $("srFlt").value=b.dataset.srq; fltChanged=true; render(); });
   $("srOut").addEventListener("click", e=>{ if(e.target.closest("[data-srgo]")){ close(); document.getElementById("t-seat").click(); } });
   $("srReload").onclick = ()=>{ const X=seat(); if(!X.load) return; const p=X.load(true); render(); Promise.resolve(p).then(render,render); };
   $("srCopy").onclick = ()=>{
