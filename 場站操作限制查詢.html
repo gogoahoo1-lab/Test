@@ -514,6 +514,11 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
 .sralt .seats{display:flex;gap:4px}
 .sralt .tot{text-align:right;font-weight:800;font-size:17px;color:#fff;font-variant-numeric:tabular-nums;line-height:1.15}
 .sralt .tot small{font-size:12px;font-weight:700;color:var(--ok);margin-right:3px}
+/* 各艙空位與 TTL 數字底部對齊 */
+.sralt .r:not(.ow) .seats,.sralt .r:not(.ow) .tot{align-self:end}
+.sralt .r:not(.ow) .seats{align-items:flex-end}
+.sralt .r:not(.ow) .srs{line-height:1.15;font-size:17px;padding:2px 8px 1px}
+.sralt .r:not(.ow) .srs u{font-size:11px}
 .sralt .tot u{display:block;text-decoration:none;font-size:10.5px;font-weight:800;letter-spacing:.08em;color:var(--gold)}
 .srs{display:inline-flex;gap:3px;align-items:baseline;background:rgba(255,255,255,.05);border-radius:6px;padding:1px 7px;font-weight:700;font-variant-numeric:tabular-nums}
 .srs u{text-decoration:none;font-size:10.5px;color:var(--muted);font-weight:500}
@@ -629,7 +634,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-13 23:55（商務艙 J）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-14 00:00（空位對齊）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
