@@ -387,7 +387,7 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
 }
 </style>
 <style>
-/* ---------- 異常速報 SITREP ---------- */
+/* ---------- 異常速報 SITUATION REPORT ---------- */
 .btn.sr{border-color:rgba(240,102,92,.55);color:#FFB3AC}
 .btn.sr:hover{background:var(--no);color:#fff;border-color:var(--no)}
 .srfab{position:fixed;right:16px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:60;appearance:none;
@@ -568,7 +568,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
 <dialog class="sr" id="srDlg" aria-labelledby="srTitle">
   <div class="srhead">
-    <div><b id="srTitle">異常速報 SITREP</b><span id="srStamp"></span></div>
+    <div><b id="srTitle">異常速報 SITUATION REPORT</b><span id="srStamp"></span></div>
     <button class="srx" id="srClose" type="button" aria-label="關閉">✕</button>
   </div>
   <div class="srbody">
@@ -4630,7 +4630,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
 })();
 </script>
 <script>
-/* 異常速報 SITREP：宵禁裕度 × 場站作業 × 受影響旅客 × 替代航班空位，一鍵產生並可複製 */
+/* 異常速報 SITUATION REPORT：宵禁裕度 × 場站作業 × 受影響旅客 × 替代航班空位，一鍵產生並可複製 */
 const SR = (()=>{
   const $ = id=>document.getElementById(id);
   const dlg = $("srDlg");
@@ -4736,7 +4736,7 @@ const SR = (()=>{
 
     const st=tpe(now), T=[];
     let html="";
-    T.push(`【異常速報 SITREP】${st.md} ${st.hm}（台北）`);
+    T.push(`【異常速報 SITUATION REPORT】${st.md} ${st.hm}（台北）`);
 
     /* 概況 */
     const fInfo = ok ? `${tpe(f.std).md} 表定 ${tpe(f.std).hm}（台北）・${TN[f.type]||f.type||""} ${f.reg||""}` : "";
