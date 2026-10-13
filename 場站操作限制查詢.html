@@ -460,6 +460,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
 .sralt .r.none{display:block;color:var(--dim);font-size:12.5px}
 .sralt .tm{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px}
 .sralt .tm b{color:var(--text);font-size:15px}
+.sralt .tm .lt{font-style:normal;font-size:10.5px;font-weight:700;color:#7FD3F0;background:rgba(127,211,240,.14);border-radius:5px;padding:0 5px;margin-left:5px}
 .sralt .fl b{color:var(--gold)} .sralt .fl i{font-style:normal;color:var(--dim);font-size:12px}
 .sralt .seats{display:flex;gap:4px}
 .sralt .tot{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
@@ -564,7 +565,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
     <div class="sx-f"><span></span><label class="sx-only"><input type="checkbox" id="sxOnly"> 只看經濟艙還有空位</label></div>
     <div class="sx-kpis" id="sxKpis"></div>
     <div id="sxBody"></div>
-    <p class="calcnote" style="margin-top:14px">台灣出發與抵台時間為台北時間；外站回台的出發與表定時間為當地時間（下方附台北時間）。座位數以公開座位圖計算：A350-900 4／26／36／240、A350-1000 4／40／36／270、A330-900 28／269、A321neo 8／180。黃底為「回台後接飛」的班次。</p>
+    <p class="calcnote" style="margin-top:14px">台灣出發與抵台時間為台北時間；外站回台的出發與表定時間為當地時間。抵台時間沒有 AIRS 資料時，以表定抵達加上起飛延誤推算。座位數以公開座位圖計算：A350-900 4／26／36／240、A350-1000 4／40／36／270、A330-900 28／269、A321neo 8／180。黃底為「回台後接飛」的班次。</p>
   </div>
 </section>
 
@@ -3090,10 +3091,15 @@ function applicableRanges(ranges, tz, wd){
     const L = r.label||"";
     if(/夏季|夏令/.test(L) && dst===false) return;
     if(/冬季|冬令/.test(L) && dst===true) return;
-    if(/[週周]([一二三四五六日天])/.test(L)){
-      const map={"日":0,"天":0,"一":1,"二":2,"三":3,"四":4,"五":5,"六":6};
-      const d = map[/[週周]([一二三四五六日天])/.exec(L)[1]];
-      if(wd!==null && wd!==d){ out.push({...r, skip:`僅${L.match(/[週周][一二三四五六日天]/)[0]}適用，今日不適用`}); return; }
+    /* 星期別：支援「每周二」「每週一、三」「每週1/3/5」「週一及週三」等寫法 */
+    const wm = /[週周星期]+\s*([一二三四五六日天0-7](?:\s*[、,，／/及和與&]?\s*[週周]?\s*[一二三四五六日天0-7])*)/.exec(L);
+    if(wm){
+      const map={"日":0,"天":0,"0":0,"7":0,"一":1,"1":1,"二":2,"2":2,"三":3,"3":3,"四":4,"4":4,"五":5,"5":5,"六":6,"6":6};
+      const days=[...new Set((wm[1].match(/[一二三四五六日天0-7]/g)||[]).map(c=>map[c]))];
+      const zh=["日","一","二","三","四","五","六"];
+      if(days.length && wd!==null && !days.includes(wd)){
+        out.push({...r, skip:`僅週${days.sort((x,y)=>((x||7)-(y||7))).map(d=>zh[d]).join("、")}適用，今日不適用`}); return;
+      }
     }
     out.push(r);
   });
@@ -4491,18 +4497,22 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     var loc = !isBase(r.from) && localAt(d.ms, r.from);
     return '<span class="hm">' + depClock(d.ms, r) + '</span>' + (loc ? '<span class="sx-lt">當地</span>' : "") + '<span class="sx-k2 ' + d.kind + '" title="' + (d.live ? "機場即時資料" : "系統清單") + '">' + { act:"實際", est:"預估", sch:"表定" }[d.kind] + (d.live ? "・機場" : "") + "</span>";
   }
+  /* 外站回台：抵台時間（AIRS 實際／預估優先，否則以表定抵達＋起飛延誤推算） */
+  function arrLine(r, d){
+    if(isBase(r.from) || !r.sta) return "";
+    var lab = isBase(r.to) ? "抵台 " : "抵達 " + esc(r.to) + " ", ms, kind;
+    var aa = airsFind("A", r.flt, r.sta);
+    if(aa && (aa.a || aa.e)){ ms = aa.a || aa.e; kind = aa.a ? "act" : "est"; }
+    else { var dl = d && d.ms && r.std ? d.ms - r.std : 0; ms = r.sta + dl; kind = dl ? "est" : "sch"; }
+    return '<span class="sx-std">' + lab + dayHm(ms) + ' <span class="sx-k2 ' + kind + '">' + { act:"實際", est:"預估", sch:"表定" }[kind] + "</span></span>";
+  }
   function depStd(r){
     var d = r._d; if(!d) return "";
-    if(d.kind === "sch"){ var aa0 = !isBase(r.from) && r.sta ? airsFind("A", r.flt, r.sta) : null, at0 = aa0 && (aa0.a || aa0.e);
-      var loc0 = !isBase(r.from) && localAt(d.ms, r.from);
-      return (at0 ? '<span class="sx-std">抵台 ' + dayHm(at0) + ' <span class="sx-k2 ' + (aa0.a ? "act" : "est") + '">' + (aa0.a ? "實際" : "預估") + "</span></span>" : "") +
-        (loc0 ? '<span class="sx-std sx-tpe">台北 ' + parts(d.ms).hm + " 起飛</span>" : ""); }
+    if(d.kind === "sch") return arrLine(r, d);
     var dl = Math.round((d.ms - r.std)/60000);
-    var aa = !isBase(r.from) && r.sta ? airsFind("A", r.flt, r.sta) : null, at = aa && (aa.a || aa.e);
     var loc = !isBase(r.from) && localAt(r.std, r.from);
     return '<span class="sx-std">表定 ' + (loc ? depClock(r.std, r) : parts(r.std).hm) + (dl ? '<span class="sx-dly' + (dl < 0 ? " early" : "") + '">' + (dl > 0 ? "晚 " : "早 ") + Math.abs(dl) + " 分</span>" : "") + "</span>" +
-      (at ? '<span class="sx-std">抵台 ' + dayHm(at) + ' <span class="sx-k2 ' + (aa.a ? "act" : "est") + '">' + (aa.a ? "實際" : "預估") + "</span></span>" : "") +
-      (loc ? '<span class="sx-std sx-tpe">台北 ' + parts(d.ms).hm + " 起飛</span>" : "");
+      arrLine(r, d);
   }
   function render(){
     if(!S.rows.length){ $("sxMain").hidden = true; return; }
@@ -4690,7 +4700,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
   }
   useCache();
   bar();
-  window.SeatX = { load:load, parse:parse, S:S, R:R, render:render };   // 測試用
+  window.SeatX = { load:load, parse:parse, S:S, R:R, render:render, localAt:localAt };   // 測試用
 })();
 </script>
 <script>
@@ -4713,6 +4723,10 @@ const SR = (()=>{
   const tpeF = new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Taipei",month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit",hourCycle:"h23"});
   function tpe(ms){ const p={}; tpeF.formatToParts(new Date(ms)).forEach(x=>p[x.type]=x.value); return {md:p.month+"/"+p.day, hm:p.hour+":"+p.minute}; }
   const lnow = code=>TZMAP[code]?localParts(TZMAP[code]):null;
+  /* 出發時刻：台灣出發用台北時間，外站出發用當地時間（附台北時間 tp） */
+  const depT = (r, ms)=>{ const t=tpe(ms);
+    const L = !BASE.includes(r.from) && seat().localAt ? seat().localAt(ms, r.from) : null;
+    return L ? {md:L.md, hm:L.hm, loc:true, tp:t} : {md:t.md, hm:t.hm, loc:false, tp:t}; };
   const hmOf = m=>pad(Math.floor(m/60))+":"+pad(m%60);
   const sec = (t,b,hl)=>`<section class="srsec${hl?" hl":""}"><h5>${t}</h5>${b}</section>`;
   const cfRow = o=>`<div class="cf cf-${o.k}"><span class="who">${E(o.who)}</span><span class="win">${E(o.win)}</span><span class="verdict">${E(o.v)}</span></div>`;
@@ -4792,8 +4806,8 @@ const SR = (()=>{
 
     /* 本站前後航班快選 */
     const near = stn ? rows.filter(r=>(r.from===stn||r.to===stn)&&tsOf(r)>now-6*3600000&&tsOf(r)<now+12*3600000).sort((a,b)=>tsOf(a)-tsOf(b)).slice(0,12) : [];
-    $("srQuick").innerHTML = near.length ? `<span class="srlab">${E(stn)} 前後 12 小時</span>` + near.map(r=>{const t=tpe(tsOf(r));
-      return `<button type="button" class="chip" data-srq="${E(r.flt+" "+t.md)}" aria-pressed="${r===f}">${E(r.flt)} ${E(r.from)}→${E(r.to)} ${t.hm}</button>`;}).join("") : "";
+    $("srQuick").innerHTML = near.length ? `<span class="srlab">${E(stn)} 前後 12 小時</span>` + near.map(r=>{const t=tpe(tsOf(r)), d=depT(r, tsOf(r));
+      return `<button type="button" class="chip" data-srq="${E(r.flt+" "+t.md)}" aria-pressed="${r===f}">${E(r.flt)} ${E(r.from)}→${E(r.to)} ${d.hm}${d.loc?"（當地）":""}</button>`;}).join("") : "";
 
     /* 事件時間 */
     const evMin = L ? L.min : null, evWd = L ? L.wd : null;
@@ -4805,11 +4819,12 @@ const SR = (()=>{
 
     /* 概況 */
     const fInfo = ok ? `${tpe(f.std).md} 表定 ${tpe(f.std).hm}（台北）・${TN[f.type]||f.type||""} ${f.reg||""}` : "";
-    const stdT = ok ? tpe(f.std) : null;
-    T.push("✈️ " + (ok ? `${f.flt} ${f.from}→${f.to}｜表定 ${stdT.md===st.md?"":stdT.md+" "}${stdT.hm}｜${TN[f.type]||f.type||""} ${f.reg||""}` : f ? `${f.flt}${f.from?" "+f.from+"→"+f.to:""}` : "航班未指定"));
+    const sd = ok ? depT(f, f.std) : null, dd = x=>x===st.md ? "" : x+" ";
+    const stdTxt = sd ? (sd.loc ? `表定 ${dd(sd.md)}${sd.hm}（當地｜台北 ${dd(sd.tp.md)}${sd.tp.hm}）` : `表定 ${dd(sd.md)}${sd.hm}`) : "";
+    T.push("✈️ " + (ok ? `${f.flt} ${f.from}→${f.to}｜${stdTxt}｜${TN[f.type]||f.type||""} ${f.reg||""}` : f ? `${f.flt}${f.from?" "+f.from+"→"+f.to:""}` : "航班未指定"));
     T.push(`📍 ${stn||"—"} 當地 ${evHm}${L?"（"+WD[L.wd]+"）":""}`);
-    const info = ok ? fInfo : f&&f.routeOnly ? "空位清單暫時讀不到這班，航線依上次紀錄帶出，人數請手動輸入" : f ? "空位清單內查無此班，人數可手動輸入" : "輸入航班號即可帶出場站、人數與替代航班";
-    const infoHtml = ok ? `${E(tpe(f.std).md)} 表定 ${E(tpe(f.std).hm)}（台北）・<b class="ac">${E(TN[f.type]||f.type||"")} ${E(f.reg||"")}</b>` : E(info);
+    const info = ok ? fInfo : f&&f.routeOnly ? (rows.length && !R.cached ? "清單內沒有這班的訂位資料（可能是調機、已取消或不在清單日期內），航線依過去紀錄帶出，人數請手動輸入" : "空位清單暫時讀不到這班，航線依上次紀錄帶出，人數請手動輸入") : f ? "空位清單內查無此班，人數可手動輸入" : "輸入航班號即可帶出場站、人數與替代航班";
+    const infoHtml = ok ? `${E(sd.md)} 表定 ${E(sd.hm)}${sd.loc ? `（當地，台北 ${E(sd.tp.md===sd.md?"":sd.tp.md+" ")}${E(sd.tp.hm)}）` : "（台北）"}・<b class="ac">${E(TN[f.type]||f.type||"")} ${E(f.reg||"")}</b>` : E(info);
     html += `<div class="srbar"><span class="srinfo${ok?"":" dim"}">${infoHtml}</span></div>`;
     const h1 = html; html = "";
 
@@ -4881,11 +4896,11 @@ const SR = (()=>{
       T.push("", `🔄 替代航班（${H} 小時內）`,
         `　空位合計${others ? "（"+route+"）" : ""}：` + (cnt.rows.length ? idx.map(i=>CLSN[i]+" "+(sum[i]||"❌")).join("｜") : "無直飛航班"));
       const list = groups.map(g=>`<div class="sralt"><div class="g">${E(g.t)}・${g.rows.length} 班</div>${
-        g.rows.length ? g.rows.map(r=>{const t=tpe(tsOf(r)), tot=r.rem.reduce((a,v)=>a+posv(v),0);
-          return `<div class="r"><span class="tm">${t.md} <b>${t.hm}</b></span><span class="fl"><b>${E(r.flt)}</b> ${E(r.from)}→${E(r.to)} <i>${E(TN[r.type]||r.type)}</i></span><span class="seats">${seatsHtml(r)}</span><span class="tot">${tot}</span></div>`;}).join("")
+        g.rows.length ? g.rows.map(r=>{const t=depT(r, tsOf(r)), tot=r.rem.reduce((a,v)=>a+posv(v),0);
+          return `<div class="r"><span class="tm">${t.md} <b>${t.hm}</b>${t.loc?'<i class="lt">當地</i>':""}</span><span class="fl"><b>${E(r.flt)}</b> ${E(r.from)}→${E(r.to)} <i>${E(TN[r.type]||r.type)}</i></span><span class="seats">${seatsHtml(r)}</span><span class="tot">${tot}</span></div>`;}).join("")
         : '<div class="r none">此範圍內沒有航班</div>'}</div>`).join("");
-      html += sec(`<mark>替代航班空位</mark><small>${H} 小時內・台北時間</small>`, (gap ? `<p class="srnote" style="margin:0 0 6px">「${E(cntName)}」空位合計</p>${gap}` : "") + list);
-      groups.forEach(g=>g.rows.forEach(r=>{const t=tpe(tsOf(r)); T.push(`　🛫 ${t.md} ${t.hm} ${r.flt} ${r.from}→${r.to}｜${seatsTxt(r)}`);}));
+      html += sec(`<mark>替代航班空位</mark><small>${H} 小時內・外站出發為當地時間</small>`, (gap ? `<p class="srnote" style="margin:0 0 6px">「${E(cntName)}」空位合計</p>${gap}` : "") + list);
+      groups.forEach(g=>g.rows.forEach(r=>{const t=depT(r, tsOf(r)); T.push(`　🛫 ${t.md} ${t.hm}${t.loc?"（當地）":""} ${r.flt} ${r.from}→${r.to}｜${seatsTxt(r)}`);}));
     } else {
       html += sec("<mark>替代航班空位</mark>", `<p class="srnote">${stn ? dataMsg(R,true) : "請輸入事發場站"}</p>`);
       T.push("", "🔄 替代航班", "　" + (stn ? dataMsg(R,false) : "請輸入事發場站"));
