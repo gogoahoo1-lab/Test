@@ -345,7 +345,11 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
 .sx-t .to{flex-basis:100%;font-size:14px}
 .sx-t .to b{letter-spacing:.05em}
 .sx-t .to i{font-style:normal;color:var(--muted);font-size:12.5px}
-.sx-dly{border-radius:6px;padding:0 6px;font-size:11.5px;background:rgba(240,102,92,.15);color:var(--no)}
+.sx-dly{border-radius:6px;padding:0 6px;font-size:11.5px;background:rgba(240,102,92,.15);color:var(--no);margin-left:6px}
+.sx-dly.early{background:rgba(63,196,146,.15);color:var(--ok)}
+.sx-k2{border-radius:6px;padding:0 6px;font-size:11px;font-weight:700}
+.sx-k2.act{background:rgba(63,196,146,.16);color:var(--ok)} .sx-k2.est{background:rgba(240,167,62,.16);color:var(--warn)} .sx-k2.sch{background:rgba(255,255,255,.06);color:var(--muted)}
+.sx-std{flex-basis:100%;font-size:12px;color:var(--muted)}
 .sx-us{display:inline-block;background:#3A8FA7;color:#fff;border-radius:6px;padding:0 6px;font-size:11px;margin-left:6px;vertical-align:1px}
 .sx-ac{font-size:13px;min-width:0}
 .sx-ac .reg{color:var(--muted);font-size:12px;letter-spacing:.04em}
@@ -4184,7 +4188,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
       var st = m[3], state = m[4].toUpperCase();
       if(/CNL|CXL|CAN/.test(state)) return;
       var std = seatTime(m[5], m[6], utc), best = seatTime(m[9], m[10], utc);
-      var base = { flt:m[1], st:st, std:std, sta: seatTime(m[7], m[8], utc), dep: best || std, delay: best && std ? Math.round((best - std)/60000) : 0, from:m[15], to:m[16], reg:m[17], type:m[19] };
+      var base = { flt:m[1], st:st, bf:m[11] || "", std:std, sta: seatTime(m[7], m[8], utc), dep: best || std, delay: best && std ? Math.round((best - std)/60000) : 0, from:m[15], to:m[16], reg:m[17], type:m[19] };
       if(st === "P" || !m[21]){ if(st === "P"){ base.ferry = true; ferry.push(base); } return; }
       var pax = m[21].split("/").map(function(x){ return x === "-" ? null : parseInt(x, 10); });
       if(pax.length === 3) pax = [pax[0], pax[1], null, pax[2]];
@@ -4212,7 +4216,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     var reg = regNorm(r.reg);
     if(!reg || /^(TBA|TBD|XXX)/.test(reg)) return "";
     var same = S.legs.filter(function(x){ return x !== r && regNorm(x.reg) === reg && x.std; });
-    var arr = r.sta ? r.sta + (r.delay || 0)*60000 : 0;
+    var arr = legArr(r);
     var nx = same.filter(function(x){ return x.std > r.std && x.std - r.std < 40*3600000; }).sort(function(a, b){ return a.std - b.std; })[0];
     var pv = same.filter(function(x){ return x.std < r.std && r.std - x.std < 40*3600000; }).sort(function(a, b){ return b.std - a.std; })[0];
     var gapN = nx && nx.from !== r.to;
@@ -4221,19 +4225,19 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     function turnTxt(m){ return m == null ? "" : m < 0 ? "　⚠ 來不及（差 " + hmDur(-m) + "）" : m > 720 ? "　停留 " + hmDur(m) : "　過站 " + hmDur(m); }
     var out = "";
     if(pv){
-      var pa = pv.sta ? pv.sta + (pv.delay || 0)*60000 : 0, pm = pa ? Math.round((r.dep - pa)/60000) : null;
+      var pa = legArr(pv), pm = pa ? Math.round((legDep(r) - pa)/60000) : null;
       out += '<span class="sx-leg ' + cls(pm) + '">⬅ ' + legFlt(pv) + " " + esc(pv.from) + "→" + esc(pv.to) + (pa ? " " + dayHm(pa) + "到" : "") + turnTxt(pm) + "</span>";
     }
     if(nx && !isBase(r.to) && isBase(nx.to)){   // 往外站：下一段是折返，改看回台後接飛哪一班
-      var ra = nx.sta ? nx.sta + (nx.delay || 0)*60000 : 0, n2 = nextRow(reg, nx);
+      var ra = legArr(nx), n2 = nextRow(reg, nx);
       out += '<span class="sx-leg none">↩ 折返 ' + legFlt(nx) + " " + esc(nx.from) + "→" + esc(nx.to) + (ra ? " " + dayHm(ra) + "到" : "") + "</span>";
       if(n2 && !n2.gap){
-        var m2 = ra ? Math.round((n2.dep - ra)/60000) : null;
-        out += '<span class="sx-leg ret' + (cls(m2) === "bad" ? " bad" : "") + '">➡ 回台後' + (m2 != null && m2 > 720 ? "下一段 " : "接飛 ") + legFlt(n2) + " " + esc(n2.from) + "→" + esc(n2.to) + " " + dayHm(n2.dep) + "飛" + turnTxt(m2) + "</span>";
+        var d2 = legDep(n2), m2 = ra ? Math.round((d2 - ra)/60000) : null;
+        out += '<span class="sx-leg ret' + (cls(m2) === "bad" ? " bad" : "") + '">➡ 回台後' + (m2 != null && m2 > 720 ? "下一段 " : "接飛 ") + legFlt(n2) + " " + esc(n2.from) + "→" + esc(n2.to) + " " + dayHm(d2) + "飛" + turnTxt(m2) + "</span>";
       } else out += '<span class="sx-leg ret">➡ ' + (n2 && n2.gap ? "回台後的下一段航點接不上" : "回台後清單內沒有接飛") + "</span>";
     } else if(nx){
-      var nm = arr ? Math.round((nx.dep - arr)/60000) : null;
-      out += '<span class="sx-leg ' + cls(nm) + '">➡ ' + (nm != null && nm > 720 ? "下一段 " : "接飛 ") + legFlt(nx) + " " + esc(nx.from) + "→" + esc(nx.to) + " " + dayHm(nx.dep) + "飛" + turnTxt(nm) + "</span>";
+      var nd = legDep(nx), nm = arr ? Math.round((nd - arr)/60000) : null;
+      out += '<span class="sx-leg ' + cls(nm) + '">➡ ' + (nm != null && nm > 720 ? "下一段 " : "接飛 ") + legFlt(nx) + " " + esc(nx.from) + "→" + esc(nx.to) + " " + dayHm(nd) + "飛" + turnTxt(nm) + "</span>";
     } else {
       var hasOut = S.legs.some(function(x){ return x.from === r.to; });
       out += '<span class="sx-leg none">➡ ' + (!hasOut ? "看不到下一段（清單沒有回程資料）" : gapN ? "下一段航點接不上（中間可能缺資料）" : "清單內沒有接飛") + "</span>";
@@ -4256,6 +4260,61 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     if(r.rem[i] == null) return '<div class="sx-c x"><u>' + lab + '</u><span class="n">' + (r.pax[i] != null && r.noCap ? "訂 " + r.pax[i] : "—") + "</span></div>";
     var v = r.rem[i], cls = v < 0 ? "over" : i === 0 ? "" : v <= (i === 3 ? 5 : 2) ? "low" : v <= TIGHT && i === 3 ? "tight" : "";
     return '<div class="sx-c ' + cls + '"><u>' + lab + '</u><span class="n">' + (v < 0 ? "超賣 " + (-v) : "<small>空</small>" + v) + '</span><span class="b">訂 ' + r.pax[i] + "/" + r.cap[i] + "</span></div>";
+  }
+  /* 起飛時間：台灣出發優先用機場即時資料（TDX，隨到離資料每幾分鐘更新），否則用系統清單的 Best DT（S 表定／E 預估／A 實際） */
+  var TDX = {};
+  function tdxIndex(j){
+    TDX = {};
+    if(!j || !Array.isArray(j.rows)) return;
+    var c = {}; (j.cols || []).forEach(function(n, i){ c[n] = i; });
+    if(c.dir == null || c.flightNo == null || c.date == null) return;
+    j.rows.forEach(function(x){
+      if(x[c.dir] !== "D" || (c.cancelled != null && x[c.cancelled])) return;
+      var fn = String(x[c.flightNo] || "").toUpperCase().replace(/\s/g, "").replace(/^([A-Z0-9]{2})0*/, "$1");
+      TDX[(x[c.station] || "") + "|" + fn + "|" + x[c.date]] = { act: x[c.act] || "", est: x[c.est] || "", date: x[c.date] };
+    });
+  }
+  /* AIRS（值班台抓的實際／預估時間），以班號＋表定時間對應 */
+  var AIRS = {};
+  function fnN(x){ return String(x || "").toUpperCase().replace(/\s/g, "").replace(/^([A-Z0-9]{2})0*/, "$1"); }
+  function airsIndex(j){
+    AIRS = {};
+    ((j && j.airs && j.airs.rows) || []).forEach(function(r){ var k = r.d + "|" + fnN(r.f); (AIRS[k] = AIRS[k] || []).push(r); });
+  }
+  function airsFind(dir, flt, ref){
+    var best = null, bd = 6*3600000;
+    (AIRS[dir + "|" + fnN(flt)] || []).forEach(function(r){ var d = Math.abs(r.s - ref); if(d < bd){ bd = d; best = r; } });
+    return best;
+  }
+  function legArr(x){ var r = x && x.sta && isBase(x.to) ? airsFind("A", x.flt, x.sta) : null; return r && (r.a || r.e) ? (r.a || r.e) : (x && x.sta ? x.sta + (x.delay || 0)*60000 : 0); }
+  function legDep(x){ var r = x && x.std && isBase(x.from) ? airsFind("D", x.flt, x.std) : null; return r && (r.a || r.e) ? (r.a || r.e) : (x ? x.dep || x.std : 0); }
+  function depInfo(r){
+    var ar = r.std && isBase(r.from) ? airsFind("D", r.flt, r.std) : null;
+    if(ar && (ar.a || ar.e)) return { ms: ar.a || ar.e, kind: ar.a ? "act" : "est", live:false, airs:true };
+    if(isBase(r.from) && r.std){
+      var fn = String(r.flt).replace(/^([A-Z0-9]{2})0*/, "$1"), f = TDX[r.from + "|" + fn + "|" + dkey(r.std)], t = f && (f.act || f.est);
+      if(t){
+        var ms = Date.parse(f.date + "T" + t + ":00+08:00");
+        if(isFinite(ms)){
+          if(ms - r.std > 12*3600000) ms -= 86400000; else if(r.std - ms > 12*3600000) ms += 86400000;
+          return { ms:ms, kind: f.act ? "act" : "est", live:true };
+        }
+      }
+    }
+    return { ms: r.dep || r.std, kind: r.bf === "A" ? "act" : r.bf === "E" ? "est" : (r.dep && r.std && r.dep !== r.std ? "est" : "sch"), live:false };
+  }
+  function depHtml(r){
+    var d = depInfo(r); r._d = d;
+    return '<span class="hm">' + parts(d.ms).hm + '</span><span class="sx-k2 ' + d.kind + '" title="' + (d.live ? "機場即時資料" : "系統清單") + '">' + { act:"實際", est:"預估", sch:"表定" }[d.kind] + (d.live ? "・機場" : "") + "</span>";
+  }
+  function depStd(r){
+    var d = r._d; if(!d) return "";
+    if(d.kind === "sch"){ var aa0 = !isBase(r.from) && r.sta ? airsFind("A", r.flt, r.sta) : null, at0 = aa0 && (aa0.a || aa0.e);
+      return at0 ? '<span class="sx-std">抵台 ' + dayHm(at0) + ' <span class="sx-k2 ' + (aa0.a ? "act" : "est") + '">' + (aa0.a ? "實際" : "預估") + "</span></span>" : ""; }
+    var dl = Math.round((d.ms - r.std)/60000);
+    var aa = !isBase(r.from) && r.sta ? airsFind("A", r.flt, r.sta) : null, at = aa && (aa.a || aa.e);
+    return '<span class="sx-std">表定 ' + parts(r.std).hm + (dl ? '<span class="sx-dly' + (dl < 0 ? " early" : "") + '">' + (dl > 0 ? "晚 " : "早 ") + Math.abs(dl) + " 分</span>" : "") + "</span>" +
+      (at ? '<span class="sx-std">抵台 ' + dayHm(at) + ' <span class="sx-k2 ' + (aa.a ? "act" : "est") + '">' + (aa.a ? "實際" : "預估") + "</span></span>" : "");
   }
   function render(){
     if(!S.rows.length){ $("sxMain").hidden = true; return; }
@@ -4336,9 +4395,8 @@ renderList(); renderDetail(); window.scrollTo({top:0});
         '<div class="sx-list">' + g.map(function(r){
           var u = isUS(r), tot = r.rem.reduce(function(a, v){ return a + pos(v); }, 0), ov = r.rem.some(function(v){ return v != null && v < 0; });
           return '<div class="sx-row' + (u ? " us" : "") + '">' +
-            '<div class="sx-t"><span class="hm">' + parts(r.dep).hm + "</span>" +
-              (r.delay ? '<span class="sx-dly">' + (r.delay > 0 ? "晚 " : "早 ") + Math.abs(r.delay) + " 分</span>" : "") +
-              '<span class="fl">' + esc(r.flt) + "</span>" + (r.st !== "J" ? '<span class="st">(' + esc(r.st) + ")</span>" : "") +
+            '<div class="sx-t">' + depHtml(r) +
+              '<span class="fl">' + esc(r.flt) + "</span>" + (r.st !== "J" ? '<span class="st">(' + esc(r.st) + ")</span>" : "") + depStd(r) +
               '<span class="to">' + (inb ? "<b>" + esc(r.from) + "</b> <i>" + esc(apt(r.from)) + "</i> → " + esc(r.to)
                                          : (r.from !== "TPE" ? '<i>' + esc(r.from) + " →</i> " : "") + "<b>" + esc(r.to) + "</b> <i>" + esc(apt(r.to)) + "</i>") +
               (u ? '<span class="sx-us">美國</span>' : "") + "</span></div>" +
@@ -4402,6 +4460,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     }).then(function(j){
       if(j){
         R.err = ""; R.need = false;
+        tdxIndex(j); airsIndex(j);
         if(j.seat && j.seat.text){
           var p = parse(j.seat.text, !!j.seat.utc);
           S.rows = p.rows; S.legs = p.legs; S.t = j.seat.t || R.t;
