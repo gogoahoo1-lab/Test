@@ -439,6 +439,14 @@ dialog.sr::backdrop{background:rgba(2,6,12,.72);backdrop-filter:blur(3px)}
 .srtime b{font-size:20px;color:var(--text);font-variant-numeric:tabular-nums;letter-spacing:.02em}
 .srlt-l{font-size:12.5px;color:var(--muted)}
 #srLTd{font-size:12.5px;color:var(--muted)}
+.srinfo .srstd{display:inline-flex;align-items:baseline;flex-wrap:wrap;gap:4px 8px}
+.srinfo .srstd u{text-decoration:none;font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--gold)}
+.srinfo .srstd small{font-size:12.5px;color:var(--muted)}
+.srinfo .srstd b{font-size:22px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+.srinfo .srstd .lt{font-style:normal;font-size:11px;font-weight:700;color:#7FD3F0;background:rgba(127,211,240,.14);border-radius:5px;padding:0 6px}
+.srinfo .srstd .etd{font-style:normal;font-size:12px;font-weight:700;color:var(--warn)}
+.srinfo .srac{margin-left:14px;color:#fff;font-weight:700}
+.srinfo .srac b{letter-spacing:.03em}
 .srinfo .ac{color:#fff;font-weight:700;letter-spacing:.02em}
 .srsum .srt{font-size:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .srsum .srt b{color:var(--gold);letter-spacing:.03em}
@@ -460,7 +468,8 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
 .sralt .r.none{display:block;color:var(--dim);font-size:12.5px}
 .sralt .tm{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px}
 .sralt .tm b{color:var(--text);font-size:15px}
-.sralt .r.ow{grid-template-columns:92px 1fr auto}
+.sralt .r.ow{grid-template-columns:1fr 110px auto}
+.sralt .r.ow .fl{order:1} .sralt .r.ow .tm{order:2} .sralt .r.ow .vd{order:3}
 .sralt .r.ow small{color:var(--muted);font-size:12px}
 .sralt .tm.std .lt,.sralt .tm.std .etd{white-space:nowrap}
 .sralt .tm.std .etd{font-style:normal;font-size:11px;font-weight:700;color:var(--warn)}
@@ -507,6 +516,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
   .sralt .r{grid-template-columns:1fr auto}
   .sralt .r .seats{grid-column:1/-1}
   .sralt .r.ow{grid-template-columns:1fr auto}
+  .sralt .r.ow .fl{grid-column:1/-1}
   .sralt .r.ow .tm{grid-column:1/-1}
   .sralt .tm.std{flex-direction:row;align-items:baseline;gap:6px}
   .sralt .r:not(.ow) .tm{grid-column:1/-1}
@@ -606,7 +616,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-13 22:55（快選只列出發）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-13 23:05（本班 STD）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4907,11 +4917,18 @@ const SR = (()=>{
     /* 概況 */
     const fInfo = ok ? `${tpe(f.std).md} 表定 ${tpe(f.std).hm}（台北）・${TN[f.type]||f.type||""} ${f.reg||""}` : "";
     const sd = ok ? depT(f, f.std) : null, dd = x=>x===st.md ? "" : x+" ";
-    const stdTxt = sd ? (sd.loc ? `表定 ${dd(sd.md)}${sd.hm}（當地｜台北 ${dd(sd.tp.md)}${sd.tp.hm}）` : `表定 ${dd(sd.md)}${sd.hm}`) : "";
+    const stdTxt = sd ? (sd.loc ? `STD ${dd(sd.md)}${sd.hm}（當地｜台北 ${dd(sd.tp.md)}${sd.tp.hm}）` : `STD ${dd(sd.md)}${sd.hm}`) : "";
     T.push("✈️ " + (ok ? `${f.flt} ${f.from}→${f.to}｜${stdTxt}｜${TN[f.type]||f.type||""} ${f.reg||""}` : f ? `${f.flt}${f.from?" "+f.from+"→"+f.to:""}` : "航班未指定"));
     T.push(`📍 ${stn||"—"} 當地 ${evHm}${L?"（"+WD[L.wd]+"）":""}`);
     const info = ok ? fInfo : f&&f.routeOnly ? (rows.length && !R.cached ? "清單內沒有這班的訂位資料（可能是調機、已取消或不在清單日期內），航線依過去紀錄帶出，人數請手動輸入" : "空位清單暫時讀不到這班，航線依上次紀錄帶出，人數請手動輸入") : f ? "空位清單內查無此班，人數可手動輸入" : "輸入航班號即可帶出場站、人數與替代航班";
-    const infoHtml = ok ? `${E(sd.md)} 表定 ${E(sd.hm)}${sd.loc ? `（當地，台北 ${E(sd.tp.md===sd.md?"":sd.tp.md+" ")}${E(sd.tp.hm)}）` : "（台北）"}・<b class="ac">${E(TN[f.type]||f.type||"")} ${E(f.reg||"")}</b>` : E(info);
+    let infoHtml = E(info);
+    if(ok){
+      const e = tsOf(f), dl = Math.round((e - f.std)/60000), ed = dl ? depT(f, e) : null;
+      infoHtml = `<span class="srstd"><u>STD</u><small>${E(sd.md)}</small><b>${E(sd.hm)}</b>`
+        + (sd.loc ? `<i class="lt">當地</i><small>台北 ${E(sd.tp.md===sd.md?"":sd.tp.md+" ")}${E(sd.tp.hm)}</small>` : `<i class="lt">台北</i>`)
+        + (ed ? `<em class="etd">${f.bf==="A"?"實際":"預計"} ${E(ed.hm)}</em>` : "")
+        + `</span><span class="srac">${E(TN[f.type]||f.type||"")} <b>${E(f.reg||"")}</b></span>`;
+    }
     html += `<div class="srbar"><span class="srinfo${ok?"":" dim"}">${infoHtml}</span></div>`;
     const h1 = html; html = "";
 
