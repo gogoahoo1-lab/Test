@@ -422,7 +422,7 @@ dialog.sr::backdrop{background:rgba(2,6,12,.72);backdrop-filter:blur(3px)}
 .srsec h5 small{font-size:12px;color:var(--gold);font-weight:600}
 .srsec h5:has(mark)::after{background:rgba(220,192,134,.45)}
 .srsum{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--no);border-radius:12px;padding:12px 15px}
-.srbar{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;margin-top:12px}
+.srbar{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;margin-top:10px}
 .srinfo{font-size:12.8px;color:var(--muted);font-variant-numeric:tabular-nums}
 .srinfo.dim{color:var(--dim)}
 .srtype{display:flex;gap:4px;flex-wrap:wrap}
@@ -581,7 +581,6 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
         <select id="srWin"><option value="12">12 小時內</option><option value="24" selected>24 小時內</option><option value="48">48 小時內</option></select></div>
     </div>
     <div class="srquick" id="srQuick"></div>
-    <input type="hidden" id="srType" value="DIV">
     <div id="srOut1"></div>
     <section class="srsec"><h5><mark>宵禁與剩餘裕度</mark></h5>
       <div class="srtime">
@@ -4711,7 +4710,7 @@ const SR = (()=>{
     if(fltChanged){ fltChanged=false; paxTouched=false; dstTouched=false; stnTouched=false; }
     /* 事發場站＝航班出發站（除非手動改過，例如改成轉降站） */
     if(f && f.from && !stnTouched && $("srStn").value.toUpperCase().trim()!==f.from){ $("srStn").value = f.from; flash("srStn"); flash("srPax"); }
-    const stn=$("srStn").value.toUpperCase().trim(), type=$("srType").value, H=+$("srWin").value||24;
+    const stn=$("srStn").value.toUpperCase().trim(), H=+$("srWin").value||24;
     const L = stn ? lnow(stn) : null;
     if(stn!==lastStn){ lastStn=stn; timeTouched=false; }
     if(!timeTouched) $("srTime").value = L ? L.label : "";
@@ -4742,9 +4741,9 @@ const SR = (()=>{
     /* 概況 */
     const fInfo = ok ? `${tpe(f.std).md} 表定 ${tpe(f.std).hm}（台北）・${TN[f.type]||f.type||""} ${f.reg||""}` : "";
     T.push("航班：" + (ok ? `${f.flt} ${f.from}→${f.to}（${fInfo}）` : f ? `${f.flt}（空位清單查無此班）` : "未指定"));
-    T.push(`狀況：${TYPES[type]}${stn?" @ "+stn:""}，預計起降 ${evHm} LT${nextDay?"（次日）":""}`);
+    T.push(`事發場站：${stn||"—"}，預計起降 ${evHm} LT${nextDay?"（次日）":""}`);
     const info = ok ? fInfo : f&&f.routeOnly ? "空位清單暫時讀不到這班，航線依上次紀錄帶出，人數請手動輸入" : f ? "空位清單內查無此班，人數可手動輸入" : "輸入航班號即可帶出場站、人數與替代航班";
-    html += `<div class="srbar"><div class="srtype">${Object.keys(TYPES).map(k=>`<button type="button" data-srtype="${k}" aria-pressed="${k===type}">${TYPES[k]}</button>`).join("")}</div><span class="srinfo${ok?"":" dim"}">${E(info)}</span></div>`;
+    html += `<div class="srbar"><span class="srinfo${ok?"":" dim"}">${E(info)}</span></div>`;
     const h1 = html; html = "";
 
     /* 1. 宵禁 */
@@ -4864,7 +4863,6 @@ const SR = (()=>{
   $("srTime").addEventListener("input", e=>{ timeTouched=!!e.target.value; render(); });
   $("srWin").addEventListener("change", render);
   $("srNow").onclick = ()=>{ timeTouched=false; render(); };
-  $("srOut1").addEventListener("click", e=>{ const b=e.target.closest("[data-srtype]"); if(!b) return; $("srType").value=b.dataset.srtype; render(); });
   $("srPax").addEventListener("input", e=>{ paxTouched=!!e.target.value.trim(); render(); });
   function flash(id){ const el=$(id); el.classList.remove("srflash"); void el.offsetWidth; el.classList.add("srflash"); }
   $("srQuick").addEventListener("click", e=>{ const b=e.target.closest("[data-srq]"); if(!b) return; $("srFlt").value=b.dataset.srq; fltChanged=true; render(); });
