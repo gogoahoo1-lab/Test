@@ -452,6 +452,8 @@ dialog.sr::backdrop{background:rgba(2,6,12,.72);backdrop-filter:blur(3px)}
 .srsum .srt b{color:var(--gold);letter-spacing:.03em}
 .srnote{font-size:12.8px;color:var(--muted);white-space:pre-line;margin:6px 0 0}
 .srtags{display:flex;gap:6px;flex-wrap:wrap}
+.srops{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+.srops h6{margin:0 0 8px;font-size:13px;font-weight:700;color:var(--text)}
 details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-top:10px}
 .srbig{font-size:13px;color:var(--muted);margin-bottom:8px}
 .srbig b{font-size:28px;color:var(--text);margin-right:4px;font-variant-numeric:tabular-nums}
@@ -619,7 +621,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-13 23:30（AIRS ETA＋宵禁）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-13 23:35（宵禁＋場站限制）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4840,6 +4842,7 @@ const SR = (()=>{
     const L = !BASE.includes(r.from) && seat().localAt ? seat().localAt(ms, r.from) : null;
     return L ? {md:L.md, hm:L.hm, loc:true, tp:t} : {md:t.md, hm:t.hm, loc:false, tp:t}; };
   const hmOf = m=>pad(Math.floor(m/60))+":"+pad(m%60);
+  const ops = (t,b)=>`<div class="srops"><h6>${t}</h6>${b}</div>`;
   const sec = (t,b,hl)=>`<section class="srsec${hl?" hl":""}"><h5>${t}</h5>${b}</section>`;
   const cfRow = o=>`<div class="cf cf-${o.k}"><span class="who">${E(o.who)}</span><span class="win">${E(o.win)}</span><span class="verdict">${E(o.v)}</span></div>`;
 
@@ -4963,7 +4966,7 @@ const SR = (()=>{
     if(stObj){
       const tags = OPS.map(k=>({k, r:read(k, stObj.items[k].status)}));
       const notes = tags.filter(o=>stObj.items[o.k].note).map(o=>`<b>${FULL[o.k]}</b>\n${E(stObj.items[o.k].note)}`).join("\n\n");
-      opsHtml = sec(`${E(stn)} 場站作業`, `<div class="srtags">${tags.map(o=>`<span class="tag t-${o.r.k}">${SHORT[o.k]}・${o.r.text}</span>`).join("")}</div>` +
+      opsHtml = ops(`${E(stn)} 場站作業限制`, `<div class="srtags">${tags.map(o=>`<span class="tag t-${o.r.k}">${SHORT[o.k]}・${o.r.text}</span>`).join("")}</div>` +
         (notes ? `<details class="srd"><summary>展開場站備註</summary><p class="note">${notes}</p></details>` : ""));
       opsTxt = `🏢 ${stn} 場站作業\n` + tags.map(o=>{
         const n = (stObj.items[o.k].note||"").replace(/\s*\n\s*/g," ").replace(/\s{2,}/g," ").trim();
@@ -4971,7 +4974,7 @@ const SR = (()=>{
         return `${OPSI[o.r.k]||"❔"} ${SHORT[o.k]}：${t}${n ? "。"+n : ""}`;
       }).join("\n");
     } else if(stn){
-      opsHtml = sec("場站作業", `<p class="srnote">${E(stn)} 不在場站限制資料庫，請直接聯繫當站。</p>`);
+      opsHtml = ops(`${E(stn)} 場站作業限制`, `<p class="srnote">${E(stn)} 不在場站限制資料庫，請直接聯繫當站。</p>`);
     }
 
     /* 3. 受影響旅客 */
@@ -5033,7 +5036,6 @@ const SR = (()=>{
           <p class="srnote">最短過站時間：A321neo 70 分、A330-900 70 分、A350-900 70 分、A350-1000 75 分。</p>`);
       }
     }
-    html += opsHtml;
 
     /* 4. 替代航班空位 */
     if(rows.length && stn){
@@ -5079,7 +5081,7 @@ const SR = (()=>{
     const foot = S.t ? `空位清單 ${tpe(S.t).md} ${tpe(S.t).hm} 更新${R.cached?"（連線失敗，使用快取）":""}` : "";
     T.push("", "ℹ️ " + (S.t ? `空位 ${tpe(S.t).md} ${tpe(S.t).hm} 更新${R.cached?"（快取）":""}，` : "") + "僅供參考");
     if(opsTxt) T.push("", opsTxt);
-    $("srOut1").innerHTML = h1; $("srCf").innerHTML = cfHtml; $("srOut").innerHTML = html;
+    $("srOut1").innerHTML = h1; $("srCf").innerHTML = cfHtml + opsHtml; $("srOut").innerHTML = html;
     $("srStamp").textContent = `產生於 ${st.md} ${st.hm}（台北）` + (foot ? "・"+foot : "");
     txt = T.join("\n");
   }
