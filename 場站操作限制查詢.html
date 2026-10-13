@@ -468,8 +468,8 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
 .sralt .r.none{display:block;color:var(--dim);font-size:12.5px}
 .sralt .tm{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px}
 .sralt .tm b{color:var(--text);font-size:15px}
-.sralt .r.ow{grid-template-columns:1fr 110px auto}
-.sralt .r.ow .fl{order:1} .sralt .r.ow .tm{order:2} .sralt .r.ow .vd{order:3}
+.sralt .r.ow{grid-template-columns:minmax(0,1fr) 92px 104px 230px}
+.sralt .r.ow .fl{order:1} .sralt .r.ow .tm{order:2} .sralt .r.ow .tm.sta{order:3} .sralt .r.ow .vd{order:4}
 .sralt .r.ow small{color:var(--muted);font-size:12px}
 .sralt .tm.std .lt,.sralt .tm.std .etd{white-space:nowrap}
 .sralt .tm.std .etd{font-style:normal;font-size:11px;font-weight:700;color:var(--warn)}
@@ -497,6 +497,8 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
 .srreg b{color:#fff;font-size:15px;letter-spacing:.03em}
 .sralt .r.ow .role{font-style:normal;font-size:11px;font-weight:700;color:var(--gold);background:rgba(220,192,134,.12);border-radius:5px;padding:0 6px;margin-right:6px}
 .sralt .r.ow .vd{font-weight:700;text-align:right;font-size:13px}
+.sralt .r.ow .vd .cfw,.srarr .cfw{display:block;margin-top:3px;font-size:12px;font-weight:800;color:#fff;background:var(--no);border-radius:6px;padding:2px 8px;text-align:left}
+.srarr .cfw{display:inline-block;margin:0}
 .sralt .r.ow.ok .vd{color:var(--ok)} .sralt .r.ow.warn .vd{color:var(--warn)} .sralt .r.ow.no .vd{color:var(--no)}
 .sralt .r.ow.no{box-shadow:inset 3px 0 0 var(--no)} .sralt .r.ow.warn{box-shadow:inset 3px 0 0 var(--warn)} .sralt .r.ow.ok{box-shadow:inset 3px 0 0 var(--ok)}
 .sralt .tm .lt{font-style:normal;font-size:10.5px;font-weight:700;color:#7FD3F0;background:rgba(127,211,240,.14);border-radius:5px;padding:0 5px;margin-left:5px}
@@ -515,9 +517,10 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
   .srform{grid-template-columns:repeat(2,minmax(0,1fr))}
   .sralt .r{grid-template-columns:1fr auto}
   .sralt .r .seats{grid-column:1/-1}
-  .sralt .r.ow{grid-template-columns:1fr auto}
+  .sralt .r.ow{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
   .sralt .r.ow .fl{grid-column:1/-1}
-  .sralt .r.ow .tm{grid-column:1/-1}
+  .sralt .r.ow .tm{grid-column:auto;flex-wrap:wrap}
+  .sralt .r.ow .tm.sta:empty{display:none}
   .sralt .tm.std{flex-direction:row;align-items:baseline;gap:6px}
   .sralt .r:not(.ow) .tm{grid-column:1/-1}
   .sralt .r:not(.ow) .tot{grid-column:2/3;grid-row:2}
@@ -616,7 +619,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-13 23:15（移除快選）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-13 23:30（AIRS ETA＋宵禁）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4747,7 +4750,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
   }
   useCache();
   bar();
-  window.SeatX = { load:load, parse:parse, S:S, R:R, render:render, localAt:localAt, legDep:legDep, airsFind:airsFind, regNorm:regNorm };   // 測試用
+  window.SeatX = { load:load, parse:parse, S:S, R:R, render:render, localAt:localAt, legDep:legDep, depInfo:depInfo, airsFind:airsFind, regNorm:regNorm };   // 測試用
 })();
 </script>
 <script>
@@ -4788,6 +4791,16 @@ const SR = (()=>{
   }
   /* 一路往後找同機號的下一段（每一段往後 40 小時內，與空位查詢頁一致），
      直到列出「回台後接飛」那一段為止；延誤會一路傳遞，追回後顯示可準時 */
+  /* 某站在某時刻是否落在宵禁：回傳「NRT 宵禁 2400-0600」之類文字，否則 null */
+  function cfHit(code, ms){
+    const s0 = DATA.stations.find(x=>x.code===code); if(!s0 || s0.items.curfew.status!=="V") return null;
+    const tz = TZMAP[code]; if(!tz) return null;
+    const rs = parseCurfew(s0.items.curfew.time); if(!rs.length) return null;
+    const p = {}; new Intl.DateTimeFormat("en-GB",{timeZone:tz,hour:"2-digit",minute:"2-digit",weekday:"short",hourCycle:"h23"}).formatToParts(new Date(ms)).forEach(x=>p[x.type]=x.value);
+    const min = (+p.hour)*60 + (+p.minute), wd = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].indexOf(p.weekday);
+    const hit = applicableRanges(rs, tz, wd).find(r=>!r.skip && inR(min, r));
+    return hit ? `${code} 宵禁 ${(hit.label?hit.label+" ":"")}${hit.raw}` : null;
+  }
   function onward(f){
     const X=seat(), reg = X.regNorm ? X.regNorm(f.reg) : "";
     if(!reg || /^(TBA|TBD|XXX)/.test(reg)) return {err:"沒有機號，無法判斷接飛"};
@@ -4801,17 +4814,22 @@ const SR = (()=>{
       if(x.from!==prev.to){ out.push({gap:true, x}); break; }
       const fb = BASE.includes(x.from), tb = BASE.includes(x.to);
       const role = !fb && tb ? "折返回台" : fb && (wentOut || BASE.includes(f.to) && !BASE.includes(f.from)) ? "回台後接飛" : "接飛";
-      const mgt = MGT[x.type] || 60, plan = X.legDep(x) || x.std;
+      const mgt = MGT[x.type] || 60, di = X.depInfo ? X.depInfo(x) : {ms:X.legDep(x)}, plan = di.ms || x.std;
       const margin = Math.round((plan - prevArr)/60000);
-      const predDep = Math.max(plan, prevArr + mgt*60000), delay = Math.round((predDep - x.std)/60000);
-      const predArr = x.sta + (predDep - x.std);
-      out.push({x, role, mgt, margin, delay, predDep, predArr, pax:(x.pax||[]).reduce((a,v)=>a+(v||0),0)});
+      /* 已有實際起飛時間就以實際為準，否則取「表定／預估」與「前段抵達＋最短過站」較晚者 */
+      const predDep = di.kind==="act" ? plan : Math.max(plan, prevArr + mgt*60000), delay = Math.round((predDep - x.std)/60000);
+      /* 抵達：AIRS 有實際／預估抵達就用 AIRS，否則以表定抵達＋起飛延誤推算 */
+      const aa = BASE.includes(x.to) && X.airsFind && x.sta ? X.airsFind("A", x.flt, x.sta) : null;
+      const arrSrc = aa && (aa.a || aa.e) ? (aa.a ? "AIRS 實際" : "AIRS 預估") : "推算";
+      const predArr = aa && (aa.a || aa.e) ? (aa.a || aa.e) : x.sta + (predDep - x.std);
+      out.push({x, role, mgt, margin, delay, predDep, predArr, arrSrc, depAct: di.kind==="act",
+        cfDep: cfHit(x.from, predDep), cfArr: cfHit(x.to, predArr), pax:(x.pax||[]).reduce((a,v)=>a+(v||0),0)});
       if(role==="回台後接飛") break;                 // 已列出回台後接飛
       if(!tb) wentOut = true;
       if(tb && !fb) wentOut = true;
       prev = x; prevArr = predArr;
     }
-    return {reg:f.reg, arr, legs:out, last};
+    return {reg:f.reg, arr, arrCf: cfHit(f.to, arr.ms), legs:out, last};
   }
   /* 出發時刻：台灣出發用台北時間，外站出發用當地時間（附台北時間 tp） */
   /* STD 樣式：金色 STD＋小字日期＋白色粗體時間；有延誤時加註預計起飛 */
@@ -4981,26 +4999,37 @@ const SR = (()=>{
         const ac = clk(ow.arr.ms, f.to);
         T.push("", `🔗 後續接飛（${f.reg}）`, `　本班預計抵達 ${f.to} ${ac.md===today?"":ac.md+" "}${ac.hm}（${ac.loc?"當地・":""}${KIND[ow.arr.kind]}）`);
         if(div){ T.push("　⚠️ 航機轉降中，以下依原航程推算，實際延誤會更長"); }
+        if(ow.arrCf){ T.push(`　⛔ 預計抵達落在 ${ow.arrCf}`); }
         let rowsH = "";
         ow.legs.forEach(o=>{
           if(o.gap){ rowsH += `<div class="r none">下一段 ${E(o.x.flt)} 由 ${E(o.x.from)} 出發，航點接不上（中間可能缺資料）</div>`; T.push(`　❔ 下一段 ${o.x.flt} ${o.x.from}→${o.x.to} 航點接不上`); return; }
-          const x=o.x, k = o.delay>0 ? "no" : (o.margin - o.mgt) < 30 ? "warn" : "ok";
+          const x=o.x, k = (o.delay>0 || o.cfDep || o.cfArr) ? "no" : (o.margin - o.mgt) < 30 ? "warn" : "ok";
           const lamp = {no:"🔴", warn:"🟡", ok:"🟢"}[k];
           const stdT = clkTxt(x.std, x.from, today), predT = clkTxt(o.predDep, x.from, today);
-          const marTxt = o.margin>720 ? `停留 ${Math.floor(o.margin/60)} 小時 ${o.margin%60} 分` : `過站 ${o.margin} 分（最短 ${o.mgt}）`;
-          const verdict = o.delay>0 ? `可能延誤約 ${o.delay} 分，預計 ${predT.replace("（當地）","")} 起飛${predT.includes("當地")?"（當地）":""}` : "可準時";
+          const marTxt = o.margin>720 ? `停留 ${Math.floor(o.margin/60)} 小時 ${o.margin%60} 分`
+            : o.margin<0 ? `前段晚於表定起飛 ${-o.margin} 分才到（最短過站 ${o.mgt}）` : `過站 ${o.margin} 分（最短 ${o.mgt}）`;
+          const verdict = o.depAct ? (o.delay>0 ? `已起飛（晚 ${o.delay} 分）` : "已起飛")
+            : o.delay>0 ? `可能延誤約 ${o.delay} 分，預計 ${predT.replace("（當地）","")} 起飛${predT.includes("當地")?"（當地）":""}` : "可準時";
+          const cfs = [o.cfDep && !o.depAct ? `預計起飛落在 ${o.cfDep}` : "", o.cfArr ? `預計抵達落在 ${o.cfArr}` : ""].filter(Boolean);
           const sp = stdT.replace("（當地）","").split(" "), sHm = sp.pop(), sMd = sp.join(" ");
-          rowsH += `<div class="r ow ${k}"><span class="tm std"><u>STD</u>${sMd?`<small>${E(sMd)}</small>`:""}<b>${E(sHm)}</b>${stdT.includes("當地")?'<i class="lt">當地</i>':""}</span>
+          /* 折返回台：加上 STA（抵台表定，台北時間）；延誤時附預計抵達 */
+          const isBack = o.role==="折返回台" && x.sta;
+          const showPa = isBack && (o.arrSrc==="推算" ? o.delay>0 : Math.abs(o.predArr - x.sta) >= 60000);
+          const paLab = o.arrSrc==="推算" ? "預計" : o.arrSrc;
+          const sa = isBack ? clk(x.sta, x.to) : null, pa = showPa ? clk(o.predArr, x.to) : null;
+          const staHtml = isBack ? `<span class="tm std sta"><u>STA</u>${sa.md!==today?`<small>${E(sa.md)}</small>`:""}<b>${E(sa.hm)}</b>${pa?`<em class="etd">${E(paLab)} ${E(pa.md!==sa.md?pa.md+" ":"")}${E(pa.hm)}</em>`:""}</span>` : '<span class="tm sta"></span>';
+          const staTxt = isBack ? `｜STA ${sa.md!==today?sa.md+" ":""}${sa.hm}${pa?`（${paLab} ${pa.md!==sa.md?pa.md+" ":""}${pa.hm}）`:""}` : "";
+          rowsH += `<div class="r ow ${k}"><span class="tm std"><u>STD</u>${sMd?`<small>${E(sMd)}</small>`:""}<b>${E(sHm)}</b>${stdT.includes("當地")?'<i class="lt">當地</i>':""}</span>${staHtml}
             <span class="fl"><em class="role">${E(o.role)}</em><b>${E(x.flt)}</b> ${E(x.from)}→${E(x.to)}${x.ferry?" <i>調機</i>":""}<br><small>${E(marTxt)}${o.pax?`・旅客 ${o.pax} 人`:""}</small></span>
-            <span class="vd">${E(verdict)}</span></div>`;
-          T.push(`　${lamp} ${o.role} ${x.flt} ${x.from}→${x.to} STD ${stdT}｜${marTxt}｜${verdict}${o.pax?`｜旅客 ${o.pax} 人`:""}`);
+            <span class="vd">${E(verdict)}${cfs.map(c=>`<span class="cfw">⛔ ${E(c)}</span>`).join("")}</span></div>`;
+          T.push(`　${lamp} ${o.role} ${x.flt} ${x.from}→${x.to} STD ${stdT}${staTxt}｜${marTxt}｜${verdict}${cfs.map(c=>"｜⛔ "+c).join("")}${o.pax?`｜旅客 ${o.pax} 人`:""}`);
         });
         if(!ow.legs.length || (ow.legs.length && !ow.legs.some(o=>o.role==="回台後接飛") && !ow.legs[ow.legs.length-1].gap)){
           const lt = ow.last ? tpe(ow.last) : null;
           const why = `清單內查不到 ${f.reg} 之後${ow.legs.length?"的回台後接飛":"的航班"}` + (lt ? `（空位清單最晚只到 ${lt.md} ${lt.hm}，可能還沒排入）` : "");
           rowsH += `<div class="r none">${E(why)}</div>`; T.push("　➖ " + why);
         }
-        html += sec("<mark>後續接飛</mark>", `<p class="srarr">${head}<span class="srreg">機號 <b>${E(f.reg)}</b></span>${div?'<br><span style="color:var(--warn)">⚠ 航機轉降中，以下依原航程推算，實際延誤會更長</span>':""}</p><div class="sralt">${rowsH}</div>
+        html += sec("<mark>後續接飛</mark>", `<p class="srarr">${head}${ow.arrCf?`<span class="cfw">⛔ 抵達落在 ${E(ow.arrCf)}</span>`:""}<span class="srreg">機號 <b>${E(f.reg)}</b></span>${div?'<br><span style="color:var(--warn)">⚠ 航機轉降中，以下依原航程推算，實際延誤會更長</span>':""}</p><div class="sralt">${rowsH}</div>
           <p class="srnote">最短過站時間：A321neo 70 分、A330-900 70 分、A350-900 70 分、A350-1000 75 分。</p>`);
       }
     }
