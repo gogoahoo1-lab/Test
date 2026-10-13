@@ -462,6 +462,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
 .sralt .tm b{color:var(--text);font-size:15px}
 .sralt .r.ow{grid-template-columns:92px 1fr auto}
 .sralt .r.ow small{color:var(--muted);font-size:12px}
+.sralt .r.ow .role{font-style:normal;font-size:11px;font-weight:700;color:var(--gold);background:rgba(220,192,134,.12);border-radius:5px;padding:0 6px;margin-right:6px}
 .sralt .r.ow .vd{font-weight:700;text-align:right;font-size:13px}
 .sralt .r.ow.ok .vd{color:var(--ok)} .sralt .r.ow.warn .vd{color:var(--warn)} .sralt .r.ow.no .vd{color:var(--no)}
 .sralt .r.ow.no{box-shadow:inset 3px 0 0 var(--no)} .sralt .r.ow.warn{box-shadow:inset 3px 0 0 var(--warn)} .sralt .r.ow.ok{box-shadow:inset 3px 0 0 var(--ok)}
@@ -577,7 +578,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-13 21:50（過站 70 分）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-13 22:05（回台接飛）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4747,24 +4748,32 @@ const SR = (()=>{
     const dl = X.legDep && x.std ? X.legDep(x) - x.std : 0;
     return {ms:x.sta + dl, kind: dl ? "est" : "sch"};
   }
+  /* 一路往後找同機號的下一段（每一段往後 40 小時內，與空位查詢頁一致），
+     直到列出「回台後接飛」那一段為止；延誤會一路傳遞，追回後顯示可準時 */
   function onward(f){
     const X=seat(), reg = X.regNorm ? X.regNorm(f.reg) : "";
     if(!reg || /^(TBA|TBD|XXX)/.test(reg)) return {err:"沒有機號，無法判斷接飛"};
-    const legs = (X.S.legs||[]).filter(x=>x!==f && X.regNorm(x.reg)===reg && x.std>f.std && x.std-f.std<36*3600000).sort((a,b)=>a.std-b.std);
+    const all = (X.S.legs||[]).filter(x=>x!==f && X.regNorm(x.reg)===reg && x.std>f.std).sort((a,b)=>a.std-b.std);
+    const last = (X.S.legs||[]).reduce((m,x)=>Math.max(m, x.std||0), 0);
     const arr = arrOf(f), out = [];
-    let prev = f, prevArr = arr.ms;
-    for(const x of legs){
-      if(out.length>=3) break;
+    let prev = f, prevArr = arr.ms, wentOut = !BASE.includes(f.to);
+    while(out.length < 4){
+      const x = all.find(y=>y.std>prev.std && y.std-prev.std < 40*3600000);
+      if(!x) break;
       if(x.from!==prev.to){ out.push({gap:true, x}); break; }
+      const fb = BASE.includes(x.from), tb = BASE.includes(x.to);
+      const role = !fb && tb ? "折返回台" : fb && (wentOut || BASE.includes(f.to) && !BASE.includes(f.from)) ? "回台後接飛" : "接飛";
       const mgt = MGT[x.type] || 60, plan = X.legDep(x) || x.std;
       const margin = Math.round((plan - prevArr)/60000);
       const predDep = Math.max(plan, prevArr + mgt*60000), delay = Math.round((predDep - x.std)/60000);
       const predArr = x.sta + (predDep - x.std);
-      out.push({x, mgt, margin, delay, predDep, predArr, pax:(x.pax||[]).reduce((a,v)=>a+(v||0),0)});
-      if(margin>720 || delay<=0) break;          // 過夜或已追回延誤，後面不再受影響
+      out.push({x, role, mgt, margin, delay, predDep, predArr, pax:(x.pax||[]).reduce((a,v)=>a+(v||0),0)});
+      if(role==="回台後接飛") break;                 // 已列出回台後接飛
+      if(!tb) wentOut = true;
+      if(tb && !fb) wentOut = true;
       prev = x; prevArr = predArr;
     }
-    return {reg:f.reg, arr, legs:out};
+    return {reg:f.reg, arr, legs:out, last};
   }
   /* 出發時刻：台灣出發用台北時間，外站出發用當地時間（附台北時間 tp） */
   const depT = (r, ms)=>{ const t=tpe(ms);
@@ -4925,7 +4934,6 @@ const SR = (()=>{
         T.push("", `🔗 後續接飛（${f.reg}）`, `　本班預計抵達 ${f.to} ${ac.md===today?"":ac.md+" "}${ac.hm}（${ac.loc?"當地・":""}${KIND[ow.arr.kind]}）`);
         if(div){ T.push("　⚠️ 航機轉降中，以下依原航程推算，實際延誤會更長"); }
         let rowsH = "";
-        if(!ow.legs.length){ rowsH = '<div class="r none">清單內沒有這架飛機的後續航班</div>'; T.push("　➖ 清單內沒有這架飛機的後續航班"); }
         ow.legs.forEach(o=>{
           if(o.gap){ rowsH += `<div class="r none">下一段 ${E(o.x.flt)} 由 ${E(o.x.from)} 出發，航點接不上（中間可能缺資料）</div>`; T.push(`　❔ 下一段 ${o.x.flt} ${o.x.from}→${o.x.to} 航點接不上`); return; }
           const x=o.x, k = o.delay>0 ? "no" : (o.margin - o.mgt) < 30 ? "warn" : "ok";
@@ -4934,10 +4942,15 @@ const SR = (()=>{
           const marTxt = o.margin>720 ? `停留 ${Math.floor(o.margin/60)} 小時 ${o.margin%60} 分` : `過站 ${o.margin} 分（最短 ${o.mgt}）`;
           const verdict = o.delay>0 ? `可能延誤約 ${o.delay} 分，預計 ${predT.replace("（當地）","")} 起飛${predT.includes("當地")?"（當地）":""}` : "可準時";
           rowsH += `<div class="r ow ${k}"><span class="tm">${E(stdT.replace("（當地）",""))}${stdT.includes("當地")?'<i class="lt">當地</i>':""}</span>
-            <span class="fl"><b>${E(x.flt)}</b> ${E(x.from)}→${E(x.to)}${x.ferry?" <i>調機</i>":""}<br><small>${E(marTxt)}${o.pax?`・旅客 ${o.pax} 人`:""}</small></span>
+            <span class="fl"><em class="role">${E(o.role)}</em><b>${E(x.flt)}</b> ${E(x.from)}→${E(x.to)}${x.ferry?" <i>調機</i>":""}<br><small>${E(marTxt)}${o.pax?`・旅客 ${o.pax} 人`:""}</small></span>
             <span class="vd">${E(verdict)}</span></div>`;
-          T.push(`　${lamp} ${x.flt} ${x.from}→${x.to} 表定 ${stdT}｜${marTxt}｜${verdict}${o.pax?`｜旅客 ${o.pax} 人`:""}`);
+          T.push(`　${lamp} ${o.role} ${x.flt} ${x.from}→${x.to} 表定 ${stdT}｜${marTxt}｜${verdict}${o.pax?`｜旅客 ${o.pax} 人`:""}`);
         });
+        if(!ow.legs.length || (ow.legs.length && !ow.legs.some(o=>o.role==="回台後接飛") && !ow.legs[ow.legs.length-1].gap)){
+          const lt = ow.last ? tpe(ow.last) : null;
+          const why = `清單內查不到 ${f.reg} 之後${ow.legs.length?"的回台後接飛":"的航班"}` + (lt ? `（空位清單最晚只到 ${lt.md} ${lt.hm}，可能還沒排入）` : "");
+          rowsH += `<div class="r none">${E(why)}</div>`; T.push("　➖ " + why);
+        }
         html += sec("後續接飛", `<p class="srnote" style="margin:0 0 8px">${head}　機號 <b class="ac">${E(f.reg)}</b>${div?'<br><span style="color:var(--warn)">⚠ 航機轉降中，以下依原航程推算，實際延誤會更長</span>':""}</p><div class="sralt">${rowsH}</div>
           <p class="srnote">最短過站時間：A321neo 70 分、A330-900 70 分、A350-900 70 分、A350-1000 75 分。</p>`);
       }
