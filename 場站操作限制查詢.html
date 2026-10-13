@@ -462,6 +462,13 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
 .sralt .tm b{color:var(--text);font-size:15px}
 .sralt .r.ow{grid-template-columns:92px 1fr auto}
 .sralt .r.ow small{color:var(--muted);font-size:12px}
+.srarr{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0 0 10px;padding:10px 14px;border-radius:12px;
+  background:rgba(220,192,134,.10);border:1px solid rgba(220,192,134,.45);color:var(--text);font-size:14.5px;font-weight:600}
+.srarr .sx-k2{font-size:11.5px}
+.srarr .ap{color:var(--gold);letter-spacing:.04em}
+.srarr .at{font-size:18px;color:#fff;font-variant-numeric:tabular-nums}
+.srreg{margin-left:auto;font-size:13px;color:var(--muted);font-weight:500}
+.srreg b{color:#fff;font-size:15px;letter-spacing:.03em}
 .sralt .r.ow .role{font-style:normal;font-size:11px;font-weight:700;color:var(--gold);background:rgba(220,192,134,.12);border-radius:5px;padding:0 6px;margin-right:6px}
 .sralt .r.ow .vd{font-weight:700;text-align:right;font-size:13px}
 .sralt .r.ow.ok .vd{color:var(--ok)} .sralt .r.ow.warn .vd{color:var(--warn)} .sralt .r.ow.no .vd{color:var(--no)}
@@ -578,7 +585,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-13 22:05（回台接飛）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-13 22:40（接飛醒目）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4926,10 +4933,10 @@ const SR = (()=>{
     /* 後續接飛 */
     if(ok){
       const ow = onward(f), today = st.md;
-      if(ow.err){ html += sec("後續接飛", `<p class="srnote">${E(ow.err)}</p>`); T.push("", "🔗 後續接飛：" + ow.err); }
+      if(ow.err){ html += sec("<mark>後續接飛</mark>", `<p class="srnote">${E(ow.err)}</p>`); T.push("", "🔗 後續接飛：" + ow.err); }
       else {
         const div = stnTouched && stn && stn!==f.from && stn!==f.to;
-        const head = `本班預計抵達 ${E(f.to)} ${E(clkTxt(ow.arr.ms, f.to, today))}<span class="sx-k2 ${ow.arr.kind}">${KIND[ow.arr.kind]}</span>`;
+        const head = `<span>本班預計抵達 <b class="ap">${E(f.to)}</b> <b class="at">${E(clkTxt(ow.arr.ms, f.to, today))}</b></span><span class="sx-k2 ${ow.arr.kind}">${KIND[ow.arr.kind]}</span>`;
         const ac = clk(ow.arr.ms, f.to);
         T.push("", `🔗 後續接飛（${f.reg}）`, `　本班預計抵達 ${f.to} ${ac.md===today?"":ac.md+" "}${ac.hm}（${ac.loc?"當地・":""}${KIND[ow.arr.kind]}）`);
         if(div){ T.push("　⚠️ 航機轉降中，以下依原航程推算，實際延誤會更長"); }
@@ -4951,7 +4958,7 @@ const SR = (()=>{
           const why = `清單內查不到 ${f.reg} 之後${ow.legs.length?"的回台後接飛":"的航班"}` + (lt ? `（空位清單最晚只到 ${lt.md} ${lt.hm}，可能還沒排入）` : "");
           rowsH += `<div class="r none">${E(why)}</div>`; T.push("　➖ " + why);
         }
-        html += sec("後續接飛", `<p class="srnote" style="margin:0 0 8px">${head}　機號 <b class="ac">${E(f.reg)}</b>${div?'<br><span style="color:var(--warn)">⚠ 航機轉降中，以下依原航程推算，實際延誤會更長</span>':""}</p><div class="sralt">${rowsH}</div>
+        html += sec("<mark>後續接飛</mark>", `<p class="srarr">${head}<span class="srreg">機號 <b>${E(f.reg)}</b></span>${div?'<br><span style="color:var(--warn)">⚠ 航機轉降中，以下依原航程推算，實際延誤會更長</span>':""}</p><div class="sralt">${rowsH}</div>
           <p class="srnote">最短過站時間：A321neo 70 分、A330-900 70 分、A350-900 70 分、A350-1000 75 分。</p>`);
       }
     }
