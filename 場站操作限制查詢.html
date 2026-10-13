@@ -462,6 +462,16 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
 .sralt .tm b{color:var(--text);font-size:15px}
 .sralt .r.ow{grid-template-columns:92px 1fr auto}
 .sralt .r.ow small{color:var(--muted);font-size:12px}
+.sralt .tm.std .lt,.sralt .tm.std .etd{white-space:nowrap}
+.sralt .tm.std .etd{font-style:normal;font-size:11px;font-weight:700;color:var(--warn)}
+.srquick .chip.cstd{display:inline-flex;align-items:center;gap:8px}
+.chip.cstd .cs{display:inline-flex;align-items:baseline;gap:4px}
+.chip.cstd .cs u{text-decoration:none;font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--gold)}
+.chip.cstd .cs b{font-size:15px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+.chip.cstd .cs i{font-style:normal;font-size:10px;font-weight:700;color:#7FD3F0;background:rgba(127,211,240,.14);border-radius:4px;padding:0 4px}
+.chip.cstd[aria-pressed="true"] .cs u{color:#5a4510}
+.chip.cstd[aria-pressed="true"] .cs b{color:#15202b}
+.chip.cstd[aria-pressed="true"] .cs i{color:#15202b;background:rgba(21,32,43,.14)}
 .sralt .tm.std{display:flex;flex-direction:column;align-items:flex-start;gap:1px;line-height:1.2}
 .sralt .tm.std u{text-decoration:none;font-size:10.5px;font-weight:800;letter-spacing:.08em;color:var(--gold)}
 .sralt .tm.std small{font-size:11.5px;color:var(--muted)}
@@ -497,6 +507,9 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
   .sralt .r.ow{grid-template-columns:1fr auto}
   .sralt .r.ow .tm{grid-column:1/-1}
   .sralt .tm.std{flex-direction:row;align-items:baseline;gap:6px}
+  .sralt .r:not(.ow) .tm{grid-column:1/-1}
+  .sralt .r:not(.ow) .tot{grid-column:2/3;grid-row:2}
+  .sralt .r:not(.ow) .fl{grid-column:1/2}
   .sralt .r.ow .vd{grid-column:1/-1;text-align:left}
   .srfab{padding:10px 14px}
 }
@@ -591,7 +604,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-13 22:45（接飛 STD）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-13 22:50（STD 統一）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4789,6 +4802,10 @@ const SR = (()=>{
     return {reg:f.reg, arr, legs:out, last};
   }
   /* 出發時刻：台灣出發用台北時間，外站出發用當地時間（附台北時間 tp） */
+  /* STD 樣式：金色 STD＋小字日期＋白色粗體時間；有延誤時加註預計起飛 */
+  const stdBlock = r=>{ const d=depT(r, r.std), e=tsOf(r), dl=Math.round((e - r.std)/60000);
+    const ed = dl ? depT(r, e) : null;
+    return `<span class="tm std"><u>STD</u><small>${E(d.md)}</small><b>${E(d.hm)}</b>${d.loc?'<i class="lt">當地</i>':""}${ed?`<em class="etd">預計 ${E(ed.hm)}</em>`:""}</span>`; };
   const depT = (r, ms)=>{ const t=tpe(ms);
     const L = !BASE.includes(r.from) && seat().localAt ? seat().localAt(ms, r.from) : null;
     return L ? {md:L.md, hm:L.hm, loc:true, tp:t} : {md:t.md, hm:t.hm, loc:false, tp:t}; };
@@ -4871,8 +4888,8 @@ const SR = (()=>{
 
     /* 本站前後航班快選 */
     const near = stn ? rows.filter(r=>(r.from===stn||r.to===stn)&&tsOf(r)>now-6*3600000&&tsOf(r)<now+12*3600000).sort((a,b)=>tsOf(a)-tsOf(b)).slice(0,12) : [];
-    $("srQuick").innerHTML = near.length ? `<span class="srlab">${E(stn)} 前後 12 小時</span>` + near.map(r=>{const t=tpe(tsOf(r)), d=depT(r, tsOf(r));
-      return `<button type="button" class="chip" data-srq="${E(r.flt+" "+t.md)}" aria-pressed="${r===f}">${E(r.flt)} ${E(r.from)}→${E(r.to)} ${d.hm}${d.loc?"（當地）":""}</button>`;}).join("") : "";
+    $("srQuick").innerHTML = near.length ? `<span class="srlab">${E(stn)} 前後 12 小時</span>` + near.map(r=>{const t=tpe(tsOf(r)), d=depT(r, r.std);
+      return `<button type="button" class="chip cstd" data-srq="${E(r.flt+" "+t.md)}" aria-pressed="${r===f}">${E(r.flt)} ${E(r.from)}→${E(r.to)}<span class="cs"><u>STD</u><b>${E(d.hm)}</b>${d.loc?'<i>當地</i>':""}</span></button>`;}).join("") : "";
 
     /* 事件時間 */
     const evMin = L ? L.min : null, evWd = L ? L.wd : null;
@@ -4994,11 +5011,11 @@ const SR = (()=>{
       T.push("", `🔄 替代航班（${H} 小時內）`,
         `　空位合計${others ? "（"+route+"）" : ""}：` + (cnt.rows.length ? idx.map(i=>CLSN[i]+" "+(sum[i]||"❌")).join("｜") : "無直飛航班"));
       const list = groups.map(g=>`<div class="sralt"><div class="g">${E(g.t)}・${g.rows.length} 班</div>${
-        g.rows.length ? g.rows.map(r=>{const t=depT(r, tsOf(r)), tot=r.rem.reduce((a,v)=>a+posv(v),0);
-          return `<div class="r"><span class="tm">${t.md} <b>${t.hm}</b>${t.loc?'<i class="lt">當地</i>':""}</span><span class="fl"><b>${E(r.flt)}</b> ${E(r.from)}→${E(r.to)} <i>${E(TN[r.type]||r.type)}</i></span><span class="seats">${seatsHtml(r)}</span><span class="tot">${tot}</span></div>`;}).join("")
+        g.rows.length ? g.rows.map(r=>{const tot=r.rem.reduce((a,v)=>a+posv(v),0);
+          return `<div class="r">${stdBlock(r)}<span class="fl"><b>${E(r.flt)}</b> ${E(r.from)}→${E(r.to)} <i>${E(TN[r.type]||r.type)}</i></span><span class="seats">${seatsHtml(r)}</span><span class="tot">${tot}</span></div>`;}).join("")
         : '<div class="r none">此範圍內沒有航班</div>'}</div>`).join("");
       html += sec(`<mark>替代航班空位</mark><small>${H} 小時內・外站出發為當地時間</small>`, (gap ? `<p class="srnote" style="margin:0 0 6px">「${E(cntName)}」空位合計</p>${gap}` : "") + list);
-      groups.forEach(g=>g.rows.forEach(r=>{const t=depT(r, tsOf(r)); T.push(`　🛫 ${t.md} ${t.hm}${t.loc?"（當地）":""} ${r.flt} ${r.from}→${r.to}｜${seatsTxt(r)}`);}));
+      groups.forEach(g=>g.rows.forEach(r=>{const t=depT(r, r.std), dl=Math.round((tsOf(r)-r.std)/60000), et=dl?depT(r, tsOf(r)):null; T.push(`　🛫 STD ${t.md} ${t.hm}${t.loc?"（當地）":""}${et?`（預計 ${et.hm}）`:""} ${r.flt} ${r.from}→${r.to}｜${seatsTxt(r)}`);}));
     } else {
       html += sec("<mark>替代航班空位</mark>", `<p class="srnote">${stn ? dataMsg(R,true) : "請輸入事發場站"}</p>`);
       T.push("", "🔄 替代航班", "　" + (stn ? dataMsg(R,false) : "請輸入事發場站"));
