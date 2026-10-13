@@ -616,7 +616,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-13 23:10（移除台北時間）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-13 23:15（移除快選）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -634,7 +634,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
       <div class="f"><label for="srWin">替代航班範圍</label>
         <select id="srWin"><option value="12">12 小時內</option><option value="24" selected>24 小時內</option><option value="48">48 小時內</option></select></div>
     </div>
-    <div class="srquick" id="srQuick"></div>
+    <div class="srquick" id="srQuick" hidden></div>
     <div id="srOut1"></div>
     <section class="srsec"><h5><mark>宵禁與剩餘裕度</mark></h5>
       <div class="srtime">
@@ -4899,12 +4899,8 @@ const SR = (()=>{
         .map(r=>{const t=tpe(tsOf(r)); return `<option value="${E(r.flt+" "+t.md)}">${E(r.from+"→"+r.to+" "+t.hm)}</option>`;}).join(""); }
 
     /* 本站前後航班快選 */
-    /* 快選：只列從事發場站出發、前後 12 小時內的班次；時間一律為該站當地時間（台灣站即台北時間） */
-    const near = stn ? rows.filter(r=>r.from===stn&&tsOf(r)>now-6*3600000&&tsOf(r)<now+12*3600000).sort((a,b)=>tsOf(a)-tsOf(b)).slice(0,12) : [];
-    const mdN = x=>String(x||"").split("/").map(n=>+n).join("/"), todayL = L ? mdN(L.date) : mdN(tpe(now).md);
-    $("srQuick").innerHTML = near.length ? `<span class="srlab">${E(stn)} 出發・前後 12 小時・當地時間</span>` + near.map(r=>{const t=tpe(tsOf(r)), d=depT(r, r.std);
-      return `<button type="button" class="chip cstd" data-srq="${E(r.flt+" "+t.md)}" aria-pressed="${r===f}">${E(r.flt)} ${E(r.from)}→${E(r.to)}<span class="cs"><u>STD</u>${mdN(d.md)!==todayL?`<small>${E(d.md)}</small>`:""}<b>${E(d.hm)}</b></span></button>`;}).join("")
-      : (stn && rows.length ? `<span class="srlab">${E(stn)} 前後 12 小時內沒有出發班次</span>` : "");
+    /* 快選列已取消，改由航班欄位輸入（仍有自動完成清單） */
+    $("srQuick").innerHTML = "";
 
     /* 事件時間 */
     const evMin = L ? L.min : null, evWd = L ? L.wd : null;
