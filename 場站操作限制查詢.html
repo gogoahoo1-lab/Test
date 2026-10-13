@@ -462,6 +462,11 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
 .sralt .tm b{color:var(--text);font-size:15px}
 .sralt .r.ow{grid-template-columns:92px 1fr auto}
 .sralt .r.ow small{color:var(--muted);font-size:12px}
+.sralt .tm.std{display:flex;flex-direction:column;align-items:flex-start;gap:1px;line-height:1.2}
+.sralt .tm.std u{text-decoration:none;font-size:10.5px;font-weight:800;letter-spacing:.08em;color:var(--gold)}
+.sralt .tm.std small{font-size:11.5px;color:var(--muted)}
+.sralt .tm.std b{font-size:19px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+.sralt .tm.std .lt{margin:2px 0 0}
 .srarr{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0 0 10px;padding:10px 14px;border-radius:12px;
   background:rgba(220,192,134,.10);border:1px solid rgba(220,192,134,.45);color:var(--text);font-size:14.5px;font-weight:600}
 .srarr .sx-k2{font-size:11.5px}
@@ -491,6 +496,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
   .sralt .r .seats{grid-column:1/-1}
   .sralt .r.ow{grid-template-columns:1fr auto}
   .sralt .r.ow .tm{grid-column:1/-1}
+  .sralt .tm.std{flex-direction:row;align-items:baseline;gap:6px}
   .sralt .r.ow .vd{grid-column:1/-1;text-align:left}
   .srfab{padding:10px 14px}
 }
@@ -585,7 +591,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-13 22:40（接飛醒目）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-13 22:45（接飛 STD）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4948,10 +4954,11 @@ const SR = (()=>{
           const stdT = clkTxt(x.std, x.from, today), predT = clkTxt(o.predDep, x.from, today);
           const marTxt = o.margin>720 ? `停留 ${Math.floor(o.margin/60)} 小時 ${o.margin%60} 分` : `過站 ${o.margin} 分（最短 ${o.mgt}）`;
           const verdict = o.delay>0 ? `可能延誤約 ${o.delay} 分，預計 ${predT.replace("（當地）","")} 起飛${predT.includes("當地")?"（當地）":""}` : "可準時";
-          rowsH += `<div class="r ow ${k}"><span class="tm">${E(stdT.replace("（當地）",""))}${stdT.includes("當地")?'<i class="lt">當地</i>':""}</span>
+          const sp = stdT.replace("（當地）","").split(" "), sHm = sp.pop(), sMd = sp.join(" ");
+          rowsH += `<div class="r ow ${k}"><span class="tm std"><u>STD</u>${sMd?`<small>${E(sMd)}</small>`:""}<b>${E(sHm)}</b>${stdT.includes("當地")?'<i class="lt">當地</i>':""}</span>
             <span class="fl"><em class="role">${E(o.role)}</em><b>${E(x.flt)}</b> ${E(x.from)}→${E(x.to)}${x.ferry?" <i>調機</i>":""}<br><small>${E(marTxt)}${o.pax?`・旅客 ${o.pax} 人`:""}</small></span>
             <span class="vd">${E(verdict)}</span></div>`;
-          T.push(`　${lamp} ${o.role} ${x.flt} ${x.from}→${x.to} 表定 ${stdT}｜${marTxt}｜${verdict}${o.pax?`｜旅客 ${o.pax} 人`:""}`);
+          T.push(`　${lamp} ${o.role} ${x.flt} ${x.from}→${x.to} STD ${stdT}｜${marTxt}｜${verdict}${o.pax?`｜旅客 ${o.pax} 人`:""}`);
         });
         if(!ow.legs.length || (ow.legs.length && !ow.legs.some(o=>o.role==="回台後接飛") && !ow.legs[ow.legs.length-1].gap)){
           const lt = ow.last ? tpe(ow.last) : null;
