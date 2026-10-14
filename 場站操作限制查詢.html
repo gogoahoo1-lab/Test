@@ -38,7 +38,10 @@ header.top{padding:26px 0 14px;display:flex;align-items:flex-end;gap:18px;flex-w
 }
 h1{font-size:22px;line-height:1.25;margin:0;font-weight:700;letter-spacing:.01em}
 .sub{color:var(--muted);font-size:12.5px;margin-top:2px}
-.stat{margin-left:auto;display:flex;gap:22px}
+.stat{display:flex;gap:22px}
+.langsw{margin-left:auto;align-self:flex-start;display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--panel)}
+.langsw button{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-size:12.5px;font-weight:700;padding:6px 13px;cursor:pointer;min-height:32px}
+.langsw button[aria-pressed="true"]{background:var(--gold);color:#15202b}
 .stat div{text-align:right}
 .stat b{display:block;font-size:21px;font-weight:700;color:var(--gold);line-height:1.2}
 .stat span{font-size:11.5px;color:var(--muted)}
@@ -285,11 +288,14 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
   .slot .lb{min-height:auto}
   .bigcode{font-size:36px}
   .stat{margin-left:0;width:100%;justify-content:flex-start;gap:26px}
+  .langsw{position:absolute;top:18px;right:16px}
+  header.top{position:relative}
+  header.top .mark{padding-right:112px}
   .stat div{text-align:left}
 }
 @media print{
   body{background:#fff;color:#000}
-  nav.tabs,.controls,.actions,.addleg,.rm,.codes,.regionrow,.totop,.srfab,dialog.sr{display:none !important}
+  nav.tabs,.controls,.actions,.addleg,.rm,.codes,.regionrow,.totop,.srfab,dialog.sr,.langsw{display:none !important}
   .card,.stationhead,.strip,.slot{background:#fff !important;color:#000 !important;border-color:#bbb !important}
   .bigcode,.timepill{color:#000 !important}
   .note{color:#222 !important}
@@ -556,6 +562,9 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
       <div class="sub">轉降、滯機加油、下客入境的第一線判斷依據</div>
     </div>
   </div>
+  <div class="langsw" role="group" aria-label="Language" data-noi18n>
+    <button type="button" data-lang="zh">中文</button><button type="button" data-lang="en">EN</button>
+  </div>
   <div class="stat">
     <div><b id="statStations">0</b><span>收錄場站</span></div>
     <div><b id="statRegions">0</b><span>營運區域</span></div>
@@ -634,7 +643,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-14 00:05（速報 B 版）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-14 10:55（Seat Vacancy）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -3229,7 +3238,7 @@ setInterval(()=>{ if(liveOn) updateLive(); }, 30000);
 const mc = document.getElementById("matrixChips");
 ITEMS.forEach(i=>{
   const b=document.createElement("button");
-  b.className="chip"; b.textContent=SHORT[i.key];
+  b.className="chip"; b.textContent=SHORT[i.key]; b.dataset.key=i.key;
   b.setAttribute("aria-pressed", i.key===matrixKey);
   b.onclick=()=>{matrixKey=i.key; [...mc.children].forEach(c=>c.setAttribute("aria-pressed", c===b)); renderMatrixDetail();};
   mc.appendChild(b);
@@ -3243,7 +3252,7 @@ function renderMatrix(){
   }).join("")}</tr>`).join("")}</tbody>`;
   t.querySelectorAll("td.cell").forEach(td=>{
     td.onclick=()=>{ matrixKey = td.dataset.key;
-      [...mc.children].forEach(c=>c.setAttribute("aria-pressed", c.textContent===SHORT[matrixKey]));
+      [...mc.children].forEach(c=>c.setAttribute("aria-pressed", c.dataset.key===matrixKey));
       renderMatrixDetail(td.dataset.code);
     };
   });
@@ -3267,15 +3276,16 @@ function renderMatrixDetail(focus){
 function linkify(text){
   let out = esc(text);
   out = out.replace(/([\w.+-]+@[\w.-]+\.\w+)/g, '<a href="mailto:$1">$1</a>');
-  out = out.replace(/(?<![\w@.-])(\d{2,4}-\d{3,4}-?\d{3,4}(?:#\d+)?|\d{4}-\d{4}|\d{9,10})(?![\w@.-])/g,
-    m=>`<a href="tel:${m.replace(/[^\d#]/g,"")}">${m}</a>`);
+  /* 不用 lookbehind（舊版 iOS Safari 不支援，會讓整段程式無法執行） */
+  out = out.replace(/(^|[^\w@.-])(\d{2,4}-\d{3,4}-?\d{3,4}(?:#\d+)?|\d{4}-\d{4}|\d{9,10})(?![\w@.-])/g,
+    (all,pre,m)=>`${pre}<a href="tel:${m.replace(/[^\d#]/g,"")}">${m}</a>`);
   return out;
 }
 document.getElementById("contacts").innerHTML = DATA.contacts.map(c=>{
   const side=(role,o)=> (o.unit||o.tel||o.email) ? `<div class="side">
       <div class="role">${role}</div>
       <div class="unit">${esc(o.unit||"—")}</div>
-      <div class="lines">${[o.tel,o.email].filter(x=>x&&x!=="JX").map(linkify).join("\n")||"無提供窗口"}</div>
+      ${(()=>{const l=[o.tel,o.email].filter(x=>x&&x!=="JX").map(linkify).join("\n"); return l ? `<div class="lines">${l}</div>` : `<div class="lines empty">無提供窗口</div>`;})()}
     </div>` : "";
   return `<div class="ccard">
     <header><b>${c.code}</b><span>台灣區備降站</span></header>
@@ -4342,7 +4352,8 @@ renderList(); renderDetail(); window.scrollTo({top:0});
               "美國":"北美", "北美其他":"北美", "大洋洲":"大洋洲", "歐洲":"歐洲", "中東非洲":"中東非洲" };
   var REGIONS = ["北美","國內","東北亞","港澳大陸","東南亞","南亞","大洋洲","歐洲","中東非洲","其他"];
   function region(c){ return C2R[CTRY[c]] || "其他"; }
-  function apt(c){ return AIRPORTS[c] || ""; }
+  var AIRPORTS_EN = { MYJ:"Matsuyama" };
+  function apt(c){ var z = AIRPORTS[c] || ""; return typeof I18N!=="undefined" && I18N.lang==="en" ? (AIRPORTS_EN[c] || I18N.tr(z)) : z; }
   function isUS(r){ var x = isBase(r.from) ? r.to : r.from; return CTRY[x] === "美國"; }
 
   function $(id){ return document.getElementById(id); }
@@ -4992,7 +5003,7 @@ const SR = (()=>{
       opsTxt = tags.map(o=>{
         const n = (stObj.items[o.k].note||"").replace(/\s*\n\s*/g," ").replace(/\s{2,}/g," ").trim();
         const t = o.r.k==="warn" ? "需申請" : o.r.text;
-        return `${OPSI[o.r.k]||"❔"} ${SHORT[o.k]}：${t}${n ? "。"+n : ""}`;
+        return `${OPSI[o.r.k]||"❔"} ${SHORT[o.k]}：${t}${n ? "。\uE000"+n+"\uE001" : ""}`;
       }).join("\n");
       P.opsL = opsTxt.split("\n");
     } else if(stn){
@@ -5126,6 +5137,8 @@ const SR = (()=>{
     $("srOut1").innerHTML = h1; $("srCf").innerHTML = cfHtml + opsHtml; $("srOut").innerHTML = html;
     $("srStamp").textContent = `產生於 ${st.md} ${st.hm}（台北）` + (foot ? "・"+foot : "");
     txt = T.join("\n");
+    if(typeof I18N!=="undefined" && I18N.lang==="en") txt = I18N.trText(txt);
+    txt = txt.replace(/[\uE000\uE001]/g, "");
   }
 
   function open(code){
@@ -5167,6 +5180,328 @@ const SR = (()=>{
 
   return { open, render, text:()=>txt };
 })();
+</script>
+<script>
+/* ================= 中英切換 i18n =================
+   做法：畫面照原本中文產生，切到英文時由這層把中文介面文字換成英文；
+   場站備註原文（.note／.livenote／.cnote）保留中文不翻。速報複製文字也套用同一套規則。 */
+const I18N = (()=>{
+  const KEY = "srLang";
+  let lang = "zh";
+  try{ lang = localStorage.getItem(KEY)==="en" ? "en" : "zh"; }catch(e){}
+
+  const WD = {"日":"Sun","天":"Sun","一":"Mon","二":"Tue","三":"Wed","四":"Thu","五":"Fri","六":"Sat","0":"Sun","7":"Sun","1":"Mon","2":"Tue","3":"Wed","4":"Thu","5":"Fri","6":"Sat"};
+  const wdList = s => (s.match(/[一二三四五六日天0-7]/g)||[]).map(c=>WD[c]).join(", ");
+
+  /* ---- 第一輪：整句（含固定數字） ---- */
+  const LONG = {
+    "以場站為單位往下串接：每一格代表航路上的一個場站，每個場站只填一次。第一站填出發時間與飛時；之後每站（含最後一站）填時差、抵達→靠檔與地停，系統自動推算抵達與可再起飛時間，並比對該站宵禁算出剩餘裕度。每站的「起飛 ETD」都可用 − ＋ 微調作業裕度（可按「回自動」還原），飛時也可先設好，按「＋ 增加下一個場站」即直接串接下一段。欄位可直接輸入，也可用 − ＋ 微調（飛時 20 分鐘一階、其餘時間 10 分鐘一階、時差 1 小時一階），或用鍵盤上下鍵。時差填「本站時間 − 上一站時間」，例如 TPE 飛 NRT 填 +1。":
+      "Chain stations downward: each box is one station on the route, entered once. For the first station enter the departure time and flight time; for every later station (including the last) enter the time difference, arrival→on-block and ground time. Arrival and earliest re-departure are calculated automatically and checked against each station's curfew to show the remaining margin. Each station's \"ETD\" can be fine-tuned with − / + (press \"Auto\" to restore); set the flight time first, then press \"+ Add next station\" to chain the next leg. Type directly, use − / + (flight time 20 min steps, other times 10 min, time difference 1 h), or the arrow keys. Time difference = this station's time − previous station's time, e.g. TPE→NRT enter +1.",
+    "台灣出發與抵台時間為台北時間；外站回台的出發與表定時間為當地時間。抵台時間沒有 AIRS 資料時，以表定抵達加上起飛延誤推算。座位數以公開座位圖計算：A350-900 4／26／36／240、A350-1000 4／40／36／270、A330-900 28／269、A321neo 8／180。黃底為「回台後接飛」的班次。":
+      "Departures from Taiwan and arrivals in Taiwan are Taipei time; departures and STD of outstation flights to Taiwan are local time. Without AIRS data, arrival is estimated as STA plus departure delay. Seats are based on published seat maps: A350-900 4/26/36/240, A350-1000 4/40/36/270, A330-900 28/269, A321neo 8/180. Yellow rows are onward flights after returning to Taiwan.",
+    "最短過站時間：A321neo 70 分、A330-900 70 分、A350-900 70 分、A350-1000 75 分。":
+      "Minimum turnaround: A321neo 70 min, A330-900 70 min, A350-900 70 min, A350-1000 75 min.",
+    "清單內沒有這班的訂位資料（可能是調機、已取消或不在清單日期內），航線依過去紀錄帶出，人數請手動輸入":
+      "No booking data for this flight in the list (ferry, cancelled or outside the list dates). Route filled from past records; please enter pax manually",
+    "資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。":
+      "Source: station operating restrictions sheet (station database). The station's latest notice prevails; confirm with the station before operating.",
+    "約每 3 小時更新一次；停在本頁時每 5 分鐘自動檢查，也可按「重新讀取」。":
+      "Updated about every 3 hours; checked every 5 min while this page is open, or press \"Reload\".",
+    "台灣區備降站翼上／翼下單位聯絡窗口。號碼與信箱可直接點擊撥出或寄信。":
+      "Above-wing / below-wing contacts for Taiwan alternate airports. Tap a number or email to call or write.",
+    "空位清單暫時讀不到這班，航線依上次紀錄帶出，人數請手動輸入":
+      "Seat list temporarily unavailable for this flight; route filled from the last record, please enter pax manually",
+    "組員特殊作業（無簽證入境／回程 On GD 值勤）": "Crew special ops (visa-free entry / return on GD duty)",
+    "此為定時更新的訂位資料，非最即時資訊，僅供參考。": "Periodically updated booking data, not real-time; for reference only.",
+    "航機轉降中，以下依原航程推算，實際延誤會更長": "Aircraft diverted; estimates below follow the original routing, actual delay will be longer",
+    "先在上面選一個區域，這裡會列出該區域的場站": "Pick a region above to list its stations",
+    "先在上面選一個地區，這裡會列出該地區的外站": "Pick a region above to list its outstations",
+    "轉降、滯機加油、下客入境的第一線判斷依據": "Front-line reference for diversion, transit refuelling, deplaning and entry",
+    "輸入航班號即可帶出場站、人數與替代航班": "Enter a flight number to fill in station, pax and alternatives",
+    "不在場站限制資料庫，請直接聯繫當站。": " is not in the station database; contact the station directly.",
+    "下一段航點接不上（中間可能缺資料）": "Next leg doesn't connect (data may be missing)",
+    "空位清單內查無此班，人數可手動輸入": "Flight not in seat list; enter pax manually",
+    "看不到下一段（清單沒有回程資料）": "Next leg not visible (no return data in list)",
+    "外站出發（出發時間為當地時間）": "Outstation departures (local time)",
+    "查無時區資料，請以現場時間判斷": "No time-zone data; use on-site time",
+    "有宵禁／跑道關閉，時間見備註": "Curfew / runway closure — see notes for times",
+    "輸入場站代碼，例如 NRT、BKK": "Station code, e.g. NRT, BKK",
+    "查無時區，請以現場時間判斷": "No time zone; use on-site time",
+    "回台後的下一段航點接不上": "Next leg after return doesn't connect",
+    "有宵禁，時間需查場站備註": "Curfew — see station notes for times",
+    "無法自動複製，請改用分享": "Couldn't copy automatically; use Share",
+    "沒有機號，無法判斷接飛": "No registration; can't determine onward flights",
+    "連線失敗，顯示上次快取": "Connection failed; showing last cache",
+    "回台後清單內沒有接飛": "No onward flight after return in list",
+    "機場上空環景示意動畫": "Airport overview animation",
+    "沒有符合條件的航班。": "No matching flights.",
+    "目前沒有分享空位清單": " is not sharing a seat list",
+    "空位清單需要查看碼。": "Seat list requires an access code.",
+    "美國線空位 J／W／Y": "US routes avail. J/W/Y",
+    "（訂位數，不含嬰兒）": " (booked, excl. infants)",
+    "上餐需申請／有條件": "Catering on request / conditional",
+    "事發場站（出發站）": "Event station (origin)",
+    "到「空位查詢」輸入": "Enter it in Seat Vacancy",
+    "只看經濟艙還有空位": "Only flights with Y seats",
+    "接飛：查無後續航班": "Onward: no later flights",
+    "有宵禁，時間未建檔": "Curfew — times not on file",
+    "空位清單需要查看碼": "Seat list requires an access code",
+    "點任一格看詳細備註": "Tap any cell for notes",
+    "・外站出發為當地時間": " · outstation departures in local time",
+    "此代碼不在資料庫": "Code not in database",
+    "此範圍內沒有航班": "No flights in this range",
+    "空位清單尚未載入": "Seat list not loaded",
+    "異常速報 SITUATION REPORT": "SITUATION REPORT",
+    "宵禁：請輸入事發場站": "Curfew: enter the event station",
+  };
+
+  /* ---- 第二輪：含數字的規則 ---- */
+  const RULES = [
+    [/版本 ([\d-]+ [\d:]+)（[^）]*）/g, "Version $1"],
+    [/找不到「([^」]*)」。換個代碼或清除搜尋條件試試。/g, 'No match for "$1". Try another code or clear the filter.'],
+    [/下一段 (\S+) 由 (\S+) 出發，航點接不上（中間可能缺資料）/g, "Next leg $1 departs $2 — route doesn't connect (data may be missing)"],
+    [/請輸入查看碼（向 ?(.+?) ?索取，只要輸入一次）/g, "Enter access code (ask $1; needed only once)"],
+    [/清單內查不到 (\S+) 之後的回台後接飛/g, "No onward flight after return for $1 in list"],
+    [/清單內查不到 (\S+) 之後的航班/g, "No later flights for $1 in list"],
+    [/（空位清單最晚只到 ([\d/]+ [\d:]+)，可能還沒排入）/g, " (seat list only covers up to $1; may not be scheduled yet)"],
+    [/前段晚於表定起飛 (\d+) 分才到（最短過站 (\d+)）/g, "Inbound arrives $1 min after STD (min turn $2)"],
+    [/過站 (-?\d+) 分（最短 (\d+)）/g, "Turn $1 min (min $2)"],
+    [/停留 (\d+) 小時 (\d+) 分/g, "Ground $1h $2m"],
+    [/可能延誤約 (\d+) 分，預計 (.+?) 起飛/g, "Possible delay ~$1 min, est. dep $2"],
+    [/可能延誤 (\d+) 分/g, "Possible delay $1 min"],
+    [/已起飛（晚 (\d+) 分）/g, "Departed (+$1 min)"],
+    [/宵禁中・距解除 /g, "In curfew · lifts in "],
+    [/僅週([一二三四五六日天、]+)適用，今日不適用/g, (m,d)=>`Only ${wdList(d)}; not today`],
+    [/每[週周]\s*([0-7](?:\s*[、,，／/]\s*[0-7])*)(?![\d:])/g, (m,d)=>"Every "+wdList(d)],
+    [/(每)?[週周]([一二三四五六日天](?:[、,，／/及和與&]?[週周]?[一二三四五六日天])*)/g, (m,e,d)=>(e?"Every ":"")+wdList(d)],
+    [/（([日一二三四五六])）/g, (m,d)=>` (${WD[d]})`],
+    [/\(([日一二三四五六])\)/g, (m,d)=>`(${WD[d]})`],
+    [/前 ?(\d+) 小時/g, "past $1 h"],
+    [/（(\d+) 分前，資料過舊）/g, " ($1 min ago — stale)"],
+    [/（(\d+) 小時前，資料過舊）/g, " ($1 h ago — stale)"],
+    [/(\d+) 小時內沒有替代航班/g, "No alternatives within $1 h"],
+    [/(\d+) 小時內/g, "within $1 h"],
+    [/無 (\S+) 直飛；最近 /g, "no direct $1; nearest "],
+    [/晚 (\d+) 分/g, "Late $1 min"],
+    [/早 (\d+) 分/g, "Early $1 min"],
+    [/差 (\S+?)）/g, "short $1)"],
+    [/旅客：(\d+) 人/g, "Pax: $1"],
+    [/旅客 (\d+) 人/g, "$1 pax"],
+    [/空位清單 ([\d/]+ [\d:]+) 更新/g, "Seat list updated $1"],
+    [/空位 ([\d/]+ [\d:]+) 更新/g, "Seats updated $1"],
+    [/系統清單 ((?:[\d/]+ )?\d{1,2}:\d{2}) 更新/g, "system list updated $1"],
+    [/((?:[\d/]+ )?\d{1,2}:\d{2}) 更新/g, "updated $1"],
+    [/「([^」]+)」空位合計/g, "Seats total · $1"],
+    [/([A-Z]{3}) 出發的所有航班/g, "All departures from $1"],
+    [/跨日 ?\+(\d)/g, "+$1 day"],
+    [/(\d{1,2}:\d{2})到/g, "arr. $1"],
+    [/(\d{1,2}:\d{2})飛/g, "dep. $1"],
+    [/(\d+) 小時 (\d+) 分/g, "$1h $2m"],
+    [/(\d+) 小時/g, "$1h"],
+    [/(\d+) 分鐘/g, "$1 min"],
+    [/(\d+) 分/g, "$1 min"],
+    [/空 (\d+) 席/g, "$1 avail"],
+    [/TTL 空 (\d+)/g, "TTL avail $1"],
+    [/空 (\d+)/g, "$1 avail"],
+    [/(\d+) 席/g, "$1 seats"],
+    [/(\d+) 人/g, "$1 pax"],
+    [/(\d+) 班/g, (m,n)=>n==="1" ? "1 flt" : n+" flts"],
+    [/超賣 ?(\d+)/g, "Oversold $1"],
+    [/超(\d+)/g, "Over $1"],
+    [/（不足 (\d+)）/g, " (short $1)"],
+  ];
+
+  /* ---- 第三輪：詞彙 ---- */
+  const WORDS = {
+    "場站操作限制查詢":"Station Restrictions","收錄場站":"Stations","營運區域":"Regions","資料待補":"Data pending",
+    "場站限制":"Restrictions","全站對照":"All Stations","備降聯絡":"Alternate Contacts","到離試算":"Timing Calc","空位查詢":"Seat Vacancy",
+    "異常速報":"SITREP","列印本站":"Print station","回到頂端":"Back to top","現況快報":"Live Status","收合快報":"Collapse",
+    "東北亞":"NE Asia","東南亞":"SE Asia","北美":"N. America","歐洲":"Europe","紐澳":"ANZ","中東非洲":"Middle East & Africa",
+    "北美其他":"Other N. America","港澳大陸":"HK/Macau/China","大洋洲":"Oceania","南亞":"South Asia","全部":"All","其他":"Other",
+    "台灣":"Taiwan","日本":"Japan","韓國":"Korea","中國":"China","港澳":"HK/Macau","美國":"USA","蒙古":"Mongolia","國內":"Domestic",
+    "免稅品攜帶限制":"Duty-free restrictions","其他特殊限制":"Other restrictions","可否滯機加油":"Transit refuelling",
+    "滯機加油":"Transit refuelling","當地上餐":"Local catering","可否轉降":"Diversion","可否下客":"Deplaning","可否入境":"Entry",
+    "Curfew 宵禁":"Curfew","需申請或有條件":"On request / conditional","需申請／有條件":"On request / conditional",
+    "可／無限制":"Allowed / no limit","可當地上餐":"Local catering OK","不可當地上餐":"No local catering","上餐資料待補":"Catering data pending",
+    "宵禁資料待補":"Curfew data pending","不適用或待補":"N/A or pending","無特別限制":"No special restriction","此欄尚未建檔":"Not on file",
+    "無額外備註":"No additional notes","請向場站確認":"Confirm with station","請查備註":"See notes","（另有備註）":" (see notes)",
+    "宵禁與剩餘裕度":"Curfew & Margin","場站作業限制":"Station ops restrictions","展開場站備註":"Show station notes",
+    "受影響旅客":"Affected Pax","受影響人數":"Affected pax","後續接飛":"Onward Flights","替代航班空位":"Alternative Flights",
+    "替代航班範圍":"Alternatives window","替代航班":"Alternatives","本班預計抵達":"This flight est. arr.","事發站":"Event stn",
+    "目的地・現在":"Destination · now","當地時間":"Local time","旅客目的地":"Pax destination","航班":"Flight",
+    "複製速報文字":"Copy report","重新讀取空位":"Reload seats","分享":"Share","產生於":"Generated",
+    "尚未指定航班":"No flight selected","航班未指定":"No flight","折返回台":"Return to TW","回台後接飛":"Onward after return",
+    "台灣　本站回台":"Taiwan · return","本站直飛":"Direct","本站回台":"Return to Taiwan","同航線後續班次":"Later flights, same route","原出發站（參考）":"From original origin (ref.)",
+    "出發的所有航班":"all departures","空位合計":"Seats total","」空位合計":"\" seats total","經濟艙空位合計":"Y seats total",
+    "請輸入事發場站":"Enter the event station","讀取空位清單中":"Loading seat list","清單內容看不懂":"Couldn't parse the list",
+    "清單內沒有接飛":"No onward flight in list","空位清單來自":"Seat list from","系統清單":"System list","空位清單":"Seat list",
+    "・系統清單":" · system list","・預計下次約":" · next approx.","最後更新":"last updated","・AIRS 更新時間不明":" · AIRS update time unknown",
+    "AIRS 無資料":"AIRS no data","連線失敗，使用快取":"connection failed, using cache","（連線失敗，使用快取）":" (connection failed, using cache)",
+    "（超過 5 小時未更新）":" (not updated for 5+ h)","查看碼不正確":"Incorrect access code","讀取失敗：":"Load failed: ",
+    "已複製，可直接貼到 LINE／Email":"Copied — paste into LINE / Email","重新讀取":"Reload","更新頻率":"Update frequency",
+    "AMP值班台":"AMP Duty Desk","值班台":"Duty Desk","機場即時資料":"Airport live data","讀取中":"Loading","・讀取中":" · loading",
+    "台灣出發":"From Taiwan","外站回台":"To Taiwan","美國線":"US routes","航班數":"Flights","超賣班次":"Oversold flights",
+    "經濟艙緊張（":"Y tight (","含超賣艙等":"incl. oversold","合計空位":"Total avail.","出發地區":"Origin region","目的地區域":"Destination region",
+    "出發場站":"Origin station","目的地站":"Destination","起飛 ETD（自動串接）":"ETD (auto)","起飛 ETD":"ETD","起飛 ETD（當地）":"ETD (local)",
+    "抵達 ETA（當地）":"ETA (local)","時差（小時）":"Time diff (h)","抵達→靠檔":"Arrival→on-block","＋ 增加下一個場站":"+ Add next station",
+    "供續飛下一站":"for continuing to next station","可再起飛":"Ready to depart","再起飛":"Re-dep","回自動":"Auto","待填時間":"Time pending",
+    "落在宵禁內":"Falls in curfew","台灣區備降站":"Taiwan alternates","航廈關閉":"terminal closed","航廈":"Terminal","台灣天際":"台灣天際","台勤":"台勤","部分欄位待補":"some fields pending","翼上單位":"Above-wing","翼下單位":"Below-wing","聯絡窗口":"Contacts",
+    "無提供窗口":"No contact provided","翼上":"Above-wing","翼下":"Below-wing","星宇":"STARLUX","華信":"Mandarin Airlines",
+    "未設配置":"No config","無此艙":"No cabin","無資料":"No data","查無":"Not found","不在場站資料庫":"Not in station database",
+    "預計抵達落在":"Est. arrival falls in","預計起飛落在":"Est. departure falls in","抵達落在":"Arrival falls in",
+    "可能延誤":"Possible delay","可準時":"On time","已起飛":"Departed","航點接不上":"route doesn't connect","下一段":"Next leg",
+    "異常速報｜":"SITREP | ","（手動輸入）":" (manual)","（台北）・":" (Taipei) · ","，⛔ 宵禁":", ⛔ curfew",
+    " 皆無宵禁":": no curfew","皆無宵禁":": no curfew","宵禁中":"In curfew","距解除":"lifts in","無宵禁":"No curfew","有宵禁":"Curfew","有規定":"Has rules","不受限":"Not affected",
+    "宵禁：":"Curfew: ","旅客：":"Pax: ","接飛：":"Onward: ","替代：":"Alt: ","替代：無":"Alt: none",
+    "無當地時間":"No local time","空位清單：":"Seat list: ","重點":"Key points","僅供參考":"for reference only",
+    "需申請":"On request","不適用":"N/A","不可":"Not allowed","可":"OK","自動帶入":"Auto","自動":"Auto","到「空位查詢」輸入":"Enter in Seat Vacancy",
+    "（台北）":" (Taipei)","（快取）":" (cache)","（當地）":" (local)","（調機）":" (ferry)","當地・":"local · ",
+    "　停留":" Ground","　現在":" now","　過站":" Turn","・旅客":" · Pax","・機場":" · airport","・經濟":" · Y","・豪經":" · W",
+    "停留":"Ground","現在":"now","過站":"Turn","當地":"Local","台北":"Taipei","表定":"Sched","預計":"Est.","預估":"Est.","實際":"Actual",
+    "推算":"Est.","裕度":"Margin","延誤":"Delay","取消":"Cancelled","調機":"Ferry","回航":"RTB","地停待修":"AOG","地停":"Ground",
+    "轉降":"Diversion","下客":"Deplane","入境":"Entry","加油":"Fuel","上餐":"Catering","免稅":"Duty-free","組員":"Crew","宵禁":"Curfew",
+    "場站作業":"Station ops","場站":"Station","出發站":"Origin","抵達站":"Arrival stn","出發":"Depart","抵達":"Arrival","抵台":"Arr. TW",
+    "起飛":"Dep","接飛":"Onward","直飛":"Direct","回台後":"after return","折返":"Return","機號":"Reg","日期":"Date","飛時":"Flight time",
+    "頭等":"First","商務":"Business","豪經":"Prem Econ","經濟":"Economy","空位":"Seats","超賣":"Oversold","跨日":"next day",
+    "今天":"Today","明天":"Tomorrow","後天":"In 2 days","昨天":"Yesterday","之後":"after","更新":"updated","未知":"Unknown",
+    "增加":"Add","移除":"Remove","減少":"Decrease","確定":"OK","關閉":"Closed","請確認":"Please confirm","的航班":" flights",
+    "夏季":"Summer","夏令":"Summer","冬季":"Winter","冬令":"Winter","每周":"Every","每週":"Every",
+    "空":"Avail","訂":"Bkd","剩":"left","皆":"all","至":"to","由":"from","人":"pax","班":"flts","席":"seats","｜旅客":" | Pax",
+    "（預計":" (est.","（過站":" (turn","（不足":" (short",
+    "　⚠ 來不及（":" ⚠ Too tight (","來不及":"Too tight","TTL 空":"TTL avail",
+    /* 城市 */
+    "桃園":"Taoyuan","松山":"Songshan","高雄":"Kaohsiung","台中":"Taichung","嘉義":"Chiayi","屏東":"Pingtung","馬祖北竿":"Matsu Beigan",
+    "台南":"Tainan","花蓮":"Hualien","台東":"Taitung","澎湖":"Penghu","金門":"Kinmen","馬祖南竿":"Matsu Nangan",
+    "東京成田":"Tokyo Narita","東京羽田":"Tokyo Haneda","大阪關西":"Osaka Kansai","大阪伊丹":"Osaka Itami","名古屋":"Nagoya","福岡":"Fukuoka",
+    "札幌新千歲":"Sapporo New Chitose","沖繩那霸":"Okinawa Naha","鹿兒島":"Kagoshima","廣島":"Hiroshima","熊本":"Kumamoto","高松":"Takamatsu",
+    "岡山":"Okayama","小松":"Komatsu","仙台":"Sendai","秋田":"Akita","青森":"Aomori","函館":"Hakodate","下地島":"Shimojishima","神戶":"Kobe",
+    "石垣":"Ishigaki","宮古":"Miyako","靜岡":"Shizuoka","富山":"Toyama","大分":"Oita","長崎":"Nagasaki","北九州":"Kitakyushu","德島":"Tokushima",
+    "高知":"Kochi","南紀白濱":"Nanki-Shirahama","茨城":"Ibaraki","首爾仁川":"Seoul Incheon","首爾金浦":"Seoul Gimpo","釜山":"Busan",
+    "濟州":"Jeju","大邱":"Daegu","光州":"Gwangju","務安":"Muan","香港":"Hong Kong","澳門":"Macau","上海浦東":"Shanghai Pudong",
+    "上海虹橋":"Shanghai Hongqiao","北京首都":"Beijing Capital","北京大興":"Beijing Daxing","廣州":"Guangzhou","深圳":"Shenzhen","廈門":"Xiamen",
+    "福州":"Fuzhou","南京":"Nanjing","杭州":"Hangzhou","成都天府":"Chengdu Tianfu","重慶":"Chongqing","武漢":"Wuhan","長沙":"Changsha",
+    "青島":"Qingdao","天津":"Tianjin","三亞":"Sanya","海口":"Haikou","昆明":"Kunming","西安":"Xi'an","珠海":"Zhuhai","寧波":"Ningbo",
+    "合肥":"Hefei","無錫":"Wuxi","濟南":"Jinan","新加坡":"Singapore","吉隆坡":"Kuala Lumpur","曼谷素萬那普":"Bangkok Suvarnabhumi",
+    "曼谷廊曼":"Bangkok Don Mueang","普吉":"Phuket","清邁":"Chiang Mai","清萊":"Chiang Rai","胡志明市":"Ho Chi Minh City","河內":"Hanoi",
+    "峴港":"Da Nang","芽莊":"Nha Trang","富國島":"Phu Quoc","海防":"Hai Phong","馬尼拉":"Manila","宿霧":"Cebu","克拉克":"Clark",
+    "卡利博":"Kalibo","公主港":"Puerto Princesa","雅加達":"Jakarta","峇里島":"Bali","泗水":"Surabaya","亞庇":"Kota Kinabalu","檳城":"Penang",
+    "仰光":"Yangon","金邊":"Phnom Penh","暹粒":"Siem Reap","永珍":"Vientiane","德里":"Delhi","孟買":"Mumbai","清奈":"Chennai","可倫坡":"Colombo",
+    "達卡":"Dhaka","加德滿都":"Kathmandu","烏蘭巴托":"Ulaanbaatar","洛杉磯":"Los Angeles","舊金山":"San Francisco","安大略":"Ontario",
+    "西雅圖":"Seattle","波特蘭":"Portland","拉斯維加斯":"Las Vegas","鳳凰城":"Phoenix","芝加哥":"Chicago","紐約甘迺迪":"New York JFK",
+    "紐約紐華克":"New York Newark","華盛頓杜勒斯":"Washington Dulles","波士頓":"Boston","亞特蘭大":"Atlanta","達拉斯":"Dallas","休士頓":"Houston",
+    "安克拉治":"Anchorage","檀香山":"Honolulu","關島":"Guam","塞班":"Saipan","帛琉":"Palau","溫哥華":"Vancouver","多倫多":"Toronto",
+    "墨西哥城":"Mexico City","瓜達拉哈拉":"Guadalajara","聖保羅":"São Paulo","雪梨":"Sydney","墨爾本":"Melbourne","布里斯本":"Brisbane",
+    "伯斯":"Perth","奧克蘭":"Auckland","基督城":"Christchurch","斐濟楠迪":"Nadi, Fiji","倫敦希斯洛":"London Heathrow","倫敦蓋威克":"London Gatwick",
+    "曼徹斯特":"Manchester","巴黎戴高樂":"Paris CDG","法蘭克福":"Frankfurt","慕尼黑":"Munich","阿姆斯特丹":"Amsterdam","維也納":"Vienna",
+    "蘇黎世":"Zurich","米蘭":"Milan","羅馬":"Rome","馬德里":"Madrid","巴塞隆納":"Barcelona","伊斯坦堡":"Istanbul","杜拜":"Dubai","多哈":"Doha",
+    "阿布達比":"Abu Dhabi","利雅德":"Riyadh","吉達":"Jeddah","莫斯科":"Moscow","聖彼得堡":"St Petersburg","哥本哈根":"Copenhagen",
+    "斯德哥爾摩":"Stockholm","赫爾辛基":"Helsinki","華沙":"Warsaw","布拉格":"Prague","約翰尼斯堡":"Johannesburg","開羅":"Cairo",
+    "阿迪斯阿貝巴":"Addis Ababa","奈洛比":"Nairobi","特拉維夫":"Tel Aviv",
+  };
+  const PUNCT = [["（"," ("],["）",")"],["｜"," | "],["、",", "],["，",", "],["。",". "],["：",": "],["；","; "],["・"," · "],
+                 ["／","/"],["「","\""],["」","\""],["　"," "],["～","~"],["＋","+"],["？","?"],["！","!"]];
+
+  const esc = s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+  const mkRe = obj=>new RegExp(Object.keys(obj).sort((a,b)=>b.length-a.length).map(esc).join("|"),"g");
+  const reLong = mkRe(LONG), reWords = mkRe(WORDS);
+  const AL = /[A-Za-z0-9)\]%]/, AR = /[A-Za-z0-9(\[#]/;
+  const sub = (re, map)=>s=>s.replace(re, m=>"\u0007"+map[m]+"\u0007")
+    .replace(/([A-Za-z0-9)\]%.])\u0007+(?=[A-Za-z0-9(\[#])/g, "$1 ")
+    .replace(/([A-Za-z0-9)\]%])\u0007+(?=[A-Za-z0-9(\[#])/g, "$1 ").replace(/\u0007/g, "");
+  const subLong = sub(reLong, LONG), subWords = sub(reWords, WORDS);
+  const HAS_CJK = /[　-〿㐀-鿿＀-￯]/;
+
+  /* 整個文字節點剛好是這些字時的專用譯法（例如按鈕） */
+  const EXACT = {"更新":"Refresh","空":"Avail","訂":"Bkd","可":"OK","中文":"中文"};
+  function tr(s){
+    if(!s || !HAS_CJK.test(s)) return s;
+    const t = s.trim(); if(EXACT[t]) return s.replace(t, EXACT[t]);
+    s = subLong(s);
+    for(const [re,rep] of RULES) s = s.replace(re, rep);
+    s = subWords(s);
+    for(const [a,b] of PUNCT) s = s.split(a).join(b);
+    return s.replace(/\)(?=━)/g,") ").replace(/[ \t]{2,}/g," ").replace(/ +([),.:;])/g,"$1").replace(/\( +/g,"(").replace(/^ {2,}/gm, " ");
+  }
+  /* 速報文字：… 之間是場站備註原文，不翻 */
+  function trText(s){
+    return s.split(/([\s\S]*?)/).map(p=>p[0]==="" ? p : p.split("\n").map(tr).join("\n")).join("");
+  }
+
+  /* ---- DOM ---- */
+  const SKIP = ".note,.livenote,.cnote,.ccard .lines:not(.empty),[data-noi18n],script,style,textarea,code";
+  const ATTRS = ["placeholder","title","aria-label"];
+  const memo = new WeakMap();
+  let busy = false;
+  const skipped = el=>!el || (el.closest && el.closest(SKIP));
+  function doText(n){
+    if(skipped(n.parentElement)) return;
+    const m = memo.get(n);
+    if(m && n.data===m.out && m.lang===lang) return;
+    const src = m && n.data===m.out ? m.src : n.data, out = lang==="en" ? tr(src) : src;
+    memo.set(n,{src,out,lang});
+    if(out!==src) n.data = out;
+  }
+  function doAttrs(el){
+    if(skipped(el)) return;
+    ATTRS.forEach(a=>{
+      if(!el.hasAttribute(a)) return;
+      const k = "data-i18n-"+a, v = el.getAttribute(a);
+      if(el.getAttribute(k+"-out")!==v || !el.hasAttribute(k)) el.setAttribute(k, v);
+      const src = el.getAttribute(k), out = lang==="en" ? tr(src) : src;
+      el.setAttribute(k+"-out", out); if(v!==out) el.setAttribute(a, out);
+    });
+  }
+  function walk(root){
+    if(root.nodeType===3){ doText(root); return; }
+    if(root.nodeType!==1 || skipped(root)) return;
+    doAttrs(root);
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT|NodeFilter.SHOW_ELEMENT, {acceptNode:n=>n.nodeType===1 && skipped(n) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT});
+    let n; while((n=w.nextNode())){ n.nodeType===3 ? doText(n) : doAttrs(n); }
+  }
+  function restore(){
+    const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT|NodeFilter.SHOW_ELEMENT);
+    let n; while((n=w.nextNode())){
+      if(n.nodeType===3){ const m=memo.get(n); if(m && n.data===m.out){ n.data=m.src; memo.set(n,{src:m.src,out:m.src,lang:"zh"}); } }
+      else ATTRS.forEach(a=>{ const k="data-i18n-"+a; if(n.hasAttribute(k)){ n.setAttribute(a, n.getAttribute(k)); n.setAttribute(k+"-out", n.getAttribute(k)); } });
+    }
+  }
+  const mo = new MutationObserver(list=>{
+    if(busy) return; busy = true;
+    try{
+      for(const r of list){
+        if(r.type==="characterData") doText(r.target);
+        else if(r.type==="attributes"){ if(ATTRS.includes(r.attributeName)) doAttrs(r.target); }
+        else r.addedNodes.forEach(walk);
+      }
+    } finally { busy = false; }
+  });
+
+  const TITLE = {zh:"場站操作限制查詢", en:"Station Restrictions"};
+  function paint(){
+    document.documentElement.lang = lang==="en" ? "en" : "zh-Hant";
+    document.title = TITLE[lang];
+    document.querySelectorAll("[data-lang]").forEach(b=>b.setAttribute("aria-pressed", b.dataset.lang===lang));
+  }
+  function set(l){
+    lang = l==="en" ? "en" : "zh";
+    try{ localStorage.setItem(KEY, lang); }catch(e){}
+    busy = true;
+    try{ lang==="en" ? walk(document.body) : restore(); } finally { busy = false; }
+    paint();
+    /* 重畫會依語言變化的畫面（城市名、速報文字） */
+    try{ window.SeatX && SeatX.render && SeatX.render(); }catch(e){}
+    try{ typeof SR!=="undefined" && SR.render(); }catch(e){}
+  }
+  function init(){
+    document.querySelectorAll("[data-lang]").forEach(b=>b.addEventListener("click",()=>set(b.dataset.lang)));
+    mo.observe(document.body, {subtree:true, childList:true, characterData:true, attributes:true, attributeFilter:ATTRS});
+    if(lang==="en"){ busy = true; try{ walk(document.body); } finally { busy = false; } }
+    paint();
+  }
+  return { get lang(){ return lang; }, set, tr, trText, init };
+})();
+I18N.init();
+
 </script>
 </body>
 </html>
