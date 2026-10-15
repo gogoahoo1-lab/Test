@@ -53,6 +53,16 @@ header{background:transparent}
 h1{font-size:38px;font-weight:400;margin:0;letter-spacing:-1px;line-height:1.05}
 h1 span{color:var(--cyan)}
 .sub{color:var(--dim);font-size:13px;margin:8px 0 0}
+.dstat{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;max-width:1280px;margin:14px auto 0;padding:0 20px;font-size:12.5px;line-height:1.3}
+.dstat:empty{display:none}
+.dstat .dh{color:var(--dim);font-weight:700;margin-right:2px}
+.dstat .ds{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.6);color:var(--txt);white-space:nowrap}
+.dstat .ds i{width:8px;height:8px;border-radius:50%;background:#b8c4cc;flex:none}
+.dstat .ds b{font-weight:600} .dstat .ds small{color:var(--dim);font-size:11.5px}
+.dstat .ds.ok i{background:var(--good)} .dstat .ds.warn i{background:var(--warn)} .dstat .ds.warn small{color:var(--warn)}
+.dstat .ds.bad i{background:var(--bad)} .dstat .ds.bad{border-color:rgba(212,80,80,.5);background:rgba(212,80,80,.07)} .dstat .ds.bad small{color:var(--bad)}
+.dstat .ds.na{color:var(--dim)}
+
 .stamp{display:flex;gap:26px;flex-wrap:wrap;align-items:baseline}
 .stamp b{font-size:28px;color:var(--txt);font-weight:400;letter-spacing:-.5px}
 .stamp i{font-style:normal;color:var(--dim);font-size:12px;display:block;margin-top:2px}
@@ -666,7 +676,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-15b</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-15c</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -674,6 +684,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
       <div><b id="stDays">0</b><i>資料涵蓋天數</i></div>
     </div>
   </div>
+  <div id="dataStatus" class="dstat" aria-live="polite"></div>
   <nav id="nav">
     <button data-tab="tdx" aria-selected="true">資料匯入</button>
     <button data-tab="board" aria-selected="false">到離看板</button>
@@ -1920,6 +1931,7 @@ function applyMap(srcLabel){
   var dates = {};
   res.flights.forEach(function(f){ if(f.date) dates[f.date] = 1; });
   DB.batches.push({
+    at: Date.now(),
     time: new Date().toLocaleTimeString("zh-TW", { hour12:false }),
     src: srcLabel || "重新套用對應",
     count: res.flights.length, added: added, updated: updated,
@@ -7588,6 +7600,7 @@ function importFiles(fileList){
 
     var dayList = Object.keys(dates).sort();
     DB.batches.push({
+      at: Date.now(),
       time: new Date().toLocaleTimeString("zh-TW",{hour12:false}),
       src: okFiles === 1 ? ("資料檔 " + results[0].name) : ("資料檔 ×" + okFiles),
       count: totalRows, added: added, updated: updated,
@@ -7850,6 +7863,7 @@ function tdxImport(data, dir, label, apt){
   });
 
   DB.batches.push({
+    at: Date.now(),
     time: new Date().toLocaleTimeString("zh-TW",{hour12:false}),
     src: label || ("TDX " + dir),
     count: kept, added: added, updated: updated,
@@ -8400,6 +8414,7 @@ function importApiData(data, dir, sourceLabel){
   res.flights.forEach(function(f){ if(f.date) dates[f.date] = 1; });
 
   DB.batches.push({
+    at: Date.now(),
     time:new Date().toLocaleTimeString("zh-TW",{hour12:false}),
     src:"API／" + sourceLabel,
     count:res.flights.length,
@@ -8809,5 +8824,49 @@ function shift(hhmm, mins){
 })();
 </script>
 
+<script>
+/* ===== 資料更新狀態列：每個來源幾點幾分更新、多久前（綠＝正常、橘＝偏舊、紅＝過舊、灰＝尚無資料） ===== */
+(function(){
+  var box = document.getElementById("dataStatus");
+  if(!box) return;
+  function ms(t){ t = +t || 0; return t && t < 1e12 ? t*1000 : t; }
+  function batchT(){
+    for(var i = DB.batches.length - 1; i >= 0; i--){ var b = DB.batches[i]; if(b && b.at) return b.at; }
+    return 0;
+  }
+  function when(t){
+    var k = function(x){ return new Intl.DateTimeFormat("en-CA", { timeZone:"Asia/Taipei" }).format(new Date(x)); };
+    var hm = fixHm(t);
+    if(k(t) === k(Date.now())) return hm;
+    if(k(t) === k(Date.now() - 86400000)) return "昨天 " + hm;
+    var d = k(t).split("-"); return (+d[1]) + "/" + (+d[2]) + " " + hm;
+  }
+  function ago(t){ var m = Math.max(0, Math.round((Date.now() - t)/60000)); return m < 1 ? "剛剛" : m < 60 ? m + " 分前" : Math.floor(m/60) + " 小時" + (m % 60 ? " " + (m % 60) + " 分" : "") + "前"; }
+  function chip(name, t, warnMin, badMin, tip){
+    t = ms(t);
+    if(!t) return '<span class="ds na" title="' + esc(tip) + '"><i></i><b>' + name + "</b> 尚無資料</span>";
+    var age = (Date.now() - t)/60000, k = age > badMin ? "bad" : age > warnMin ? "warn" : "ok";
+    return '<span class="ds ' + k + '" title="' + esc(tip) + '"><i></i><b>' + name + "</b> " + when(t) + " 更新<small>（" + ago(t) + "）</small></span>";
+  }
+  function paint(){
+    try{
+      var L = [];
+      L.push(chip("到離資料（TDX）", batchT(), 30, 90, "最後一次抓進 TDX 到離資料的時間"));
+      L.push(chip("航班地圖（ADS-B）", HOLD.lastOk, 5, 15, "航班地圖最後一次收到航機位置的時間（需開著「開始監看」）"));
+      L.push(chip("空位清單（OpsLink）", LITE ? (RELAY.seatT || 0) : SEAT.feedT, 210, 300, "OpsLink 空位清單的更新時間（擴充功能每 3 小時自動查詢）"));
+      L.push(chip("AIRS", AIRS.t, 30, 60, "AIRS iWatch 實際／預估時間的更新時間"));
+      if(LITE) L.push(chip("值班台上傳", RELAY.dbT, 30, 60, "值班台最後一次把資料上傳到中繼站的時間"));
+      else {
+        var c = typeof relayCfg === "function" ? relayCfg() : null;
+        if(c && c.on) L.push(chip("分享上傳", RELAY.lastDb, 30, 60, "最後一次把到離／空位／AIRS 上傳到中繼站（分享版、場站查詢讀的就是這份）"));
+      }
+      box.innerHTML = '<span class="dh">資料更新</span>' + L.join("");
+    }catch(e){}
+  }
+  window.dataStatusPaint = paint;
+  setTimeout(paint, 1500); setInterval(paint, 20000);
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden) paint(); });
+})();
+</script>
 </body>
 </html>
