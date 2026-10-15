@@ -654,7 +654,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-15 11:50（資料更新狀態）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-15 12:15（資料更新狀態）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4718,17 +4718,17 @@ renderList(); renderDetail(); window.scrollTo({top:0});
   /* ---------- 資料更新狀態：每個來源幾點幾分更新、多久前（綠＝正常、橘＝偏舊、紅＝過舊） ---------- */
   R.okAt = 0;
   function agoTxt(t){ var m = Math.max(0, Math.round((Date.now() - t)/60000)); return m < 1 ? "剛剛" : m < 60 ? m + " 分前" : Math.floor(m/60) + " 小時" + (m % 60 ? " " + (m % 60) + " 分" : "") + "前"; }
-  function chip(name, t, warnMin, badMin, tip){
+  function stChip(name, t, warnMin, badMin, tip){
     if(!t) return '<span class="ds na" title="' + esc(tip || "") + '"><i></i><b>' + name + "</b> 尚無資料</span>";
     var age = (Date.now() - t)/60000, k = age > badMin ? "bad" : age > warnMin ? "warn" : "ok";
     return '<span class="ds ' + k + '" title="' + esc(tip || "") + '"><i></i><b>' + name + "</b> " + dayHm(t) + " 更新<small>（" + agoTxt(t) + "）</small></span>";
   }
   function statusHtml(){
     return '<div class="dstat"><span class="dh">資料更新</span>' +
-      chip("到離資料", R.t && !R.cached ? R.t : 0, 45, 120, "值班台最後一次上傳到離資料（TDX）的時間") +
-      chip("空位清單", S.t, 210, 300, "OpsLink 空位清單的更新時間（每 3 小時自動查詢）") +
-      chip("AIRS", !R.cached ? AIRS_T : 0, 30, 60, "AIRS iWatch 實際／預估時間的更新時間") +
-      chip("本頁讀取", R.okAt, 10, 30, "這個頁面最後一次成功從中繼站讀取資料的時間") +
+      stChip("到離資料", R.t && !R.cached ? R.t : 0, 45, 120, "值班台最後一次上傳到離資料（TDX）的時間") +
+      stChip("空位清單", S.t, 210, 300, "OpsLink 空位清單的更新時間（每 3 小時自動查詢）") +
+      stChip("AIRS", !R.cached ? AIRS_T : 0, 30, 60, "AIRS iWatch 實際／預估時間的更新時間") +
+      stChip("本頁讀取", R.okAt, 10, 30, "這個頁面最後一次成功從中繼站讀取資料的時間") +
       "</div>";
   }
   function paintStatus(){
