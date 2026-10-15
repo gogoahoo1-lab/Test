@@ -458,6 +458,8 @@ dialog.sr::backdrop{background:rgba(2,6,12,.72);backdrop-filter:blur(3px)}
 .srsum .srt b{color:var(--gold);letter-spacing:.03em}
 .srnote{font-size:12.8px;color:var(--muted);white-space:pre-line;margin:6px 0 0}
 .srtags{display:flex;gap:6px;flex-wrap:wrap}
+.sx-warn{flex-basis:100%;margin-top:8px;padding:9px 12px;border-radius:10px;background:rgba(240,102,92,.14);border:1px solid rgba(240,102,92,.5);color:#FFC9C4;font-size:13px}
+.sx-warn b{color:#fff} .sx-warn ul{margin:4px 0 0;padding-left:18px} .sx-warn li{margin:2px 0}
 .srops{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
 .srops h6{margin:0 0 8px;font-size:13px;font-weight:700;color:var(--text)}
 .srnis{display:grid;gap:8px;margin-top:10px}
@@ -643,7 +645,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-14 10:55（Seat Vacancy）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-15 08:45（速報不含值班台回報）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4716,7 +4718,8 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     el.innerHTML = '<span>📡 空位清單來自 <b>' + SRC_NAME + "</b>" +
       (S.t ? "・系統清單 " + dayHm(S.t) + " 更新" + (stale ? '<span class="err">（超過 5 小時未更新）</span>' : "・預計下次約 " + dayHm(S.t + 3*3600000)) : "") +
       (!R.cached && R.t ? airsBadge() : "") + (R.cached ? '・<span class="err">連線失敗，顯示上次快取</span>' : "") + (R.busy ? "・讀取中…" : "") + (R.err ? '・<span class="err">' + esc(R.err) + "</span>" : "") + "</span>" +
-      '<button class="sx-btn ghost" id="sxReload" type="button">重新讀取</button>';
+      '<button class="sx-btn ghost" id="sxReload" type="button">重新讀取</button>' +
+      (R.warn && !R.cached ? '<div class="sx-warn"><b>⚠ 值班台回報（' + clockOf(R.warn.t) + '）</b><ul data-noi18n>' + R.warn.msgs.map(function(m){ return "<li>" + esc(m) + "</li>"; }).join("") + "</ul></div>" : "");
     $("sxReload").onclick = function(){ load(true); };
   }
   function load(force){
@@ -4735,6 +4738,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
       if(j){
         R.err = ""; R.need = false;
         tdxIndex(j); airsIndex(j);
+        R.warn = j.warn && j.warn.msgs && j.warn.msgs.length && Date.now() - (j.warn.t || 0) < 6*3600000 ? j.warn : null;   // 值班台上傳的警告
         if(j.seat && j.seat.text){
           var p = parse(j.seat.text, !!j.seat.utc);
           S.rows = p.rows; S.legs = p.legs; S.t = j.seat.t || R.t; R.cached = false;
@@ -5345,7 +5349,7 @@ const I18N = (()=>{
     "出發場站":"Origin station","目的地站":"Destination","起飛 ETD（自動串接）":"ETD (auto)","起飛 ETD":"ETD","起飛 ETD（當地）":"ETD (local)",
     "抵達 ETA（當地）":"ETA (local)","時差（小時）":"Time diff (h)","抵達→靠檔":"Arrival→on-block","＋ 增加下一個場站":"+ Add next station",
     "供續飛下一站":"for continuing to next station","可再起飛":"Ready to depart","再起飛":"Re-dep","回自動":"Auto","待填時間":"Time pending",
-    "落在宵禁內":"Falls in curfew","台灣區備降站":"Taiwan alternates","航廈關閉":"terminal closed","航廈":"Terminal","台灣天際":"台灣天際","台勤":"台勤","部分欄位待補":"some fields pending","翼上單位":"Above-wing","翼下單位":"Below-wing","聯絡窗口":"Contacts",
+    "落在宵禁內":"Falls in curfew","台灣區備降站":"Taiwan alternates","值班台回報":"Duty desk reports","航廈關閉":"terminal closed","航廈":"Terminal","台灣天際":"台灣天際","台勤":"台勤","部分欄位待補":"some fields pending","翼上單位":"Above-wing","翼下單位":"Below-wing","聯絡窗口":"Contacts",
     "無提供窗口":"No contact provided","翼上":"Above-wing","翼下":"Below-wing","星宇":"STARLUX","華信":"Mandarin Airlines",
     "未設配置":"No config","無此艙":"No cabin","無資料":"No data","查無":"Not found","不在場站資料庫":"Not in station database",
     "預計抵達落在":"Est. arrival falls in","預計起飛落在":"Est. departure falls in","抵達落在":"Arrival falls in",
