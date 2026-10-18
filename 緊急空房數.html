@@ -88,6 +88,21 @@ select.inp{background-image:linear-gradient(45deg,transparent 50%,var(--mute) 50
 .mrow .nt{grid-column:2;color:var(--acc2);font-size:13px}
 .partrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:6px}
 .partrow b{flex:1;min-width:120px}
+.bs-wrap{position:relative;height:110px;margin-top:54px;border-bottom:1px solid var(--line);touch-action:none;user-select:none}
+.bs-bars .bs-bar{position:absolute;bottom:0;border-radius:3px 3px 0 0}
+.bs-bar.s0{background:var(--acc)}.bs-bar.s1{background:#6f93b8}
+.bs-h{position:absolute;top:-30px;bottom:0;width:28px;margin-left:-14px;cursor:ew-resize;touch-action:none;z-index:2}
+.bs-line{position:absolute;left:13px;top:22px;bottom:0;width:2px;background:var(--text);opacity:.85}
+.bs-h.on .bs-line{background:var(--acc2);width:3px}
+.bs-lab{position:absolute;top:0;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:11px;background:var(--card2);border:1px solid var(--line);border-radius:6px;padding:1px 5px;color:var(--text)}
+.bs-h:nth-child(even) .bs-lab{top:-24px}
+.bs-h.on .bs-lab{border-color:var(--acc);color:var(--acc2)}
+.bs-x{margin-left:5px;color:var(--bad);cursor:pointer;font-weight:700;padding:0 2px}
+.bs-axis{display:flex;justify-content:space-between;font-size:11px;color:var(--mute);margin-top:3px}
+.bs-tools{display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap}
+.bs-add{background:transparent;border:1px solid var(--line);border-radius:8px;padding:4px 10px;font-size:12px;color:var(--acc2);cursor:pointer}
+.bs-tip{font-size:11px;color:var(--mute)}
+
 .big{background:var(--accbg);border:1px solid rgba(212,149,107,.35);border-radius:14px;padding:14px}
 .big .k{font-size:13px;color:var(--acc2)}
 .big .bv{font-size:34px;font-weight:800;line-height:1.15;margin-top:4px;color:var(--text)}
@@ -187,11 +202,12 @@ ol.steps{padding-left:18px;margin:6px 0;font-size:13px;line-height:1.8;color:var
       <div class="grid g2">
         <div><label class="f">查詢範圍（楽天）</label><select class="inp" id="spread"><option value="1">單點（依半徑）</option><option value="7">擴大：中心＋周圍 6 點（約 6–8 km，較慢）</option></select></div>
       </div>
+      <div class="hint hidden" id="radHint"></div>
       <div class="grid g3">
         <div><label class="f">入住日</label><input class="inp" type="date" id="ci"></div>
         <div><label class="f">晚數</label><select class="inp" id="nights"></select></div>
-        <div><label class="f">半徑 km</label><select class="inp" id="radius">
-          <option value="1">1</option><option value="2">2</option><option value="3" selected>3</option></select></div>
+        <div><label class="f">半徑（公里）</label><select class="inp" id="radius">
+          <option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="5">5</option><option value="8">8</option><option value="10">10</option><option value="15">15</option><option value="20">20</option></select></div>
       </div>
       <div class="grid g3">
         <div><label class="f">每房大人</label><select class="inp" id="adults"></select></div>
@@ -211,6 +227,7 @@ ol.steps{padding-left:18px;margin:6px 0;font-size:13px;line-height:1.8;color:var
   </div>
 
   <div id="errBox"></div>
+  <div class="hint" id="srcInfo" style="margin-top:8px;color:var(--acc2)"></div>
 
   <div class="card hidden" id="sumCard">
     <h3 id="sumTitle">查詢結果</h3>
@@ -268,6 +285,7 @@ ol.steps{padding-left:18px;margin:6px 0;font-size:13px;line-height:1.8;color:var
           <div class="row2"><button class="btn sm" id="bApply">套用</button><button class="btn ghost sm" id="bCancel">取消</button></div>
           <div class="hint" id="bMsg"></div>
         </div>
+        <div id="bandSlider"></div>
         <div class="bands" id="bands"></div>
       </div>
     </div>
@@ -458,6 +476,11 @@ function initForm(){
   document.querySelectorAll('#conds .chip').forEach(c=>c.onclick=()=>c.classList.toggle('on'));
   try{ const last=JSON.parse(store('jhv.form')||'null'); if(last){ ['nights','radius','adults','rooms','maxc','spread'].forEach(k=>{ if(last[k]!=null) $(k).value=last[k]; }); if(last.place&&last.place.centers&&last.place.centers.length) setPlace(last.place,true); (last.conds||[]).forEach(v=>{ const c=document.querySelector(`#conds .chip[data-v="${v}"]`); if(c) c.classList.add('on'); }); } }catch(e){}
   initPlaces();
+  const radUI=()=>{ const R=+$('radius').value, big=R>3; $('spread').disabled=big; $('spread').parentElement.style.opacity=big?.45:1;
+    const h=$('radHint'); h.classList.toggle('hidden',!big);
+    if(big&&place){ const n=gridCenters(place.centers[0][0],place.centers[0][1],'',R).length;
+      h.innerHTML=`📍 ${R} 公里範圍會自動分成 <b>${n}</b> 個查詢點（楽天每點上限 3 公里），約需 ${Math.ceil(n*1.2/60)}–${Math.ceil(n*2.4/60)} 分鐘，之後再讀每家空房數。大城市範圍內飯店可能上千家，會比較久。`; } };
+  $('radius').onchange=radUI; window.__radUI=radUI; radUI();
   $('originTxt').textContent = location.protocol==='file:' ? '（目前是本機檔案，請先上傳到網站）' : location.origin;
 }
 function readForm(){
@@ -495,7 +518,7 @@ function setPlace(p,quiet){
   place.overseas = p.overseas!=null ? !!p.overseas : !inJapan(place.centers[0][0],place.centers[0][1]);
   place.query=p.query||place.name;
   if(place.overseas) $('placeSub').textContent+='・海外（使用 Booking 資料）';
-  $('placeResults').innerHTML='';
+  $('placeResults').innerHTML=''; if(window.__radUI) window.__radUI();
   if(!quiet) store('jhv.form',JSON.stringify({...(JSON.parse(store('jhv.form')||'{}')),place}));
 }
 function initPlaces(){
@@ -534,7 +557,18 @@ async function searchPlace(){
     $('placeResults').querySelectorAll('.presult').forEach(b=>b.onclick=()=>{ const a=arr[+b.dataset.i]; const nm=dn(a), en=(a.namedetails||{})['name:en']; const parts=a.display_name.split(',').map(x=>x.trim()); const query=a.address&&a.address.country_code!=='jp' ? (en ? [en] : [nm,a.address.city||a.address.town||a.address.state||'',a.address.country||'']).filter(Boolean).join(', ') : nm; setPlace({name:nm,anchor:nm,query,overseas:a.address?a.address.country_code!=='jp':undefined,centers:[[+a.lat,+a.lon,nm]]}); });
   }catch(e){ $('placeResults').innerHTML=`<div class="err">地點搜尋失敗：${esc(e.message)}。可改用「地圖上點選」或貼座標。</div>`; }
 }
+// 半徑 >3km：以 3km 小圓蜂巢狀鋪滿整個範圍（楽天每點上限 3km）
+function gridCenters(la,lo,nm,R){
+  const r=3, d=2.85*Math.sqrt(3), K=Math.ceil(R/d)+1, kx=111*Math.cos(la*Math.PI/180), out=[];
+  for(let q=-K;q<=K;q++) for(let w=-K;w<=K;w++){
+    const x=d*(q+w/2), y=d*(w*Math.sqrt(3)/2), dist=Math.hypot(x,y);
+    if(dist<=R+r*0.9) out.push([la+y/111, lo+x/kx, dist<0.01?nm:`${nm}周邊`, dist]);
+  }
+  out.sort((a,b)=>a[3]-b[3]);  // 由近到遠查
+  return out.map(c=>c.slice(0,3));
+}
 function expandCenters(cs,spread,radius){
+  if(radius>3) return gridCenters(cs[0][0],cs[0][1],cs[0][2],radius);
   if(spread<=1||cs.length!==1) return cs;
   const [la,lo,nm]=cs[0], d=radius*1.7, out=[[la,lo,nm]];
   for(let k=0;k<6;k++){ const a=k*Math.PI/3; out.push([la+d*Math.cos(a)/111, lo+d*Math.sin(a)/(111*Math.cos(la*Math.PI/180)), `${nm}周邊${k+1}`]); }
@@ -620,10 +654,11 @@ function normalize(raw,f){
 
 /* ---------- 搜尋 ---------- */
 let busy=false;
-async function search(){
+async function search(forceRakuten){
   if(busy) return;
   $('errBox').innerHTML='';
-  const src=curSource();
+  const src=forceRakuten===true?'rakuten':curSource();
+  if(forceRakuten!==true) $('srcInfo').textContent='';
   if(src==='booking') return searchBooking();
   if(src==='ext') return searchExt();
   if(place&&place.overseas){ showErr('楽天只有日本的資料。這個地點請把「資料來源」改成 Booking（或用「自動」）。'); return; }
@@ -636,11 +671,11 @@ async function search(){
       let page=1, pageCount=1;
       do{
         setProg(Math.min(95,(calls/est)*100), `查詢「${c[2]}」第 ${page} 頁…`);
-        const params={checkinDate:f.ci,checkoutDate:f.co,adultNum:adultParam(f,f.rooms),roomNum:f.rooms,latitude:c[0],longitude:c[1],searchRadius:f.radius,page,sort:'+roomCharge'};
+        const params={checkinDate:f.ci,checkoutDate:f.co,adultNum:adultParam(f,f.rooms),roomNum:f.rooms,latitude:c[0],longitude:c[1],searchRadius:Math.min(3,f.radius),page,sort:'+roomCharge'};
         if(f.conds.length) params.squeezeCondition=f.conds.join(',');
         if(calls>0) await sleep(1100);
         const j=await callApi(params); calls++;
-        pageCount=Math.min((j.pagingInfo&&j.pagingInfo.pageCount)||0, S.maxPages||3);
+        pageCount=Math.min((j.pagingInfo&&j.pagingInfo.pageCount)||0, f.radius>3?Math.min(2,S.maxPages||3):(S.maxPages||3));
         if(page===1) est += Math.max(0,pageCount-1);
         normalize(parseHotels(j),f).forEach(h=>{ const old=seen.get(h.no); if(!old||(h.dist??99)<(old.dist??99)) seen.set(h.no,h); });
         page++;
@@ -648,6 +683,7 @@ async function search(){
     }
     // 距離一律以第一個中心點（anchor）計算
     results=[...seen.values()];
+    if(f.radius>3) results=results.filter(h=>h.dist==null||h.dist<=f.radius);
     if(f.maxc) results=results.filter(h=>!h.min||h.min<=f.maxc);
     lastSearch=f; setStatus('ok'); setProg(100,`完成：呼叫 ${calls} 次 API，${new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})} 更新`);
     render();
@@ -679,36 +715,49 @@ window.postMessage({__hv:1,type:'HV_PING'},'*'); setTimeout(()=>window.postMessa
 let busyExt=false;
 function extNormalize(x,f){
   const a=f.centers[0];
-  return { src:'booking', via:'ext', no:'ext'+x.key, extKey:x.key, name:x.name, img:'', lat:x.lat||null, lng:x.lng||null,
+  return { src:x.source||'booking', via:'ext', no:'ext'+x.key, extKey:x.key, name:x.name, img:'', lat:x.lat||null, lng:x.lng||null,
     rating:+x.score||0, reviews:0, station:'', area:x.distance||'', access:'', infoUrl:'', planUrl:'', plansCount:null, plans:[],
     min:x.perNight||null, estimated:false, vac: x.deepRooms!=null?x.deepRooms:(x.left!=null?x.left:null), vacCap:!!x.deepCap,
-    vacHint: x.deepRooms==null&&x.left!=null?'僅剩':'', soldOut:!!x.soldOut, tel:x.tel||'', telSrc:x.tel?'Booking':'',
+    vacHint: x.deepRooms==null&&x.left!=null?'僅剩':'', vacFail: x.source==='agoda'&&x.left==null, soldOut:!!x.soldOut, tel:x.tel||'', telSrc:x.tel?'Booking':'',
     dist: (x.lat&&x.lng)?km(a[0],a[1],x.lat,x.lng):null };
 }
 async function searchExt(){
   if(busy) return; $('errBox').innerHTML='';
-  if(!extOK) return showErr('沒有偵測到 B 版擴充功能。請在電腦 Chrome 安裝並連結（設定頁有步驟），或把資料來源改成其他選項。');
+  if(!extOK){
+    const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent), fileMode=location.protocol==='file:';
+    const why = mobile ? '手機無法使用 Chrome 擴充功能'
+      : fileMode ? 'APP 是用本機檔案（file://）打開的，擴充功能只能連結放在網站上的 APP'
+      : !/Chrome\//.test(navigator.userAgent) ? '目前不是用 Chrome 瀏覽器'
+      : '這個網址還沒和 B 版連結，或連結後沒有重新整理頁面';
+    if(!(place&&place.overseas)){ $('srcInfo').textContent=`ℹ️ 偵測不到 B 版（${why}），這次改用楽天查詢。`; return search(true); }
+    if(S.rapidKey){ $('srcInfo').textContent=`ℹ️ 偵測不到 B 版（${why}），這次改用 Booking 資料（RapidAPI 免費額度）查詢。`; return searchBooking(); }
+    return showErr(`偵測不到 B 版擴充功能：${why}。海外地點可以改用「Booking 資料」：到設定頁填 RapidAPI Key（免費方案）。`);
+  }
   let f; try{ f=readForm(); }catch(e){ return showErr(e.message); }
   f.centers=[place.centers[0]];
   busy=true; busyExt=true; isDemo=false; $('goBtn').disabled=true; $('prog').classList.remove('hidden'); setProg(15,'交給 B 版查詢（背景會開 Booking 分頁，請勿關閉）…');
   try{
     const r=await extCall('search',{where:place.query||place.name,ci:f.ci,co:f.co,adults:f.adults*f.rooms,rooms:f.rooms,loadMore:3,deepN:S.extDeepN??999});
-    results=r.hotels.map(x=>extNormalize(x,f)).filter(h=>!h.soldOut);
+    const all=r.hotels.map(x=>extNormalize(x,f)).filter(h=>!h.soldOut);
+    // 同一家飯店兩站都有 → 以 Booking 為主，附上 Agoda 價格
+    const bk=all.filter(h=>h.src!=='agoda'), byName=new Map(bk.map(h=>[nameKey(h.name),h]));
+    const agOnly=[]; all.filter(h=>h.src==='agoda').forEach(a=>{ const m=byName.get(nameKey(a.name)); if(m){ m.alt={src:'Agoda',price:a.min,left:a.vac}; } else agOnly.push(a); });
+    results=[...bk,...agOnly].filter(h=>h.dist==null||h.dist<=f.radius);
     if(f.maxc) results=results.filter(h=>!h.min||h.min<=f.maxc);
     lastSearch=f; dataSource='ext'; setStatus('ok','B 版');
-    setProg(100,`完成：B 版讀到 ${results.length} 間（Booking）`); render();
+    setProg(100,`完成：B 版讀到 ${results.length} 間（${r.msg||'Booking'}）`); render();
   }catch(e){ setStatus('bad'); showErr(errText(e)); setProg(0,''); }
   finally{ busy=false; busyExt=false; $('goBtn').disabled=false; setTimeout(()=>$('prog').classList.add('hidden'),800); }
 }
 async function probeExt(){
   if(probing||!lastSearch) return;
-  const keys=results.filter(h=>h.extKey&&(h.vac==null||h.vacHint)).slice(0,S.extDeepN||999).map(h=>h.extKey);
+  const keys=results.filter(h=>h.extKey&&h.src!=='agoda'&&(h.vac==null||h.vacHint)).slice(0,S.extDeepN||999).map(h=>h.extKey);
   if(!keys.length){ $('sRoomsNote').textContent='目前清單都已讀過剩餘房數。'; return; }
   probing=true; busyExt=true; $('probeBtn').disabled=true; $('pProg').classList.remove('hidden'); updateVacStat(); renderList();
   try{
     const r=await extCall('deep',{limit:keys.length,keys});
     const f=lastSearch, map=new Map(r.hotels.map(x=>[x.key,extNormalize(x,f)]));
-    results=results.map(h=>{ const n=map.get(h.extKey); if(n&&!n.tel&&h.tel){ n.tel=h.tel; n.telSrc=h.telSrc; } return n||h; });
+    results=results.map(h=>{ const n=map.get(h.extKey); if(n){ if(!n.tel&&h.tel){ n.tel=h.tel; n.telSrc=h.telSrc; } if(h.alt) n.alt=h.alt; } return n||h; });
     finishProbe(keys.length);
   }catch(e){ showErr(errText(e)); probing=false; $('probeBtn').disabled=false; $('pProg').classList.add('hidden'); }
   finally{ busyExt=false; }
@@ -781,7 +830,7 @@ async function searchBooking(){
       if(hs.length<15) break;
       await sleep(400);
     }
-    results=[...seen.values()]; if(f.maxc) results=results.filter(h=>!h.min||h.min<=f.maxc);
+    results=[...seen.values()].filter(h=>h.dist==null||h.dist<=Math.max(f.radius,3)); if(f.maxc) results=results.filter(h=>!h.min||h.min<=f.maxc);
     lastSearch=f; dataSource='booking'; setStatus('ok','Booking 資料'); bkCachePut(f); ok=true;
     setProg(100,`完成：Booking 資料 ${results.length} 間${bkQuota!=null?`｜本月剩餘額度 ${bkQuota}`:''}`);
     render();
@@ -909,7 +958,7 @@ function finishProbe(calls){
 function vacText(h){ return h.vac==null?'?':(h.vacCap?h.vac+'+':String(h.vac)); }
 function sumVac(hs){ const d=hs.filter(h=>h.vac!=null); return {n:d.length, sum:d.reduce((s,h)=>s+h.vac,0), cap:d.some(h=>h.vacCap)}; }
 function updateVacStat(calls){
-  const v=sumVac(results), tot=results.length, miss=results.filter(h=>h.vac==null).length;
+  const v=sumVac(results), tot=results.length, miss=results.filter(h=>h.vac==null&&!h.vacFail).length;
   const top=results.filter(h=>h.vac!=null&&h.vac>0).sort((a,b)=>(b.vac-a.vac)||((a.min??1e12)-(b.min??1e12))).slice(0,5);
   $('topBox').classList.toggle('hidden',!top.length);
   $('topList').innerHTML=top.map((h,i)=>`<div class="toprow" data-no="${esc(h.no)}"><span class="rk">${i+1}</span><span class="nm">${esc(h.name)}</span><span class="vac ${h.vac>=6?'hi':h.vac>=3?'mid':'lo'}">${vacText(h)} 間</span><span class="pr">${yen(h.min)}</span></div>`).join('');
@@ -922,6 +971,86 @@ function updateVacStat(calls){
     : dataSource==='booking'
     ? `空房數＝Booking 回報的剩餘房數${bkQuota!=null?`｜本月剩餘額度 ${bkQuota}`:''}。`
     : (calls!=null?`完成，呼叫 ${calls} 次 API。`:'')+(S.adultMode==='total'?'（楽天以總人數計算）':'')+'「+」表示該家至少 10 間，實際可能更多。';
+}
+
+// 可拖曳的價格區間長條圖（看板與 APP 共用）
+// opts: { getPrices: () => number[], getCuts: () => number[], onChange: (cuts, final) => void, fmt: v => string }
+function BandSlider(el, opts) {
+  el.innerHTML = '<div class="bs-wrap"><div class="bs-bars"></div><div class="bs-handles"></div></div>' +
+    '<div class="bs-axis"><span class="bs-lo"></span><span class="bs-hi"></span></div>' +
+    '<div class="bs-tools"><button type="button" class="bs-add">＋ 新增分界</button><span class="bs-tip">拖曳直線調整價格區間；點標籤的 × 刪除</span></div>';
+  const wrap = el.querySelector('.bs-wrap'), bars = el.querySelector('.bs-bars'), hs = el.querySelector('.bs-handles');
+  let lo = 0, hi = 1, cuts = [], dragging = -1, prices = [];
+  const step = () => (hi - lo > 30000 ? 1000 : 500);
+  const snap = v => Math.round(v / step()) * step();
+  const pct = v => ((v - lo) / (hi - lo)) * 100;
+  function segIndex(v) { let i = 0; cuts.forEach(c => { if (v >= c) i++; }); return i; }
+  function drawBars() {
+    const nb = 32, w = (hi - lo) / nb, cnt = new Array(nb).fill(0);
+    prices.forEach(p => { cnt[Math.min(nb - 1, Math.max(0, Math.floor((p - lo) / w)))]++; });
+    const mx = Math.max(1, ...cnt);
+    bars.innerHTML = cnt.map((c, i) => {
+      const mid = lo + (i + 0.5) * w, seg = segIndex(mid);
+      return `<div class="bs-bar s${seg % 2}" style="left:${(i / nb) * 100}%;width:${100 / nb}%;height:${c ? Math.max(6, (c / mx) * 100) : 0}%" title="${opts.fmt(lo + i * w)}–${opts.fmt(lo + (i + 1) * w)}：${c} 間"></div>`;
+    }).join('');
+  }
+  function drawHandles() {
+    hs.innerHTML = cuts.map((c, i) => (c > lo && c < hi)
+      ? `<div class="bs-h" data-i="${i}" style="left:${pct(c)}%"><div class="bs-line"></div><div class="bs-lab">${opts.fmt(c)}<span class="bs-x" data-x="${i}">×</span></div></div>` : '').join('');
+    hs.querySelectorAll('.bs-h').forEach(h => h.addEventListener('pointerdown', down));
+    hs.querySelectorAll('.bs-x').forEach(x => x.addEventListener('pointerdown', e => {
+      e.stopPropagation(); e.preventDefault();
+      cuts.splice(+x.dataset.x, 1); opts.onChange(cuts.slice(), true); render();
+    }));
+  }
+  function down(e) {
+    if (e.target.classList.contains('bs-x')) return;
+    dragging = +e.currentTarget.dataset.i; e.currentTarget.setPointerCapture(e.pointerId); e.preventDefault();
+    e.currentTarget.classList.add('on');
+  }
+  function move(e) {
+    if (dragging < 0) return;
+    const r = wrap.getBoundingClientRect(), x = Math.min(r.width, Math.max(0, e.clientX - r.left));
+    let v = snap(lo + (x / r.width) * (hi - lo));
+    const prev = dragging > 0 ? cuts[dragging - 1] + step() : lo + step(), next = dragging < cuts.length - 1 ? cuts[dragging + 1] - step() : hi - step();
+    v = Math.min(next, Math.max(prev, v));
+    if (v !== cuts[dragging]) { cuts[dragging] = v; drawHandles(); drawBars(); hs.querySelector(`.bs-h[data-i="${dragging}"]`)?.classList.add('on'); opts.onChange(cuts.slice(), false); }
+  }
+  function up() { if (dragging < 0) return; dragging = -1; opts.onChange(cuts.slice(), true); render(); }
+  wrap.addEventListener('pointermove', move); hs.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
+  el.querySelector('.bs-add').onclick = () => {
+    const pts = [lo, ...cuts.filter(c => c > lo && c < hi), hi]; let bi = 0, bw = 0;
+    for (let i = 0; i < pts.length - 1; i++) if (pts[i + 1] - pts[i] > bw) { bw = pts[i + 1] - pts[i]; bi = i; }
+    const v = snap((pts[bi] + pts[bi + 1]) / 2);
+    if (bw < step() * 2) return;
+    cuts = [...cuts, v].sort((a, b) => a - b); opts.onChange(cuts.slice(), true); render();
+  };
+  function render() {
+    if (dragging >= 0) return;
+    prices = (opts.getPrices() || []).filter(p => p > 0).sort((a, b) => a - b);
+    cuts = (opts.getCuts() || []).slice().sort((a, b) => a - b);
+    if (prices.length < 2) { el.style.display = 'none'; return; }
+    el.style.display = '';
+    lo = Math.floor(prices[0] / 1000) * 1000; hi = Math.ceil(prices[prices.length - 1] / 1000) * 1000;
+    if (hi - lo < 2000) hi = lo + 2000;
+    el.querySelector('.bs-lo').textContent = opts.fmt(lo); el.querySelector('.bs-hi').textContent = opts.fmt(hi);
+    const out = cuts.filter(c => c <= lo || c >= hi).length;
+    el.querySelector('.bs-tip').textContent = out ? `有 ${out} 條分界在價格範圍外（不顯示）；拖曳直線調整，點 × 刪除` : '拖曳直線調整價格區間；點標籤的 × 刪除';
+    drawBars(); drawHandles();
+  }
+  return { render };
+}
+
+let bandSlider=null;
+function initBandSlider(){
+  bandSlider=BandSlider($('bandSlider'),{
+    getPrices:()=>results.map(h=>h.min).filter(Boolean),
+    getCuts:()=>bandCuts,
+    fmt:v=>'¥'+fmtY(v),
+    onChange:(c,final)=>{ bandCuts=c; BANDS=buildBands(c); bandSel=null; try{ $('bandInput').value=c.join(', '); }catch(e){}
+      if(final){ store('jhv.bands',JSON.stringify(c)); renderList(); } drawBands(); }
+  });
 }
 
 /* ---------- 呈現 ---------- */
@@ -992,6 +1121,7 @@ function drawBands(){
       <span class="h">${r.hotels}</span><span class="pl">${r.rooms}</span></div>`; }).join('')+
     '<div class="hint" style="margin-top:4px">點價格帶可篩選下方清單；再點一次取消。</div>';
   $('bands').querySelectorAll('.band').forEach(el=>el.onclick=()=>{ const i=+el.dataset.i; if(el.classList.contains('zero')) return; bandSel = bandSel===i?null:i; drawBands(); renderList(); });
+  if(bandSlider) bandSlider.render();
 }
 function drawHist(prices){
   const lo=prices[0], hi=prices[prices.length-1], n=Math.min(6,Math.max(1,prices.length)), step=Math.max(1,(hi-lo)/n);
@@ -1026,6 +1156,7 @@ function renderList(){
           ${h.station?`<span>${esc(h.station)}站</span>`:''}${h.area?`<span>${esc(h.area)}</span>`:''}
         </div>
         <div class="price"><div class="p">${yen(h.min)}<small> /房/晚${h.estimated?'（參考）':''}</small></div><span style="display:flex;gap:6px;align-items:center"><span class="vac ${h.vac==null?'q':h.vac>=6?'hi':h.vac>=3?'mid':'lo'}">${h.vac==null?(probing?'空房 讀取中…':'空房 未取得'):(h.vacHint?'僅剩 '+h.vac+' 間':'空房 '+vacText(h)+' 間')}</span>${h.plansCount!=null?`<span class="badge">${h.plansCount} 方案</span>`:''}</span></div>
+        ${h.via==='ext'?`<div class="meta" style="margin-top:4px"><span class="tag">${h.src==='agoda'?'Agoda':'Booking'}</span>${h.alt&&h.alt.price?`<span>Agoda 約 ${yen(h.alt.price)}/晚${h.alt.left!=null?`・僅剩 ${h.alt.left}`:''}</span>`:''}</div>`:''}
         ${telHtml(h)}
         ${plans?`<div class="plans">${plans}</div>`:''}
         <div class="actions">
@@ -1047,7 +1178,7 @@ function ensureMap(){
 }
 function drawMap(){
   if(!map) return; layer.clearLayers(); const pts=[];
-  if(lastSearch) lastSearch.centers.forEach(c=>{ L.circle([c[0],c[1]],{radius:lastSearch.radius*1000,color:'#D4956B',weight:1,fillOpacity:.05}).addTo(layer); pts.push([c[0],c[1]]); });
+  if(lastSearch){ const ls=lastSearch, cs=ls.radius>3?[ls.centers[0]]:ls.centers; cs.forEach(c=>{ L.circle([c[0],c[1]],{radius:ls.radius*1000,color:'#D4956B',weight:1,fillOpacity:.05}).addTo(layer); pts.push([c[0],c[1]]); }); }
   results.forEach(h=>{
     if(!h.lat) return;
     const icon=L.divIcon({className:'',html:`<span class="pin">${h.min?yen(h.min):'?'}</span>`,iconSize:null});
@@ -1273,7 +1404,7 @@ function show(v){
 initForm(); loadSettings(); enterCallMode();
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>show(t.dataset.v));
 $('goBtn').onclick=search; $('demoBtn').onclick=loadDemo;
-initBandEdit(); $('probeBtn').onclick=()=>dataSource==='booking'?probeBooking():dataSource==='ext'?probeExt():probeRooms();
+initBandEdit(); initBandSlider(); $('probeBtn').onclick=()=>dataSource==='booking'?probeBooking():dataSource==='ext'?probeExt():probeRooms();
 $('appHref').textContent=location.protocol==='file:'?'（請先把 APP 放到網站上）':location.href.split('#')[0];
 $('saveBtn2').onclick=()=>{ saveSettings(); $('bkTestOut').textContent='已儲存。'; };
 $('bkTestBtn').onclick=async()=>{ saveSettings(); $('bkTestOut').textContent='測試中…';
