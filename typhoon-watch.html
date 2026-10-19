@@ -107,6 +107,9 @@ td{padding:8px 8px;border-bottom:1px solid #f0f0ec;vertical-align:top}
 .metar .raw{background:#f6f6f2;border-radius:12px;padding:8px 10px;margin-top:6px;white-space:pre-wrap;word-break:break-word}
 .kv{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px}
 .kv div{font-size:12px;color:var(--muted)} .kv b{display:block;font-size:20px;color:var(--ink);font-weight:300}
+.datacard{margin-top:16px;border-radius:var(--r);padding:18px 22px;box-shadow:var(--shadow);background:#fff;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.datacard.demo{background:linear-gradient(120deg,#F3D9DE,#fff 70%)}
+.datacard .t{font-weight:600}
 .note{background:#f7f8f1;border-radius:18px;padding:12px 14px;font-size:12px;color:#4a4b44;line-height:1.6}
 .leaflet-container{font-family:Inter,"Noto Sans TC",sans-serif}
 .ap-label{background:transparent;border:none;box-shadow:none;font-size:11px;font-weight:600;color:#151515;text-shadow:0 0 3px #fff,0 0 3px #fff}
@@ -125,22 +128,21 @@ input.cell{width:100%;min-width:60px;border-radius:10px;padding:5px 8px}
       <div class="sub" id="heroSub">載入中…</div>
     </div>
     <div class="controls">
-      <label class="small">主路徑</label><select id="primarySel"></select>
       <label class="small">機型</label><select id="acSel"></select>
       <select id="rwyCond"><option value="dry">跑道乾</option><option value="wet">跑道濕</option></select>
       <button class="btn" id="refreshBtn">更新資料</button>
     </div>
   </div>
   <div class="hero-stats" id="heroStats"></div>
-  <div class="warnbar" id="warnbar"></div>
 </section>
 
 <!-- TAB: 總覽 -->
 <div class="tab on" id="tab-map">
+  <div id="dataCard"></div>
   <div class="grid g2">
     <div class="card">
       <h2><span class="key">◎</span>路徑與暴風圈</h2>
-      <div class="hint">實線＝主路徑，虛線＝其他來源，灰色點線＝歷史對照。圓圈為所選時間的七級／十級風暴風圈。</div>
+      <div class="hint">黑線是颱風路徑，綠圈是七級風範圍、紅圈是十級風範圍。拖動下方時間條看不同時間，點航點看當時的風和側風。</div>
       <div id="map"></div>
       <div class="slider-row">
         <button class="btn ghost" id="playBtn">▶</button>
@@ -154,7 +156,7 @@ input.cell{width:100%;min-width:60px;border-radius:10px;padding:5px 8px}
     </div>
     <div class="card">
       <h2><span class="key l">⌖</span>最接近距離（CPA）</h2>
-      <div class="hint">依主路徑計算颱風中心離各航點最近的距離與時間，以及進出七級風暴風圈的時間（台灣時間）。</div>
+      <div class="hint">颱風中心離各航點最近的距離和時間；最右欄是該航點被七級風圈籠罩的時段（台灣時間）。</div>
       <div class="tbl-wrap"><table id="cpaTbl"></table></div>
     </div>
   </div>
@@ -164,7 +166,7 @@ input.cell{width:100%;min-width:60px;border-radius:10px;padding:5px 8px}
 <div class="tab" id="tab-timeline">
   <div class="card" style="margin-top:16px">
     <h2><span class="key">▤</span>航點風險時間軸（未來 120 小時）</h2>
-    <div class="hint">每格 1 小時，台灣時間。等級取「側風／陣風」與「暴風圈距離」兩者較高者。點格子可跳到地圖時間，點航點名稱看側風細節。</div>
+    <div class="hint">每格 1 小時（台灣時間），越紅越危險。點格子會跳到地圖上那個時間；點航點名稱，下方會顯示該機場的側風細節。</div>
     <div class="row">
       <label class="small"><input type="checkbox" id="tlFocus" checked> 只顯示有風險或在颱風 <span id="focusKmLbl"></span> km 內的航點</label>
       <div class="legend"><span><i style="background:var(--lv0)"></i>正常</span><span><i style="background:var(--lv1)"></i>注意</span><span><i style="background:var(--lv2)"></i>警戒</span><span><i style="background:var(--lv3)"></i>高風險</span><span><i style="background:#ddd"></i>無資料</span></div>
@@ -172,13 +174,9 @@ input.cell{width:100%;min-width:60px;border-radius:10px;padding:5px 8px}
     <div class="tl" id="timeline"></div>
     <div class="msg" id="tlMsg"></div>
   </div>
-</div>
-
-<!-- TAB: 側風 -->
-<div class="tab" id="tab-xw">
-  <div class="card" style="margin-top:16px">
+  <div class="card" id="xwCard" style="margin-top:16px">
     <h2><span class="key l">⟂</span>跑道側風換算</h2>
-    <div class="hint">以陣風計算各跑道兩端的側風與順風分量，自動挑選側風最小（且順風不超限）的跑道。跑道方向為真航向近似值，可在設定修改。</div>
+    <div class="hint">用預報陣風算出最適合跑道的側風。黑線超過紅虛線＝超過機型側風上限。</div>
     <div class="row">
       <select id="xwAp"></select>
       <select id="xwStep"><option value="1">每 1 小時</option><option value="3" selected>每 3 小時</option></select>
@@ -193,7 +191,7 @@ input.cell{width:100%;min-width:60px;border-radius:10px;padding:5px 8px}
 <div class="tab" id="tab-flights">
   <div class="card" style="margin-top:16px">
     <h2><span class="key">✈</span>航段影響判斷</h2>
-    <div class="hint">每行一班，時間用當地時間。格式彈性，例如：<span class="mono">2026-10-23 JX800 TPE NRT 08:20 12:40</span>　或　<span class="mono">10/23 JX805 NRT-TPE 1420 1730</span>　抵達隔天加 <span class="mono">+1</span>。沒寫日期就用下方預設日期。</div>
+    <div class="hint">每行一班：<span class="mono">日期 航班 出發 抵達 起飛 落地</span>（當地時間），例如 <span class="mono">10/23 JX800 TPE NRT 08:20 12:40</span>。落地在隔天就在後面加 <span class="mono">+1</span>。可以先按「填入範例」看看。</div>
     <div class="row">
       <label class="small">預設日期</label><input type="date" id="schedDate">
       <button class="btn" id="schedRun">分析</button>
@@ -201,47 +199,7 @@ input.cell{width:100%;min-width:60px;border-radius:10px;padding:5px 8px}
     </div>
     <textarea id="schedText" placeholder="2026-10-23 JX800 TPE NRT 08:20 12:40"></textarea>
     <div class="tbl-wrap" style="margin-top:14px"><table id="flightTbl"></table></div>
-    <div class="note" style="margin-top:12px">航路判斷用大圓航線抽樣 24 點，依飛行時間推算颱風位置，實際航路與 ATC 繞飛不同，僅供初篩。建議時窗＝前後 12 小時內，出發、抵達、航路都降到「注意」以下的最近時間。</div>
-  </div>
-</div>
-
-<!-- TAB: 實況 -->
-<div class="tab" id="tab-metar">
-  <div class="card" style="margin-top:16px">
-    <h2><span class="key l">≋</span>機場實況 METAR / TAF</h2>
-    <div class="hint">資料來自 aviationweather.gov。會把實測陣風換算成側風，並與模式同時段預報比較，看預報是否低估。</div>
-    <div class="row">
-      <input type="text" id="metarIds" style="min-width:280px" placeholder="RCTP,RCSS,ROAH">
-      <button class="btn" id="metarBtn">抓取</button>
-      <span class="msg" id="metarMsg"></span>
-    </div>
-    <div class="metar-grid" id="metarGrid"></div>
-  </div>
-</div>
-
-<!-- TAB: 路徑資料 -->
-<div class="tab" id="tab-tracks">
-  <div class="grid g2">
-    <div class="card">
-      <h2><span class="key">⇶</span>各單位路徑</h2>
-      <div class="hint">每行一點：<span class="mono">日期 時間, 緯度, 經度, 最大風速kt, 七級半徑km, 十級半徑km</span>（台灣時間；行內含 Z 或 UTC 則視為 UTC）。半徑留空會用設定的預設值。JTWC 警報全文可直接貼上，會自動解析。</div>
-      <div id="srcCards"></div>
-    </div>
-    <div>
-      <div class="card">
-        <h2><span class="key l">≠</span>多來源比較</h2>
-        <div class="hint">各來源在同一時間的預報位置，以及彼此最大差距（分歧越大，越該保守）。</div>
-        <div class="tbl-wrap"><table id="cmpTbl"></table></div>
-        <div class="tbl-wrap" style="margin-top:14px"><table id="cmpCpa"></table></div>
-      </div>
-      <div class="card" style="margin-top:16px">
-        <h2><span class="key">↺</span>歷史對照</h2>
-        <div class="hint">在地圖上疊加過去颱風路徑，比較型態。內建康芮（2024）為依公開報導整理的概略位置；可貼上其他颱風（格式同左）。</div>
-        <div id="histList"></div>
-        <div class="row" style="margin-top:10px"><input type="text" id="histName" placeholder="名稱，例如 山陀兒 2024"><button class="btn ghost" id="histAdd">新增</button></div>
-        <textarea id="histText" placeholder="2024-10-02 08:00, 21.5, 119.8"></textarea>
-      </div>
-    </div>
+    <div class="note" style="margin-top:12px">「建議時窗」是前後 12 小時內，起飛、落地、航路都安全的最近時間。航路以直線估算，僅供初步篩選。</div>
   </div>
 </div>
 
@@ -257,31 +215,40 @@ input.cell{width:100%;min-width:60px;border-radius:10px;padding:5px 8px}
 
 <!-- TAB: 設定 -->
 <div class="tab" id="tab-settings">
+  <div class="card" style="margin-top:16px">
+    <h2><span class="key l">⌁</span>氣象署授權碼</h2>
+    <div class="hint">颱風路徑來自中央氣象署開放資料。到 opendata.cwa.gov.tw 免費註冊會員，登入後在「取得授權碼」複製貼到這裡，只要設定一次。</div>
+    <div class="row"><input type="password" id="cwaKeySet" placeholder="CWA-XXXXXXXX-…" style="flex:1;min-width:240px"><button class="btn" id="cwaKeySetBtn">儲存並抓取</button></div>
+    <div class="msg cwaMsg"></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h2><span class="key">⟂</span>機型側風上限</h2>
+    <div class="hint">預設數值只是示意，請改成公司 OM／FCOM 的數字（kt，含陣風）。</div>
+    <div class="tbl-wrap"><table id="acTbl"></table></div>
+  </div>
+  <details class="card" style="margin-top:16px">
+    <summary style="cursor:pointer;font-weight:600">進階設定（航點、跑道、門檻）</summary>
   <div class="grid g2">
-    <div class="card">
+    <div class="card" style="box-shadow:none;padding:12px 0">
       <h2><span class="key">⚙</span>航點與跑道</h2>
       <div class="hint">跑道格式 <span class="mono">05/23:052</span>（標示:真航向，多條用逗號分隔）。座標、時區、跑道皆可編輯。</div>
       <div class="tbl-wrap"><table id="apTbl"></table></div>
       <div class="row" style="margin-top:10px"><button class="btn ghost" id="apAdd">新增航點</button><button class="btn" id="apSave">儲存並重新抓取</button><button class="btn ghost" id="apReset">還原預設</button></div>
     </div>
     <div>
-      <div class="card">
-        <h2><span class="key l">⟂</span>機型限制</h2>
-        <div class="hint">預設數值只是示意，請依公司 OM／FCOM 設定（單位 kt，含陣風）。</div>
-        <div class="tbl-wrap"><table id="acTbl"></table></div>
-      </div>
-      <div class="card" style="margin-top:16px">
+      <div class="card" style="box-shadow:none;padding:12px 0">
         <h2><span class="key">≡</span>門檻</h2>
         <div class="tbl-wrap"><table id="thrTbl"></table></div>
         <div class="row" style="margin-top:10px"><button class="btn" id="thrSave">儲存</button></div>
         <div class="note" style="margin-top:8px">風速模式（Open-Meteo）解析度較粗，常低估颱風核心附近的風，所以等級同時參考暴風圈距離，兩者取高。</div>
       </div>
-      <div class="card" style="margin-top:16px">
+      <div class="card" style="box-shadow:none;padding:12px 0">
         <h2><span class="key l">⌁</span>颱風名稱</h2>
         <div class="row"><input type="text" id="tcNameIn" style="flex:1"><button class="btn ghost" id="tcNameSave">儲存</button></div>
       </div>
     </div>
   </div>
+  </details>
 </div>
 
 </div>
@@ -289,10 +256,7 @@ input.cell{width:100%;min-width:60px;border-radius:10px;padding:5px 8px}
 <nav class="nav" id="nav">
   <button data-tab="map" class="on">總覽</button>
   <button data-tab="timeline">時間軸</button>
-  <button data-tab="xw">側風</button>
   <button data-tab="flights">航班</button>
-  <button data-tab="metar">實況</button>
-  <button data-tab="tracks">路徑資料</button>
   <button data-tab="brief">簡報</button>
   <button data-tab="settings">設定</button>
 </nav>
@@ -506,7 +470,11 @@ function trackAt(tr, t){
   return null;
 }
 function fillR(p){ return Object.assign({}, p, {r7: p.r7 ?? S.thr.defR7, r10: p.r10 ?? S.thr.defR10}); }
-const primaryTrack = () => S.tracks[S.primary];
+function primaryKey(){
+  return ['CWA','PAGASA'].concat(Object.keys(S.tracks)).find(k => S.tracks[k] && S.tracks[k].pts.length >= 2) || 'CWA';
+}
+const isDemo = () => primaryKey() !== 'CWA';
+const primaryTrack = () => S.tracks[primaryKey()];
 function trackLevel(ap, t, tr){
   const c = trackAt(tr || primaryTrack(), t); if(!c) return {lv:0, d:null, c:null};
   const d = distKm(ap.lat, ap.lon, c.lat, c.lon);
@@ -655,13 +623,17 @@ function parseCWA(j, want){
     const c = parseCoord(f.coordinate ?? f.Coordinate); if(!c) return;
     let t;
     if(isFc && f.initTime != null && f.tau != null) t = Date.parse(f.initTime) + (+f.tau)*HR;
-    else t = Date.parse(f.fixTime || f.FixTime || f.dateTime || f.initTime);
+    else t = Date.parse(f.fixTime || f.FixTime || f.futureTime || f.validTime || f.dateTime || f.initTime);
     if(!isFinite(t)) return;
     const ms = parseFloat(f.maxWindSpeed); const v = isFinite(ms) ? Math.round(ms*1.944) : null;
     pts.push({t, lat:c.lat, lon:c.lon, v, r7: findRadius(f, /15ms|15Ms|circleOf15/i), r10: findRadius(f, /25ms|25Ms|circleOf25/i)});
   };
   const ad = tc.analysisData?.fix || []; (Array.isArray(ad)?ad:[ad]).forEach(f => take(f,false));
   const fd = tc.forecastData?.fix || []; (Array.isArray(fd)?fd:[fd]).forEach(f => take(f,true));
+  if(pts.length < 2){
+    const seen = new Set();
+    deepWalk(tc, (k, v) => { if(v && typeof v === 'object' && !Array.isArray(v) && (v.coordinate || v.Coordinate) && !seen.has(v)){ seen.add(v); take(v, v.tau != null); } });
+  }
   return {name: `${tc.cwaTyphoonName||''} ${tc.typhoonName||''}`.trim(), pts: dedupe(pts), all: tcs.map(x => `${x.cwaTyphoonName||''} ${x.typhoonName||''}`.trim())};
 }
 function parseJMA(spec){
@@ -688,15 +660,25 @@ let MAP = null, L_tracks = null, L_rings = null, L_aps = null, L_hist = null;
 function initMap(){
   if(MAP || typeof L === 'undefined') return;
   MAP = L.map('map', {zoomControl:true, worldCopyJump:true}).setView([24, 125], 5);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {attribution:'&copy; OpenStreetMap &copy; CARTO', subdomains:'abcd', maxZoom:12}).addTo(MAP);
+  const esriAttr = 'Tiles &copy; Esri';
+  const light = L.layerGroup([
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {attribution:esriAttr, maxZoom:16}),
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {maxZoom:16})
+  ]);
+  const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'&copy; OpenStreetMap', maxZoom:18});
+  const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution:esriAttr, maxZoom:17});
+  const bases = {'淺灰':light, '標準':osm, '衛星':sat};
+  let pick = store.get('basemap','淺灰'); (bases[pick] || light).addTo(MAP);
+  L.control.layers(bases, null, {position:'topright'}).addTo(MAP);
+  MAP.on('baselayerchange', e => store.set('basemap', e.name));
   L_hist = L.layerGroup().addTo(MAP); L_tracks = L.layerGroup().addTo(MAP); L_rings = L.layerGroup().addTo(MAP); L_aps = L.layerGroup().addTo(MAP);
 }
 function drawTracks(){
   if(!MAP) return;
   L_tracks.clearLayers(); L_hist.clearLayers();
   Object.entries(S.tracks).forEach(([k, tr]) => {
-    if(!tr.pts || !tr.pts.length) return;
-    const isP = k === S.primary;
+    if(!tr.pts || !tr.pts.length || k !== primaryKey()) return;
+    const isP = k === primaryKey();
     const ll = tr.pts.map(p => [p.lat, p.lon]);
     L.polyline(ll, {color: isP ? '#151515' : tr.color, weight: isP ? 4 : 2.5, dashArray: isP ? null : tr.dash, opacity: isP ? .95 : .8}).addTo(L_tracks).bindTooltip(tr.label + (isP?'（主路徑）':''));
     tr.pts.forEach(p => {
@@ -704,7 +686,7 @@ function drawTracks(){
         .bindTooltip(`${tr.label}<br>${fmtTW(p.t,true)}<br>${p.lat.toFixed(1)}N ${p.lon.toFixed(1)}E${p.v!=null?'<br>'+Math.round(p.v)+' kt':''}`).addTo(L_tracks);
     });
   });
-  S.history.filter(h => h.on && h.pts.length).forEach(h => {
+  [].forEach(h => {
     L.polyline(h.pts.map(p => [p.lat,p.lon]), {color:'#8a8a82', weight:2, dashArray:'1 6', lineCap:'round'}).addTo(L_hist).bindTooltip(h.name);
     h.pts.forEach(p => L.circleMarker([p.lat,p.lon],{radius:2.5,color:'#8a8a82',fillOpacity:1}).bindTooltip(`${h.name}<br>${fmtTW(p.t)}`).addTo(L_hist));
   });
@@ -725,7 +707,8 @@ function drawTime(){
     const r = risk(a, t);
     const col = r.lv==null ? '#cfcfcf' : LVCOL[r.lv];
     const m = L.circleMarker([a.lat,a.lon], {radius:7, color:'#151515', weight:1.5, fillColor:col, fillOpacity:1}).addTo(L_aps);
-    m.bindTooltip(a.code, {permanent:true, direction:'right', className:'ap-label', offset:[6,0]});
+    const eastNb = S.airports.some(b => b.on && b !== a && b.lon > a.lon && distKm(a.lat,a.lon,b.lat,b.lon) < 80);
+    m.bindTooltip(a.code, {permanent:true, direction: eastNb ? 'left' : 'right', className:'ap-label', offset: eastNb ? [-6,0] : [6,0]});
     m.bindPopup(apPopup(a, r, t));
   });
 }
@@ -746,7 +729,7 @@ function renderHero(){
   const tpe = S.airports.find(a => a.code==='TPE');
   const cp = tpe ? cpa(tr, tpe) : null;
   const L_ = limits();
-  $('#heroSub').innerHTML = `主路徑：${esc(tr?.label||'—')}${tr?.issued?'　'+esc(tr.issued):''}　·　風場 ${S.wxAt ? fmtTW(S.wxAt)+' 更新' : (S.wxErr ? esc(S.wxErr) : '載入中')}　·　${esc(S.acSel)} 側風限制 ${L_.xw}kt${S.rwyCond==='wet'?'（濕跑道）':''}`;
+  $('#heroSub').innerHTML = `路徑：${isDemo() ? '示範資料（非最新）' : '中央氣象署　'+esc(tr.issued||'')}　·　風場 ${S.wxAt ? fmtTW(S.wxAt)+' 更新' : (S.wxErr ? esc(S.wxErr) : '載入中')}　·　${esc(S.acSel)} 側風限制 ${L_.xw}kt${S.rwyCond==='wet'?'（濕跑道）':''}`;
   const stat = (k, v, u='') => `<div class="stat"><div class="k">${k}</div><div class="v num">${v}<small>${u}</small></div></div>`;
   let h = '';
   if(c){ h += stat('目前位置（推估）', `${c.lat.toFixed(1)}°N ${c.lon.toFixed(1)}°E`); if(c.v!=null) h += stat('最大風速', Math.round(c.v), 'kt'); h += stat('七級／十級半徑', `${Math.round(c.r7)}/${Math.round(c.r10)}`, 'km'); }
@@ -799,7 +782,7 @@ function renderTimeline(){
   h += '</div>';
   $('#timeline').innerHTML = h;
   $$('#timeline .tl-cell').forEach(el => el.addEventListener('click', () => { setSlider(+el.dataset.i); showTab('map'); }));
-  $$('#timeline .tl-name').forEach(el => el.addEventListener('click', () => { $('#xwAp').value = el.dataset.ap; renderXW(); showTab('xw'); }));
+  $$('#timeline .tl-name').forEach(el => el.addEventListener('click', () => { $('#xwAp').value = el.dataset.ap; renderXW(); $('#xwCard').scrollIntoView({behavior:'smooth'}); }));
   $('#tlMsg').textContent = S.wxErr || (S.wxAt ? '' : '風場資料載入中，目前只顯示暴風圈距離。');
 }
 function renderXWSelect(){
@@ -965,7 +948,7 @@ function renderMetar(){
 /* ================= 路徑資料頁 ================= */
 function renderSources(){
   const sel = $('#primarySel');
-  sel.innerHTML = Object.entries(S.tracks).map(([k,tr]) => `<option value="${k}" ${k===S.primary?'selected':''}>${esc(tr.label)}${tr.pts.length?'':'（無資料）'}</option>`).join('');
+  sel.innerHTML = Object.entries(S.tracks).map(([k,tr]) => `<option value="${k}" ${k===primaryKey()?'selected':''}>${esc(tr.label)}${tr.pts.length?'':'（無資料）'}</option>`).join('');
   $('#srcCards').innerHTML = Object.entries(S.tracks).map(([k,tr]) => {
     let extra = '';
     if(k==='CWA') extra = `<div class="row"><input type="password" id="cwaKey" placeholder="氣象署開放資料授權碼" value="${esc(S.cwaKey)}" style="flex:1"><input type="text" id="cwaWant" placeholder="颱風英文名（選填）" value="CHAMPI" style="width:150px"><button class="btn" data-fetch="CWA">抓取</button></div>`;
@@ -993,18 +976,36 @@ function applySource(k){
   srcMsg(k, `已套用 ${pts.length} 點`, pts.length ? 'ok' : 'err');
 }
 function setPrimary(k){ S.primary = k; store.set('primary', k); renderAll(); }
+function cwaMsg(txt, cls){ $$('.cwaMsg').forEach(el => { el.className = 'msg cwaMsg '+(cls||''); el.textContent = txt; }); }
+async function saveKeyAndFetch(key){
+  S.cwaKey = (key||'').trim(); store.set('cwaKey', S.cwaKey);
+  const ks = $('#cwaKeySet'); if(ks) ks.value = S.cwaKey;
+  await fetchCWA();
+}
 async function fetchCWA(){
-  const key = $('#cwaKey').value.trim(); S.cwaKey = key; store.set('cwaKey', key);
-  if(!key){ srcMsg('CWA','請先輸入授權碼','err'); return; }
-  srcMsg('CWA','抓取中…');
+  const key = S.cwaKey;
+  if(!key){ cwaMsg('請先輸入授權碼','err'); return; }
+  cwaMsg('抓取中…');
   try{
     const r = await fetch(`https://opendata.cwa.gov.tw/api/v1/rest/datastore/W-C0034-005?Authorization=${encodeURIComponent(key)}&format=JSON`);
+    if(r.status === 401 || r.status === 403) throw new Error('授權碼無效，請重新複製');
     if(!r.ok) throw new Error('HTTP '+r.status);
-    const res = parseCWA(await r.json(), $('#cwaWant').value.trim());
-    S.tracks.CWA.pts = res.pts; S.tracks.CWA.issued = `${res.name}　${fmtTW(Date.now())} 抓取`; saveTracks();
-    if(!primaryTrack().pts.length || S.primary==='PAGASA') { S.primary = 'CWA'; store.set('primary','CWA'); }
-    renderAll(); srcMsg('CWA', `取得 ${res.name}：${res.pts.length} 點（目前有：${res.all.join('、')}）`, 'ok');
-  }catch(e){ srcMsg('CWA','抓取失敗：'+e.message,'err'); }
+    const want = (S.tcName.match(/[A-Za-z][A-Za-z-]+/) || [''])[0];
+    const res = parseCWA(await r.json(), want);
+    if(res.pts.length < 2){ renderAll(); cwaMsg(`氣象署目前沒有可用的颱風路徑（${res.all.join('、')||'無'}），暫時顯示示範資料。`, 'err'); return; }
+    S.tracks.CWA.pts = res.pts; S.tracks.CWA.issued = `${fmtTW(Date.now())} 更新`; saveTracks();
+    if(res.name){ S.tcName = res.name; store.set('tcName', S.tcName); }
+    renderAll(); cwaMsg(`已取得 ${res.name} 最新路徑（${res.pts.length} 點）`, 'ok');
+  }catch(e){ renderAll(); cwaMsg('抓取失敗：'+e.message, 'err'); }
+}
+function renderDataCard(){
+  const el = $('#dataCard'); if(!el) return;
+  if(!isDemo()){ el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="datacard demo"><span class="key">!</span><div style="flex:1;min-width:220px"><div class="t">目前是示範路徑，不是最新資料</div>
+    <div class="small muted">貼上中央氣象署授權碼就會自動抓最新路徑（只需一次）。取得方式：到 opendata.cwa.gov.tw 免費註冊，登入後點「取得授權碼」。</div></div>
+    <input type="password" id="cwaKeyMain" placeholder="貼上授權碼" value="${esc(S.cwaKey)}" style="min-width:220px"><button class="btn" id="cwaKeyMainBtn">抓取</button>
+    <div class="msg cwaMsg" style="width:100%"></div></div>`;
+  $('#cwaKeyMainBtn').addEventListener('click', () => saveKeyAndFetch($('#cwaKeyMain').value));
 }
 async function fetchJMA(){
   srcMsg('JMA','抓取中…');
@@ -1052,19 +1053,10 @@ function genBrief(){
   const tr = primaryTrack(); const now = Date.now(); const L_ = limits();
   const lines = [];
   lines.push(`【${S.tcName} 航班影響摘要】${fmtTW(now,true)} 產出`);
-  lines.push(`主路徑：${tr.label}${tr.issued?'（'+tr.issued+'）':''}`);
+  lines.push(`路徑來源：${isDemo() ? '示範資料' : '中央氣象署（'+tr.issued+'）'}`);
   const c = trackAt(tr, now);
   if(c) lines.push(`目前推估位置 ${c.lat.toFixed(1)}N ${c.lon.toFixed(1)}E${c.v!=null?'，最大風速約 '+Math.round(c.v)+' kt':''}，七級風半徑 ${Math.round(c.r7)} km。`);
-  const W = S.warn; const ws = [];
-  if(W.cwa!=='無') ws.push('氣象署 '+W.cwa); if(W.jma!=='無') ws.push('JMA 沖繩 '+W.jma); if(W.pagasa!=='0') ws.push('PAGASA 訊號 '+W.pagasa+' 號');
-  lines.push(`警報：${ws.length ? ws.join('、') : '目前無'}${W.note?'；'+W.note:''}`);
-  // 分歧
-  const ks = Object.keys(S.tracks).filter(k => S.tracks[k].pts.length >= 2);
-  if(ks.length >= 2){
-    const t = S.t0 + 72*HR; const ps = ks.map(k => trackAt(S.tracks[k], t)).filter(Boolean); let sp = 0;
-    ps.forEach((a,i) => ps.forEach((b,j) => { if(j>i) sp = Math.max(sp, distKm(a.lat,a.lon,b.lat,b.lon)); }));
-    if(ps.length >= 2) lines.push(`各單位 72 小時位置最大差距約 ${Math.round(sp)} km${sp>200?'，路徑不確定性高，建議保守規劃':''}。`);
-  }
+  if(isDemo()) lines.push('※ 注意：目前使用示範路徑，非最新預報。');
   lines.push('');
   lines.push('■ 航點風險窗口（台灣時間）');
   const rows = [];
@@ -1122,13 +1114,11 @@ function showTab(name){
   $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
   if(name === 'map'){ initMap(); setTimeout(() => { MAP && MAP.invalidateSize(); drawTracks(); drawTime(); }, 30); }
   if(name === 'brief' && !$('#briefText').value) genBrief();
-  if(name === 'metar' && !S.metar) fetchMetar();
   window.scrollTo({top:0, behavior:'smooth'});
 }
 function renderAll(){
   buildHours();
-  renderHero(); renderWarn(); renderSources(); renderCPA(); renderTimeline(); renderXWSelect(); renderXW(); renderCompare(); renderHistory(); renderFlights();
-  if(S.metar) renderMetar();
+  renderHero(); renderDataCard(); renderCPA(); renderTimeline(); renderXWSelect(); renderXW(); renderFlights();
   drawTracks(); drawTime();
 }
 function defaultMetarIds(){
@@ -1149,8 +1139,7 @@ function bind(){
   $('#acSel').addEventListener('change', e => { S.acSel = e.target.value; store.set('acSel', S.acSel); renderAll(); });
   $('#rwyCond').value = S.rwyCond;
   $('#rwyCond').addEventListener('change', e => { S.rwyCond = e.target.value; store.set('rwyCond', S.rwyCond); renderAll(); });
-  $('#primarySel').addEventListener('change', e => setPrimary(e.target.value));
-  $('#refreshBtn').addEventListener('click', async () => { $('#refreshBtn').disabled = true; $('#refreshBtn').textContent = '更新中…'; await fetchWx(); if(S.cwaKey) await fetchCWA().catch(()=>{}); renderAll(); if(S.metar) fetchMetar(); $('#refreshBtn').disabled = false; $('#refreshBtn').textContent = '更新資料'; });
+  $('#refreshBtn').addEventListener('click', async () => { $('#refreshBtn').disabled = true; $('#refreshBtn').textContent = '更新中…'; await fetchWx(); if(S.cwaKey) await fetchCWA().catch(()=>{}); renderAll(); $('#refreshBtn').disabled = false; $('#refreshBtn').textContent = '更新資料'; });
   $('#tlFocus').addEventListener('change', renderTimeline);
   $('#xwAp').addEventListener('change', renderXW); $('#xwStep').addEventListener('change', renderXW);
   const p = twParts(Date.now() + 24*HR); $('#schedDate').value = `${p.y}-${p2(p.m)}-${p2(p.d)}`;
@@ -1161,14 +1150,8 @@ function bind(){
     $('#schedText').value = [`${d} JX800 TPE NRT 08:20 12:40`, `${d} JX801 NRT TPE 14:00 17:00`, `${d} JX882 TPE OKA 10:00 12:30`, `${d} JX883 OKA TPE 13:40 14:20`, `${d} JX786 TPE MNL 07:30 09:50`, `${d} JX840 TPE FUK 09:00 12:15`, `${d} JX002 TPE LAX 23:40 19:40`].join('\n');
     renderFlights();
   });
-  $('#metarIds').value = defaultMetarIds();
-  $('#metarBtn').addEventListener('click', fetchMetar);
-  $('#histAdd').addEventListener('click', () => {
-    const pts = parseGeneric($('#histText').value); const name = $('#histName').value.trim() || '歷史路徑';
-    if(!pts.length) return alert('沒有解析到路徑點');
-    S.history.push({name, on:true, pts}); store.set('history', S.history); $('#histText').value=''; $('#histName').value='';
-    renderHistory(); drawTracks();
-  });
+  $('#cwaKeySet').value = S.cwaKey;
+  $('#cwaKeySetBtn').addEventListener('click', () => saveKeyAndFetch($('#cwaKeySet').value));
   $('#briefGen').addEventListener('click', genBrief);
   $('#briefCopy').addEventListener('click', async () => {
     try{ await navigator.clipboard.writeText($('#briefText').value); $('#briefMsg').className='msg ok'; $('#briefMsg').textContent='已複製'; }
@@ -1189,7 +1172,6 @@ function bind(){
   await fetchWx();
   if(S.cwaKey){ await fetchCWA().catch(()=>{}); }
   renderAll();
-  $('#metarIds').value = defaultMetarIds();
   setInterval(() => { buildHours(); renderHero(); }, 10*60*1000);
 })();
 </script>
