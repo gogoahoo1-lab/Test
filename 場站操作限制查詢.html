@@ -341,7 +341,7 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
 .sx-sum{font-size:12.5px;background:rgba(127,211,240,.09);color:#BFE6F5;border-radius:9px;padding:5px 11px;display:inline-block;margin-bottom:8px}
 .sx-sum b{font-variant-numeric:tabular-nums}
 .sx-list{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-.sx-row{display:grid;grid-template-columns:minmax(190px,1.1fr) minmax(220px,1.6fr) minmax(300px,2fr) 78px;gap:14px;align-items:center;padding:12px 16px;border-top:1px solid var(--line2)}
+.sx-row{display:grid;grid-template-columns:minmax(190px,1.1fr) minmax(220px,1.6fr) minmax(300px,2fr) 150px;gap:14px;align-items:center;padding:12px 16px;border-top:1px solid var(--line2)}
 .sx-row:first-child{border-top:0}
 .sx-row.us{background:rgba(127,211,240,.06);box-shadow:inset 3px 0 0 #7FD3F0}
 .sx-t{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
@@ -381,6 +381,9 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
 .sx-tot u{display:block;text-decoration:none;font-size:11px;color:var(--muted)}
 .sx-tot b{font-size:18px;font-variant-numeric:tabular-nums}
 .sx-tot em{display:block;font-style:normal;font-size:11px;color:var(--no)}
+.sx-tot.two{display:grid;grid-template-columns:auto auto;justify-content:end;gap:0 16px;align-items:start}
+.sx-tot .bk b{color:#FFD978}
+.sx-tot small{display:block;font-size:11px;color:var(--dim);white-space:nowrap;font-variant-numeric:tabular-nums}
 .sx-empty{padding:28px 16px;text-align:center;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:var(--r)}
 @media (max-width:900px){
   .sx-row{grid-template-columns:1fr auto;gap:8px 10px;padding:12px 13px}
@@ -654,7 +657,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-15 12:15（資料更新狀態）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-20c（TTL 訂位亮金色）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4680,6 +4683,9 @@ renderList(); renderDetail(); window.scrollTo({top:0});
       return '<div class="sx-day"><h3>' + dayLabel(k) + " <small>" + (inb ? "外站出發（出發時間為當地時間）" : "台灣出發") + " " + g.length + " 班</small></h3>" + sum +
         '<div class="sx-list">' + g.map(function(r){
           var u = isUS(r), tot = r.rem.reduce(function(a, v){ return a + pos(v); }, 0), ov = r.rem.some(function(v){ return v != null && v < 0; });
+          /* TTL 訂位數：各艙等訂位加總／座位數加總（沒有座位配置的只顯示訂位數） */
+          var bk = 0, cp = 0, hasB = false;
+          [0,1,2,3].forEach(function(i){ if(r.pax && r.pax[i] != null){ bk += +r.pax[i] || 0; hasB = true; } if(r.cap && r.cap[i]) cp += +r.cap[i] || 0; });
           return '<div class="sx-row' + (u ? " us" : "") + '">' +
             '<div class="sx-t">' + depHtml(r) +
               '<span class="fl">' + esc(r.flt) + "</span>" + (r.st !== "J" ? '<span class="st">(' + esc(r.st) + ")</span>" : "") + depStd(r) +
@@ -4688,7 +4694,8 @@ renderList(); renderDetail(); window.scrollTo({top:0});
               (u ? '<span class="sx-us">美國</span>' : "") + "</span></div>" +
             '<div class="sx-ac">' + esc(TYPE_NAME[r.type] || r.type) + (r.noCap ? ' <span style="color:var(--no)">未設配置</span>' : "") + ' <span class="reg">' + esc(r.reg) + "</span>" + links(r) + "</div>" +
             '<div class="sx-cls">' + [0,1,2,3].map(function(i){ return cell(r, i); }).join("") + "</div>" +
-            '<div class="sx-tot"><u>合計空位</u><b>' + tot + "</b>" + (ov ? "<em>含超賣艙等</em>" : "") + "</div>" +
+            '<div class="sx-tot' + (hasB ? " two" : "") + '"><div><u>合計空位</u><b>' + tot + "</b>" + (ov ? "<em>含超賣艙等</em>" : "") + "</div>" +
+              (hasB ? '<div class="bk"><u>TTL 訂位</u><b>' + bk + "</b>" + (cp && !r.noCap ? "<small>/ " + cp + " 座</small>" : "") + "</div>" : "") + "</div>" +
           "</div>";
         }).join("") + "</div></div>";
     }).join("") || '<div class="sx-empty">沒有符合條件的航班。</div>';
@@ -5125,19 +5132,21 @@ const SR = (()=>{
       } else if(dst){
         groups.push({t:`${stn} → ${dst}　本站直飛`, rows:pool.filter(r=>r.from===stn&&r.to===dst), count:true});
         if(ok && f.from!==stn) groups.push({t:`${f.from} → ${dst}　原出發站（參考）`, rows:pool.filter(r=>r.from===f.from&&r.to===dst)});
-        if(!BASE.includes(stn)) groups.push({t:`${stn} → 台灣　本站回台`, rows:pool.filter(r=>r.from===stn&&BASE.includes(r.to)&&r.to!==dst)});
+        /* 旅客要回台灣：同站飛其他台灣航點（例如 NRT→RMQ）也算進空位合計 */
+        if(!BASE.includes(stn)) groups.push({t:`${stn} → 台灣　本站回台（其他航點）`, rows:pool.filter(r=>r.from===stn&&BASE.includes(r.to)&&r.to!==dst), count:BASE.includes(dst)});
       } else groups.push({t:`${stn} 出發的所有航班`, rows:pool.filter(r=>r.from===stn), count:true});
       const sum=[0,0,0,0];
       groups.forEach(g=>{ g.rows.sort((a,b)=>tsOf(a)-tsOf(b)); if(g.count) g.rows.forEach(r=>[0,1,2,3].forEach(i=>sum[i]+=posv(r.rem[i]))); });
-      const cnt = groups.find(g=>g.count), cntName = cnt.t.replace(/\s+/g," ");
+      const cgs = groups.filter(g=>g.count), multi = cgs.filter(g=>g.rows.length).length > 1 || (cgs.length > 1 && !cgs[0].rows.length);
+      const cnt = { t: multi ? `${stn} 回台（全部台灣航點）` : cgs[0].t, rows: [].concat(...cgs.map(g=>g.rows)) }, cntName = cnt.t.replace(/\s+/g," ");
       /* 替代航班空位合計（直接列出各艙等還有幾席） */
       const idx=[0,1,2,3].filter(i=>cnt.rows.some(r=>r.cap&&r.cap[i]));
       const gap = cnt.rows.length ? `<div class="srgap">${idx.map(i=>`<div class="srg ${sum[i]>0?"ok":"no"}"><u>${CLSN[i]}</u><b>空 ${sum[i]} 席</b></div>`).join("")}</div>` : "";
-      const others = groups.some(g=>g!==cnt && g.rows.length), route = cntName.replace(/ ?→ ?/,"→").replace(/ .*$/,"");
-      const ts = sum.reduce((a,b)=>a+b,0), rt = dst ? `${stn}→${dst}` : `${stn} 出發`;
+      const others = groups.some(g=>!g.count && g.rows.length), route = multi ? `${stn} 回台` : cntName.replace(/ ?→ ?/,"→").replace(/ .*$/,"");
+      const ts = sum.reduce((a,b)=>a+b,0), rt = multi ? `${stn} 回台` : dst ? `${stn}→${dst}` : `${stn} 出發`;
       if(cnt.rows.length){
-        P.altS = `${total!=null && ts<total ? "⚠️" : "🟢"} 替代：${rt} ${dst?"直飛 ":""}${cnt.rows.length} 班，TTL 空 ${ts}${total!=null && ts<total ? `（不足 ${total-ts}）` : ""}`;
-        P.altL.push(`空位合計${others ? "（"+route+"）" : ""}：` + idx.map(i=>CLSN[i]+" "+(sum[i]||"❌")).join("｜"));
+        P.altS = `${total!=null && ts<total ? "⚠️" : "🟢"} 替代：${rt} ${dst&&!multi?"直飛 ":""}${cnt.rows.length} 班，TTL 空 ${ts}${total!=null && ts<total ? `（不足 ${total-ts}）` : ""}`;
+        P.altL.push(`空位合計${others || multi ? "（"+route+"）" : ""}：` + idx.map(i=>CLSN[i]+" "+(sum[i]||"❌")).join("｜"));
       } else {
         const near1 = groups.flatMap(g=>g.rows).sort((a,b)=>tsOf(a)-tsOf(b))[0];
         P.altS = near1 ? `⚠️ 替代：無 ${rt} 直飛；最近 ${near1.flt} ${near1.from}→${near1.to} 空 ${near1.rem.reduce((a,v)=>a+posv(v),0)}` : `⛔ 替代：${H} 小時內沒有替代航班`;
@@ -5299,6 +5308,7 @@ const I18N = (()=>{
     [/（(\d+) 小時 (\d+) 分前）/g, " ($1h $2m ago)"],
     [/（(\d+) 小時前）/g, " ($1 h ago)"],
     [/（(\d+) 分前）/g, " ($1 min ago)"],
+    [/\/ (\d+) 座/g, "/ $1 seats"],
     [/版本 ([\d-]+ [\d:]+)（[^）]*）/g, "Version $1"],
     [/找不到「([^」]*)」。換個代碼或清除搜尋條件試試。/g, 'No match for "$1". Try another code or clear the filter.'],
     [/下一段 (\S+) 由 (\S+) 出發，航點接不上（中間可能缺資料）/g, "Next leg $1 departs $2 — route doesn't connect (data may be missing)"],
@@ -5373,7 +5383,7 @@ const I18N = (()=>{
     "目的地・現在":"Destination · now","當地時間":"Local time","旅客目的地":"Pax destination","航班":"Flight",
     "複製速報文字":"Copy report","重新讀取空位":"Reload seats","分享":"Share","產生於":"Generated",
     "尚未指定航班":"No flight selected","航班未指定":"No flight","折返回台":"Return to TW","回台後接飛":"Onward after return",
-    "台灣　本站回台":"Taiwan · return","本站直飛":"Direct","本站回台":"Return to Taiwan","同航線後續班次":"Later flights, same route","原出發站（參考）":"From original origin (ref.)",
+    "台灣　本站回台（其他航點）":"Taiwan · return (other TW airports)","回台（全部台灣航點）":"to Taiwan (all TW airports)","台灣　本站回台":"Taiwan · return","本站直飛":"Direct","本站回台":"Return to Taiwan","同航線後續班次":"Later flights, same route","原出發站（參考）":"From original origin (ref.)",
     "出發的所有航班":"all departures","空位合計":"Seats total","」空位合計":"\" seats total","經濟艙空位合計":"Y seats total",
     "請輸入事發場站":"Enter the event station","讀取空位清單中":"Loading seat list","清單內容看不懂":"Couldn't parse the list",
     "清單內沒有接飛":"No onward flight in list","空位清單來自":"Seat list from","資料更新":"Data status","到離資料":"Flight data","本頁讀取":"Page fetched","尚無資料":"no data","（剛剛）":" (just now)","系統清單":"System list","空位清單":"Seat list",
@@ -5383,7 +5393,7 @@ const I18N = (()=>{
     "已複製，可直接貼到 LINE／Email":"Copied — paste into LINE / Email","重新讀取":"Reload","更新頻率":"Update frequency",
     "AMP值班台":"AMP Duty Desk","值班台":"Duty Desk","機場即時資料":"Airport live data","讀取中":"Loading","・讀取中":" · loading",
     "台灣出發":"From Taiwan","外站回台":"To Taiwan","美國線":"US routes","航班數":"Flights","超賣班次":"Oversold flights",
-    "經濟艙緊張（":"Y tight (","含超賣艙等":"incl. oversold","合計空位":"Total avail.","出發地區":"Origin region","目的地區域":"Destination region",
+    "經濟艙緊張（":"Y tight (","含超賣艙等":"incl. oversold","合計空位":"Total avail.","TTL 訂位":"TTL booked","出發地區":"Origin region","目的地區域":"Destination region",
     "出發場站":"Origin station","目的地站":"Destination","起飛 ETD（自動串接）":"ETD (auto)","起飛 ETD":"ETD","起飛 ETD（當地）":"ETD (local)",
     "抵達 ETA（當地）":"ETA (local)","時差（小時）":"Time diff (h)","抵達→靠檔":"Arrival→on-block","＋ 增加下一個場站":"+ Add next station",
     "供續飛下一站":"for continuing to next station","可再起飛":"Ready to depart","再起飛":"Re-dep","回自動":"Auto","待填時間":"Time pending",
