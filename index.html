@@ -33,13 +33,20 @@
   button { font-family: inherit; }
 
   /* ============ DESKTOP LAYOUT (default) ============ */
-  .app { display: grid; grid-template-columns: 72px 1fr; height: 100vh; overflow: hidden; }
+  .app { display: grid; grid-template-columns: 76px 1fr; height: 100vh; overflow: hidden; }
 
   .sidebar { background: var(--navy-900); display: flex; flex-direction: column; align-items: center; padding: 20px 0; gap: 6px; }
   .brand-mark { width: 40px; height: 40px; margin-bottom: 16px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--gold), #A08048); border-radius: 10px; color: var(--navy-900); font-weight: 700; font-family: 'Inter'; font-size: 18px; letter-spacing: -0.5px; }
-  .nav-btn { width: 44px; height: 44px; border-radius: 12px; background: transparent; border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 22px; position: relative; transition: all 0.15s ease; opacity: 0.85; filter: saturate(1.15); }
-  .nav-btn:hover { background: rgba(255,255,255,0.1); opacity: 1; filter: saturate(1.3) brightness(1.1); }
-  .nav-btn.active { background: rgba(201, 166, 107, 0.22); color: var(--gold); opacity: 1; filter: saturate(1.4) brightness(1.15); box-shadow: inset 0 0 0 1px rgba(201,166,107,0.4); }
+  /* D style: SVG icon + always-visible label below */
+  .nav-btn { width: 60px; height: auto; padding: 8px 4px 6px; border-radius: 10px; background: transparent; border: none; color: #fff; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; position: relative; transition: all 0.15s ease; }
+  .nav-btn svg { width: 22px; height: 22px; stroke: rgba(255,255,255,0.9); stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round; transition: all 0.15s; }
+  .nav-btn .nav-label { display: block; font-size: 10px; color: rgba(255,255,255,0.85); letter-spacing: 0.5px; font-family: inherit; line-height: 1; }
+  .nav-btn:hover { background: rgba(255,255,255,0.1); }
+  .nav-btn:hover svg { stroke: #fff; }
+  .nav-btn:hover .nav-label { color: #fff; }
+  .nav-btn.active { background: rgba(201, 166, 107, 0.22); box-shadow: inset 0 0 0 1px rgba(201,166,107,0.4); }
+  .nav-btn.active svg { stroke: var(--gold-light, var(--gold)); }
+  .nav-btn.active .nav-label { color: var(--gold-light, var(--gold)); font-weight: 600; }
   .nav-btn.active::before { content: ""; position: absolute; left: -20px; top: 12px; bottom: 12px; width: 3px; background: var(--gold); border-radius: 0 2px 2px 0; }
   .nav-btn .badge { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: #E5674C; border: 2px solid var(--navy-900); }
   .nav-btn .nav-label { display: none; }
@@ -467,10 +474,11 @@
       border-top: 1px solid rgba(255,255,255,0.05);
     }
     .brand-mark { display: none; }
-    .nav-btn { width: 56px; height: 44px; border-radius: 10px; flex-direction: column; gap: 2px; font-size: 18px; }
+    .nav-btn { width: 56px; height: auto; padding: 6px 4px; border-radius: 10px; flex-direction: column; gap: 2px; }
+    .nav-btn svg { width: 20px; height: 20px; }
     .nav-btn.active::before { display: none; }
-    .nav-btn.active { background: rgba(201, 166, 107, 0.15); }
-    .nav-btn .nav-label { display: block; font-size: 9px; color: currentColor; letter-spacing: 0.5px; }
+    .nav-btn.active { background: rgba(201, 166, 107, 0.22); box-shadow: inset 0 0 0 1px rgba(201,166,107,0.4); }
+    .nav-btn .nav-label { display: block; font-size: 9px; color: rgba(255,255,255,0.85); letter-spacing: 0.5px; }
     .nav-spacer { display: none; }
     .main { grid-row: 1; grid-template-rows: auto 1fr; overflow: hidden; }
 
@@ -569,12 +577,31 @@
 <div class="app">
   <aside class="sidebar">
     <div class="brand-mark">JX</div>
-    <button class="nav-btn active" data-view="lounge" title="貴賓室"><span>🪑</span><span class="nav-label">座位</span></button>
-    <button class="nav-btn" data-view="stats" title="統計"><span>📊</span><span class="nav-label">統計</span></button>
-    <button class="nav-btn" data-view="forecast" title="容量預估"><span>📈</span><span class="nav-label">預估</span></button>
-    <button class="nav-btn" data-view="chat" title="聊天"><span>💬</span><span class="nav-label">聊天</span><span class="badge" id="chatBadge" style="display:none;"></span></button>
-    <button class="nav-btn" data-view="inventory" title="備品"><span>📦</span><span class="nav-label">備品</span></button>
-    <button class="nav-btn" data-view="admin" title="使用者管理" id="navAdmin" style="display:none;"><span>👥</span><span class="nav-label">帳號</span></button>
+    <button class="nav-btn active" data-view="lounge" title="貴賓室">
+      <svg viewBox="0 0 24 24"><path d="M6 10V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v5M4 10h16v6H4zM6 16v4M18 16v4M8 10v6M16 10v6"/></svg>
+      <span class="nav-label">座位</span>
+    </button>
+    <button class="nav-btn" data-view="stats" title="統計">
+      <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>
+      <span class="nav-label">統計</span>
+    </button>
+    <button class="nav-btn" data-view="forecast" title="容量預估">
+      <svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-9M14 6h7v7"/></svg>
+      <span class="nav-label">預估</span>
+    </button>
+    <button class="nav-btn" data-view="chat" title="聊天">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span class="nav-label">聊天</span>
+      <span class="badge" id="chatBadge" style="display:none;"></span>
+    </button>
+    <button class="nav-btn" data-view="inventory" title="備品">
+      <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16zM3.3 7l8.7 5 8.7-5M12 22V12"/></svg>
+      <span class="nav-label">備品</span>
+    </button>
+    <button class="nav-btn" data-view="admin" title="使用者管理" id="navAdmin" style="display:none;">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span class="nav-label">帳號</span>
+    </button>
     <div class="nav-spacer"></div>
     <button class="nav-btn" onclick="showIdentityModal()" title="設定"><span>⚙️</span><span class="nav-label">設定</span></button>
   </aside>
