@@ -744,7 +744,7 @@ html[data-skin] .sky{ border-color:var(--line); }
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-21f（總訂位＋轉機人數依篩選）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-21g（KPI 移除艙等空位）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4775,8 +4775,6 @@ renderList(); renderDetail(); window.scrollTo({top:0});
         list.forEach(function(r){ [0,1,2,3].forEach(function(i){ av += pos(r.rem[i]); if(r.pax && r.pax[i] != null) bk += +r.pax[i] || 0; if(r.cap && r.cap[i] && !r.noCap) cp += +r.cap[i]; }); });
         return kpi("", "總空位（全艙）", av + " 席") + kpi("g", "總訂位（TTL）", bk + ' 人<small class="sx-kcap">／' + cp + " 座</small>");
       })() +
-      kpi("c", "美國線空位 J／W／Y", us.length ? us.reduce(function(a, r){ return a + pos(r.rem[1]); }, 0) + "／" + us.reduce(function(a, r){ return a + pos(r.rem[2]); }, 0) + "／" + us.reduce(function(a, r){ return a + pos(r.rem[3]); }, 0) : "—") +
-      kpi("", "經濟艙空位合計", list.reduce(function(a, r){ return a + pos(r.rem[3]); }, 0) + " 席") +
       kpi("r", "超賣班次", list.filter(function(r){ return r.rem.some(function(v){ return v != null && v < 0; }); }).length + " 班") +
       kpi("", "經濟艙緊張（≤" + TIGHT + "）", list.filter(function(r){ return r.rem[3] != null && r.rem[3] >= 0 && r.rem[3] <= TIGHT; }).length + " 班");
 
