@@ -678,7 +678,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-21b（轉機人數同步）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-21c（轉機人數即時同步）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4800,8 +4800,8 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     for(var p in XS.pend){ if(p === "__clear") continue; if(XS.pend[p] == null) delete XF[p]; else XF[p] = XS.pend[p]; }
     XS.t = +(j && j.t) || 0; xStore();
   }
-  function xReq(method, body){
-    return fetch(XFER_URL + "/xfer?code=" + encodeURIComponent(code()), {
+  function xReq(method, body, since){
+    return fetch(XFER_URL + "/xfer?code=" + encodeURIComponent(code()) + (since ? "&since=" + since : ""), {
       method:method, cache:"no-store",
       headers: body ? { "Content-Type":"application/json", "X-Edit-Code": editCode() } : {},
       body: body ? JSON.stringify(body) : undefined
@@ -4810,15 +4810,17 @@ renderList(); renderDetail(); window.scrollTo({top:0});
   function xPull(){
     if(XS.busy) return;
     XS.busy = true; xCount();
-    xReq("GET").then(function(x){
+    var quick = XS.t && XS.on === true && !Object.keys(XS.pend).length && !XS.err;
+    xReq("GET", null, quick ? XS.t : 0).then(function(x){
       if(x.s === 404){ XS.on = false; return; }
       XS.on = true;
+      if(x.s === 204){ XS.same = true; return; }   /* 沒有變更，不重畫 */
       if(x.s === 403){ XS.err = "查看碼不正確，讀不到大家的轉機人數"; return; }
       if(x.s !== 200) throw new Error("HTTP " + x.s);
       if(XS.err && !/編輯碼/.test(XS.err)) XS.err = "";
       xApply(x.j);
     }).catch(function(){ if(XS.on == null) XS.on = false; else XS.err = "連不到中繼，顯示上次資料"; })
-    .then(function(){ XS.busy = false; xCount(); xRender(); if(Object.keys(XS.pend).length && XS.on && !XS.err) xFlush(); });
+    .then(function(){ XS.busy = false; xCount(); if(XS.same) XS.same = false; else xRender(); if(Object.keys(XS.pend).length && XS.on && !XS.err) xFlush(); });
   }
   function xFlush(){
     var send = XS.pend, keys = Object.keys(send);
@@ -4863,10 +4865,10 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     xCount(); render();
     if(Object.keys(XS.pend).length) xFlush();
   };
-  /* 讀取時機：打開空位查詢、回到前景、停在本頁時每 60 秒 */
+  /* 讀取時機：打開空位查詢、回到前景、停在本頁時每 8 秒（沒有變更時中繼只回 204，不下載資料） */
   if($("t-seat")) $("t-seat").addEventListener("click", function(){ xPull(); });
   document.addEventListener("visibilitychange", function(){ if(!document.hidden && !$("p-seat").classList.contains("hidden")) xPull(); });
-  setInterval(function(){ if(!document.hidden && !$("p-seat").classList.contains("hidden")) xPull(); }, 60000);
+  setInterval(function(){ if(!document.hidden && !$("p-seat").classList.contains("hidden")) xPull(); }, 8000);
 
   /* 範本：列出目前清單的航班（CSV，Excel 可直接開啟、編輯後另存或直接上傳） */
   $("sxXtpl").onclick = function(){
