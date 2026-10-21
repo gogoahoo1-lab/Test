@@ -342,6 +342,9 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
 .sx-xf input::placeholder{color:var(--dim);font-weight:400}
 .sx-xf small{font-weight:500;color:var(--dim);font-size:11px}
 .sx-xf.has input{background:rgba(127,211,240,.16)}
+.sx-xf input[readonly]{border-style:dashed;cursor:default}
+.sx-xsync{font-size:12px;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.05)}
+.sx-xsync.ok{color:var(--ok)} .sx-xsync.warn{color:var(--warn)} .sx-xsync.bad{color:var(--no)}
 .sx-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:14px 0 4px}
 .sx-kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 13px}
 .sx-kpi u{display:block;text-decoration:none;font-size:11.5px;color:var(--muted)}
@@ -662,10 +665,11 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
     <div class="sx-f"><span id="sxLabB">目的地區域</span><div class="sx-chips" id="sxB"></div></div>
     <div class="sx-f" id="sxRowC"><span>目的地站</span><div class="sx-chips" id="sxC"></div></div>
     <div class="sx-f"><span></span><label class="sx-only"><input type="checkbox" id="sxOnly"> 只看經濟艙還有空位</label></div>
-    <div class="sx-xbar" id="sxXbar"><span class="tmp">臨時</span><b>🔁 轉機人數</b><span id="sxXcnt">尚未填寫</span>
+    <div class="sx-xbar" id="sxXbar"><span class="tmp">臨時</span><b>🔁 轉機人數</b><span id="sxXcnt">尚未填寫</span><span class="sx-xsync" id="sxXsync"></span>
       <button class="sx-btn" type="button" id="sxXup">上傳 Excel</button>
       <button class="sx-btn" type="button" id="sxXtpl">下載範本</button>
       <button class="sx-btn ghost" type="button" id="sxXclr" style="margin-left:0">清除全部</button>
+      <button class="sx-btn ghost" type="button" id="sxXcode" style="margin-left:0">輸入編輯碼</button>
       <input type="file" id="sxXfile" accept=".xlsx,.xls,.csv" hidden>
       <span class="msg" id="sxXmsg" hidden></span></div>
     <div class="sx-kpis" id="sxKpis"></div>
@@ -674,7 +678,7 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-21a（臨時：轉機人數）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-21b（轉機人數同步）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4733,11 +4737,17 @@ renderList(); renderDetail(); window.scrollTo({top:0});
   });
   $("sxOnly").addEventListener("change", function(){ S.only = this.checked; saveView(); render(); });
 
-  /* ---------- 臨時功能：各班轉機總人數（手動輸入或上傳 Excel，只存在本機瀏覽器） ----------
-     鍵值：班號|台北日期（YYYY-MM-DD）；Excel 沒有日期欄時存成 班號|*，套用到該班號所有日期 */
-  var XK = "sxXfer", XF = {};
+  /* ---------- 臨時功能：各班轉機總人數（手動輸入或上傳 Excel，經 Cloudflare 中繼與大家同步） ----------
+     鍵值：班號|台北日期（YYYY-MM-DD）；Excel 沒有日期欄時存成 班號|*，套用到該班號所有日期
+     讀取用「查看碼」，寫入另需「編輯碼」；中繼還沒部署時自動退回只存本機 */
+  var XFER_URL = "https://flight-xfer.gogoahoo.workers.dev";
+  var XK = "sxXfer", XF = {}, XS = { on:null, t:0, pend:{}, timer:0, busy:false, err:"", deferred:false };
   try{ XF = JSON.parse(localStorage.getItem(XK) || "{}") || {}; }catch(e){ XF = {}; }
-  function xSave(){ try{ localStorage.setItem(XK, JSON.stringify(XF)); }catch(e){} xCount(); }
+  try{ XS.pend = JSON.parse(localStorage.getItem(XK + "Pend") || "{}") || {}; }catch(e){ XS.pend = {}; }
+  function editCode(){ try{ return localStorage.getItem("sxXedit") || ""; }catch(e){ return ""; } }
+  function canEdit(){ return XS.on !== true || !!editCode(); }
+  function xStore(){ try{ localStorage.setItem(XK, JSON.stringify(XF)); localStorage.setItem(XK + "Pend", JSON.stringify(XS.pend)); }catch(e){} }
+  function xSave(){ xStore(); xCount(); }
   function xKey(r){ return fnN(r.flt) + "|" + dkey(r.std || r.dep); }
   function xLocalKey(r){   /* 外站出發：Excel 可能填當地日期 */
     if(isBase(r.from)) return null;
@@ -4751,27 +4761,112 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     var a = XF[fnN(r.flt) + "|*"]; return a != null ? a : null;
   }
   function xferCell(r){
-    var v = xferOf(r);
-    return '<label class="sx-xf' + (v != null ? " has" : "") + '">🔁 轉機 <input type="text" inputmode="numeric" data-xfer="' + esc(xKey(r)) + '" value="' + (v != null ? v : "") + '" placeholder="—" aria-label="轉機人數"> 人' +
+    var v = xferOf(r), ro = !canEdit();
+    return '<label class="sx-xf' + (v != null ? " has" : "") + '">🔁 轉機 <input type="text" inputmode="numeric" data-xfer="' + esc(xKey(r)) + '" value="' + (v != null ? v : "") + '" placeholder="—" aria-label="轉機人數"' + (ro ? ' readonly title="輸入編輯碼才能修改"' : "") + '> 人' +
       (v != null && r.pax ? '<small>／訂位 ' + r.pax.reduce(function(a, x){ return a + (x || 0); }, 0) + "</small>" : "") + "</label>";
   }
   function xCount(){
     var n = Object.keys(XF).length, f = 0, t = 0;
     S.rows.forEach(function(r){ var v = xferOf(r); if(v != null){ f++; t += v; } });
-    $("sxXcnt").textContent = !n ? "尚未填寫（可在每班下方直接輸入，或上傳 Excel）"
-      : "清單內 " + f + " 班已填，共 " + t + " 人" + (f ? "" : "（已存 " + n + " 筆，清單內尚無對應航班）") + "・只存在這台裝置";
+    $("sxXcnt").textContent = !n ? (canEdit() ? "尚未填寫（可在每班下方直接輸入，或上傳 Excel）" : "目前沒有人填寫")
+      : "清單內 " + f + " 班已填，共 " + t + " 人" + (f ? "" : "（已存 " + n + " 筆，清單內尚無對應航班）");
+    var np = Object.keys(XS.pend).filter(function(k){ return k !== "__clear"; }).length + (XS.pend.__clear ? 1 : 0), el = $("sxXsync"), k = "", txt;
+    if(XS.on === false){ k = "warn"; txt = "僅存本機（中繼尚未啟用轉機同步）"; }
+    else if(XS.on == null){ txt = "連線中繼中…"; }
+    else if(XS.err){ k = "bad"; txt = "⚠ " + XS.err + (np ? "（" + np + " 筆未送出）" : ""); }
+    else if(XS.busy || np){ txt = "☁️ 同步中…"; }
+    else { k = "ok"; txt = "☁️ 已與大家同步" + (XS.t ? "・" + dayHm(XS.t) + " 更新" : ""); }
+    if(XS.on === true && !editCode()) txt += "・🔒 唯讀";
+    el.textContent = txt; el.className = "sx-xsync " + k;
+    var ed = canEdit();
+    $("sxXup").hidden = !ed; $("sxXclr").hidden = !ed;
+    $("sxXcode").hidden = XS.on !== true; $("sxXcode").textContent = editCode() ? "編輯碼 ✓" : "輸入編輯碼";
   }
   function xMsg(t, err){ var m = $("sxXmsg"); m.hidden = !t; m.textContent = t || ""; m.className = "msg" + (err ? " err" : ""); }
+  function xRender(){   /* 正在輸入時先不重畫，避免游標跳走 */
+    var a = document.activeElement;
+    if(a && a.hasAttribute && a.hasAttribute("data-xfer")){ XS.deferred = true; xCount(); return; }
+    XS.deferred = false; render(); try{ typeof SR!=="undefined" && SR.render(); }catch(_){}
+  }
+  /* 套用一批變更：v 為 null 表示刪除 */
+  function xSet(ch){
+    for(var k in ch){ if(ch[k] == null) delete XF[k]; else XF[k] = ch[k]; XS.pend[k] = ch[k]; }
+    xSave(); clearTimeout(XS.timer); XS.timer = setTimeout(xFlush, 700);
+  }
+  function xApply(j){   /* 伺服器資料＋尚未送出的本機變更 */
+    var d = (j && j.data) || {}; XF = {};
+    for(var k in d) XF[k] = d[k];
+    if(XS.pend.__clear) XF = {};
+    for(var p in XS.pend){ if(p === "__clear") continue; if(XS.pend[p] == null) delete XF[p]; else XF[p] = XS.pend[p]; }
+    XS.t = +(j && j.t) || 0; xStore();
+  }
+  function xReq(method, body){
+    return fetch(XFER_URL + "/xfer?code=" + encodeURIComponent(code()), {
+      method:method, cache:"no-store",
+      headers: body ? { "Content-Type":"application/json", "X-Edit-Code": editCode() } : {},
+      body: body ? JSON.stringify(body) : undefined
+    }).then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ return { s:r.status, j:j }; }); });
+  }
+  function xPull(){
+    if(XS.busy) return;
+    XS.busy = true; xCount();
+    xReq("GET").then(function(x){
+      if(x.s === 404){ XS.on = false; return; }
+      XS.on = true;
+      if(x.s === 403){ XS.err = "查看碼不正確，讀不到大家的轉機人數"; return; }
+      if(x.s !== 200) throw new Error("HTTP " + x.s);
+      if(XS.err && !/編輯碼/.test(XS.err)) XS.err = "";
+      xApply(x.j);
+    }).catch(function(){ if(XS.on == null) XS.on = false; else XS.err = "連不到中繼，顯示上次資料"; })
+    .then(function(){ XS.busy = false; xCount(); xRender(); if(Object.keys(XS.pend).length && XS.on && !XS.err) xFlush(); });
+  }
+  function xFlush(){
+    var send = XS.pend, keys = Object.keys(send);
+    if(!keys.length) return;
+    if(XS.on !== true){ if(XS.on === false){ XS.pend = {}; xSave(); } return; }   /* 本機模式：存在本機即可 */
+    if(XS.busy){ clearTimeout(XS.timer); XS.timer = setTimeout(xFlush, 800); return; }
+    XS.busy = true; XS.pend = {}; xCount();
+    var set = {}; for(var k0 in send) if(k0 !== "__clear") set[k0] = send[k0];
+    var body = { clear:!!send.__clear, set:set };
+    xReq("POST", body).then(function(x){
+      if(x.s === 401){ XS.err = "編輯碼不正確，變更沒有送出"; restore(); return; }
+      if(x.s === 403){ XS.err = "查看碼不正確"; restore(); return; }
+      if(x.s !== 200) throw new Error("HTTP " + x.s);
+      XS.err = ""; xApply(x.j);
+    }).catch(function(){ XS.err = "同步失敗，15 秒後重送"; restore(); clearTimeout(XS.timer); XS.timer = setTimeout(xFlush, 15000); })
+    .then(function(){ XS.busy = false; xSave(); xRender(); });
+    function restore(){ for(var k in send) if(!(k in XS.pend)) XS.pend[k] = send[k]; }
+  }
   $("p-seat").addEventListener("input", function(e){
-    var el = e.target; if(!el.hasAttribute || !el.hasAttribute("data-xfer")) return;
-    var k = el.getAttribute("data-xfer"), v = el.value.replace(/[^\d]/g, "");
+    var el = e.target; if(!el.hasAttribute || !el.hasAttribute("data-xfer") || el.readOnly) return;
+    var k = el.getAttribute("data-xfer"), v = el.value.replace(/[^\d]/g, "").slice(0, 3);
     if(v !== el.value) el.value = v;
-    if(v === ""){ delete XF[k]; var a = k.split("|")[0] + "|*"; if(XF[a] != null) delete XF[a]; }
-    else XF[k] = +v;
-    xSave();
+    var ch = {};
+    if(v === ""){ ch[k] = null; var a = k.split("|")[0] + "|*"; if(XF[a] != null) ch[a] = null; }
+    else ch[k] = +v;
+    xSet(ch);
   });
-  $("p-seat").addEventListener("change", function(e){ if(e.target.hasAttribute && e.target.hasAttribute("data-xfer")){ render(); try{ typeof SR!=="undefined" && SR.render(); }catch(_){} } });
-  $("sxXclr").onclick = function(){ if(!Object.keys(XF).length) return; if(!confirm("確定清除所有轉機人數？")) return; XF = {}; xSave(); xMsg("已清除"); render(); };
+  $("p-seat").addEventListener("change", function(e){ if(e.target.hasAttribute && e.target.hasAttribute("data-xfer")) setTimeout(xRender, 0); });
+  $("p-seat").addEventListener("focusout", function(e){ if(XS.deferred && e.target.hasAttribute && e.target.hasAttribute("data-xfer")) setTimeout(xRender, 0); });
+  $("p-seat").addEventListener("click", function(e){ var i = e.target; if(i.hasAttribute && i.hasAttribute("data-xfer") && i.readOnly) xMsg("🔒 要修改轉機人數，請先按「輸入編輯碼」（向 " + SRC_NAME + " 索取）"); });
+  $("sxXclr").onclick = function(){
+    if(!Object.keys(XF).length) return;
+    if(!confirm(XS.on ? "確定清除所有轉機人數？所有人看到的資料都會一起清掉。" : "確定清除所有轉機人數？")) return;
+    XF = {}; XS.pend = { __clear:true }; xSave(); xMsg("已清除"); render();
+    clearTimeout(XS.timer); XS.timer = setTimeout(xFlush, 50);
+  };
+  $("sxXcode").onclick = function(){
+    var v = prompt("輸入編輯碼（向 " + SRC_NAME + " 索取；清空後按確定可改回唯讀）", editCode());
+    if(v == null) return;
+    try{ v.trim() ? localStorage.setItem("sxXedit", v.trim()) : localStorage.removeItem("sxXedit"); }catch(e){}
+    if(/編輯碼/.test(XS.err)) XS.err = "";
+    xCount(); render();
+    if(Object.keys(XS.pend).length) xFlush();
+  };
+  /* 讀取時機：打開空位查詢、回到前景、停在本頁時每 60 秒 */
+  if($("t-seat")) $("t-seat").addEventListener("click", function(){ xPull(); });
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden && !$("p-seat").classList.contains("hidden")) xPull(); });
+  setInterval(function(){ if(!document.hidden && !$("p-seat").classList.contains("hidden")) xPull(); }, 60000);
 
   /* 範本：列出目前清單的航班（CSV，Excel 可直接開啟、編輯後另存或直接上傳） */
   $("sxXtpl").onclick = function(){
@@ -4840,8 +4935,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     });
     var keys = Object.keys(add);
     if(!keys.length) throw new Error("看不到資料：請確認有「航班」與「轉機人數」兩欄（日期欄可省略）");
-    keys.forEach(function(k){ XF[k] = add[k]; });
-    xSave();
+    xSet(add);
     /* 對照目前空位清單 */
     var hit = 0, miss = [];
     keys.forEach(function(k){ var p = k.split("|");
@@ -4850,7 +4944,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     xMsg("✅ 匯入 " + keys.length + " 筆，對應到清單內航班 " + hit + " 筆" +
       (miss.length ? "\n⚠ 清單內找不到：" + miss.slice(0, 12).join("、") + (miss.length > 12 ? " 等 " + miss.length + " 筆" : "") + "（已保留，清單更新後會自動套上）" : "") +
       (bad.length ? "\n⚠ 略過無法判讀的列：第 " + bad.slice(0, 10).join("、") + (bad.length > 10 ? " 等" : "") + " 列" : ""), false);
-    render(); try{ typeof SR!=="undefined" && SR.render(); }catch(_){}
+    xRender();
   }
   $("sxXup").onclick = function(){ $("sxXfile").value = ""; $("sxXfile").click(); };
   $("sxXfile").onchange = function(){
@@ -4869,7 +4963,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     fr.onerror = function(){ xMsg("檔案讀取失敗", true); };
     isCsv ? fr.readAsText(f, "utf-8") : fr.readAsArrayBuffer(f);
   };
-  xCount();
+  xCount(); xPull();
 
   /* ---------- 讀取中繼 ---------- */
   var R = { t:0, busy:false, err:"", need:false, lastTry:0 };
@@ -5570,7 +5664,7 @@ const I18N = (()=>{
     "推算":"Est.","裕度":"Margin","延誤":"Delay","取消":"Cancelled","調機":"Ferry","回航":"RTB","地停待修":"AOG","地停":"Ground",
     "轉降":"Diversion","下客":"Deplane","入境":"Entry","加油":"Fuel","上餐":"Catering","免稅":"Duty-free","組員":"Crew","宵禁":"Curfew",
     "場站作業":"Station ops","場站":"Station","出發站":"Origin","抵達站":"Arrival stn","出發":"Depart","抵達":"Arrival","抵台":"Arr. TW",
-    "轉機人數合計":"Transfer pax total","班已填":" flts filled","轉機人數":"Transfer pax","其中轉機":"incl. transfer","轉機":"Transfer","上傳 Excel":"Upload Excel","下載範本":"Download template","清除全部":"Clear all","臨時":"Temp","起飛":"Dep","接飛":"Onward","直飛":"Direct","回台後":"after return","折返":"Return","機號":"Reg","日期":"Date","飛時":"Flight time",
+    "轉機人數合計":"Transfer pax total","班已填":" flts filled","轉機人數":"Transfer pax","其中轉機":"incl. transfer","轉機":"Transfer","上傳 Excel":"Upload Excel","下載範本":"Download template","清除全部":"Clear all","輸入編輯碼":"Enter edit code","編輯碼":"Edit code","已與大家同步":"Synced","同步中":"Syncing","唯讀":"Read-only","僅存本機（中繼尚未啟用轉機同步）":"Local only (relay sync not enabled)","臨時":"Temp","起飛":"Dep","接飛":"Onward","直飛":"Direct","回台後":"after return","折返":"Return","機號":"Reg","日期":"Date","飛時":"Flight time",
     "頭等":"First","商務":"Business","豪經":"Prem Econ","經濟":"Economy","空位":"Seats","超賣":"Oversold","跨日":"next day",
     "今天":"Today","明天":"Tomorrow","後天":"In 2 days","昨天":"Yesterday","之後":"after","更新":"updated","未知":"Unknown",
     "增加":"Add","移除":"Remove","減少":"Decrease","確定":"OK","關閉":"Closed","請確認":"Please confirm","的航班":" flights",
