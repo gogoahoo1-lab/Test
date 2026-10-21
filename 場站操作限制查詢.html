@@ -331,6 +331,17 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
 .sx-hint{font-size:12.5px;color:var(--dim);padding-top:5px}
 .sx-only{display:flex;gap:7px;align-items:center;font-size:13px;color:var(--muted);cursor:pointer}
 .sx-only input{width:17px;height:17px;accent-color:var(--gold)}
+/* 臨時：轉機人數 */
+.sx-xbar{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin:4px 0 10px;padding:9px 13px;border-radius:11px;background:rgba(127,211,240,.07);border:1px dashed rgba(127,211,240,.4);font-size:13px;color:var(--muted)}
+.sx-xbar b{color:#7FD3F0}
+.sx-xbar .tmp{font-size:11px;font-weight:700;color:#15202b;background:#7FD3F0;border-radius:5px;padding:1px 6px}
+.sx-xbar .msg{flex-basis:100%;font-size:12.5px;color:var(--text);white-space:pre-line}
+.sx-xbar .msg.err{color:var(--no)}
+.sx-xf{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12.5px;color:#7FD3F0;font-weight:700}
+.sx-xf input{width:76px;background:var(--panel2);border:1px solid rgba(127,211,240,.45);color:#fff;font:inherit;font-size:16px;font-weight:700;padding:3px 8px;border-radius:7px;text-align:center;font-variant-numeric:tabular-nums}
+.sx-xf input::placeholder{color:var(--dim);font-weight:400}
+.sx-xf small{font-weight:500;color:var(--dim);font-size:11px}
+.sx-xf.has input{background:rgba(127,211,240,.16)}
 .sx-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:14px 0 4px}
 .sx-kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 13px}
 .sx-kpi u{display:block;text-decoration:none;font-size:11.5px;color:var(--muted)}
@@ -651,13 +662,19 @@ details.srd summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin-to
     <div class="sx-f"><span id="sxLabB">目的地區域</span><div class="sx-chips" id="sxB"></div></div>
     <div class="sx-f" id="sxRowC"><span>目的地站</span><div class="sx-chips" id="sxC"></div></div>
     <div class="sx-f"><span></span><label class="sx-only"><input type="checkbox" id="sxOnly"> 只看經濟艙還有空位</label></div>
+    <div class="sx-xbar" id="sxXbar"><span class="tmp">臨時</span><b>🔁 轉機人數</b><span id="sxXcnt">尚未填寫</span>
+      <button class="sx-btn" type="button" id="sxXup">上傳 Excel</button>
+      <button class="sx-btn" type="button" id="sxXtpl">下載範本</button>
+      <button class="sx-btn ghost" type="button" id="sxXclr" style="margin-left:0">清除全部</button>
+      <input type="file" id="sxXfile" accept=".xlsx,.xls,.csv" hidden>
+      <span class="msg" id="sxXmsg" hidden></span></div>
     <div class="sx-kpis" id="sxKpis"></div>
     <div id="sxBody"></div>
     <p class="calcnote" style="margin-top:14px">台灣出發與抵台時間為台北時間；外站回台的出發與表定時間為當地時間。抵台時間沒有 AIRS 資料時，以表定抵達加上起飛延誤推算。座位數以公開座位圖計算：A350-900 4／26／36／240、A350-1000 4／40／36／270、A330-900 28／269、A321neo 8／180。黃底為「回台後接飛」的班次。</p>
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-20c（TTL 訂位亮金色）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-21a（臨時：轉機人數）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4660,7 +4677,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
         Object.keys(st).sort(function(a, b){ return st[b] - st[a] || (a < b ? -1 : 1); }).map(function(c){ return chip("data-xistn", c, S.istn, c + " " + esc(apt(c)), st[c]); }).join("");
       list = inDay.filter(function(r){ return S.ireg === "all" || S.istn === "all" || r.from === S.istn; });
     }
-    $("sxOnly").checked = S.only;
+    $("sxOnly").checked = S.only; try{ xCount(); }catch(e){}
     if(S.only) list = list.filter(function(r){ return r.rem[3] != null && r.rem[3] > 0; });
 
     function pos(v){ return v != null && v > 0 ? v : 0; }
@@ -4668,6 +4685,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     var us = list.filter(isUS);
     $("sxKpis").innerHTML =
       kpi("", "航班數", list.length + " 班") +
+      (function(){ var xs = list.map(xferOf).filter(function(v){ return v != null; }); return xs.length ? kpi("c", "轉機人數合計（" + xs.length + " 班已填）", xs.reduce(function(a, b){ return a + b; }, 0) + " 人") : ""; })() +
       kpi("c", "美國線空位 J／W／Y", us.length ? us.reduce(function(a, r){ return a + pos(r.rem[1]); }, 0) + "／" + us.reduce(function(a, r){ return a + pos(r.rem[2]); }, 0) + "／" + us.reduce(function(a, r){ return a + pos(r.rem[3]); }, 0) : "—") +
       kpi("", "經濟艙空位合計", list.reduce(function(a, r){ return a + pos(r.rem[3]); }, 0) + " 席") +
       kpi("r", "超賣班次", list.filter(function(r){ return r.rem.some(function(v){ return v != null && v < 0; }); }).length + " 班") +
@@ -4692,7 +4710,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
               '<span class="to">' + (inb ? "<b>" + esc(r.from) + "</b> <i>" + esc(apt(r.from)) + "</i> → " + esc(r.to)
                                          : (r.from !== "TPE" ? '<i>' + esc(r.from) + " →</i> " : "") + "<b>" + esc(r.to) + "</b> <i>" + esc(apt(r.to)) + "</i>") +
               (u ? '<span class="sx-us">美國</span>' : "") + "</span></div>" +
-            '<div class="sx-ac">' + esc(TYPE_NAME[r.type] || r.type) + (r.noCap ? ' <span style="color:var(--no)">未設配置</span>' : "") + ' <span class="reg">' + esc(r.reg) + "</span>" + links(r) + "</div>" +
+            '<div class="sx-ac">' + esc(TYPE_NAME[r.type] || r.type) + (r.noCap ? ' <span style="color:var(--no)">未設配置</span>' : "") + ' <span class="reg">' + esc(r.reg) + "</span>" + links(r) + xferCell(r) + "</div>" +
             '<div class="sx-cls">' + [0,1,2,3].map(function(i){ return cell(r, i); }).join("") + "</div>" +
             '<div class="sx-tot' + (hasB ? " two" : "") + '"><div><u>合計空位</u><b>' + tot + "</b>" + (ov ? "<em>含超賣艙等</em>" : "") + "</div>" +
               (hasB ? '<div class="bk"><u>TTL 訂位</u><b>' + bk + "</b>" + (cp && !r.noCap ? "<small>/ " + cp + " 座</small>" : "") + "</div>" : "") + "</div>" +
@@ -4714,6 +4732,144 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     }
   });
   $("sxOnly").addEventListener("change", function(){ S.only = this.checked; saveView(); render(); });
+
+  /* ---------- 臨時功能：各班轉機總人數（手動輸入或上傳 Excel，只存在本機瀏覽器） ----------
+     鍵值：班號|台北日期（YYYY-MM-DD）；Excel 沒有日期欄時存成 班號|*，套用到該班號所有日期 */
+  var XK = "sxXfer", XF = {};
+  try{ XF = JSON.parse(localStorage.getItem(XK) || "{}") || {}; }catch(e){ XF = {}; }
+  function xSave(){ try{ localStorage.setItem(XK, JSON.stringify(XF)); }catch(e){} xCount(); }
+  function xKey(r){ return fnN(r.flt) + "|" + dkey(r.std || r.dep); }
+  function xLocalKey(r){   /* 外站出發：Excel 可能填當地日期 */
+    if(isBase(r.from)) return null;
+    var L = localAt(r.std, r.from); if(!L) return null;
+    var p = L.md.split("/"), y = dkey(r.std).slice(0, 4);
+    return fnN(r.flt) + "|" + y + "-" + pad2(+p[0]) + "-" + pad2(+p[1]);
+  }
+  function xferOf(r){
+    var k = xKey(r); if(XF[k] != null) return XF[k];
+    var lk = xLocalKey(r); if(lk && XF[lk] != null) return XF[lk];
+    var a = XF[fnN(r.flt) + "|*"]; return a != null ? a : null;
+  }
+  function xferCell(r){
+    var v = xferOf(r);
+    return '<label class="sx-xf' + (v != null ? " has" : "") + '">🔁 轉機 <input type="text" inputmode="numeric" data-xfer="' + esc(xKey(r)) + '" value="' + (v != null ? v : "") + '" placeholder="—" aria-label="轉機人數"> 人' +
+      (v != null && r.pax ? '<small>／訂位 ' + r.pax.reduce(function(a, x){ return a + (x || 0); }, 0) + "</small>" : "") + "</label>";
+  }
+  function xCount(){
+    var n = Object.keys(XF).length, f = 0, t = 0;
+    S.rows.forEach(function(r){ var v = xferOf(r); if(v != null){ f++; t += v; } });
+    $("sxXcnt").textContent = !n ? "尚未填寫（可在每班下方直接輸入，或上傳 Excel）"
+      : "清單內 " + f + " 班已填，共 " + t + " 人" + (f ? "" : "（已存 " + n + " 筆，清單內尚無對應航班）") + "・只存在這台裝置";
+  }
+  function xMsg(t, err){ var m = $("sxXmsg"); m.hidden = !t; m.textContent = t || ""; m.className = "msg" + (err ? " err" : ""); }
+  $("p-seat").addEventListener("input", function(e){
+    var el = e.target; if(!el.hasAttribute || !el.hasAttribute("data-xfer")) return;
+    var k = el.getAttribute("data-xfer"), v = el.value.replace(/[^\d]/g, "");
+    if(v !== el.value) el.value = v;
+    if(v === ""){ delete XF[k]; var a = k.split("|")[0] + "|*"; if(XF[a] != null) delete XF[a]; }
+    else XF[k] = +v;
+    xSave();
+  });
+  $("p-seat").addEventListener("change", function(e){ if(e.target.hasAttribute && e.target.hasAttribute("data-xfer")){ render(); try{ typeof SR!=="undefined" && SR.render(); }catch(_){} } });
+  $("sxXclr").onclick = function(){ if(!Object.keys(XF).length) return; if(!confirm("確定清除所有轉機人數？")) return; XF = {}; xSave(); xMsg("已清除"); render(); };
+
+  /* 範本：列出目前清單的航班（CSV，Excel 可直接開啟、編輯後另存或直接上傳） */
+  $("sxXtpl").onclick = function(){
+    var rows = S.rows.filter(function(r){ return r.std >= Date.now() - 86400000; });
+    var lines = ["航班,日期,航線,轉機人數"].concat(rows.map(function(r){ var v = xferOf(r); return [r.flt, dkey(r.std), r.from + "-" + r.to, v != null ? v : ""].join(","); }));
+    var b = new Blob(["﻿" + lines.join("\r\n")], { type:"text/csv;charset=utf-8" }), a = document.createElement("a");
+    a.href = URL.createObjectURL(b); a.download = "轉機人數範本_" + dkey(Date.now()) + ".csv"; document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  };
+
+  /* 上傳：.xlsx/.xls 用 SheetJS（第一次使用時才載入），.csv 直接讀 */
+  var XLSX_URL = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js", xlsxP = null;
+  function needXlsx(){
+    if(window.XLSX) return Promise.resolve(window.XLSX);
+    return xlsxP || (xlsxP = new Promise(function(ok, no){ var sc = document.createElement("script"); sc.src = XLSX_URL;
+      sc.onload = function(){ ok(window.XLSX); }; sc.onerror = function(){ xlsxP = null; no(new Error("Excel 解析元件載入失敗（需要網路），可改存成 CSV 上傳")); }; document.head.appendChild(sc); }));
+  }
+  function csvRows(t){
+    var out = [], row = [], cur = "", q = false;
+    t = t.replace(/^﻿/, "");
+    for(var i = 0; i < t.length; i++){ var c = t[i];
+      if(q){ if(c === '"'){ if(t[i+1] === '"'){ cur += '"'; i++; } else q = false; } else cur += c; }
+      else if(c === '"') q = true;
+      else if(c === "," || c === "\t" || c === ";"){ row.push(cur); cur = ""; }
+      else if(c === "\n" || c === "\r"){ if(c === "\r" && t[i+1] === "\n") i++; row.push(cur); out.push(row); row = []; cur = ""; }
+      else cur += c; }
+    if(cur || row.length){ row.push(cur); out.push(row); }
+    return out;
+  }
+  function xDate(v){   /* → YYYY-MM-DD；認得 Excel 日期序號、Date、2026/10/21、10/21、21OCT、2026-10-21 */
+    if(v == null || v === "") return null;
+    var now = new Date(), y0 = now.getFullYear();
+    function near(mo, d){ var best = null; [y0-1, y0, y0+1].forEach(function(y){ var ms = Date.UTC(y, mo, d); if(best == null || Math.abs(ms - now) < Math.abs(best - now)) best = ms; }); var x = new Date(best); return x.getUTCFullYear() + "-" + pad2(x.getUTCMonth()+1) + "-" + pad2(x.getUTCDate()); }
+    if(v instanceof Date && !isNaN(v)) return v.getFullYear() + "-" + pad2(v.getMonth()+1) + "-" + pad2(v.getDate());
+    if(typeof v === "number" && v > 30000 && v < 80000){ var d = new Date(Math.round((v - 25569) * 86400000)); return d.getUTCFullYear() + "-" + pad2(d.getUTCMonth()+1) + "-" + pad2(d.getUTCDate()); }
+    var s = String(v).trim().toUpperCase(), m;
+    if((m = /^(\d{4})[\/\-.年](\d{1,2})[\/\-.月](\d{1,2})/.exec(s))) return m[1] + "-" + pad2(+m[2]) + "-" + pad2(+m[3]);
+    if((m = /^(\d{1,2})[\/\-.月](\d{1,2})日?$/.exec(s))) return near(+m[1]-1, +m[2]);
+    if((m = /^(\d{1,2})\s*([A-Z]{3})(\d{2,4})?$/.exec(s)) && MON3[m[2]] != null) return m[3] ? (m[3].length === 2 ? "20" + m[3] : m[3]) + "-" + pad2(MON3[m[2]]+1) + "-" + pad2(+m[1]) : near(MON3[m[2]], +m[1]);
+    return null;
+  }
+  var FLT_RE = /^([A-Z0-9]{2})\s*0*(\d{1,4}[A-Z]?)$/;
+  function xFlt(v){ var s = String(v == null ? "" : v).trim().toUpperCase().replace(/\s/g, ""); if(/^\d{1,4}$/.test(s)) s = "JX" + s; var m = FLT_RE.exec(s); return m && /\d/.test(m[2]) && /[A-Z]/.test(m[1] + "X") ? fnN(m[1] + m[2]) : null; }
+  function xNum(v){ if(v == null || v === "") return null; var n = typeof v === "number" ? v : parseFloat(String(v).replace(/[,，\s人]/g, "")); return isFinite(n) && n >= 0 ? Math.round(n) : null; }
+  function xImport(grid){
+    grid = grid.filter(function(r){ return r && r.some(function(c){ return c !== "" && c != null; }); });
+    /* 找表頭 */
+    var hi = -1, cF = -1, cD = -1, cX = -1;
+    for(var i = 0; i < Math.min(grid.length, 10) && hi < 0; i++){
+      grid[i].forEach(function(c, j){ var t = String(c == null ? "" : c).replace(/\s/g, "").toUpperCase();
+        if(cF < 0 && /航班|班號|班次|FLIGHT|FLT|FLTNO/.test(t)) cF = j;
+        else if(cD < 0 && /日期|DATE|DAY/.test(t)) cD = j;
+        else if(cX < 0 && /轉機|轉乘|TRANSFER|TRF|XFER|TRS|CONN/.test(t)) cX = j; });
+      if(cF >= 0 && cX >= 0) hi = i; else { cF = cD = cX = -1; }
+    }
+    var body = grid.slice(hi + 1), add = {}, bad = [];
+    body.forEach(function(r, n){
+      var f, d = null, x;
+      if(hi >= 0){ f = xFlt(r[cF]); d = cD >= 0 ? xDate(r[cD]) : null; x = xNum(r[cX]); }
+      else {   /* 沒有表頭：第一個像班號的格子＝航班、像日期的＝日期、最後一個數字＝轉機人數 */
+        f = null; x = null;
+        r.forEach(function(c){ if(!f && xFlt(c)) { f = xFlt(c); return; } if(!d && typeof c !== "number" && xDate(c)) { d = xDate(c); return; } if(!d && c instanceof Date) { d = xDate(c); return; } var k = xNum(c); if(k != null && !(typeof c === "number" && c > 30000)) x = k; });
+      }
+      if(!f || x == null){ if(r.join("").trim()) bad.push(n + hi + 2); return; }
+      var k = f + "|" + (d || "*"); add[k] = (add[k] || 0) + x;   /* 同班同日多列自動加總 */
+    });
+    var keys = Object.keys(add);
+    if(!keys.length) throw new Error("看不到資料：請確認有「航班」與「轉機人數」兩欄（日期欄可省略）");
+    keys.forEach(function(k){ XF[k] = add[k]; });
+    xSave();
+    /* 對照目前空位清單 */
+    var hit = 0, miss = [];
+    keys.forEach(function(k){ var p = k.split("|");
+      var ok = S.rows.some(function(r){ return fnN(r.flt) === p[0] && (p[1] === "*" || xKey(r).split("|")[1] === p[1] || (xLocalKey(r) || "").split("|")[1] === p[1]); });
+      if(ok) hit++; else miss.push(p[0] + (p[1] === "*" ? "" : " " + p[1].slice(5).replace("-", "/"))); });
+    xMsg("✅ 匯入 " + keys.length + " 筆，對應到清單內航班 " + hit + " 筆" +
+      (miss.length ? "\n⚠ 清單內找不到：" + miss.slice(0, 12).join("、") + (miss.length > 12 ? " 等 " + miss.length + " 筆" : "") + "（已保留，清單更新後會自動套上）" : "") +
+      (bad.length ? "\n⚠ 略過無法判讀的列：第 " + bad.slice(0, 10).join("、") + (bad.length > 10 ? " 等" : "") + " 列" : ""), false);
+    render(); try{ typeof SR!=="undefined" && SR.render(); }catch(_){}
+  }
+  $("sxXup").onclick = function(){ $("sxXfile").value = ""; $("sxXfile").click(); };
+  $("sxXfile").onchange = function(){
+    var f = this.files && this.files[0]; if(!f) return;
+    xMsg("讀取 " + f.name + " 中…");
+    var isCsv = /\.csv$/i.test(f.name), fr = new FileReader();
+    fr.onload = function(){
+      (isCsv ? Promise.resolve(null) : needXlsx()).then(function(X){
+        var grid;
+        if(isCsv) grid = csvRows(String(fr.result));
+        else { var wb = X.read(new Uint8Array(fr.result), { type:"array", cellDates:true });
+          grid = X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, raw:true, defval:"" }); }
+        xImport(grid);
+      }).catch(function(e){ xMsg("匯入失敗：" + (e && e.message || e), true); });
+    };
+    fr.onerror = function(){ xMsg("檔案讀取失敗", true); };
+    isCsv ? fr.readAsText(f, "utf-8") : fr.readAsArrayBuffer(f);
+  };
+  xCount();
 
   /* ---------- 讀取中繼 ---------- */
   var R = { t:0, busy:false, err:"", need:false, lastTry:0 };
@@ -4821,7 +4977,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
   }
   useCache();
   bar();
-  window.SeatX = { load:load, parse:parse, S:S, R:R, render:render, paintStatus:paintStatus, localAt:localAt, legDep:legDep, depInfo:depInfo, airsFind:airsFind, regNorm:regNorm };   // 測試用
+  window.SeatX = { xferOf:xferOf, load:load, parse:parse, S:S, R:R, render:render, paintStatus:paintStatus, localAt:localAt, legDep:legDep, depInfo:depInfo, airsFind:airsFind, regNorm:regNorm };   // 測試用
 })();
 </script>
 <script>
@@ -5062,14 +5218,15 @@ const SR = (()=>{
     const man = parseInt($("srPax").value,10), manual = paxTouched && isFinite(man) && man>=0;
     if(manual) total = man;
     let pb;
+    const xf = ok && seat().xferOf ? seat().xferOf(f) : null;
     if(total==null) pb = `<p class="srnote">${rows.length ? "尚未指定航班" : dataMsg(R,true)}</p>`;
     else {
-      pb = `<div class="srbig"><b>${total}</b>人${manual?"（手動輸入）":"（訂位數，不含嬰兒）"}</div>`;
+      pb = `<div class="srbig"><b>${total}</b>人${manual?"（手動輸入）":"（訂位數，不含嬰兒）"}${xf!=null?`　🔁 其中轉機 <b style="font-size:22px;color:#7FD3F0">${xf}</b>人`:""}</div>`;
       if(hasCls) pb += `<div class="sx-cls">${[0,1,2,3].map(i=>`<div class="sx-c${f.cap[i]||f.pax[i]?"":" x"}"><u>${CLSN[i]}</u><span class="n">${f.pax[i]==null?"—":f.pax[i]}</span><span class="b">${f.cap[i]?"／"+f.cap[i]+" 席":"無此艙"}</span></div>`).join("")}</div>`;
     }
     html += sec("受影響旅客", pb);
     const paxCls = hasCls && !manual ? [0,1,2,3].filter(i=>f.pax[i]).map(i=>CLSN[i]+" "+f.pax[i]).join("／") : "";
-    P.paxS = "👥 旅客：" + (total==null ? "未知" : total+" 人") + (manual ? "（手動輸入）" : paxCls ? `（${paxCls}）` : "");
+    P.paxS = "👥 旅客：" + (total==null ? "未知" : total+" 人") + (manual ? "（手動輸入）" : paxCls ? `（${paxCls}）` : "") + (xf!=null ? `，其中轉機 ${xf} 人` : "");
     /* 後續接飛 */
     if(ok){
       const ow = onward(f), today = st.md;
@@ -5413,7 +5570,7 @@ const I18N = (()=>{
     "推算":"Est.","裕度":"Margin","延誤":"Delay","取消":"Cancelled","調機":"Ferry","回航":"RTB","地停待修":"AOG","地停":"Ground",
     "轉降":"Diversion","下客":"Deplane","入境":"Entry","加油":"Fuel","上餐":"Catering","免稅":"Duty-free","組員":"Crew","宵禁":"Curfew",
     "場站作業":"Station ops","場站":"Station","出發站":"Origin","抵達站":"Arrival stn","出發":"Depart","抵達":"Arrival","抵台":"Arr. TW",
-    "起飛":"Dep","接飛":"Onward","直飛":"Direct","回台後":"after return","折返":"Return","機號":"Reg","日期":"Date","飛時":"Flight time",
+    "轉機人數合計":"Transfer pax total","班已填":" flts filled","轉機人數":"Transfer pax","其中轉機":"incl. transfer","轉機":"Transfer","上傳 Excel":"Upload Excel","下載範本":"Download template","清除全部":"Clear all","臨時":"Temp","起飛":"Dep","接飛":"Onward","直飛":"Direct","回台後":"after return","折返":"Return","機號":"Reg","日期":"Date","飛時":"Flight time",
     "頭等":"First","商務":"Business","豪經":"Prem Econ","經濟":"Economy","空位":"Seats","超賣":"Oversold","跨日":"next day",
     "今天":"Today","明天":"Tomorrow","後天":"In 2 days","昨天":"Yesterday","之後":"after","更新":"updated","未知":"Unknown",
     "增加":"Add","移除":"Remove","減少":"Decrease","確定":"OK","關閉":"Closed","請確認":"Please confirm","的航班":" flights",
