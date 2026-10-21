@@ -382,6 +382,8 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
 .sx-k2.act{background:rgba(63,196,146,.16);color:var(--ok)} .sx-k2.est{background:rgba(240,167,62,.16);color:var(--warn)} .sx-k2.sch{background:rgba(255,255,255,.06);color:var(--muted)}
 .sx-std{flex-basis:100%;font-size:12px;color:var(--muted)}
 .sx-lt{border-radius:6px;padding:0 6px;font-size:11px;font-weight:700;background:rgba(127,211,240,.14);color:#7FD3F0}
+.sx-dd{border-radius:6px;padding:1px 7px;font-size:12px;font-weight:800;background:rgba(220,192,134,.18);color:var(--gold);border:1px solid rgba(220,192,134,.45);white-space:nowrap}
+.sx-std.sx-arr{font-size:12.5px;color:var(--text);font-weight:700}
 .sx-ld{font-size:11px;color:var(--warn);margin-left:4px;font-weight:600}
 .sx-std.sx-tpe{color:var(--dim)}
 .sx-us{display:inline-block;background:#3A8FA7;color:#fff;border-radius:6px;padding:0 6px;font-size:11px;margin-left:6px;vertical-align:1px}
@@ -725,7 +727,7 @@ html[data-skin] .sky{ border-color:var(--line); }
     <div class="sx-qhint" id="sxQhint" hidden></div>
     <div id="sxFilt">
     <div class="sx-dir" id="sxDir"></div>
-    <div class="sx-f"><span>日期</span><div class="sx-chips" id="sxDates"></div></div>
+    <div class="sx-f"><span id="sxLabD">日期</span><div class="sx-chips" id="sxDates"></div></div>
     <div class="sx-f"><span id="sxLabA">出發場站</span><div class="sx-chips" id="sxA"></div></div>
     <div class="sx-f"><span id="sxLabB">目的地區域</span><div class="sx-chips" id="sxB"></div></div>
     <div class="sx-f" id="sxRowC"><span>目的地站</span><div class="sx-chips" id="sxC"></div></div>
@@ -744,7 +746,7 @@ html[data-skin] .sky{ border-color:var(--line); }
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-21g（KPI 移除艙等空位）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-21i（外站回台依抵台日期歸日）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4672,8 +4674,8 @@ renderList(); renderDetail(); window.scrollTo({top:0});
   }
   function depHtml(r){
     var d = depInfo(r); r._d = d;
-    var loc = !isBase(r.from) && localAt(d.ms, r.from);
-    return '<span class="hm">' + depClock(d.ms, r) + '</span>' + (loc ? '<span class="sx-lt">當地</span>' : "") + '<span class="sx-k2 ' + d.kind + '" title="' + (d.live ? "機場即時資料" : "系統清單") + '">' + { act:"實際", est:"預估", sch:"表定" }[d.kind] + (d.live ? "・機場" : "") + "</span>";
+    var loc = !isBase(r.from) && localAt(d.ms, r.from), ld = loc ? localDay(d.ms, r.from) : "";
+    return '<span class="hm">' + (loc ? loc.hm : depClock(d.ms, r)) + '</span>' + (loc ? '<span class="sx-dd" title="' + esc(r.from) + ' 當地出發日期">' + ld + " 當地出發</span>" : "") + '<span class="sx-k2 ' + d.kind + '" title="' + (d.live ? "機場即時資料" : "系統清單") + '">' + { act:"實際", est:"預估", sch:"表定" }[d.kind] + (d.live ? "・機場" : "") + "</span>";
   }
   /* 外站回台：抵台時間（AIRS 實際／預估優先，否則以表定抵達＋起飛延誤推算） */
   function arrLine(r, d){
@@ -4682,7 +4684,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     var aa = airsFind("A", r.flt, r.sta);
     if(aa && (aa.a || aa.e)){ ms = aa.a || aa.e; kind = aa.a ? "act" : "est"; }
     else { var dl = d && d.ms && r.std ? d.ms - r.std : 0; ms = r.sta + dl; kind = dl ? "est" : "sch"; }
-    return '<span class="sx-std">' + lab + dayHm(ms) + ' <span class="sx-k2 ' + kind + '">' + { act:"實際", est:"預估", sch:"表定" }[kind] + "</span></span>";
+    return '<span class="sx-std' + (isBase(r.to) ? " sx-arr" : "") + '">' + lab + dayHm(ms) + ' <span class="sx-k2 ' + kind + '">' + { act:"實際", est:"預估", sch:"表定" }[kind] + "</span></span>";
   }
   function depStd(r){
     var d = r._d; if(!d) return "";
@@ -4692,11 +4694,23 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     return '<span class="sx-std">表定 ' + (loc ? depClock(r.std, r) : parts(r.std).hm) + (dl ? '<span class="sx-dly' + (dl < 0 ? " early" : "") + '">' + (dl > 0 ? "晚 " : "早 ") + Math.abs(dl) + " 分</span>" : "") + "</span>" +
       arrLine(r, d);
   }
+  /* 歸日用的時間：台灣出發看起飛時間；外站回台看抵台時間（跨日的美國線等會歸到實際抵台那天） */
+  function viewMs(r){ if(isBase(r.from)) return r.dep; var a = legArr(r); return a || r.dep; }
+  var WDF = {};
+  function localDay(ms, code){   /* 當地日期＋星期，例如 10/21（二） */
+    var tz = aptTz(code); if(!tz || !ms) return "";
+    try{
+      var f = WDF[tz] || (WDF[tz] = new Intl.DateTimeFormat("en-US", { timeZone:tz, month:"numeric", day:"numeric", weekday:"short" }));
+      var p = {}; f.formatToParts(new Date(ms)).forEach(function(x){ p[x.type] = x.value; });
+      return p.month + "/" + p.day + "（" + DOW[["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].indexOf(p.weekday)] + "）";
+    }catch(e){ return ""; }
+  }
   function render(){
     if(!S.rows.length){ $("sxMain").hidden = true; return; }
+    S.rows.forEach(function(r){ r._vm = viewMs(r); });
     $("sxMain").hidden = false;
     var cutoff = Date.parse(dkey(Date.now() - 86400000) + "T00:00:00+08:00");
-    var all = S.rows.filter(function(r){ return !r.dep || r.dep >= cutoff; });
+    var all = S.rows.filter(function(r){ return !r._vm || r._vm >= cutoff; });
     var list, q = qTokens();
     $("sxFilt").hidden = !!q.length; $("sxQx").hidden = !S.q; $("sxQhint").hidden = !q.length;
     if(q.length){
@@ -4722,11 +4736,12 @@ renderList(); renderDetail(); window.scrollTo({top:0});
         REGIONS.filter(function(g){ return rc0[g]; }).map(function(g){ return chip("data-xireg", g, S.ireg, regLabel(g), rc0[g]); }).join("");
       base = inAll.filter(function(r){ return S.ireg === "all" || region(r.from) === S.ireg; });
     }
-    var days = {}; base.forEach(function(r){ var k = dkey(r.dep); days[k] = (days[k] || 0) + 1; });
+    $("sxLabD").textContent = S.dir === "in" ? "抵台日期" : "日期";
+    var days = {}; base.forEach(function(r){ var k = dkey(r._vm); days[k] = (days[k] || 0) + 1; });
     if(S.date !== "all" && !days[S.date]) S.date = "all";
     $("sxDates").innerHTML = chip("data-xd", "all", S.date, "全部", base.length) +
       Object.keys(days).sort().map(function(k){ return chip("data-xd", k, S.date, dayLabel(k), days[k]); }).join("");
-    var inDay = base.filter(function(r){ return S.date === "all" || dkey(r.dep) === S.date; });
+    var inDay = base.filter(function(r){ return S.date === "all" || dkey(r._vm) === S.date; });
     var list;
     if(S.dir === "out"){
       var rc = {}; inDay.forEach(function(r){ var g = region(r.to); rc[g] = (rc[g] || 0) + 1; });
@@ -4775,17 +4790,16 @@ renderList(); renderDetail(); window.scrollTo({top:0});
         list.forEach(function(r){ [0,1,2,3].forEach(function(i){ av += pos(r.rem[i]); if(r.pax && r.pax[i] != null) bk += +r.pax[i] || 0; if(r.cap && r.cap[i] && !r.noCap) cp += +r.cap[i]; }); });
         return kpi("", "總空位（全艙）", av + " 席") + kpi("g", "總訂位（TTL）", bk + ' 人<small class="sx-kcap">／' + cp + " 座</small>");
       })() +
-      kpi("r", "超賣班次", list.filter(function(r){ return r.rem.some(function(v){ return v != null && v < 0; }); }).length + " 班") +
-      kpi("", "經濟艙緊張（≤" + TIGHT + "）", list.filter(function(r){ return r.rem[3] != null && r.rem[3] >= 0 && r.rem[3] <= TIGHT; }).length + " 班");
+      kpi("r", "超賣班次", list.filter(function(r){ return r.rem.some(function(v){ return v != null && v < 0; }); }).length + " 班");
 
     var groups = {};
-    list.forEach(function(r){ var k = dkey(r.dep); (groups[k] = groups[k] || []).push(r); });
+    list.forEach(function(r){ var k = dkey(r._vm); (groups[k] = groups[k] || []).push(r); });
     $("sxBody").innerHTML = Object.keys(groups).sort().map(function(k){
-      var g = groups[k].slice().sort(function(a, b){ return (isUS(b) - isUS(a)) || (a.dep - b.dep); });
+      var g = groups[k].slice().sort(function(a, b){ return (isUS(b) - isUS(a)) || (a._vm - b._vm); });
       var gu = g.filter(isUS);
       var sum = gu.length ? '<div class="sx-sum">美國線 ' + gu.length + " 班：商務 <b>" + gu.reduce(function(a, r){ return a + pos(r.rem[1]); }, 0) +
         "</b>・豪經 <b>" + gu.reduce(function(a, r){ return a + pos(r.rem[2]); }, 0) + "</b>・經濟 <b>" + gu.reduce(function(a, r){ return a + pos(r.rem[3]); }, 0) + "</b></div>" : "";
-      return '<div class="sx-day"><h3>' + dayLabel(k) + " <small>" + (q.length ? "搜尋結果" : S.dir === "in" ? "外站出發（出發時間為當地時間）" : "台灣出發") + " " + g.length + " 班</small></h3>" + sum +
+      return '<div class="sx-day"><h3>' + dayLabel(k) + " <small>" + (q.length ? "搜尋結果" : S.dir === "in" ? "依抵台日期・外站出發時間為當地時間" : "台灣出發") + " " + g.length + " 班</small></h3>" + sum +
         '<div class="sx-list">' + g.map(function(r){
           var u = isUS(r), tot = r.rem.reduce(function(a, v){ return a + pos(v); }, 0), ov = r.rem.some(function(v){ return v != null && v < 0; });
           /* TTL 訂位數：各艙等訂位加總／座位數加總（沒有座位配置的只顯示訂位數） */
@@ -5765,7 +5779,7 @@ const I18N = (()=>{
     "推算":"Est.","裕度":"Margin","延誤":"Delay","取消":"Cancelled","調機":"Ferry","回航":"RTB","地停待修":"AOG","地停":"Ground",
     "轉降":"Diversion","下客":"Deplane","入境":"Entry","加油":"Fuel","上餐":"Catering","免稅":"Duty-free","組員":"Crew","宵禁":"Curfew",
     "場站作業":"Station ops","場站":"Station","出發站":"Origin","抵達站":"Arrival stn","出發":"Depart","抵達":"Arrival","抵台":"Arr. TW",
-    "轉機人數合計":"Transfer pax total","班已填":" flts filled","轉機人數":"Transfer pax","其中轉機":"incl. transfer","轉機":"Transfer","上傳 Excel":"Upload Excel","下載範本":"Download template","清除全部":"Clear all","總空位（全艙）":"Total avail. (all cabins)","總訂位（TTL）":"Total booked (TTL)","全部日期":"All dates","班中":" flts,","目前畫面":"Current view","搜尋結果":"Search results","搜尋航班":"Search flights","輸入編輯碼":"Enter edit code","編輯碼":"Edit code","已與大家同步":"Synced","同步中":"Syncing","唯讀":"Read-only","僅存本機（中繼尚未啟用轉機同步）":"Local only (relay sync not enabled)","臨時":"Temp","起飛":"Dep","接飛":"Onward","直飛":"Direct","回台後":"after return","折返":"Return","機號":"Reg","日期":"Date","飛時":"Flight time",
+    "轉機人數合計":"Transfer pax total","班已填":" flts filled","轉機人數":"Transfer pax","其中轉機":"incl. transfer","轉機":"Transfer","上傳 Excel":"Upload Excel","下載範本":"Download template","清除全部":"Clear all","當地出發":"local dep.","抵台日期":"Arr. date (TW)","依抵台日期・外站出發時間為當地時間":"By Taiwan arrival date · departure times local","總空位（全艙）":"Total avail. (all cabins)","總訂位（TTL）":"Total booked (TTL)","全部日期":"All dates","班中":" flts,","目前畫面":"Current view","搜尋結果":"Search results","搜尋航班":"Search flights","輸入編輯碼":"Enter edit code","編輯碼":"Edit code","已與大家同步":"Synced","同步中":"Syncing","唯讀":"Read-only","僅存本機（中繼尚未啟用轉機同步）":"Local only (relay sync not enabled)","臨時":"Temp","起飛":"Dep","接飛":"Onward","直飛":"Direct","回台後":"after return","折返":"Return","機號":"Reg","日期":"Date","飛時":"Flight time",
     "頭等":"First","商務":"Business","豪經":"Prem Econ","經濟":"Economy","空位":"Seats","超賣":"Oversold","跨日":"next day",
     "今天":"Today","明天":"Tomorrow","後天":"In 2 days","昨天":"Yesterday","之後":"after","更新":"updated","未知":"Unknown",
     "增加":"Add","移除":"Remove","減少":"Decrease","確定":"OK","關閉":"Closed","請確認":"Please confirm","的航班":" flights",
