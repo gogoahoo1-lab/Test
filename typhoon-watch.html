@@ -1,0 +1,1342 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>颱風航班影響</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root{
+  --bg:#EFEFED; --card:#fff; --ink:#151515; --muted:#6f7068; --line:#e4e4df;
+  --olive:#7E8F35; --lime:#D6EF5C; --accent:#C7F034; --pink:#F3D9DE;
+  --lv0:#E7EBDD; --lv1:#F3E08A; --lv2:#F4A261; --lv3:#E5484D;
+  --shadow:0 12px 34px rgba(30,30,20,.07);
+  --r:30px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:Inter,"Noto Sans TC",system-ui,sans-serif;color:var(--ink);
+  background:
+    radial-gradient(900px 600px at 8% -5%, rgba(214,239,92,.35), transparent 60%),
+    radial-gradient(800px 600px at 100% 10%, rgba(243,217,222,.55), transparent 60%),
+    var(--bg);
+  background-attachment:fixed;min-height:100vh;padding:16px 16px 120px;
+}
+.wrap{max-width:1280px;margin:0 auto}
+.num{font-weight:300;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.hero{
+  border-radius:var(--r);padding:26px 28px;color:#14160a;box-shadow:var(--shadow);
+  background:
+    radial-gradient(600px 300px at 85% 20%, rgba(214,239,92,.95), transparent 70%),
+    radial-gradient(500px 340px at 10% 110%, rgba(199,240,52,.6), transparent 70%),
+    linear-gradient(120deg,#7E8F35 0%,#A7BC45 55%,#D6EF5C 100%);
+}
+.hero-top{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start}
+.hero h1{margin:0;font-size:28px;font-weight:600;letter-spacing:-.02em}
+.hero .sub{opacity:.75;font-size:13px;margin-top:4px}
+.hero-stats{display:flex;gap:28px;flex-wrap:wrap;margin-top:18px}
+.stat .k{font-size:12px;opacity:.7}
+.stat .v{font-size:34px;line-height:1.1}
+.stat .v small{font-size:14px;font-weight:400;margin-left:3px}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select,input,textarea,button{font:inherit}
+select,input[type=text],input[type=number],input[type=date],input[type=password]{
+  border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.75);border-radius:999px;padding:8px 14px;font-size:13px;color:var(--ink)
+}
+textarea{width:100%;border:1px solid var(--line);border-radius:18px;padding:12px 14px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;background:#fafaf8;min-height:120px;resize:vertical}
+.btn{border:none;border-radius:999px;padding:9px 16px;font-size:13px;font-weight:500;cursor:pointer;background:#151515;color:#fff}
+.btn.ghost{background:rgba(255,255,255,.75);color:var(--ink);border:1px solid rgba(0,0,0,.12)}
+.btn.acc{background:var(--accent);color:#151515}
+.btn:disabled{opacity:.5;cursor:default}
+.warnbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.wchip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.6);border-radius:999px;padding:4px 6px 4px 12px;font-size:12px}
+.wchip select{padding:4px 10px;border:none;background:#fff}
+.wchip.on{background:#151515;color:#fff}
+.grid{display:grid;gap:16px;margin-top:16px}
+.g2{grid-template-columns:1.6fr 1fr}
+@media(max-width:900px){.g2{grid-template-columns:1fr}}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:22px}
+.card h2{margin:0 0 4px;font-size:17px;font-weight:600;display:flex;align-items:center;gap:10px}
+.card .hint{color:var(--muted);font-size:12px;margin-bottom:12px}
+.key{width:42px;height:42px;border-radius:50%;display:inline-grid;place-items:center;background:#151515;color:var(--accent);font-size:16px;font-weight:600;flex:none}
+.key.l{background:var(--lime);color:#151515}
+#map{height:520px;border-radius:22px;overflow:hidden;background:#dfe3d6}
+@media(max-width:600px){#map{height:380px}}
+.slider-row{display:flex;gap:12px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.slider-row input[type=range]{flex:1;min-width:180px;accent-color:#151515}
+.tlabel{font-size:20px;min-width:150px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-weight:500;color:var(--muted);text-align:left;padding:8px 8px;border-bottom:1px solid var(--line);white-space:nowrap;font-size:12px}
+td{padding:8px 8px;border-bottom:1px solid #f0f0ec;vertical-align:top}
+.tbl-wrap{overflow:auto;max-width:100%}
+.pill{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:500;white-space:nowrap}
+.lv0{background:var(--lv0)} .lv1{background:var(--lv1)} .lv2{background:var(--lv2)} .lv3{background:var(--lv3);color:#fff}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);align-items:center}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:4px;vertical-align:-2px}
+/* timeline */
+.tl{overflow:auto}
+.tl-grid{display:grid;gap:0;font-size:11px;min-width:900px}
+.tl-row{display:contents}
+.tl-name{position:sticky;left:0;background:#fff;padding:4px 8px 4px 0;white-space:nowrap;z-index:2;cursor:pointer;font-weight:500}
+.tl-name small{color:var(--muted);font-weight:400}
+.tl-cell{height:22px;border-right:1px solid #fff;cursor:pointer}
+.tl-cell.day{border-left:2px solid #151515}
+.tl-head{font-size:11px;color:var(--muted);padding:2px 0;white-space:nowrap;overflow:visible}
+.tl-now{outline:2px solid #151515;outline-offset:-2px}
+/* nav */
+.nav{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:1000;display:flex;gap:4px;padding:6px;border-radius:999px;
+  background:rgba(255,255,255,.62);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);box-shadow:0 10px 40px rgba(0,0,0,.14);max-width:calc(100vw - 24px);overflow-x:auto}
+.nav button{border:none;background:transparent;border-radius:999px;padding:10px 14px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;color:var(--ink)}
+.nav button.on{background:#151515;color:#fff}
+.tab{display:none}.tab.on{display:block}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+.src-card{border:1px solid var(--line);border-radius:22px;padding:16px;margin-bottom:12px}
+.src-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.swatch{display:inline-block;width:22px;height:4px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.msg{font-size:12px;margin-top:6px;color:var(--muted)}
+.msg.err{color:#b4232a}.msg.ok{color:#4d5c12}
+.metar-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.metar{border:1px solid var(--line);border-radius:22px;padding:14px}
+.metar .raw{background:#f6f6f2;border-radius:12px;padding:8px 10px;margin-top:6px;white-space:pre-wrap;word-break:break-word}
+.kv{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px}
+.kv div{font-size:12px;color:var(--muted)} .kv b{display:block;font-size:20px;color:var(--ink);font-weight:300}
+.datacard{margin-top:16px;border-radius:var(--r);padding:18px 22px;box-shadow:var(--shadow);background:#fff;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.datacard.demo{background:linear-gradient(120deg,#F3D9DE,#fff 70%)}
+.datacard .t{font-weight:600}
+.note{background:#f7f8f1;border-radius:18px;padding:12px 14px;font-size:12px;color:#4a4b44;line-height:1.6}
+.leaflet-container{font-family:Inter,"Noto Sans TC",sans-serif}
+.ap-label{background:transparent;border:none;box-shadow:none;font-size:11px;font-weight:600;color:#151515;text-shadow:0 0 3px #fff,0 0 3px #fff}
+.ap-label:before{display:none}
+input.cell{width:100%;min-width:60px;border-radius:10px;padding:5px 8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-top">
+    <div>
+      <h1 id="tcTitle">颱風航班影響</h1>
+      <div class="sub" id="heroSub">載入中…</div>
+    </div>
+    <div class="controls">
+      <label class="small">機型</label><select id="acSel"></select>
+      <select id="rwyCond"><option value="dry">跑道乾</option><option value="wet">跑道濕</option></select>
+      <button class="btn" id="refreshBtn">更新資料</button>
+    </div>
+  </div>
+  <div class="hero-stats" id="heroStats"></div>
+</section>
+
+<!-- TAB: 總覽 -->
+<div class="tab on" id="tab-map">
+  <div id="dataCard"></div>
+  <div class="grid g2">
+    <div class="card">
+      <h2><span class="key">◎</span>路徑與暴風圈</h2>
+      <div class="hint">黑線是預報路徑、灰線是過去路徑；綠圈是七級風（30kt）範圍、紅圈是十級風（50kt）範圍，灰色虛線圈是中心可能偏移的範圍。拖動下方時間條看不同時間，點航點看當時的風和側風。</div>
+      <div id="map"></div>
+      <div class="slider-row">
+        <button class="btn ghost" id="playBtn">▶</button>
+        <input type="range" id="tSlider" min="0" max="120" step="1" value="0">
+        <div class="tlabel num" id="tLabel"></div>
+      </div>
+      <div class="legend" style="margin-top:10px">
+        <span><i style="background:var(--lv0)"></i>正常</span><span><i style="background:var(--lv1)"></i>注意</span>
+        <span><i style="background:var(--lv2)"></i>警戒</span><span><i style="background:var(--lv3)"></i>高風險</span>
+      </div>
+    </div>
+    <div class="card">
+      <h2><span class="key l">⌖</span>最接近距離（CPA）</h2>
+      <div class="hint">颱風中心離各航點最近的距離和時間；最右欄是該航點被七級風圈籠罩的時段（台灣時間）。</div>
+      <div class="tbl-wrap"><table id="cpaTbl"></table></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h2><span class="key l">≋</span>Windy 動態風場（ECMWF）</h2>
+    <div class="hint">嵌入 Windy 官方地圖，模式固定為 ECMWF，與上方計算用的風場同一個模式，方便目視對照。這裡只能看，數字不會進入計算。</div>
+    <div class="row" id="windyCtl">
+      <button class="btn" data-wo="wind">風</button><button class="btn ghost" data-wo="gust">陣風</button><button class="btn ghost" data-wo="rain">雨量</button><button class="btn ghost" data-wo="pressure">氣壓</button>
+      <span style="width:10px"></span>
+      <button class="btn ghost" data-wc="tc">對準颱風</button><button class="btn ghost" data-wc="tw">對準台灣</button>
+      <a class="btn ghost" id="windyOpen" target="_blank" rel="noopener" style="text-decoration:none">在 Windy 開啟</a>
+    </div>
+    <div id="windyBox" style="border-radius:22px;overflow:hidden;background:#dfe3d6;height:480px"></div>
+  </div>
+</div>
+
+<!-- TAB: 時間軸 -->
+<div class="tab" id="tab-timeline">
+  <div class="card" style="margin-top:16px">
+    <h2><span class="key">▤</span>航點風險時間軸（未來 120 小時）</h2>
+    <div class="hint">每格 1 小時（台灣時間），越紅越危險。點格子會跳到地圖上那個時間；點航點名稱，下方會顯示該機場的側風細節。</div>
+    <div class="row">
+      <label class="small"><input type="checkbox" id="tlFocus" checked> 只顯示有風險或在颱風 <span id="focusKmLbl"></span> km 內的航點</label>
+      <div class="legend"><span><i style="background:var(--lv0)"></i>正常</span><span><i style="background:var(--lv1)"></i>注意</span><span><i style="background:var(--lv2)"></i>警戒</span><span><i style="background:var(--lv3)"></i>高風險</span><span><i style="background:#ddd"></i>無資料</span></div>
+    </div>
+    <div class="tl" id="timeline"></div>
+    <div class="msg" id="tlMsg"></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h2><span class="key">T</span>貼上 TAF（選填，比模式準）</h2>
+    <div class="hint">按「開啟 TAF 原文」會在新分頁顯示颱風附近機場的 TAF，全選複製後貼到下方，再按「套用」。可一次貼多個機場。有 TAF 的時段，時間軸和側風會改用 TAF 的風，並取 TEMPO／PROB 裡最不利的情況。</div>
+    <div class="row"><a class="btn ghost" id="tafOpen" target="_blank" rel="noopener" style="text-decoration:none">開啟 TAF 原文</a><button class="btn" id="tafApply">套用</button><button class="btn ghost" id="tafClear">清除</button><span class="msg" id="tafMsg"></span></div>
+    <textarea id="tafText" placeholder="TAF RCTP 210500Z 2106/2212 05018G28KT 9999 FEW020 BKN040 TEMPO 2112/2118 06025G38KT 4000 SHRA="></textarea>
+  </div>
+  <div class="card" id="xwCard" style="margin-top:16px">
+    <h2><span class="key l">⟂</span>跑道側風換算</h2>
+    <div class="hint">用預報陣風算出最適合跑道的側風。黑線超過紅虛線＝超過機型側風上限。有貼 TAF 的時段改用 TAF（表格「來源」欄會標示）。</div>
+    <div class="row">
+      <select id="xwAp"></select>
+      <select id="xwStep"><option value="1">每 1 小時</option><option value="3" selected>每 3 小時</option></select>
+      <span class="small muted" id="xwLim"></span>
+    </div>
+    <div id="xwChart"></div>
+    <div class="tbl-wrap"><table id="xwTbl"></table></div>
+  </div>
+</div>
+
+<!-- TAB: 航班 -->
+<div class="tab" id="tab-flights">
+  <div class="card" style="margin-top:16px">
+    <h2><span class="key">✈</span>航段影響判斷</h2>
+    <div class="hint">每行一班：<span class="mono">日期 航班 出發 抵達 起飛 落地</span>（當地時間），例如 <span class="mono">10/23 JX800 TPE NRT 08:20 12:40</span>。落地在隔天就在後面加 <span class="mono">+1</span>。可以先按「填入範例」看看。</div>
+    <div class="row">
+      <label class="small">預設日期</label><input type="date" id="schedDate">
+      <button class="btn" id="schedRun">分析</button>
+      <button class="btn ghost" id="schedSample">填入範例</button>
+    </div>
+    <textarea id="schedText" placeholder="2026-10-23 JX800 TPE NRT 08:20 12:40"></textarea>
+    <div class="tbl-wrap" style="margin-top:14px"><table id="flightTbl"></table></div>
+    <div class="note" style="margin-top:12px">「建議時窗」是前後 12 小時內，起飛、落地、航路都安全的最近時間。航路以直線估算，僅供初步篩選。</div>
+  </div>
+</div>
+
+<!-- TAB: 簡報 -->
+<div class="tab" id="tab-brief">
+  <div class="card" style="margin-top:16px">
+    <h2><span class="key l">✎</span>颱風影響摘要</h2>
+    <div class="hint">依目前資料自動產生，可直接修改後複製貼到群組。</div>
+    <div class="row"><button class="btn" id="briefGen">重新產生</button><button class="btn acc" id="briefCopy">複製</button><span class="msg" id="briefMsg"></span></div>
+    <textarea id="briefText" style="min-height:420px;font-family:inherit;font-size:13px;line-height:1.7"></textarea>
+  </div>
+</div>
+
+<!-- TAB: 設定 -->
+<div class="tab" id="tab-settings">
+  <div class="card" style="margin-top:16px">
+    <h2><span class="key l">⌁</span>備用路徑：氣象署授權碼（選填）</h2>
+    <div class="hint">颱風路徑主要用日本氣象廳（ICAO 指定的西北太平洋颱風諮詢中心），不需要金鑰。若日本氣象廳抓不到，會改用氣象署：到 opendata.cwa.gov.tw 免費註冊，登入後在「取得授權碼」複製貼到這裡。</div>
+    <div class="row"><input type="password" id="cwaKeySet" placeholder="CWA-XXXXXXXX-…" style="flex:1;min-width:240px"><button class="btn" id="cwaKeySetBtn">儲存並抓取</button></div>
+    <div class="msg cwaMsg"></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h2><span class="key">⟂</span>機型側風上限</h2>
+    <div class="hint">預設數值只是示意，請改成公司 OM／FCOM 的數字（kt，含陣風）。</div>
+    <div class="tbl-wrap"><table id="acTbl"></table></div>
+  </div>
+  <details class="card" style="margin-top:16px">
+    <summary style="cursor:pointer;font-weight:600">進階設定（航點、跑道、門檻）</summary>
+  <div class="grid g2">
+    <div class="card" style="box-shadow:none;padding:12px 0">
+      <h2><span class="key">⚙</span>航點與跑道</h2>
+      <div class="hint">跑道格式 <span class="mono">05/23:052</span>（標示:真航向，多條用逗號分隔）。座標、時區、跑道皆可編輯。</div>
+      <div class="tbl-wrap"><table id="apTbl"></table></div>
+      <div class="row" style="margin-top:10px"><button class="btn ghost" id="apAdd">新增航點</button><button class="btn" id="apSave">儲存並重新抓取</button><button class="btn ghost" id="apReset">還原預設</button></div>
+    </div>
+    <div>
+      <div class="card" style="box-shadow:none;padding:12px 0">
+        <h2><span class="key">≡</span>門檻</h2>
+        <div class="tbl-wrap"><table id="thrTbl"></table></div>
+        <div class="row" style="margin-top:10px"><button class="btn" id="thrSave">儲存</button></div>
+        <div class="note" style="margin-top:8px">風速模式（Open-Meteo）解析度較粗，常低估颱風核心附近的風，所以等級同時參考暴風圈距離，兩者取高。</div>
+      </div>
+      <div class="card" style="box-shadow:none;padding:12px 0">
+        <h2><span class="key l">⌁</span>颱風名稱</h2>
+        <div class="row"><input type="text" id="tcNameIn" style="flex:1"><button class="btn ghost" id="tcNameSave">儲存</button></div>
+      </div>
+    </div>
+  </div>
+  </details>
+</div>
+
+</div>
+
+<nav class="nav" id="nav">
+  <button data-tab="map" class="on">總覽</button>
+  <button data-tab="timeline">時間軸</button>
+  <button data-tab="flights">航班</button>
+  <button data-tab="brief">簡報</button>
+  <button data-tab="settings">設定</button>
+</nav>
+
+<script>
+/* ================= 基本工具 ================= */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const HR = 3600e3;
+const p2 = n => String(n).padStart(2,'0');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem('tyw_'+k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem('tyw_'+k, JSON.stringify(v)); }catch(e){} }
+};
+const clone = o => JSON.parse(JSON.stringify(o));
+const WK = '日一二三四五六';
+function fmtTW(t, withWk){
+  const d = new Date(t + 8*HR);
+  return `${p2(d.getUTCMonth()+1)}/${p2(d.getUTCDate())}${withWk?'('+WK[d.getUTCDay()]+')':''} ${p2(d.getUTCHours())}:${p2(d.getUTCMinutes())}`;
+}
+function twParts(t){ const d = new Date(t + 8*HR); return {y:d.getUTCFullYear(), m:d.getUTCMonth()+1, d:d.getUTCDate(), h:d.getUTCHours(), mi:d.getUTCMinutes(), wd:d.getUTCDay()}; }
+function twToUtc(y,m,d,h,mi){ return Date.UTC(y,m-1,d,h,mi) - 8*HR; }
+function tzOffset(tz, t){
+  try{
+    const f = new Intl.DateTimeFormat('en-US',{timeZone:tz,hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const o = {}; f.formatToParts(new Date(t)).forEach(p => o[p.type] = p.value);
+    return Date.UTC(+o.year, +o.month-1, +o.day, +o.hour % 24, +o.minute, +o.second) - Math.floor(t/1000)*1000;
+  }catch(e){ return 8*HR; }
+}
+function localToUtc(y,m,d,h,mi,tz){
+  const guess = Date.UTC(y,m-1,d,h,mi);
+  let t = guess - tzOffset(tz, guess);
+  t = guess - tzOffset(tz, t);
+  return t;
+}
+function fmtLocal(t, tz){
+  const off = tzOffset(tz, t); const d = new Date(t + off);
+  return `${p2(d.getUTCMonth()+1)}/${p2(d.getUTCDate())} ${p2(d.getUTCHours())}:${p2(d.getUTCMinutes())}`;
+}
+const rad = x => x*Math.PI/180, deg = x => x*180/Math.PI;
+function distKm(a1,o1,a2,o2){
+  const R=6371, dA=rad(a2-a1), dO=rad(o2-o1);
+  const h = Math.sin(dA/2)**2 + Math.cos(rad(a1))*Math.cos(rad(a2))*Math.sin(dO/2)**2;
+  return 2*R*Math.asin(Math.min(1,Math.sqrt(h)));
+}
+function gcInterp(a1,o1,a2,o2,f){
+  const p1=rad(a1),l1=rad(o1),p2_=rad(a2),l2=rad(o2);
+  const d = distKm(a1,o1,a2,o2)/6371; if(d < 1e-9) return [a1,o1];
+  const A=Math.sin((1-f)*d)/Math.sin(d), B=Math.sin(f*d)/Math.sin(d);
+  const x=A*Math.cos(p1)*Math.cos(l1)+B*Math.cos(p2_)*Math.cos(l2);
+  const y=A*Math.cos(p1)*Math.sin(l1)+B*Math.cos(p2_)*Math.sin(l2);
+  const z=A*Math.sin(p1)+B*Math.sin(p2_);
+  return [deg(Math.atan2(z,Math.sqrt(x*x+y*y))), deg(Math.atan2(y,x))];
+}
+const DIRS = ['北','北北東','東北','東北東','東','東南東','東南','南南東','南','南南西','西南','西南西','西','西北西','西北','北北西'];
+const dirTxt = d => d==null ? '—' : DIRS[Math.round(((d%360)+360)%360/22.5)%16];
+const LVTXT = ['正常','注意','警戒','高風險'];
+const lvPill = lv => lv==null ? '<span class="pill" style="background:#ddd">無資料</span>' : `<span class="pill lv${lv}">${LVTXT[lv]}</span>`;
+const LVCOL = ['#E7EBDD','#F3E08A','#F4A261','#E5484D'];
+
+/* ================= 預設資料 ================= */
+const DEFAULT_AIRPORTS = [
+ ['TPE','RCTP','桃園',25.0777,121.2328,'Asia/Taipei','05/23:052'],
+ ['TSA','RCSS','松山',25.0694,121.5525,'Asia/Taipei','10/28:097'],
+ ['KHH','RCKH','高雄',22.5771,120.3500,'Asia/Taipei','09/27:088'],
+ ['RMQ','RCMQ','台中',24.2647,120.6206,'Asia/Taipei','18/36:178'],
+ ['OKA','ROAH','沖繩',26.1958,127.6459,'Asia/Tokyo','18/36:178'],
+ ['FUK','RJFF','福岡',33.5859,130.4511,'Asia/Tokyo','16/34:152'],
+ ['KMJ','RJFT','熊本',32.8373,130.8550,'Asia/Tokyo','07/25:063'],
+ ['KIX','RJBB','關西',34.4273,135.2440,'Asia/Tokyo','06/24:055'],
+ ['NGO','RJGG','中部',34.8584,136.8054,'Asia/Tokyo','18/36:176'],
+ ['NRT','RJAA','成田',35.7647,140.3864,'Asia/Tokyo','16/34:157'],
+ ['HND','RJTT','羽田',35.5523,139.7798,'Asia/Tokyo','16/34:157,04/22:037,05/23:050'],
+ ['SDJ','RJSS','仙台',38.1397,140.9170,'Asia/Tokyo','09/27:085,12/30:115'],
+ ['HKD','RJCH','函館',41.7700,140.8219,'Asia/Tokyo','12/30:116'],
+ ['CTS','RJCC','新千歲',42.7752,141.6923,'Asia/Tokyo','01/19:000'],
+ ['HKG','VHHH','香港',22.3080,113.9185,'Asia/Hong_Kong','07/25:073'],
+ ['MFM','VMMC','澳門',22.1496,113.5916,'Asia/Macau','16/34:160'],
+ ['MNL','RPLL','馬尼拉',14.5086,121.0198,'Asia/Manila','06/24:058,13/31:132'],
+ ['CRK','RPLC','克拉克',15.1860,120.5603,'Asia/Manila','02/20:020'],
+ ['CEB','RPVM','宿霧',10.3075,123.9794,'Asia/Manila','04/22:040'],
+ ['HAN','VVNB','河內',21.2212,105.8072,'Asia/Ho_Chi_Minh','11/29:110'],
+ ['DAD','VVDN','峴港',16.0439,108.1994,'Asia/Ho_Chi_Minh','17/35:172'],
+ ['SGN','VVTS','胡志明市',10.8188,106.6520,'Asia/Ho_Chi_Minh','07/25:074'],
+ ['BKK','VTBS','曼谷',13.6900,100.7501,'Asia/Bangkok','01/19:014'],
+ ['CNX','VTCC','清邁',18.7668,98.9626,'Asia/Bangkok','18/36:180'],
+ ['KUL','WMKK','吉隆坡',2.7456,101.7099,'Asia/Kuala_Lumpur','14/32:144'],
+ ['PEN','WMKP','檳城',5.2971,100.2770,'Asia/Kuala_Lumpur','04/22:037'],
+ ['SIN','WSSS','新加坡',1.3644,103.9915,'Asia/Singapore','02/20:020'],
+ ['CGK','WIII','雅加達',-6.1256,106.6559,'Asia/Jakarta','07/25:069'],
+ ['DPS','WADD','峇里島',-8.7482,115.1670,'Asia/Makassar','09/27:090'],
+ ['LAX','KLAX','洛杉磯',33.9416,-118.4085,'America/Los_Angeles','06/24:083'],
+ ['SFO','KSFO','舊金山',37.6213,-122.3790,'America/Los_Angeles','10/28:118,01/19:028'],
+ ['ONT','KONT','安大略',34.0560,-117.6012,'America/Los_Angeles','08/26:085'],
+ ['SEA','KSEA','西雅圖',47.4502,-122.3088,'America/Los_Angeles','16/34:180'],
+ ['PHX','KPHX','鳳凰城',33.4352,-112.0101,'America/Phoenix','08/26:077'],
+ ['PRG','LKPR','布拉格',50.1008,14.2600,'Europe/Prague','06/24:063,12/30:128'],
+].map(a => ({code:a[0], icao:a[1], name:a[2], lat:a[3], lon:a[4], tz:a[5], rwys:a[6], on:true}));
+
+const DEFAULT_AC = {
+  'A321neo':  {xw:33, tw:10},
+  'A330-900': {xw:35, tw:10},
+  'A350-900': {xw:35, tw:10},
+  'A350-1000':{xw:35, tw:10},
+  '公司統一': {xw:30, tw:10},
+};
+const DEFAULT_THR = {wetFactor:0.8, gust1:30, gust2:40, gust3:50, sus3:34, ringBuf:150, focusKm:1500, defR7:250, defR10:100};
+
+// 菲律賓氣象局 10/18 23:00 發布之預報點（台灣時間），風速 km/h 已換算 kt。示範用，請以最新報更新。
+const SEED_TRACKS = {
+  CWA:   {label:'中央氣象署', color:'#151515', dash:null, issued:'', pts:[]},
+  JMA:   {label:'日本氣象廳', color:'#7E8F35', dash:'8 6', issued:'', pts:[]},
+  JTWC:  {label:'JTWC', color:'#B5657A', dash:'2 6', issued:'', pts:[]},
+  PAGASA:{label:'PAGASA 菲律賓', color:'#3d6f8e', dash:'10 4 2 4', issued:'10/18 23:00 發布（示範資料）', pts:[
+    {t:twToUtc(2026,10,19,8,0),  lat:14.3, lon:139.3, v:94,  r7:null, r10:null},
+    {t:twToUtc(2026,10,20,20,0), lat:17.3, lon:132.6, v:111, r7:null, r10:null},
+    {t:twToUtc(2026,10,21,8,0),  lat:18.5, lon:130.0, v:111, r7:null, r10:null},
+    {t:twToUtc(2026,10,21,20,0), lat:19.7, lon:128.0, v:105, r7:null, r10:null},
+    {t:twToUtc(2026,10,22,20,0), lat:20.9, lon:125.5, v:100, r7:null, r10:null},
+    {t:twToUtc(2026,10,23,20,0), lat:22.4, lon:122.4, v:89,  r7:null, r10:null},
+  ]},
+  USER:  {label:'自訂', color:'#9a7b2f', dash:'4 4', issued:'', pts:[]},
+};
+const SEED_HISTORY = [
+  {name:'康芮 Kong-rey 2024（概略）', on:true, pts:[
+    {t:twToUtc(2024,10,28,17,0), lat:17.4, lon:127.6},
+    {t:twToUtc(2024,10,29,17,0), lat:19.0, lon:125.2},
+    {t:twToUtc(2024,10,30,17,0), lat:20.8, lon:123.2},
+    {t:twToUtc(2024,10,31,13,40),lat:23.1, lon:121.4},
+    {t:twToUtc(2024,10,31,17,0), lat:23.6, lon:121.1},
+  ]}
+];
+const DEFAULT_WARN = {cwa:'無', jma:'無', pagasa:'0', note:''};
+
+/* ================= 狀態 ================= */
+const S = {
+  airports: store.get('airports', clone(DEFAULT_AIRPORTS)),
+  ac: store.get('ac', clone(DEFAULT_AC)),
+  acSel: store.get('acSel', 'A350-900'),
+  rwyCond: store.get('rwyCond', 'dry'),
+  thr: Object.assign(clone(DEFAULT_THR), store.get('thr', {})),
+  tracks: store.get('tracks', null),
+  primary: store.get('primary', 'PAGASA'),
+  history: store.get('history', clone(SEED_HISTORY)),
+  warn: Object.assign(clone(DEFAULT_WARN), store.get('warn', {})),
+  cwaKey: store.get('cwaKey', ''),
+  sched: store.get('sched', ''),
+  tcName: store.get('tcName', '薔琵 CHAMPI'),
+  tafText: store.get('tafText', ''), taf: {}, jmaErr: '',
+  wx: {}, wxAt: null, wxErr: '',
+  t0: 0, H: [], sliderI: 0,
+  metar: null,
+};
+if(!S.tracks){ S.tracks = clone(SEED_TRACKS); }
+Object.keys(SEED_TRACKS).forEach(k => { if(!S.tracks[k]) S.tracks[k] = clone(SEED_TRACKS[k]); });
+if(!S.ac[S.acSel]) S.acSel = Object.keys(S.ac)[0];
+function saveTracks(){ store.set('tracks', S.tracks); }
+
+function buildHours(){
+  const now = Date.now();
+  S.t0 = Math.floor(now/HR)*HR;
+  S.H = Array.from({length:121}, (_,i) => S.t0 + i*HR);
+}
+buildHours();
+
+/* ================= 跑道與側風 ================= */
+function parseRwys(str){
+  return String(str||'').split(',').map(s => s.trim()).filter(Boolean).map(s => {
+    const [lab, h] = s.includes(':') ? s.split(':') : [null, s];
+    const hdg = parseFloat(h);
+    let ends;
+    if(lab && lab.includes('/')) ends = lab.split('/').map(x => x.trim());
+    else { const a = Math.round(hdg/10)%36 || 36; const b = Math.round((hdg+180)/10)%36 || 36; ends = [p2(a), p2(b)]; }
+    return {ends, hdg};
+  }).filter(r => !isNaN(r.hdg));
+}
+function limits(){
+  const a = S.ac[S.acSel] || {xw:30, tw:10};
+  const f = S.rwyCond === 'wet' ? S.thr.wetFactor : 1;
+  return {xw: +(a.xw * f).toFixed(1), tw: a.tw};
+}
+function bestRunway(ap, dir, spd, gust){
+  const rw = parseRwys(ap.rwys); if(!rw.length || dir==null) return null;
+  const g = Math.max(spd||0, gust||0); const L = limits();
+  let best = null;
+  rw.forEach(r => {
+    [[r.ends[0], r.hdg],[r.ends[1], r.hdg+180]].forEach(([name, h]) => {
+      const d = rad(dir - h);
+      const xw = Math.abs(Math.sin(d))*g, hw = Math.cos(d)*g, tw = Math.max(0, -hw);
+      const score = (tw > L.tw ? 1000 + tw : 0) + xw;
+      if(!best || score < best.score) best = {name, xw, tw, hw, score};
+    });
+  });
+  return best;
+}
+
+/* ================= 路徑內插 ================= */
+function trackAt(tr, t){
+  const P = tr && tr.pts; if(!P || P.length < 1) return null;
+  if(P.length === 1) return Math.abs(P[0].t - t) <= 3*HR ? fillR(P[0]) : null;
+  if(t < P[0].t || t > P[P.length-1].t) return null;
+  for(let i=0;i<P.length-1;i++){
+    const a=P[i], b=P[i+1];
+    if(t>=a.t && t<=b.t){
+      const f = b.t===a.t ? 0 : (t-a.t)/(b.t-a.t);
+      const [lat,lon] = gcInterp(a.lat,a.lon,b.lat,b.lon,f);
+      const lerp = (x,y) => (x==null||y==null) ? (x??y) : x+(y-x)*f;
+      return fillR({t, lat, lon, v:lerp(a.v,b.v), r7:lerp(a.r7,b.r7), r10:lerp(a.r10,b.r10), prob:lerp(a.prob,b.prob)});
+    }
+  }
+  return null;
+}
+function fillR(p){ return Object.assign({}, p, {r7: p.r7 ?? S.thr.defR7, r10: p.r10 ?? S.thr.defR10}); }
+function primaryKey(){
+  return ['JMA','CWA','PAGASA'].concat(Object.keys(S.tracks)).find(k => S.tracks[k] && S.tracks[k].pts.length >= 2) || 'JMA';
+}
+const isDemo = () => primaryKey() === 'PAGASA';
+const SRC_LABEL = {JMA:'日本氣象廳（ICAO 颱風諮詢中心）', CWA:'中央氣象署', PAGASA:'示範資料'};
+const srcText = () => isDemo() ? '示範資料（非最新）' : `${SRC_LABEL[primaryKey()]||primaryTrack().label}　${primaryTrack().issued||''}`;
+const primaryTrack = () => S.tracks[primaryKey()];
+function trackLevel(ap, t, tr){
+  const c = trackAt(tr || primaryTrack(), t); if(!c) return {lv:0, d:null, c:null};
+  const d = distKm(ap.lat, ap.lon, c.lat, c.lon);
+  let lv = 0;
+  if(d <= c.r10) lv = 3; else if(d <= c.r7) lv = 2; else if(d <= c.r7 + S.thr.ringBuf) lv = 1;
+  return {lv, d, c};
+}
+function cpa(tr, ap){
+  if(!tr || !tr.pts || tr.pts.length < 2) return null;
+  const a = tr.pts[0].t, b = tr.pts[tr.pts.length-1].t;
+  let best = null, enter = null, exit = null;
+  for(let t=a; t<=b; t+=HR/2){
+    const c = trackAt(tr, t); if(!c) continue;
+    const d = distKm(ap.lat, ap.lon, c.lat, c.lon);
+    if(!best || d < best.d) best = {d, t, c};
+    if(d <= c.r7){ if(enter==null) enter = t; exit = t; }
+  }
+  return best ? Object.assign(best, {enter, exit}) : null;
+}
+
+/* ================= 風場（Open-Meteo） ================= */
+async function fetchWx(){
+  const aps = S.airports.filter(a => a.on);
+  if(!aps.length) return;
+  const lat = aps.map(a => a.lat).join(','), lon = aps.map(a => a.lon).join(',');
+  const base = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kn&timeformat=unixtime&timezone=GMT&forecast_days=7`;
+  // 先用 ECMWF IFS 9km（與 Windy 預設模式相同），失敗或缺值再退回 Open-Meteo 自動選模式
+  const tries = [{q:'&models=ecmwf_ifs', label:'ECMWF'}, {q:'', label:'Open-Meteo 自動'}];
+  const pick = (h, k) => h[k] || h[k+'_ecmwf_ifs'] || null;
+  let lastErr = '';
+  for(const tr of tries){
+    try{
+      const r = await fetch(base + tr.q); if(!r.ok) throw new Error('HTTP '+r.status);
+      const j = await r.json(); const arr = Array.isArray(j) ? j : [j];
+      const wx = {}; let ok = 0;
+      aps.forEach((a,i) => {
+        const h = arr[i] && arr[i].hourly; if(!h) return;
+        const spd = pick(h,'wind_speed_10m'), dir = pick(h,'wind_direction_10m'), gust = pick(h,'wind_gusts_10m');
+        if(!spd || !dir) return;
+        if(spd.slice(0,72).filter(v => v != null).length < 48) return;
+        wx[a.code] = {t:h.time.map(x=>x*1000), spd, dir, gust: gust || spd};
+        ok++;
+      });
+      if(ok < aps.length/2) throw new Error('資料不足');
+      S.wx = wx; S.wxAt = Date.now(); S.wxErr = ''; S.wxModel = tr.label;
+      return;
+    }catch(e){ lastErr = e.message; }
+  }
+  S.wxErr = '風場資料抓取失敗：'+lastErr;
+}
+function tafRefTime(dd, hh, mm, ref){
+  const r = new Date(ref); let best = null;
+  for(const dm of [-1,0,1]){ const t = Date.UTC(r.getUTCFullYear(), r.getUTCMonth()+dm, dd, hh, mm||0); if(best == null || Math.abs(t-ref) < Math.abs(best-ref)) best = t; }
+  return best;
+}
+function parseTAF(text, now){
+  now = now || Date.now();
+  const out = {}; const src = String(text||'').toUpperCase();
+  const ms = [...src.matchAll(/\b([A-Z]{4})\s+(\d{2})(\d{2})(\d{2})Z\s+(\d{2})(\d{2})\/(\d{2})(\d{2})\b/g)];
+  ms.forEach((m, k) => {
+    const icao = m[1];
+    const body = src.slice(m.index + m[0].length, k+1 < ms.length ? ms[k+1].index : src.length);
+    const issued = tafRefTime(+m[2], +m[3], +m[4], now);
+    const from = tafRefTime(+m[5], +m[6], 0, issued), to = tafRefTime(+m[7], +m[8], 0, from + 15*HR);
+    const mid = from + 12*HR;
+    const W = s => { const x = s.match(/^(\d{3}|VRB)(\d{2,3})(?:G(\d{2,3}))?(KT|MPS)$/); if(!x) return null; const f = x[4]==='MPS' ? 1.944 : 1; const spd = +x[2]*f; return {dir: x[1]==='VRB' ? null : +x[1], spd, gust: x[3] ? +x[3]*f : spd}; };
+    const P = s => { const x = (s||'').match(/^(\d{2})(\d{2})\/(\d{2})(\d{2})$/); return x ? [tafRefTime(+x[1],+x[2],0,mid), tafRefTime(+x[3],+x[4],0,mid)] : null; };
+    const tok = body.replace(/=/g,' ').trim().split(/\s+/);
+    const groups = [{type:'BASE', a:from, b:to, wind:null}]; let cur = groups[0];
+    for(let i=0;i<tok.length;i++){
+      const s = tok[i]; let x;
+      if((x = s.match(/^FM(\d{2})(\d{2})(\d{2})$/))){ cur = {type:'FM', a:tafRefTime(+x[1],+x[2],+x[3],mid), b:to, wind:null}; groups.push(cur); continue; }
+      if(s==='BECMG' || s==='TEMPO' || /^PROB\d{2}$/.test(s)){
+        let j = i+1; if(s.startsWith('PROB') && tok[j]==='TEMPO') j++;
+        const per = P(tok[j]); if(per){ cur = {type: s==='BECMG' ? 'BECMG' : 'TEMPO', a:per[0], b:per[1], wind:null}; groups.push(cur); i = j; }
+        continue;
+      }
+      if(!cur.wind){ const w = W(s); if(w) cur.wind = w; }
+    }
+    const hours = {};
+    for(let t = Math.floor(from/HR)*HR; t < to; t += HR){
+      let prev = groups[0].wind; const cands = [];
+      groups.forEach(g => {
+        if(!g.wind) return;
+        if(g.type==='FM' && t >= g.a) prev = g.wind;
+        if(g.type==='BECMG' && t >= g.a){ if(t < g.b) cands.push(g.wind); else prev = g.wind; }
+      });
+      groups.forEach(g => { if(g.type==='TEMPO' && g.wind && t >= g.a && t < g.b) cands.push(g.wind); });
+      if(prev) cands.unshift(prev);
+      if(cands.length) hours[t] = cands;
+    }
+    if(!out[icao] || out[icao].issued < issued) out[icao] = {issued, from, to, hours, raw: (m[0] + body).trim().replace(/\s+/g,' ')};
+  });
+  return out;
+}
+const tafCount = () => Object.keys(S.taf || {}).length;
+function tafWind(ap, t){
+  const T = ap && S.taf && S.taf[ap.icao]; if(!T) return null;
+  const cands = T.hours[Math.floor(t/HR)*HR]; if(!cands) return null;
+  let best = null;
+  cands.forEach(w => {
+    const xw = w.dir == null ? Math.max(w.spd, w.gust) : ((bestRunway(ap, w.dir, w.spd, w.gust) || {}).xw || 0);
+    const sc = xw*1000 + (w.gust || 0);
+    if(!best || sc > best.sc) best = Object.assign({sc}, w);
+  });
+  return {dir:best.dir, spd:best.spd, gust:best.gust, src:'TAF'};
+}
+function wxAt(code, t){
+  const ap = S.airports.find(a => a.code === code);
+  const tw = tafWind(ap, t); if(tw) return tw;
+  const w = S.wx[code]; if(!w || !w.t.length) return null;
+  const i = Math.round((t - w.t[0])/HR);
+  if(i < 0 || i >= w.t.length || w.spd[i]==null) return null;
+  return {spd:w.spd[i], dir:w.dir[i], gust: w.gust[i] ?? w.spd[i], src: S.wxModel || '模式'};
+}
+
+/* ================= 風險 ================= */
+function risk(ap, t){
+  const w = wxAt(ap.code, t); const L = limits(); const T = S.thr;
+  let wl = null, rw = null, why = [];
+  if(w){
+    rw = w.dir == null ? {name:'VRB', xw:Math.max(w.spd, w.gust||0), tw:0, hw:0} : bestRunway(ap, w.dir, w.spd, w.gust);
+    const xw = rw ? rw.xw : 0, g = w.gust || 0;
+    wl = 0;
+    if(xw > L.xw || g >= T.gust3 || w.spd >= T.sus3) wl = 3;
+    else if(xw > L.xw*0.85 || g >= T.gust2) wl = 2;
+    else if(xw > L.xw*0.65 || g >= T.gust1) wl = 1;
+    if(rw && xw > L.xw*0.65) why.push(`${w.src==='TAF'?'TAF ':''}側風 ${xw.toFixed(0)}kt (${rw.name})`);
+    if(g >= T.gust1) why.push(`陣風 ${g.toFixed(0)}kt`);
+  }
+  const tl = trackLevel(ap, t);
+  if(tl.lv >= 2) why.push(tl.lv===3 ? '在十級風圈內' : '在七級風圈內');
+  else if(tl.lv === 1) why.push('接近七級風圈');
+  const lv = (wl==null && !tl.c) ? null : Math.max(wl ?? 0, tl.lv);
+  return {lv, wl, tl, w, rw, why};
+}
+function maxRiskWindow(ap, t, spanH=1){
+  let best = null;
+  for(let k=-spanH;k<=spanH;k++){
+    const tt = Math.round((t + k*HR)/HR)*HR; const r = risk(ap, tt);
+    if(r.lv != null && (!best || r.lv > best.lv)) best = Object.assign({t:tt}, r);
+  }
+  return best || {lv:null, why:[]};
+}
+
+/* ================= 解析器 ================= */
+function nowYM(){ const p = twParts(Date.now()); return p; }
+function parseGeneric(text){
+  const out = [];
+  String(text||'').split(/\n/).forEach(line => {
+    line = line.trim(); if(!line || line.startsWith('#')) return;
+    const utc = /(\d)Z\b|\bUTC\b/i.test(line);
+    let m = line.match(/(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})[ T]+(\d{1,2}):?(\d{2})/);
+    let y, mo, d, h, mi;
+    if(m){ [y,mo,d,h,mi] = m.slice(1,6).map(Number); }
+    else {
+      m = line.match(/(\d{1,2})\/(\d{1,2})\s+(\d{1,2}):?(\d{2})/); if(!m) return;
+      [mo,d,h,mi] = m.slice(1,5).map(Number); y = nowYM().y;
+    }
+    const rest = line.slice(m.index + m[0].length).replace(/^Z/i,'');
+    const nums = (rest.match(/-?\d+(?:\.\d+)?/g) || []).map(Number);
+    if(nums.length < 2) return;
+    let lat = nums[0], lon = nums[1];
+    if(/\d\s*S\b/.test(rest.split(/[, ]+/).slice(0,3).join(' '))) lat = -Math.abs(lat);
+    const t = utc ? Date.UTC(y,mo-1,d,h,mi) : twToUtc(y,mo,d,h,mi);
+    out.push({t, lat, lon, v: nums[2] ?? null, r7: nums[3] ?? null, r10: nums[4] ?? null});
+  });
+  return dedupe(out);
+}
+function dedupe(pts){
+  const m = new Map(); pts.forEach(p => { if(isFinite(p.t) && isFinite(p.lat) && isFinite(p.lon)) m.set(p.t, p); });
+  return [...m.values()].sort((a,b) => a.t-b.t);
+}
+function parseJTWC(text){
+  const re = /(\d{2})(\d{2})(\d{2})Z\s*-{2,}\s*(?:NEAR\s+)?(\d{1,2}\.\d)\s*([NS])\s+(\d{2,3}\.\d)\s*([EW])/g;
+  const ms = []; let m;
+  while((m = re.exec(text))) ms.push({m, i:m.index, end:re.lastIndex});
+  const now = new Date(); const out = [];
+  ms.forEach((x, k) => {
+    const seg = text.slice(x.end, k+1 < ms.length ? ms[k+1].i : text.length);
+    const [dd, hh, mm] = [x.m[1], x.m[2], x.m[3]].map(Number);
+    let y = now.getUTCFullYear(), mo = now.getUTCMonth();
+    if(dd < now.getUTCDate() - 20) mo += 1; else if(dd > now.getUTCDate() + 20) mo -= 1;
+    const t = Date.UTC(y, mo, dd, hh, mm);
+    let lat = +x.m[4] * (x.m[5]==='S'?-1:1), lon = +x.m[6] * (x.m[7]==='W'?-1:1);
+    const v = (seg.match(/MAX SUSTAINED WINDS\s*-\s*(\d+)\s*KT/) || [])[1];
+    const radius = kt => {
+      const r = seg.match(new RegExp('RADIUS OF 0?'+kt+' KT WINDS\\s*-([\\s\\S]*?)(?=RADIUS OF|REPEAT|VECTOR|\\n\\s*\\n|$)'));
+      if(!r) return null; const n = (r[1].match(/(\d+)\s*NM/g) || []).map(s => parseInt(s));
+      return n.length ? Math.round(Math.max(...n)*1.852) : null;
+    };
+    out.push({t, lat, lon, v: v ? +v : null, r7: radius('34'), r10: radius('50')});
+  });
+  return dedupe(out);
+}
+function deepWalk(o, fn, path=''){
+  if(o && typeof o === 'object'){ for(const k in o){ fn(k, o[k], path+'.'+k); deepWalk(o[k], fn, path+'.'+k); } }
+}
+function parseCoord(c){
+  if(c == null) return null;
+  if(typeof c === 'string'){ const n = (c.match(/-?\d+(?:\.\d+)?/g) || []).map(Number); if(n.length>=2) return {lat:Math.min(n[0],n[1]), lon:Math.max(n[0],n[1])}; return null; }
+  if(Array.isArray(c) && c.length>=2) return {lat:Math.min(+c[0],+c[1]), lon:Math.max(+c[0],+c[1])};
+  if(typeof c === 'object'){
+    const la = c.lat ?? c.latitude ?? c.Latitude, lo = c.lon ?? c.lng ?? c.longitude ?? c.Longitude;
+    if(la!=null && lo!=null) return {lat:+la, lon:+lo};
+  }
+  return null;
+}
+function findRadius(o, re){
+  let r = null;
+  deepWalk(o, (k, v, path) => { if(r==null && re.test(path) && /radius|km/i.test(k) && v!=null && !isNaN(parseFloat(v))) r = parseFloat(v); });
+  return r;
+}
+function parseCWA(j, want){
+  const list = j?.records?.tropicalCyclones?.tropicalCyclone || [];
+  const tcs = Array.isArray(list) ? list : [list];
+  if(!tcs.length) throw new Error('目前沒有熱帶氣旋資料');
+  let tc = tcs.find(x => want && (String(x.typhoonName||'').toUpperCase().includes(want.toUpperCase()) || String(x.cwaTyphoonName||'').includes(want))) || tcs[0];
+  const pts = [];
+  const take = (f, isFc) => {
+    const c = parseCoord(f.coordinate ?? f.Coordinate); if(!c) return;
+    let t;
+    if(isFc && f.initTime != null && f.tau != null) t = Date.parse(f.initTime) + (+f.tau)*HR;
+    else t = Date.parse(f.fixTime || f.FixTime || f.futureTime || f.validTime || f.dateTime || f.initTime);
+    if(!isFinite(t)) return;
+    const ms = parseFloat(f.maxWindSpeed); const v = isFinite(ms) ? Math.round(ms*1.944) : null;
+    pts.push({t, lat:c.lat, lon:c.lon, v, r7: findRadius(f, /15ms|15Ms|circleOf15/i), r10: findRadius(f, /25ms|25Ms|circleOf25/i)});
+  };
+  const ad = tc.analysisData?.fix || []; (Array.isArray(ad)?ad:[ad]).forEach(f => take(f,false));
+  const fd = tc.forecastData?.fix || []; (Array.isArray(fd)?fd:[fd]).forEach(f => take(f,true));
+  if(pts.length < 2){
+    const seen = new Set();
+    deepWalk(tc, (k, v) => { if(v && typeof v === 'object' && !Array.isArray(v) && (v.coordinate || v.Coordinate) && !seen.has(v)){ seen.add(v); take(v, v.tau != null); } });
+  }
+  return {name: `${tc.cwaTyphoonName||''} ${tc.typhoonName||''}`.trim(), pts: dedupe(pts), all: tcs.map(x => `${x.cwaTyphoonName||''} ${x.typhoonName||''}`.trim())};
+}
+function parseJMA(spec){
+  // JMA bosai specifications.json：[title, 分析, 12h, 24h, …]
+  const arr = Array.isArray(spec) ? spec : [spec];
+  const title = arr.find(x => x && x.part === 'title') || {};
+  const meanKm = a => { const v = (Array.isArray(a) ? a : []).map(x => parseFloat(x?.range?.km)).filter(isFinite); return v.length ? v.reduce((s,x) => s+x, 0)/v.length : null; };
+  let galeExtra = null; const pts = [];
+  arr.forEach(it => {
+    if(!it || it.part === 'title' || !it.position || !Array.isArray(it.position.deg)) return;
+    const t = Date.parse(it.validtime?.UTC || it.validtime?.JST); if(!isFinite(t)) return;
+    const lat = +it.position.deg[0], lon = +it.position.deg[1];
+    const v = parseFloat(it.maximumWind?.sustained?.kt);
+    const prob = parseFloat(it.probabilityCircleRadius?.km);
+    let r10 = meanKm(it.stormWarning);                       // 暴風域 50kt（預報值含機率圓，扣掉）
+    if(r10 != null && isFinite(prob)) r10 = Math.max(30, r10 - prob);
+    let r7 = meanKm(it.galeWarning);                         // 強風域 30kt（只有分析時刻有）
+    if(r7 != null && r10 != null && galeExtra == null) galeExtra = r7 - r10;
+    if(r7 == null && r10 != null && galeExtra != null) r7 = r10 + galeExtra;
+    pts.push({t, lat, lon, v: isFinite(v) ? v : null, r7, r10, prob: isFinite(prob) ? prob : null});
+  });
+  return {pts: dedupe(pts), name: title.name?.en || '', num: title.typhoonNumber || '', issue: Date.parse(title.issue?.UTC || title.issue?.JST)};
+}
+function ptsToText(pts){
+  return (pts||[]).map(p => { const q = twParts(p.t); return `${q.y}-${p2(q.m)}-${p2(q.d)} ${p2(q.h)}:${p2(q.mi)}, ${(+p.lat).toFixed(1)}, ${(+p.lon).toFixed(1)}, ${p.v==null?'':Math.round(p.v)}, ${p.r7==null?'':Math.round(p.r7)}, ${p.r10==null?'':Math.round(p.r10)}`.replace(/(, )+$/,''); }).join('\n');
+}
+
+/* ================= 地圖 ================= */
+let MAP = null, L_tracks = null, L_rings = null, L_aps = null, L_hist = null;
+function initMap(){
+  if(MAP || typeof L === 'undefined') return;
+  MAP = L.map('map', {zoomControl:true, worldCopyJump:true}).setView([24, 125], 5);
+  const esriAttr = 'Tiles &copy; Esri';
+  const light = L.layerGroup([
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {attribution:esriAttr, maxZoom:16}),
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {maxZoom:16})
+  ]);
+  const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'&copy; OpenStreetMap', maxZoom:18});
+  const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution:esriAttr, maxZoom:17});
+  const bases = {'淺灰':light, '標準':osm, '衛星':sat};
+  let pick = store.get('basemap','淺灰'); (bases[pick] || light).addTo(MAP);
+  L.control.layers(bases, null, {position:'topright'}).addTo(MAP);
+  MAP.on('baselayerchange', e => store.set('basemap', e.name));
+  L_hist = L.layerGroup().addTo(MAP); L_tracks = L.layerGroup().addTo(MAP); L_rings = L.layerGroup().addTo(MAP); L_aps = L.layerGroup().addTo(MAP);
+}
+function drawTracks(){
+  if(!MAP) return;
+  L_tracks.clearLayers(); L_hist.clearLayers();
+  Object.entries(S.tracks).forEach(([k, tr]) => {
+    if(!tr.pts || !tr.pts.length || k !== primaryKey()) return;
+    const isP = k === primaryKey();
+    if(tr.past && tr.past.length > 1) L.polyline(tr.past, {color:'#6f7068', weight:2, opacity:.7}).addTo(L_tracks).bindTooltip('過去路徑');
+    const ll = tr.pts.map(p => [p.lat, p.lon]);
+    L.polyline(ll, {color: isP ? '#151515' : tr.color, weight: isP ? 4 : 2.5, dashArray: isP ? null : tr.dash, opacity: isP ? .95 : .8}).addTo(L_tracks).bindTooltip(tr.label + (isP?'（主路徑）':''));
+    tr.pts.forEach(p => {
+      L.circleMarker([p.lat,p.lon], {radius: isP?5:3.5, color: isP?'#151515':tr.color, weight:2, fillColor: isP?'#C7F034':'#fff', fillOpacity:1})
+        .bindTooltip(`${tr.label}<br>${fmtTW(p.t,true)}<br>${p.lat.toFixed(1)}N ${p.lon.toFixed(1)}E${p.v!=null?'<br>'+Math.round(p.v)+' kt':''}`).addTo(L_tracks);
+    });
+  });
+  [].forEach(h => {
+    L.polyline(h.pts.map(p => [p.lat,p.lon]), {color:'#8a8a82', weight:2, dashArray:'1 6', lineCap:'round'}).addTo(L_hist).bindTooltip(h.name);
+    h.pts.forEach(p => L.circleMarker([p.lat,p.lon],{radius:2.5,color:'#8a8a82',fillOpacity:1}).bindTooltip(`${h.name}<br>${fmtTW(p.t)}`).addTo(L_hist));
+  });
+}
+function drawTime(){
+  const t = S.H[S.sliderI];
+  $('#tLabel').textContent = fmtTW(t, true) + ' 台灣';
+  if(!MAP) return;
+  L_rings.clearLayers(); L_aps.clearLayers();
+  const c = trackAt(primaryTrack(), t);
+  if(c){
+    if(c.prob) L.circle([c.lat,c.lon], {radius:c.prob*1000, color:'#6f7068', weight:1.2, dashArray:'4 5', fill:false}).addTo(L_rings).bindTooltip(`中心可能位置（70% 機率圓）${Math.round(c.prob)} km`);
+    L.circle([c.lat,c.lon], {radius:c.r7*1000, color:'#7E8F35', weight:1.5, fillColor:'#D6EF5C', fillOpacity:.22}).addTo(L_rings).bindTooltip(`七級風 ${Math.round(c.r7)} km`);
+    L.circle([c.lat,c.lon], {radius:c.r10*1000, color:'#E5484D', weight:1.5, fillColor:'#E5484D', fillOpacity:.18}).addTo(L_rings).bindTooltip(`十級風 ${Math.round(c.r10)} km`);
+    L.marker([c.lat,c.lon], {icon: L.divIcon({className:'', html:'<div style="width:22px;height:22px;border-radius:50%;background:#151515;border:3px solid #C7F034;box-shadow:0 0 0 4px rgba(199,240,52,.35)"></div>', iconSize:[22,22], iconAnchor:[11,11]})})
+      .bindTooltip(`${S.tcName}<br>${fmtTW(t,true)}<br>${c.lat.toFixed(1)}N ${c.lon.toFixed(1)}E${c.v!=null?'<br>約 '+Math.round(c.v)+' kt':''}`).addTo(L_rings);
+  }
+  S.airports.filter(a => a.on).forEach(a => {
+    const r = risk(a, t);
+    const col = r.lv==null ? '#cfcfcf' : LVCOL[r.lv];
+    const m = L.circleMarker([a.lat,a.lon], {radius:7, color:'#151515', weight:1.5, fillColor:col, fillOpacity:1}).addTo(L_aps);
+    const eastNb = S.airports.some(b => b.on && b !== a && b.lon > a.lon && distKm(a.lat,a.lon,b.lat,b.lon) < 80);
+    m.bindTooltip(a.code, {permanent:true, direction: eastNb ? 'left' : 'right', className:'ap-label', offset: eastNb ? [-6,0] : [6,0]});
+    m.bindPopup(apPopup(a, r, t));
+  });
+}
+function apPopup(a, r, t){
+  const w = r.w;
+  return `<b>${esc(a.code)} ${esc(a.name)}</b><br>${fmtTW(t,true)}（當地 ${fmtLocal(t,a.tz)}）<br>
+  ${w ? `風（${w.src}）${w.dir==null?'VRB':dirTxt(w.dir)+' '+Math.round(w.dir)+'°'} ${w.spd.toFixed(0)}kt 陣風 ${w.gust.toFixed(0)}kt<br>` : '無風場資料<br>'}
+  ${r.rw ? `最佳跑道 ${r.rw.name}：側風 ${r.rw.xw.toFixed(0)}kt、順風 ${r.rw.tw.toFixed(0)}kt<br>` : ''}
+  ${r.tl.d!=null ? `距颱風中心 ${Math.round(r.tl.d)} km<br>` : ''}
+  等級：${r.lv==null?'—':LVTXT[r.lv]}${r.why.length?'（'+esc(r.why.join('、'))+'）':''}`;
+}
+
+/* ================= 各區塊渲染 ================= */
+function renderHero(){
+  $('#tcTitle').textContent = S.tcName + '　航班影響';
+  const tr = primaryTrack(); const now = Date.now();
+  const c = trackAt(tr, now) || (tr && tr.pts.length ? fillR(tr.pts.reduce((a,b) => Math.abs(b.t-now) < Math.abs(a.t-now) ? b : a)) : null);
+  const tpe = S.airports.find(a => a.code==='TPE');
+  const cp = tpe ? cpa(tr, tpe) : null;
+  const L_ = limits();
+  $('#heroSub').innerHTML = `路徑：${esc(srcText())}${tafCount() ? '　·　TAF '+tafCount()+' 個機場' : ''}　·　風場 ${S.wxAt ? (S.wxModel||'')+' '+fmtTW(S.wxAt)+' 更新' : (S.wxErr ? esc(S.wxErr) : '載入中')}　·　${esc(S.acSel)} 側風限制 ${L_.xw}kt${S.rwyCond==='wet'?'（濕跑道）':''}`;
+  const stat = (k, v, u='') => `<div class="stat"><div class="k">${k}</div><div class="v num">${v}<small>${u}</small></div></div>`;
+  let h = '';
+  if(c){ h += stat('目前位置（推估）', `${c.lat.toFixed(1)}°N ${c.lon.toFixed(1)}°E`); if(c.v!=null) h += stat('最大風速', Math.round(c.v), 'kt'); h += stat('七級／十級半徑', `${Math.round(c.r7)}/${Math.round(c.r10)}`, 'km'); }
+  else h += stat('目前位置', '無路徑資料');
+  if(cp){ h += stat('最接近桃園', Math.round(cp.d), 'km'); h += stat('最接近時間', fmtTW(cp.t, true)); }
+  // 最高風險航點
+  let worst = null;
+  S.airports.filter(a=>a.on).forEach(a => { S.H.forEach(t => { const r = risk(a,t); if(r.lv!=null && (!worst || r.lv > worst.lv)) worst = {lv:r.lv, a, t}; }); });
+  if(worst && worst.lv >= 2) h += stat('首個高等級航點', `${worst.a.code}`, ' '+LVTXT[worst.lv]);
+  $('#heroStats').innerHTML = h;
+}
+function renderWarn(){
+  const W = S.warn;
+  const chip = (lab, key, opts) => `<div class="wchip ${W[key] && W[key]!=='無' && W[key]!=='0' ? 'on':''}">${lab}<select data-w="${key}">${opts.map(o => `<option ${String(W[key])===String(o)?'selected':''}>${o}</option>`).join('')}</select></div>`;
+  $('#warnbar').innerHTML =
+    chip('氣象署', 'cwa', ['無','海上警報','海上陸上警報','解除']) +
+    chip('JMA 沖繩', 'jma', ['無','注意報','警報','特別警報']) +
+    chip('PAGASA 訊號', 'pagasa', ['0','1','2','3','4','5']) +
+    `<div class="wchip">備註<input type="text" data-w="note" value="${esc(W.note)}" style="border:none;background:#fff;padding:4px 10px;width:200px"></div>`;
+  $$('#warnbar [data-w]').forEach(el => el.addEventListener('change', e => { S.warn[el.dataset.w] = el.value; store.set('warn', S.warn); renderWarn(); }));
+}
+function renderCPA(){
+  const tr = primaryTrack();
+  const rows = S.airports.filter(a => a.on).map(a => ({a, c: cpa(tr, a)})).filter(x => x.c).sort((x,y) => x.c.d - y.c.d).slice(0, 18);
+  if(!rows.length){ $('#cpaTbl').innerHTML = '<tr><td class="muted">主路徑沒有足夠的點（至少 2 點）。</td></tr>'; return; }
+  $('#cpaTbl').innerHTML = `<tr><th>航點</th><th>最近距離</th><th>時間</th><th>七級風圈</th></tr>` + rows.map(({a,c}) => {
+    const lv = c.d <= c.c.r10 ? 3 : c.d <= c.c.r7 ? 2 : c.d <= c.c.r7 + S.thr.ringBuf ? 1 : 0;
+    return `<tr><td><b>${a.code}</b> <span class="muted small">${esc(a.name)}</span></td><td><span class="pill lv${lv}">${Math.round(c.d)} km</span></td><td class="num">${fmtTW(c.t,true)}</td><td class="small">${c.enter ? fmtTW(c.enter)+' → '+fmtTW(c.exit) : '<span class="muted">不進入</span>'}</td></tr>`;
+  }).join('');
+}
+function renderTimeline(){
+  $('#focusKmLbl').textContent = S.thr.focusKm;
+  const focus = $('#tlFocus').checked; const tr = primaryTrack();
+  let rows = S.airports.filter(a => a.on).map(a => {
+    const lv = S.H.map(t => risk(a, t).lv);
+    const mx = Math.max(-1, ...lv.map(x => x ?? -1));
+    const c = cpa(tr, a);
+    return {a, lv, mx, cd: c ? c.d : Infinity};
+  });
+  if(focus) rows = rows.filter(r => r.mx >= 1 || r.cd <= S.thr.focusKm);
+  rows.sort((x,y) => (y.mx - x.mx) || (x.cd - y.cd));
+  if(!rows.length){ $('#timeline').innerHTML = '<div class="muted small">沒有符合條件的航點。</div>'; return; }
+  const cols = S.H.length;
+  let h = `<div class="tl-grid" style="grid-template-columns:130px repeat(${cols}, minmax(7px,1fr))"><div class="tl-head"></div>`;
+  S.H.forEach((t,i) => { const p = twParts(t); h += `<div class="tl-head">${p.h===0 ? `${p.m}/${p.d}(${WK[p.wd]})` : (p.h%6===0 && cols<=121 ? '' : '')}</div>`; });
+  rows.forEach(r => {
+    h += `<div class="tl-name" data-ap="${r.a.code}">${r.a.code} <small>${esc(r.a.name)}</small></div>`;
+    r.lv.forEach((lv,i) => { const p = twParts(S.H[i]); h += `<div class="tl-cell ${p.h===0?'day':''} ${i===S.sliderI?'tl-now':''}" style="background:${lv==null?'#ddd':LVCOL[lv]}" data-i="${i}" title="${r.a.code} ${fmtTW(S.H[i],true)} ${lv==null?'無資料':LVTXT[lv]}"></div>`; });
+  });
+  h += '</div>';
+  $('#timeline').innerHTML = h;
+  $$('#timeline .tl-cell').forEach(el => el.addEventListener('click', () => { setSlider(+el.dataset.i); showTab('map'); }));
+  $$('#timeline .tl-name').forEach(el => el.addEventListener('click', () => { $('#xwAp').value = el.dataset.ap; renderXW(); $('#xwCard').scrollIntoView({behavior:'smooth'}); }));
+  $('#tlMsg').textContent = S.wxErr || (S.wxAt ? '' : '風場資料載入中，目前只顯示暴風圈距離。');
+}
+function renderXWSelect(){
+  const sel = $('#xwAp'); const cur = sel.value || 'TPE';
+  sel.innerHTML = S.airports.filter(a => a.on).map(a => `<option value="${a.code}">${a.code} ${esc(a.name)}</option>`).join('');
+  sel.value = S.airports.some(a => a.code===cur && a.on) ? cur : (S.airports.find(a=>a.on)||{}).code;
+}
+function renderXW(){
+  const a = S.airports.find(x => x.code === $('#xwAp').value); if(!a) return;
+  const step = +$('#xwStep').value; const L_ = limits();
+  $('#xwLim').textContent = `${S.acSel} 側風上限 ${L_.xw}kt、順風上限 ${L_.tw}kt　·　跑道 ${parseRwys(a.rwys).map(r => r.ends.join('/')).join('、')}　·　時區 ${a.tz}`;
+  const data = S.H.map(t => ({t, r: risk(a, t)}));
+  // 圖
+  const W = 1000, Hh = 200, pad = 30;
+  const vals = data.map(d => d.r.w ? Math.max(d.r.w.gust||0, d.r.rw ? d.r.rw.xw : 0) : 0);
+  const maxY = Math.max(L_.xw*1.3, ...vals, 20);
+  const x = i => pad + (W-2*pad) * i/(data.length-1), y = v => Hh - pad - (Hh-2*pad) * v/maxY;
+  const line = (f, col, dash='') => { let p=''; data.forEach((d,i) => { const v = f(d); if(v==null) return; p += (p?'L':'M') + x(i).toFixed(1)+','+y(v).toFixed(1); }); return `<path d="${p}" fill="none" stroke="${col}" stroke-width="2" ${dash?`stroke-dasharray="${dash}"`:''}/>`; };
+  let svg = `<svg viewBox="0 0 ${W} ${Hh}" style="width:100%;height:auto;display:block;margin-bottom:12px">`;
+  data.forEach((d,i) => { if(d.r.lv>=2) svg += `<rect x="${x(i)-4}" y="${pad}" width="8" height="${Hh-2*pad}" fill="${LVCOL[d.r.lv]}" opacity=".25"/>`; });
+  svg += `<line x1="${pad}" x2="${W-pad}" y1="${y(L_.xw)}" y2="${y(L_.xw)}" stroke="#E5484D" stroke-dasharray="6 5"/><text x="${W-pad}" y="${y(L_.xw)-5}" text-anchor="end" font-size="11" fill="#E5484D">側風上限 ${L_.xw}kt</text>`;
+  data.forEach((d,i) => { const p = twParts(d.t); if(p.h===0) svg += `<line x1="${x(i)}" x2="${x(i)}" y1="${pad}" y2="${Hh-pad}" stroke="#ddd"/><text x="${x(i)+3}" y="${Hh-10}" font-size="11" fill="#6f7068">${p.m}/${p.d}(${WK[p.wd]})</text>`; });
+  svg += line(d => d.r.w ? d.r.w.gust : null, '#B9B9B0', '3 4') + line(d => d.r.rw ? d.r.rw.xw : null, '#151515');
+  svg += `<text x="${pad}" y="16" font-size="11" fill="#151515">— 最佳跑道側風（陣風）</text><text x="${pad+190}" y="16" font-size="11" fill="#8a8a82">- - 陣風</text></svg>`;
+  $('#xwChart').innerHTML = svg;
+  $('#xwTbl').innerHTML = `<tr><th>台灣時間</th><th>當地</th><th>風向</th><th>風速</th><th>陣風</th><th>最佳跑道</th><th>側風</th><th>順風</th><th>距颱風</th><th>來源</th><th>等級</th></tr>` +
+    data.filter((d,i) => i % step === 0).map(d => {
+      const r = d.r, w = r.w;
+      return `<tr><td class="num">${fmtTW(d.t,true)}</td><td class="num muted">${fmtLocal(d.t,a.tz)}</td>
+      <td>${w ? (w.dir==null ? 'VRB' : dirTxt(w.dir)+' '+Math.round(w.dir)+'°') : '—'}</td><td class="num">${w ? w.spd.toFixed(0) : '—'}</td><td class="num">${w ? w.gust.toFixed(0) : '—'}</td>
+      <td>${r.rw ? r.rw.name : '—'}</td><td class="num"><b style="font-weight:600;color:${r.rw && r.rw.xw > L_.xw ? '#E5484D':'inherit'}">${r.rw ? r.rw.xw.toFixed(0) : '—'}</b></td><td class="num">${r.rw ? r.rw.tw.toFixed(0) : '—'}</td>
+      <td class="num">${r.tl.d!=null ? Math.round(r.tl.d)+' km' : '—'}</td><td class="small">${w ? (w.src==='TAF' ? '<b style="font-weight:600">TAF</b>' : '<span class="muted">'+esc(w.src)+'</span>') : '—'}</td><td>${lvPill(r.lv)}</td></tr>`;
+    }).join('');
+}
+
+/* ================= 航班 ================= */
+function parseSchedule(text, defDate){
+  const codes = new Set(S.airports.map(a => a.code));
+  const out = [];
+  String(text||'').split(/\n/).forEach(raw => {
+    let line = raw.trim(); if(!line || line.startsWith('#')) return;
+    let y, m, d;
+    let dm = line.match(/(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/);
+    if(dm){ [y,m,d] = dm.slice(1,4).map(Number); line = line.replace(dm[0], ' '); }
+    else {
+      dm = line.match(/(?:^|\s)(\d{1,2})\/(\d{1,2})(?=\s)/);
+      if(dm){ m = +dm[1]; d = +dm[2]; y = defDate.y; line = line.replace(dm[0], ' '); }
+      else { y = defDate.y; m = defDate.m; d = defDate.d; }
+    }
+    const fm = line.match(/\b([A-Z]{2}|[A-Z]\d|\d[A-Z])\s?(\d{1,4}[A-Z]?)\b/);
+    let flt = '';
+    if(fm && !codes.has(fm[0])){ flt = fm[1]+fm[2]; line = line.replace(fm[0], ' '); }
+    const aps = (line.match(/\b[A-Z]{3}\b/g) || []).filter(c => codes.has(c));
+    line = line.replace(/\b[A-Z]{3}\b/g, ' ');
+    const tm = [...line.matchAll(/(\d{1,2}):?(\d{2})(\s*\(?\+1\)?)?/g)].filter(x => +x[1] < 24 && +x[2] < 60);
+    if(aps.length < 2 || tm.length < 2){ out.push({raw, err: aps.length<2 ? '找不到兩個已知航點代碼' : '找不到兩個時間'}); return; }
+    const dep = S.airports.find(a => a.code===aps[0]), arr = S.airports.find(a => a.code===aps[1]);
+    const std = localToUtc(y,m,d,+tm[0][1],+tm[0][2],dep.tz);
+    let sta = localToUtc(y,m,d,+tm[1][1],+tm[1][2],arr.tz);
+    if(tm[1][3] && /\+1/.test(tm[1][3])) sta += 24*HR;
+    while(sta <= std) sta += 24*HR;
+    out.push({raw, flt, dep, arr, std, sta});
+  });
+  return out;
+}
+function routeLevel(dep, arr, std, sta){
+  const tr = primaryTrack(); let best = {lv:0, d:Infinity, t:null};
+  for(let k=0;k<=24;k++){
+    const f = k/24, t = std + (sta-std)*f;
+    const [la, lo] = gcInterp(dep.lat, dep.lon, arr.lat, arr.lon, f);
+    const c = trackAt(tr, t); if(!c) continue;
+    const d = distKm(la, lo, c.lat, c.lon);
+    let lv = d <= c.r10 ? 3 : d <= c.r7 ? 2 : d <= c.r7 + S.thr.ringBuf ? 1 : 0;
+    if(d < best.d) best = {lv: Math.max(best.lv, lv), d, t};
+    else best.lv = Math.max(best.lv, lv);
+  }
+  return best;
+}
+function evalFlight(f, shift=0){
+  const std = f.std + shift, sta = f.sta + shift;
+  const dr = maxRiskWindow(f.dep, std, 1), ar = maxRiskWindow(f.arr, sta, 1), rr = routeLevel(f.dep, f.arr, std, sta);
+  return {dr, ar, rr, lv: Math.max(dr.lv ?? 0, ar.lv ?? 0, rr.lv)};
+}
+function renderFlights(){
+  const dv = $('#schedDate').value.split('-').map(Number);
+  const list = parseSchedule($('#schedText').value, {y:dv[0], m:dv[1], d:dv[2]});
+  store.set('sched', $('#schedText').value);
+  if(!list.length){ $('#flightTbl').innerHTML = ''; return; }
+  $('#flightTbl').innerHTML = `<tr><th>航班</th><th>航段</th><th>出發（當地／台灣）</th><th>抵達（當地／台灣）</th><th>出發端</th><th>抵達端</th><th>航路</th><th>建議</th><th>建議時窗</th></tr>` +
+    list.map(f => {
+      if(f.err) return `<tr><td colspan="9" class="small"><span class="pill lv2">無法解析</span> <span class="mono">${esc(f.raw)}</span>　${esc(f.err)}</td></tr>`;
+      const e = evalFlight(f);
+      const adv = [];
+      if((e.dr.lv??0) >= 3) adv.push('出發端高風險：評估延後／取消');
+      else if((e.dr.lv??0) === 2) adv.push('出發端警戒：留意側風、可能延誤');
+      if((e.ar.lv??0) >= 3) adv.push('抵達端高風險：評估延後、備降與加油');
+      else if((e.ar.lv??0) === 2) adv.push('抵達端警戒：準備備降方案');
+      if(e.rr.lv >= 2) adv.push('航路接近暴風圈：評估繞飛、增加油量');
+      else if(e.rr.lv === 1) adv.push('航路靠近外圍：留意亂流');
+      let win = '—';
+      if(e.lv >= 2){
+        for(let k=1;k<=12;k++){
+          for(const s of [k, -k]){
+            const ee = evalFlight(f, s*HR);
+            if(ee.lv <= 1 && (ee.dr.lv!=null)){ win = `${s>0?'延後':'提前'} ${Math.abs(s)}h → ${fmtLocal(f.std+s*HR, f.dep.tz)} 起飛`; k = 99; break; }
+          }
+        }
+        if(win === '—') win = '前後 12 小時內沒有低風險時窗';
+      }
+      const cell = r => `${lvPill(r.lv)}<div class="small muted">${esc((r.why||[]).join('、'))}</div>`;
+      return `<tr><td><b>${esc(f.flt||'—')}</b></td><td>${f.dep.code}→${f.arr.code}</td>
+      <td class="num">${fmtLocal(f.std,f.dep.tz)}<div class="small muted">${fmtTW(f.std)}</div></td>
+      <td class="num">${fmtLocal(f.sta,f.arr.tz)}<div class="small muted">${fmtTW(f.sta)}</div></td>
+      <td>${cell(e.dr)}</td><td>${cell(e.ar)}</td>
+      <td>${lvPill(e.rr.lv)}<div class="small muted">${isFinite(e.rr.d) ? '最近 '+Math.round(e.rr.d)+' km' : '無路徑資料'}</div></td>
+      <td class="small">${adv.length ? esc(adv.join('；')) : '<span class="muted">正常執行</span>'}</td><td class="small">${esc(win)}</td></tr>`;
+    }).join('');
+}
+
+/* ================= METAR / TAF ================= */
+async function fetchMetar(){
+  const ids = $('#metarIds').value.split(/[,\s]+/).map(s => s.trim().toUpperCase()).filter(Boolean);
+  if(!ids.length) return;
+  $('#metarMsg').className = 'msg'; $('#metarMsg').textContent = '抓取中…';
+  try{
+    const [m, t] = await Promise.all([
+      fetch(`https://aviationweather.gov/api/data/metar?ids=${ids.join(',')}&format=json`).then(r => r.ok ? r.json() : Promise.reject(new Error('METAR HTTP '+r.status))),
+      fetch(`https://aviationweather.gov/api/data/taf?ids=${ids.join(',')}&format=json`).then(r => r.ok ? r.json() : []).catch(() => [])
+    ]);
+    S.metar = {m: Array.isArray(m)?m:[], t: Array.isArray(t)?t:[], at: Date.now(), ids};
+    $('#metarMsg').className = 'msg ok'; $('#metarMsg').textContent = '更新於 ' + fmtTW(Date.now());
+  }catch(e){
+    $('#metarMsg').className = 'msg err';
+    $('#metarMsg').textContent = '抓取失敗（' + e.message + '）。若是瀏覽器阻擋跨網域，可改在 aviationweather.gov 查詢。';
+    S.metar = null;
+  }
+  renderMetar();
+}
+function renderMetar(){
+  if(!S.metar){ $('#metarGrid').innerHTML = ''; return; }
+  const L_ = limits();
+  $('#metarGrid').innerHTML = S.metar.ids.map(id => {
+    const m = S.metar.m.find(x => (x.icaoId||x.stationId) === id);
+    const t = S.metar.t.find(x => (x.icaoId||x.stationId) === id);
+    const ap = S.airports.find(a => a.icao === id);
+    let kv = '', cmp = '';
+    if(m){
+      const dir = typeof m.wdir === 'number' ? m.wdir : null, spd = +m.wspd || 0, gst = +m.wgst || 0;
+      const rw = ap && dir!=null ? bestRunway(ap, dir, spd, gst) : null;
+      kv = `<div class="kv"><div>風<b class="num">${dir!=null?Math.round(dir)+'°':(m.wdir||'—')}</b></div><div>風速<b class="num">${spd}kt</b></div><div>陣風<b class="num">${gst||'—'}</b></div>${rw?`<div>${rw.name} 側風<b class="num" style="color:${rw.xw>L_.xw?'#E5484D':'inherit'}">${rw.xw.toFixed(0)}kt</b></div>`:''}</div>`;
+      if(ap){
+        const obsT = (m.obsTime ? m.obsTime*1000 : Date.parse(m.reportTime));
+        const w = wxAt(ap.code, Math.round(obsT/HR)*HR);
+        if(w){ const dg = Math.max(spd,gst) - Math.max(w.spd, w.gust); cmp = `<div class="msg">模式同時段：${Math.round(w.dir)}° ${w.spd.toFixed(0)}kt 陣風 ${w.gust.toFixed(0)}kt　→ 實測${dg>=0?'比模式強':'比模式弱'} <b>${Math.abs(dg).toFixed(0)}kt</b>${dg>=8?'，模式可能低估，判斷宜保守':''}</div>`; }
+      }
+    }
+    return `<div class="metar"><b>${id}</b> ${ap?esc(ap.name):''}${kv}
+      <div class="raw mono">${m ? esc(m.rawOb||m.rawText||'') : '無 METAR'}</div>
+      <div class="raw mono">${t ? esc(t.rawTAF||t.rawText||'') : '無 TAF'}</div>${cmp}</div>`;
+  }).join('');
+}
+
+/* ================= 路徑資料頁 ================= */
+function renderSources(){
+  const sel = $('#primarySel');
+  sel.innerHTML = Object.entries(S.tracks).map(([k,tr]) => `<option value="${k}" ${k===primaryKey()?'selected':''}>${esc(tr.label)}${tr.pts.length?'':'（無資料）'}</option>`).join('');
+  $('#srcCards').innerHTML = Object.entries(S.tracks).map(([k,tr]) => {
+    let extra = '';
+    if(k==='CWA') extra = `<div class="row"><input type="password" id="cwaKey" placeholder="氣象署開放資料授權碼" value="${esc(S.cwaKey)}" style="flex:1"><input type="text" id="cwaWant" placeholder="颱風英文名（選填）" value="CHAMPI" style="width:150px"><button class="btn" data-fetch="CWA">抓取</button></div>`;
+    if(k==='JMA') extra = `<div class="row"><button class="btn" data-fetch="JMA">從 JMA 抓取</button><span class="small muted">若瀏覽器阻擋，請改貼上</span></div>`;
+    if(k==='JTWC') extra = `<div class="small muted" style="margin-bottom:6px">可直接貼上 JTWC 警報全文（WTPN31 PGTW），會自動辨識。</div>`;
+    return `<div class="src-card"><div class="src-head"><div><span class="swatch" style="background:${tr.color}"></span><b>${esc(tr.label)}</b> <span class="small muted">${tr.pts.length} 點</span></div>
+      <label class="small"><input type="radio" name="prim" value="${k}" ${k===S.primary?'checked':''}> 設為主路徑</label></div>
+      ${extra}
+      <div class="row"><input type="text" data-issued="${k}" placeholder="發布時間／備註" value="${esc(tr.issued)}" style="flex:1"></div>
+      <textarea data-src="${k}" placeholder="2026-10-22 20:00, 20.9, 125.5, 100, 250, 100">${esc(ptsToText(tr.pts))}</textarea>
+      <div class="row" style="margin-top:8px;margin-bottom:0"><button class="btn ghost" data-apply="${k}">套用</button><button class="btn ghost" data-clear="${k}">清除</button><span class="msg" id="msg-${k}"></span></div></div>`;
+  }).join('');
+  $$('#srcCards [name=prim]').forEach(el => el.addEventListener('change', () => setPrimary(el.value)));
+  $$('#srcCards [data-apply]').forEach(el => el.addEventListener('click', () => applySource(el.dataset.apply)));
+  $$('#srcCards [data-clear]').forEach(el => el.addEventListener('click', () => { const k = el.dataset.clear; S.tracks[k].pts = []; S.tracks[k].issued=''; saveTracks(); renderAll(); }));
+  $$('#srcCards [data-issued]').forEach(el => el.addEventListener('change', () => { S.tracks[el.dataset.issued].issued = el.value; saveTracks(); renderHero(); }));
+  $$('#srcCards [data-fetch]').forEach(el => el.addEventListener('click', () => el.dataset.fetch==='CWA' ? fetchCWA() : fetchJMA()));
+}
+function srcMsg(k, txt, cls){ const el = $('#msg-'+k); if(el){ el.className = 'msg '+(cls||''); el.textContent = txt; } }
+function applySource(k){
+  const txt = $(`#srcCards [data-src="${k}"]`).value;
+  const pts = /KT WINDS|\d{6}Z\s*-{2,}/.test(txt) ? parseJTWC(txt) : parseGeneric(txt);
+  S.tracks[k].pts = pts; saveTracks();
+  renderAll();
+  srcMsg(k, `已套用 ${pts.length} 點`, pts.length ? 'ok' : 'err');
+}
+function setPrimary(k){ S.primary = k; store.set('primary', k); renderAll(); }
+function cwaMsg(txt, cls){ $$('.cwaMsg').forEach(el => { el.className = 'msg cwaMsg '+(cls||''); el.textContent = txt; }); }
+async function saveKeyAndFetch(key){
+  S.cwaKey = (key||'').trim(); store.set('cwaKey', S.cwaKey);
+  const ks = $('#cwaKeySet'); if(ks) ks.value = S.cwaKey;
+  await fetchCWA();
+}
+async function fetchCWA(){
+  const key = S.cwaKey;
+  if(!key){ cwaMsg('請先輸入授權碼','err'); return; }
+  cwaMsg('抓取中…');
+  try{
+    const r = await fetch(`https://opendata.cwa.gov.tw/api/v1/rest/datastore/W-C0034-005?Authorization=${encodeURIComponent(key)}&format=JSON`);
+    if(r.status === 401 || r.status === 403) throw new Error('授權碼無效，請重新複製');
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const want = (S.tcName.match(/[A-Za-z][A-Za-z-]+/) || [''])[0];
+    const res = parseCWA(await r.json(), want);
+    if(res.pts.length < 2){ renderAll(); cwaMsg(`氣象署目前沒有可用的颱風路徑（${res.all.join('、')||'無'}）。`, 'err'); return; }
+    S.tracks.CWA.pts = res.pts; S.tracks.CWA.issued = `${fmtTW(Date.now())} 更新`; saveTracks();
+    if(res.name){ S.tcName = res.name; store.set('tcName', S.tcName); }
+    renderAll(); cwaMsg(`已取得 ${res.name} 最新路徑（${res.pts.length} 點）`, 'ok');
+  }catch(e){ renderAll(); cwaMsg('抓取失敗：'+e.message, 'err'); }
+}
+function renderDataCard(){
+  const el = $('#dataCard'); if(!el) return;
+  if(!isDemo()){ el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="datacard demo"><span class="key">!</span><div style="flex:1;min-width:220px"><div class="t">目前是示範路徑，不是最新資料</div>
+    <div class="small muted">日本氣象廳抓取失敗：${esc(S.jmaErr || '尚未抓取')}。可以按上方「更新資料」重試，或貼上中央氣象署授權碼改用氣象署路徑（到 opendata.cwa.gov.tw 免費註冊，登入後點「取得授權碼」）。</div></div>
+    <input type="password" id="cwaKeyMain" placeholder="氣象署授權碼" value="${esc(S.cwaKey)}" style="min-width:220px"><button class="btn" id="cwaKeyMainBtn">抓取</button>
+    <div class="msg cwaMsg" style="width:100%"></div></div>`;
+  $('#cwaKeyMainBtn').addEventListener('click', () => saveKeyAndFetch($('#cwaKeyMain').value));
+}
+const JMA_BASE = 'https://www.jma.go.jp/bosai/typhoon/data/';
+async function getJSON(u){ const r = await fetch(u, {cache:'no-store'}); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
+async function fetchJMA(){
+  S.jmaErr = '';
+  try{
+    const list = await getJSON(JMA_BASE + 'targetTc.json');
+    const ids = (Array.isArray(list) ? list : []).map(x => x && x.tropicalCyclone).filter(Boolean);
+    if(!ids.length) throw new Error('日本氣象廳目前沒有颱風');
+    const want = (S.tcName.match(/[A-Za-z][A-Za-z-]+/) || [''])[0].toUpperCase();
+    const tpe = S.airports.find(a => a.code === 'TPE') || {lat:25.08, lon:121.23};
+    let best = null;
+    for(const id of ids){
+      let res; try{ res = parseJMA(await getJSON(`${JMA_BASE}${id}/specifications.json`)); }catch(e){ continue; }
+      if(res.pts.length < 2) continue;
+      res.id = id; res.d = Math.min(...res.pts.map(p => distKm(tpe.lat, tpe.lon, p.lat, p.lon)));
+      if(want && res.name.toUpperCase() === want){ best = res; break; }
+      if(!best || res.d < best.d) best = res;
+    }
+    if(!best) throw new Error('沒有可用的預報點');
+    let past = [];
+    try{
+      const fc = await getJSON(`${JMA_BASE}${best.id}/forecast.json`);
+      const a = (Array.isArray(fc) ? fc : []).find(x => x && x.track);
+      if(a) past = [].concat(a.track.preTyphoon || [], a.track.typhoon || []).filter(q => Array.isArray(q) && q.length >= 2);
+    }catch(e){}
+    Object.assign(S.tracks.JMA, {pts: best.pts, past, issued: isFinite(best.issue) ? fmtTW(best.issue)+' 發布' : fmtTW(Date.now())+' 抓取'});
+    saveTracks();
+    if(best.name && !S.tcName.toUpperCase().includes(best.name.toUpperCase())){ S.tcName = best.name.toUpperCase(); store.set('tcName', S.tcName); }
+    return true;
+  }catch(e){
+    S.jmaErr = /Failed to fetch|NetworkError|Load failed/i.test(e.message) ? '瀏覽器擋住了連線（跨網域限制）' : e.message;
+    return false;
+  }
+}
+async function fetchTracks(){
+  await fetchJMA();
+  if(S.cwaKey) await fetchCWA().catch(()=>{});
+}
+function renderCompare(){
+  const ks = Object.keys(S.tracks).filter(k => S.tracks[k].pts.length >= 2);
+  if(!ks.length){ $('#cmpTbl').innerHTML = '<tr><td class="muted">至少需要一個來源有 2 點以上。</td></tr>'; $('#cmpCpa').innerHTML=''; return; }
+  const offs = [0, 24, 48, 72, 96, 120];
+  $('#cmpTbl').innerHTML = `<tr><th>時間</th>${ks.map(k => `<th><span class="swatch" style="background:${S.tracks[k].color}"></span>${esc(S.tracks[k].label)}</th>`).join('')}<th>最大差距</th></tr>` +
+    offs.map(o => {
+      const t = S.t0 + o*HR; const ps = ks.map(k => trackAt(S.tracks[k], t));
+      let spread = 0; ps.forEach((a,i) => ps.forEach((b,j) => { if(a && b && j>i) spread = Math.max(spread, distKm(a.lat,a.lon,b.lat,b.lon)); }));
+      const n = ps.filter(Boolean).length;
+      return `<tr><td class="num">+${o}h<div class="small muted">${fmtTW(t,true)}</div></td>${ps.map(p => `<td class="num small">${p ? `${p.lat.toFixed(1)}N ${p.lon.toFixed(1)}E${p.v!=null?'<br>'+Math.round(p.v)+'kt':''}` : '—'}</td>`).join('')}
+      <td>${n>=2 ? `<span class="pill ${spread>300?'lv3':spread>150?'lv2':spread>80?'lv1':'lv0'}">${Math.round(spread)} km</span>` : '—'}</td></tr>`;
+    }).join('');
+  const keyAps = ['TPE','TSA','KHH','OKA','FUK','MNL'].map(c => S.airports.find(a => a.code===c)).filter(Boolean);
+  $('#cmpCpa').innerHTML = `<tr><th>最近距離</th>${ks.map(k => `<th>${esc(S.tracks[k].label)}</th>`).join('')}</tr>` +
+    keyAps.map(a => `<tr><td><b>${a.code}</b></td>${ks.map(k => { const c = cpa(S.tracks[k], a); return `<td class="small num">${c ? Math.round(c.d)+' km<br><span class="muted">'+fmtTW(c.t)+'</span>' : '—'}</td>`; }).join('')}</tr>`).join('');
+}
+function renderHistory(){
+  const tpe = S.airports.find(a => a.code==='TPE');
+  $('#histList').innerHTML = S.history.map((h,i) => {
+    let near = '';
+    if(tpe && h.pts.length){ const d = Math.min(...h.pts.map(p => distKm(tpe.lat,tpe.lon,p.lat,p.lon))); near = `距桃園最近約 ${Math.round(d)} km（以資料點計）`; }
+    return `<div class="row" style="margin-bottom:6px"><label><input type="checkbox" data-hon="${i}" ${h.on?'checked':''}> <b>${esc(h.name)}</b></label><span class="small muted">${h.pts.length} 點 · ${near}</span><button class="btn ghost" data-hdel="${i}" style="padding:4px 10px">刪除</button></div>`;
+  }).join('') || '<div class="muted small">尚無歷史路徑</div>';
+  $$('[data-hon]').forEach(el => el.addEventListener('change', () => { S.history[+el.dataset.hon].on = el.checked; store.set('history', S.history); drawTracks(); }));
+  $$('[data-hdel]').forEach(el => el.addEventListener('click', () => { S.history.splice(+el.dataset.hdel,1); store.set('history', S.history); renderHistory(); drawTracks(); }));
+}
+
+/* ================= 簡報 ================= */
+function genBrief(){
+  const tr = primaryTrack(); const now = Date.now(); const L_ = limits();
+  const lines = [];
+  lines.push(`【${S.tcName} 航班影響摘要】${fmtTW(now,true)} 產出`);
+  lines.push(`路徑來源：${srcText()}`);
+  if(tafCount()) lines.push(`機場風：${Object.keys(S.taf).join('、')} 採用 TAF（取 TEMPO／PROB 最不利情況），其餘為模式預報。`);
+  const c = trackAt(tr, now);
+  if(c) lines.push(`目前推估位置 ${c.lat.toFixed(1)}N ${c.lon.toFixed(1)}E${c.v!=null?'，最大風速約 '+Math.round(c.v)+' kt':''}，七級風半徑 ${Math.round(c.r7)} km。`);
+  if(isDemo()) lines.push('※ 注意：目前使用示範路徑，非最新預報。');
+  lines.push('');
+  lines.push('■ 航點風險窗口（台灣時間）');
+  const rows = [];
+  S.airports.filter(a => a.on).forEach(a => {
+    let segs = [], cur = null;
+    S.H.forEach(t => { const lv = risk(a,t).lv ?? 0;
+      if(lv >= 2){ if(!cur) cur = {s:t, e:t, mx:lv}; else { cur.e = t; cur.mx = Math.max(cur.mx, lv); } }
+      else if(cur){ segs.push(cur); cur = null; } });
+    if(cur) segs.push(cur);
+    const cp = cpa(tr, a);
+    if(segs.length) rows.push({a, segs, cp, mx: Math.max(...segs.map(s=>s.mx))});
+  });
+  rows.sort((x,y) => x.segs[0].s - y.segs[0].s);
+  if(!rows.length) lines.push('・未來 120 小時沒有航點達「警戒」以上。');
+  rows.forEach(r => lines.push(`・${r.a.code} ${r.a.name}：${r.segs.map(s => `${fmtTW(s.s,true)}～${fmtTW(s.e+HR)} ${LVTXT[s.mx]}`).join('；')}${r.cp?`（最近 ${Math.round(r.cp.d)} km @ ${fmtTW(r.cp.t)}）`:''}`));
+  // 航班
+  const dv = $('#schedDate').value.split('-').map(Number);
+  const fl = parseSchedule($('#schedText').value, {y:dv[0], m:dv[1], d:dv[2]}).filter(f => !f.err);
+  const hit = fl.map(f => ({f, e: evalFlight(f)})).filter(x => x.e.lv >= 2);
+  if(fl.length){
+    lines.push(''); lines.push(`■ 受影響航班（${hit.length}/${fl.length} 班達警戒以上）`);
+    hit.forEach(({f,e}) => lines.push(`・${f.flt||''} ${f.dep.code}→${f.arr.code} ${fmtLocal(f.std,f.dep.tz)}：出發${LVTXT[e.dr.lv??0]}／抵達${LVTXT[e.ar.lv??0]}／航路${LVTXT[e.rr.lv]}`));
+  }
+  lines.push('');
+  lines.push(`■ 判斷基準：${S.acSel} 側風上限 ${L_.xw}kt${S.rwyCond==='wet'?'（濕跑道）':''}、順風 ${L_.tw}kt；無 TAF 的時段風場為 Open-Meteo 模式，颱風核心附近可能低估。實際以 METAR／TAF、公司 OCC 與簽派判斷為準。`);
+  $('#briefText').value = lines.join('\n');
+}
+
+/* ================= 設定頁 ================= */
+function renderSettings(){
+  $('#apTbl').innerHTML = `<tr><th>啟用</th><th>IATA</th><th>ICAO</th><th>名稱</th><th>緯度</th><th>經度</th><th>時區</th><th>跑道</th></tr>` +
+    S.airports.map((a,i) => `<tr data-i="${i}"><td><input type="checkbox" data-f="on" ${a.on?'checked':''}></td>
+      <td><input class="cell" data-f="code" value="${esc(a.code)}" style="width:62px"></td><td><input class="cell" data-f="icao" value="${esc(a.icao)}" style="width:72px"></td>
+      <td><input class="cell" data-f="name" value="${esc(a.name)}" style="width:80px"></td><td><input class="cell" data-f="lat" value="${a.lat}" style="width:84px"></td>
+      <td><input class="cell" data-f="lon" value="${a.lon}" style="width:94px"></td><td><input class="cell" data-f="tz" value="${esc(a.tz)}" style="width:150px"></td>
+      <td><input class="cell" data-f="rwys" value="${esc(a.rwys)}" style="width:220px"></td></tr>`).join('');
+  $('#acTbl').innerHTML = `<tr><th>機型</th><th>側風上限 kt</th><th>順風上限 kt</th></tr>` +
+    Object.entries(S.ac).map(([k,v]) => `<tr><td>${esc(k)}</td><td><input class="cell" type="number" data-ac="${esc(k)}" data-f="xw" value="${v.xw}"></td><td><input class="cell" type="number" data-ac="${esc(k)}" data-f="tw" value="${v.tw}"></td></tr>`).join('');
+  $$('#acTbl input').forEach(el => el.addEventListener('change', () => { S.ac[el.dataset.ac][el.dataset.f] = +el.value; store.set('ac', S.ac); renderAll(); }));
+  const T = S.thr; const lab = {wetFactor:'濕跑道側風折減係數', gust1:'注意：陣風 ≥ kt', gust2:'警戒：陣風 ≥ kt', gust3:'高風險：陣風 ≥ kt', sus3:'高風險：平均風 ≥ kt', ringBuf:'七級風圈外「注意」緩衝 km', focusKm:'時間軸顯示範圍 km', defR7:'預設七級風半徑 km', defR10:'預設十級風半徑 km'};
+  $('#thrTbl').innerHTML = Object.keys(lab).map(k => `<tr><td>${lab[k]}</td><td><input class="cell" type="number" step="any" data-thr="${k}" value="${T[k]}" style="width:100px"></td></tr>`).join('');
+  $('#tcNameIn').value = S.tcName;
+}
+function readAirportTable(){
+  return $$('#apTbl tr[data-i]').map(tr => {
+    const g = f => tr.querySelector(`[data-f="${f}"]`);
+    return {on:g('on').checked, code:g('code').value.trim().toUpperCase(), icao:g('icao').value.trim().toUpperCase(), name:g('name').value.trim(), lat:+g('lat').value, lon:+g('lon').value, tz:g('tz').value.trim(), rwys:g('rwys').value.trim()};
+  }).filter(a => a.code && isFinite(a.lat) && isFinite(a.lon));
+}
+
+/* ================= 介面串接 ================= */
+function setSlider(i){ S.sliderI = Math.max(0, Math.min(S.H.length-1, i)); $('#tSlider').value = S.sliderI; drawTime(); $$('#timeline .tl-cell').forEach(el => el.classList.toggle('tl-now', +el.dataset.i === S.sliderI)); }
+function showTab(name){
+  $$('.tab').forEach(t => t.classList.toggle('on', t.id === 'tab-'+name));
+  $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
+  if(name === 'map'){ initMap(); setTimeout(() => { MAP && MAP.invalidateSize(); drawTracks(); drawTime(); }, 30); if(!WINDY.loaded) renderWindy(); }
+  if(name === 'brief' && !$('#briefText').value) genBrief();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function renderAll(){
+  buildHours();
+  renderHero(); renderDataCard(); renderCPA(); renderTimeline(); renderXWSelect(); renderXW(); renderFlights();
+  drawTracks(); drawTime(); updateTafLink();
+}
+function defaultMetarIds(){
+  const tr = primaryTrack();
+  return S.airports.filter(a => a.on).map(a => ({a, c:cpa(tr,a)})).filter(x => x.c && x.c.d <= 900).sort((x,y) => x.c.d-y.c.d).map(x => x.a.icao).slice(0,8).concat(['RCTP','RCSS']).filter((v,i,arr) => arr.indexOf(v)===i).join(',');
+}
+
+function bind(){
+  $$('#nav button').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+  $('#tSlider').addEventListener('input', e => setSlider(+e.target.value));
+  let timer = null;
+  $('#playBtn').addEventListener('click', () => {
+    if(timer){ clearInterval(timer); timer = null; $('#playBtn').textContent = '▶'; return; }
+    $('#playBtn').textContent = '❚❚';
+    timer = setInterval(() => { setSlider(S.sliderI >= S.H.length-1 ? 0 : S.sliderI + 1); }, 250);
+  });
+  $('#acSel').innerHTML = Object.keys(S.ac).map(k => `<option ${k===S.acSel?'selected':''}>${esc(k)}</option>`).join('');
+  $('#acSel').addEventListener('change', e => { S.acSel = e.target.value; store.set('acSel', S.acSel); renderAll(); });
+  $('#rwyCond').value = S.rwyCond;
+  $('#rwyCond').addEventListener('change', e => { S.rwyCond = e.target.value; store.set('rwyCond', S.rwyCond); renderAll(); });
+  $('#refreshBtn').addEventListener('click', async () => { $('#refreshBtn').disabled = true; $('#refreshBtn').textContent = '更新中…'; await Promise.all([fetchWx(), fetchTracks()]); renderAll(); $('#refreshBtn').disabled = false; $('#refreshBtn').textContent = '更新資料'; });
+  $('#tlFocus').addEventListener('change', renderTimeline);
+  $('#xwAp').addEventListener('change', renderXW); $('#xwStep').addEventListener('change', renderXW);
+  const p = twParts(Date.now() + 24*HR); $('#schedDate').value = `${p.y}-${p2(p.m)}-${p2(p.d)}`;
+  $('#schedText').value = S.sched;
+  $('#schedRun').addEventListener('click', renderFlights);
+  $('#schedSample').addEventListener('click', () => {
+    const q = twParts(Date.now() + 4*24*HR); const d = `${q.y}-${p2(q.m)}-${p2(q.d)}`;
+    $('#schedText').value = [`${d} JX800 TPE NRT 08:20 12:40`, `${d} JX801 NRT TPE 14:00 17:00`, `${d} JX882 TPE OKA 10:00 12:30`, `${d} JX883 OKA TPE 13:40 14:20`, `${d} JX786 TPE MNL 07:30 09:50`, `${d} JX840 TPE FUK 09:00 12:15`, `${d} JX002 TPE LAX 23:40 19:40`].join('\n');
+    renderFlights();
+  });
+  $$('#windyCtl [data-wo]').forEach(b => b.addEventListener('click', () => { WINDY.overlay = b.dataset.wo; store.set('windyOverlay', WINDY.overlay); renderWindy(); }));
+  $$('#windyCtl [data-wc]').forEach(b => b.addEventListener('click', () => { WINDY.center = b.dataset.wc; renderWindy(); }));
+  $('#tafText').value = S.tafText;
+  $('#tafApply').addEventListener('click', () => applyTAF(true));
+  $('#tafClear').addEventListener('click', () => { $('#tafText').value = ''; applyTAF(true); });
+  $('#cwaKeySet').value = S.cwaKey;
+  $('#cwaKeySetBtn').addEventListener('click', () => saveKeyAndFetch($('#cwaKeySet').value));
+  $('#briefGen').addEventListener('click', genBrief);
+  $('#briefCopy').addEventListener('click', async () => {
+    try{ await navigator.clipboard.writeText($('#briefText').value); $('#briefMsg').className='msg ok'; $('#briefMsg').textContent='已複製'; }
+    catch(e){ $('#briefText').select(); document.execCommand && document.execCommand('copy'); $('#briefMsg').textContent='已選取，請手動複製'; }
+  });
+  $('#apAdd').addEventListener('click', () => { S.airports = readAirportTable(); S.airports.push({code:'', icao:'', name:'', lat:0, lon:0, tz:'Asia/Taipei', rwys:'', on:true}); renderSettings(); });
+  $('#apSave').addEventListener('click', async () => { S.airports = readAirportTable(); store.set('airports', S.airports); await fetchWx(); renderSettings(); renderAll(); });
+  $('#apReset').addEventListener('click', async () => { if(!confirm('還原預設航點？')) return; S.airports = clone(DEFAULT_AIRPORTS); store.set('airports', S.airports); await fetchWx(); renderSettings(); renderAll(); });
+  $('#thrSave').addEventListener('click', () => { $$('[data-thr]').forEach(el => S.thr[el.dataset.thr] = +el.value); store.set('thr', S.thr); renderAll(); });
+  $('#tcNameSave').addEventListener('click', () => { S.tcName = $('#tcNameIn').value.trim() || S.tcName; store.set('tcName', S.tcName); renderAll(); });
+}
+
+const WINDY = {overlay: store.get('windyOverlay','wind'), center:'tc', loaded:false};
+function windyCenter(){
+  if(WINDY.center === 'tw') return {lat:23.8, lon:121.0, zoom:6};
+  const c = trackAt(primaryTrack(), Date.now()) || (primaryTrack().pts[0]);
+  return c ? {lat:+(c.lat*0.6 + 24*0.4).toFixed(2), lon:+(c.lon*0.6 + 121.5*0.4).toFixed(2), zoom:5} : {lat:23.8, lon:124, zoom:5};
+}
+function renderWindy(){
+  const box = $('#windyBox'); if(!box) return;
+  const c = windyCenter(), tpe = S.airports.find(a => a.code==='TPE') || {lat:25.08, lon:121.23};
+  const q = `lat=${c.lat}&lon=${c.lon}&detailLat=${tpe.lat}&detailLon=${tpe.lon}&zoom=${c.zoom}&level=surface&overlay=${WINDY.overlay}&product=ecmwf&menu=&message=true&marker=&calendar=now&pressure=true&type=map&location=coordinates&detail=&metricWind=kt&metricTemp=%C2%B0C&radarRange=-1`;
+  box.innerHTML = `<iframe title="Windy" src="https://embed.windy.com/embed2.html?${q}" style="width:100%;height:100%;border:0" loading="lazy" allowfullscreen></iframe>`;
+  $('#windyOpen').href = `https://www.windy.com/?${WINDY.overlay},ecmwf,${c.lat},${c.lon},${c.zoom}`;
+  $$('#windyCtl [data-wo]').forEach(b => b.className = 'btn' + (b.dataset.wo === WINDY.overlay ? '' : ' ghost'));
+  WINDY.loaded = true;
+}
+function tafIds(){
+  const tr = primaryTrack();
+  return S.airports.filter(a => a.on && a.icao).map(a => ({a, c:cpa(tr,a)})).filter(x => x.c && x.c.d <= 1000).sort((x,y) => x.c.d - y.c.d).map(x => x.a.icao).concat(['RCTP','RCSS']).filter((v,i,arr) => arr.indexOf(v)===i).slice(0,10);
+}
+function updateTafLink(){ const el = $('#tafOpen'); if(el) el.href = 'https://aviationweather.gov/api/data/taf?ids=' + tafIds().join(','); }
+function applyTAF(user){
+  S.tafText = $('#tafText').value; store.set('tafText', S.tafText);
+  S.taf = parseTAF(S.tafText);
+  const ks = Object.keys(S.taf), el = $('#tafMsg');
+  if(el){
+    if(!S.tafText.trim()){ el.className = 'msg'; el.textContent = ''; }
+    else if(!ks.length){ el.className = 'msg err'; el.textContent = '沒有辨識到 TAF（需要像「RCTP 210500Z 2106/2212 …」的原文）'; }
+    else { el.className = 'msg ok'; el.textContent = '已套用：' + ks.map(k => `${k}（至 ${fmtTW(S.taf[k].to)}）`).join('、'); }
+  }
+  if(user) renderAll();
+}
+(async function main(){
+  bind(); renderSettings(); applyTAF(false);
+  initMap();
+  // 主路徑預設停在「現在」最近的格子
+  renderAll();
+  await Promise.all([fetchWx(), fetchTracks()]);
+  renderAll(); renderWindy();
+  setInterval(() => { buildHours(); renderHero(); }, 10*60*1000);
+})();
+</script>
+</body>
+</html>
