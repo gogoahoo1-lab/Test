@@ -746,7 +746,7 @@ html[data-skin] .sky{ border-color:var(--line); }
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-21i（外站回台依抵台日期歸日）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-21j（轉機人數移到 KPI）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4785,12 +4785,14 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     var us = list.filter(isUS);
     $("sxKpis").innerHTML =
       kpi("", "航班數", list.length + " 班") +
+      '<div class="sx-kpi c" id="sxKx"><u>轉機人數</u><b>—</b></div>' +
       (function(){
         var av = 0, bk = 0, cp = 0;
         list.forEach(function(r){ [0,1,2,3].forEach(function(i){ av += pos(r.rem[i]); if(r.pax && r.pax[i] != null) bk += +r.pax[i] || 0; if(r.cap && r.cap[i] && !r.noCap) cp += +r.cap[i]; }); });
         return kpi("", "總空位（全艙）", av + " 席") + kpi("g", "總訂位（TTL）", bk + ' 人<small class="sx-kcap">／' + cp + " 座</small>");
       })() +
       kpi("r", "超賣班次", list.filter(function(r){ return r.rem.some(function(v){ return v != null && v < 0; }); }).length + " 班");
+    try{ xCount(); }catch(e){}
 
     var groups = {};
     list.forEach(function(r){ var k = dkey(r._vm); (groups[k] = groups[k] || []).push(r); });
@@ -4881,8 +4883,9 @@ renderList(); renderDetail(); window.scrollTo({top:0});
   function xCount(){
     var n = Object.keys(XF).length, f = 0, t = 0, v0 = S.view || [];
     v0.forEach(function(r){ var v = xferOf(r); if(v != null){ f++; t += v; } });
-    $("sxXcnt").innerHTML = !n ? (canEdit() ? "尚未填寫（可在每班下方直接輸入，或上傳 Excel）" : "目前沒有人填寫")
-      : esc(S.viewLabel || "目前畫面") + "：" + v0.length + " 班中 " + f + " 班已填，轉機 <b>" + t + "</b> 人";
+    $("sxXcnt").innerHTML = !n ? (canEdit() ? "尚未填寫（可在每班下方直接輸入，或上傳 Excel）" : "目前沒有人填寫") : "";
+    var kx = $("sxKx");
+    if(kx) kx.innerHTML = "<u>轉機人數" + (f ? "（" + f + "／" + v0.length + " 班已填）" : "") + "</u><b>" + (f ? t + " 人" : "—") + "</b>";
     var np = Object.keys(XS.pend).filter(function(k){ return k !== "__clear"; }).length + (XS.pend.__clear ? 1 : 0), el = $("sxXsync"), k = "", txt;
     if(XS.on === false){ k = "warn"; txt = "僅存本機（中繼尚未啟用轉機同步）"; }
     else if(XS.on == null){ txt = "連線中繼中…"; }
