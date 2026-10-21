@@ -344,7 +344,7 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
 .sx-only input{width:17px;height:17px;accent-color:var(--gold)}
 /* 臨時：轉機人數 */
 .sx-xbar{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin:4px 0 10px;padding:9px 13px;border-radius:11px;background:rgba(127,211,240,.07);border:1px dashed rgba(127,211,240,.4);font-size:13px;color:var(--muted)}
-.sx-xbar b{color:#7FD3F0}
+.sx-xbar b{color:#7FD3F0} #sxXcnt b{font-size:15px}
 .sx-xbar .tmp{font-size:11px;font-weight:700;color:#15202b;background:#7FD3F0;border-radius:5px;padding:1px 6px}
 .sx-xbar .msg{flex-basis:100%;font-size:12.5px;color:var(--text);white-space:pre-line}
 .sx-xbar .msg.err{color:var(--no)}
@@ -360,7 +360,7 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
 .sx-kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 13px}
 .sx-kpi u{display:block;text-decoration:none;font-size:11.5px;color:var(--muted)}
 .sx-kpi b{font-size:19px;font-variant-numeric:tabular-nums}
-.sx-kpi.c b{color:#7FD3F0} .sx-kpi.r b{color:var(--no)}
+.sx-kpi.c b{color:#7FD3F0} .sx-kpi.g b{color:#FFD978} .sx-kpi .sx-kcap{font-size:12px;font-weight:500;color:var(--muted);margin-left:4px} .sx-kpi.r b{color:var(--no)}
 .sx-day h3{margin:20px 0 8px;font-size:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:baseline}
 .sx-day h3 small{font-size:12.5px;font-weight:400;color:var(--muted)}
 .sx-sum{font-size:12.5px;background:rgba(127,211,240,.09);color:#BFE6F5;border-radius:9px;padding:5px 11px;display:inline-block;margin-bottom:8px}
@@ -626,7 +626,7 @@ html[data-skin] .sx-xbar b, html[data-skin] .sx-xf, html[data-skin] .sx-kpi.c b,
 html[data-skin] .chip.cstd .cs i, html[data-skin] .sralt .tm .lt, html[data-skin] .sx-sum{ color:var(--cyan); }
 html[data-skin] .sx-xbar .tmp{ background:var(--cyan); color:#fff; }
 html[data-skin] .sx-row.us{ box-shadow:inset 3px 0 0 var(--cyan); }
-html[data-skin] .sx-tot .bk b{ color:#A46F0B; }
+html[data-skin] .sx-tot .bk b, html[data-skin] .sx-kpi.g b{ color:#A46F0B; }
 html[data-skin] .btn.sr{ color:var(--no); }
 html[data-skin] .srfab{ background:#fff; color:var(--no); border-color:rgba(201,56,46,.55); }
 html[data-skin] .srfab:hover, html[data-skin] .btn.sr:hover{ background:var(--no); color:#fff; }
@@ -744,7 +744,7 @@ html[data-skin] .sky{ border-color:var(--line); }
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-21e（空位查詢可搜尋航班）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-21f（總訂位＋轉機人數依篩選）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4753,8 +4753,11 @@ renderList(); renderDetail(); window.scrollTo({top:0});
       list = inDay.filter(function(r){ return S.ireg === "all" || S.istn === "all" || r.from === S.istn; });
     }
     }
-    $("sxOnly").checked = S.only; try{ xCount(); }catch(e){}
+    $("sxOnly").checked = S.only;
     if(S.only) list = list.filter(function(r){ return r.rem[3] != null && r.rem[3] > 0; });
+    S.view = list;
+    S.viewLabel = q.length ? "搜尋結果" : (S.date === "all" ? "全部日期" : dayLabel(S.date)) + "・" + (S.dir === "in" ? "外站回台" : "台灣出發");
+    try{ xCount(); }catch(e){}
     if(q.length){
       var nOut = list.filter(function(r){ return isBase(r.from); }).length;
       $("sxQhint").innerHTML = list.length
@@ -4767,7 +4770,11 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     var us = list.filter(isUS);
     $("sxKpis").innerHTML =
       kpi("", "航班數", list.length + " 班") +
-      (function(){ var xs = list.map(xferOf).filter(function(v){ return v != null; }); return xs.length ? kpi("c", "轉機人數合計（" + xs.length + " 班已填）", xs.reduce(function(a, b){ return a + b; }, 0) + " 人") : ""; })() +
+      (function(){
+        var av = 0, bk = 0, cp = 0;
+        list.forEach(function(r){ [0,1,2,3].forEach(function(i){ av += pos(r.rem[i]); if(r.pax && r.pax[i] != null) bk += +r.pax[i] || 0; if(r.cap && r.cap[i] && !r.noCap) cp += +r.cap[i]; }); });
+        return kpi("", "總空位（全艙）", av + " 席") + kpi("g", "總訂位（TTL）", bk + ' 人<small class="sx-kcap">／' + cp + " 座</small>");
+      })() +
       kpi("c", "美國線空位 J／W／Y", us.length ? us.reduce(function(a, r){ return a + pos(r.rem[1]); }, 0) + "／" + us.reduce(function(a, r){ return a + pos(r.rem[2]); }, 0) + "／" + us.reduce(function(a, r){ return a + pos(r.rem[3]); }, 0) : "—") +
       kpi("", "經濟艙空位合計", list.reduce(function(a, r){ return a + pos(r.rem[3]); }, 0) + " 席") +
       kpi("r", "超賣班次", list.filter(function(r){ return r.rem.some(function(v){ return v != null && v < 0; }); }).length + " 班") +
@@ -4860,10 +4867,10 @@ renderList(); renderDetail(); window.scrollTo({top:0});
       (v != null && r.pax ? '<small>／訂位 ' + r.pax.reduce(function(a, x){ return a + (x || 0); }, 0) + "</small>" : "") + "</label>";
   }
   function xCount(){
-    var n = Object.keys(XF).length, f = 0, t = 0;
-    S.rows.forEach(function(r){ var v = xferOf(r); if(v != null){ f++; t += v; } });
-    $("sxXcnt").textContent = !n ? (canEdit() ? "尚未填寫（可在每班下方直接輸入，或上傳 Excel）" : "目前沒有人填寫")
-      : "清單內 " + f + " 班已填，共 " + t + " 人" + (f ? "" : "（已存 " + n + " 筆，清單內尚無對應航班）");
+    var n = Object.keys(XF).length, f = 0, t = 0, v0 = S.view || [];
+    v0.forEach(function(r){ var v = xferOf(r); if(v != null){ f++; t += v; } });
+    $("sxXcnt").innerHTML = !n ? (canEdit() ? "尚未填寫（可在每班下方直接輸入，或上傳 Excel）" : "目前沒有人填寫")
+      : esc(S.viewLabel || "目前畫面") + "：" + v0.length + " 班中 " + f + " 班已填，轉機 <b>" + t + "</b> 人";
     var np = Object.keys(XS.pend).filter(function(k){ return k !== "__clear"; }).length + (XS.pend.__clear ? 1 : 0), el = $("sxXsync"), k = "", txt;
     if(XS.on === false){ k = "warn"; txt = "僅存本機（中繼尚未啟用轉機同步）"; }
     else if(XS.on == null){ txt = "連線中繼中…"; }
@@ -5760,7 +5767,7 @@ const I18N = (()=>{
     "推算":"Est.","裕度":"Margin","延誤":"Delay","取消":"Cancelled","調機":"Ferry","回航":"RTB","地停待修":"AOG","地停":"Ground",
     "轉降":"Diversion","下客":"Deplane","入境":"Entry","加油":"Fuel","上餐":"Catering","免稅":"Duty-free","組員":"Crew","宵禁":"Curfew",
     "場站作業":"Station ops","場站":"Station","出發站":"Origin","抵達站":"Arrival stn","出發":"Depart","抵達":"Arrival","抵台":"Arr. TW",
-    "轉機人數合計":"Transfer pax total","班已填":" flts filled","轉機人數":"Transfer pax","其中轉機":"incl. transfer","轉機":"Transfer","上傳 Excel":"Upload Excel","下載範本":"Download template","清除全部":"Clear all","搜尋結果":"Search results","搜尋航班":"Search flights","輸入編輯碼":"Enter edit code","編輯碼":"Edit code","已與大家同步":"Synced","同步中":"Syncing","唯讀":"Read-only","僅存本機（中繼尚未啟用轉機同步）":"Local only (relay sync not enabled)","臨時":"Temp","起飛":"Dep","接飛":"Onward","直飛":"Direct","回台後":"after return","折返":"Return","機號":"Reg","日期":"Date","飛時":"Flight time",
+    "轉機人數合計":"Transfer pax total","班已填":" flts filled","轉機人數":"Transfer pax","其中轉機":"incl. transfer","轉機":"Transfer","上傳 Excel":"Upload Excel","下載範本":"Download template","清除全部":"Clear all","總空位（全艙）":"Total avail. (all cabins)","總訂位（TTL）":"Total booked (TTL)","全部日期":"All dates","班中":" flts,","目前畫面":"Current view","搜尋結果":"Search results","搜尋航班":"Search flights","輸入編輯碼":"Enter edit code","編輯碼":"Edit code","已與大家同步":"Synced","同步中":"Syncing","唯讀":"Read-only","僅存本機（中繼尚未啟用轉機同步）":"Local only (relay sync not enabled)","臨時":"Temp","起飛":"Dep","接飛":"Onward","直飛":"Direct","回台後":"after return","折返":"Return","機號":"Reg","日期":"Date","飛時":"Flight time",
     "頭等":"First","商務":"Business","豪經":"Prem Econ","經濟":"Economy","空位":"Seats","超賣":"Oversold","跨日":"next day",
     "今天":"Today","明天":"Tomorrow","後天":"In 2 days","昨天":"Yesterday","之後":"after","更新":"updated","未知":"Unknown",
     "增加":"Add","移除":"Remove","減少":"Decrease","確定":"OK","關閉":"Closed","請確認":"Please confirm","的航班":" flights",
