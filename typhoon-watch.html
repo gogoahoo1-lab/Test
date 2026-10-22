@@ -899,18 +899,60 @@ function renderXW(){
   $('#xwLim').textContent = `${S.acSel} 側風上限 ${L_.xw}kt、順風上限 ${L_.tw}kt　·　跑道 ${parseRwys(a.rwys).map(r => r.ends.join('/')).join('、')}　·　時區 ${a.tz}`;
   const data = S.H.map(t => ({t, r: risk(a, t)}));
   // 圖
-  const W = 1000, Hh = 200, pad = 30;
+  const W = 1000, Hh = 270, pL = 46, pR = 16, pT = 28, pB = 46;
   const vals = data.map(d => d.r.w ? Math.max(d.r.w.gust||0, d.r.rw ? d.r.rw.xw : 0) : 0);
-  const maxY = Math.max(L_.xw*1.3, ...vals, 20);
-  const x = i => pad + (W-2*pad) * i/(data.length-1), y = v => Hh - pad - (Hh-2*pad) * v/maxY;
+  const rawMax = Math.max(L_.xw*1.3, ...vals, 20);
+  const stepY = rawMax > 60 ? 20 : rawMax > 30 ? 10 : 5;
+  const maxY = Math.ceil(rawMax/stepY)*stepY;
+  const x = i => pL + (W-pL-pR) * i/(data.length-1), y = v => Hh - pB - (Hh-pT-pB) * v/maxY;
   const line = (f, col, dash='') => { let p=''; data.forEach((d,i) => { const v = f(d); if(v==null) return; p += (p?'L':'M') + x(i).toFixed(1)+','+y(v).toFixed(1); }); return `<path d="${p}" fill="none" stroke="${col}" stroke-width="2" ${dash?`stroke-dasharray="${dash}"`:''}/>`; };
-  let svg = `<svg viewBox="0 0 ${W} ${Hh}" style="width:100%;height:auto;display:block;margin-bottom:12px">`;
-  data.forEach((d,i) => { if(d.r.lv>=2) svg += `<rect x="${x(i)-4}" y="${pad}" width="8" height="${Hh-2*pad}" fill="${LVCOL[d.r.lv]}" opacity=".25"/>`; });
-  svg += `<line x1="${pad}" x2="${W-pad}" y1="${y(L_.xw)}" y2="${y(L_.xw)}" stroke="#E5484D" stroke-dasharray="6 5"/><text x="${W-pad}" y="${y(L_.xw)-5}" text-anchor="end" font-size="11" fill="#E5484D">側風上限 ${L_.xw}kt</text>`;
-  data.forEach((d,i) => { const p = twParts(d.t); if(p.h===0) svg += `<line x1="${x(i)}" x2="${x(i)}" y1="${pad}" y2="${Hh-pad}" stroke="#ddd"/><text x="${x(i)+3}" y="${Hh-10}" font-size="11" fill="#6f7068">${p.m}/${p.d}(${WK[p.wd]})</text>`; });
+  let svg = `<svg id="xwSvg" viewBox="0 0 ${W} ${Hh}" style="width:100%;height:auto;display:block;margin-bottom:12px;font-family:Inter,'Noto Sans TC',sans-serif">`;
+  // 風險底色
+  data.forEach((d,i) => { if(d.r.lv>=2) svg += `<rect x="${x(i)-4}" y="${pT}" width="8" height="${Hh-pT-pB}" fill="${LVCOL[d.r.lv]}" opacity=".25"/>`; });
+  // Y 軸刻度（kt）
+  for(let v=0; v<=maxY; v+=stepY){
+    svg += `<line x1="${pL}" x2="${W-pR}" y1="${y(v)}" y2="${y(v)}" stroke="${v===0?'#9a9a92':'#ecece6'}"/>`;
+    svg += `<text x="${pL-8}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="#6f7068">${v}</text>`;
+  }
+  svg += `<text x="${pL-8}" y="${pT-10}" text-anchor="end" font-size="11" fill="#6f7068">kt</text>`;
+  // X 軸時間線：每 6 小時一條細線＋時刻，每天 00 時粗線＋日期
+  data.forEach((d,i) => {
+    const p = twParts(d.t);
+    if(p.h % 6 !== 0) return;
+    const day = p.h === 0;
+    svg += `<line x1="${x(i)}" x2="${x(i)}" y1="${pT}" y2="${Hh-pB+(day?6:3)}" stroke="${day?'#b9b9b0':'#ecece6'}" ${day?'':'stroke-dasharray="2 3"'}/>`;
+    svg += `<text x="${x(i)}" y="${Hh-pB+16}" text-anchor="middle" font-size="10.5" fill="${day?'#151515':'#8a8a82'}">${p2(p.h)}</text>`;
+    if(day) svg += `<text x="${x(i)}" y="${Hh-pB+32}" text-anchor="middle" font-size="11.5" font-weight="600" fill="#151515">${p.m}/${p.d}(${WK[p.wd]})</text>`;
+  });
+  svg += `<text x="${W-pR}" y="${Hh-4}" text-anchor="end" font-size="10.5" fill="#8a8a82">台灣時間</text>`;
+  // 側風上限
+  svg += `<line x1="${pL}" x2="${W-pR}" y1="${y(L_.xw)}" y2="${y(L_.xw)}" stroke="#E5484D" stroke-dasharray="6 5"/><text x="${W-pR}" y="${y(L_.xw)-5}" text-anchor="end" font-size="11" fill="#E5484D">側風上限 ${L_.xw}kt</text>`;
   svg += line(d => d.r.w ? d.r.w.gust : null, '#B9B9B0', '3 4') + line(d => d.r.rw ? d.r.rw.xw : null, '#151515');
-  svg += `<text x="${pad}" y="16" font-size="11" fill="#151515">— 最佳跑道側風（陣風）</text><text x="${pad+190}" y="16" font-size="11" fill="#8a8a82">- - 陣風</text></svg>`;
+  svg += `<text x="${pL}" y="16" font-size="11" fill="#151515">— 最佳跑道側風（陣風）</text><text x="${pL+190}" y="16" font-size="11" fill="#8a8a82">- - 陣風</text>`;
+  // 滑鼠讀值
+  svg += `<g id="xwHover" style="display:none;pointer-events:none"><line id="xwHL" y1="${pT}" y2="${Hh-pB}" stroke="#151515" stroke-width="1"/><circle id="xwHD" r="4" fill="#151515"/><circle id="xwHG" r="3.5" fill="#B9B9B0"/>
+    <rect id="xwHB" y="${pT+2}" width="178" height="52" rx="10" fill="#fff" stroke="#e4e4df"/><text id="xwHT" y="${pT+20}" font-size="11.5" fill="#151515"></text><text id="xwHT2" y="${pT+38}" font-size="11.5" fill="#6f7068"></text></g>
+    <rect x="${pL}" y="${pT}" width="${W-pL-pR}" height="${Hh-pT-pB}" fill="transparent" id="xwHit"/>`;
+  svg += `</svg>`;
   $('#xwChart').innerHTML = svg;
+  const svgEl = $('#xwSvg'), hit = $('#xwHit'), g = $('#xwHover');
+  const move = ev => {
+    const pt = svgEl.createSVGPoint(); const e = ev.touches ? ev.touches[0] : ev; pt.x = e.clientX; pt.y = e.clientY;
+    const loc = pt.matrixTransform(svgEl.getScreenCTM().inverse());
+    const i = Math.max(0, Math.min(data.length-1, Math.round((loc.x - pL) / (W-pL-pR) * (data.length-1))));
+    const d = data[i], r = d.r, xx = x(i);
+    g.style.display = '';
+    $('#xwHL').setAttribute('x1', xx); $('#xwHL').setAttribute('x2', xx);
+    const xwv = r.rw ? r.rw.xw : null, gv = r.w ? r.w.gust : null;
+    $('#xwHD').setAttribute('cx', xx); $('#xwHD').setAttribute('cy', xwv==null ? -99 : y(xwv));
+    $('#xwHG').setAttribute('cx', xx); $('#xwHG').setAttribute('cy', gv==null ? -99 : y(gv));
+    const bx = xx + 190 > W - pR ? xx - 186 : xx + 8;
+    $('#xwHB').setAttribute('x', bx); $('#xwHT').setAttribute('x', bx+10); $('#xwHT2').setAttribute('x', bx+10);
+    $('#xwHT').textContent = `${fmtTW(d.t, true)}　${r.rw ? r.rw.name : ''}`;
+    $('#xwHT2').textContent = `側風 ${xwv==null?'—':xwv.toFixed(0)}kt · 陣風 ${gv==null?'—':gv.toFixed(0)}kt`;
+  };
+  hit.addEventListener('mousemove', move); hit.addEventListener('touchmove', move, {passive:true}); hit.addEventListener('touchstart', move, {passive:true});
+  hit.addEventListener('mouseleave', () => g.style.display = 'none');
   $('#xwTbl').innerHTML = `<tr><th>台灣時間</th><th>當地</th><th>風向</th><th>風速</th><th>陣風</th><th>最佳跑道</th><th>側風</th><th>順風</th><th>距颱風</th><th>來源</th><th>等級</th></tr>` +
     data.filter((d,i) => i % step === 0).map(d => {
       const r = d.r, w = r.w;
