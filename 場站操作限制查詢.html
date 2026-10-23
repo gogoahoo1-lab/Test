@@ -753,7 +753,7 @@ html[data-skin] .sky{ border-color:var(--line); }
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-22h（資安強化：碼改標頭傳送、錯誤封鎖、登出）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-23a（合計空位扣除超賣）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4815,8 +4815,8 @@ renderList(); renderDetail(); window.scrollTo({top:0});
       '<div class="sx-kpi c" id="sxKx"><u>轉機人數</u><b>—</b></div>' +
       (function(){
         var av = 0, bk = 0, cp = 0;
-        list.forEach(function(r){ [0,1,2,3].forEach(function(i){ av += pos(r.rem[i]); if(r.pax && r.pax[i] != null) bk += +r.pax[i] || 0; if(r.cap && r.cap[i] && !r.noCap) cp += +r.cap[i]; }); });
-        return kpi("", "總空位（全艙）", av + " 席") + kpi("g", "總訂位（TTL）", bk + ' 人<small class="sx-kcap">／' + cp + " 座</small>");
+        list.forEach(function(r){ [0,1,2,3].forEach(function(i){ if(r.rem[i] != null) av += +r.rem[i]; if(r.pax && r.pax[i] != null) bk += +r.pax[i] || 0; if(r.cap && r.cap[i] && !r.noCap) cp += +r.cap[i]; }); });
+        return kpi("", "總空位（已扣超賣）", av + " 席") + kpi("g", "總訂位（TTL）", bk + ' 人<small class="sx-kcap">／' + cp + " 座</small>");
       })() +
       kpi("r", "超賣班次", list.filter(function(r){ return r.rem.some(function(v){ return v != null && v < 0; }); }).length + " 班");
     try{ xCount(); }catch(e){}
@@ -4830,7 +4830,9 @@ renderList(); renderDetail(); window.scrollTo({top:0});
         "</b>・豪經 <b>" + gu.reduce(function(a, r){ return a + pos(r.rem[2]); }, 0) + "</b>・經濟 <b>" + gu.reduce(function(a, r){ return a + pos(r.rem[3]); }, 0) + "</b></div>" : "";
       return '<div class="sx-day"><h3>' + dayLabel(k) + " <small>" + (q.length ? "搜尋結果" : S.dir === "in" ? "依抵台日期・外站出發時間為當地時間" : "台灣出發") + " " + g.length + " 班</small></h3>" + sum +
         '<div class="sx-list">' + g.map(function(r){
-          var u = isUS(r), tot = r.rem.reduce(function(a, v){ return a + pos(v); }, 0), ov = r.rem.some(function(v){ return v != null && v < 0; });
+          /* 合計空位＝各艙空位加總，再扣掉超賣數（超賣艙等的負數直接相減） */
+          var u = isUS(r), ovn = r.rem.reduce(function(a, v){ return a + (v != null && v < 0 ? -v : 0); }, 0), ov = ovn > 0,
+              tot = r.rem.reduce(function(a, v){ return a + pos(v); }, 0) - ovn;
           /* TTL 訂位數：各艙等訂位加總／座位數加總（沒有座位配置的只顯示訂位數） */
           var bk = 0, cp = 0, hasB = false;
           [0,1,2,3].forEach(function(i){ if(r.pax && r.pax[i] != null){ bk += +r.pax[i] || 0; hasB = true; } if(r.cap && r.cap[i]) cp += +r.cap[i] || 0; });
@@ -4842,7 +4844,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
               (u ? '<span class="sx-us">美國</span>' : "") + "</span></div>" +
             '<div class="sx-ac">' + esc(TYPE_NAME[r.type] || r.type) + (r.noCap ? ' <span style="color:var(--no)">未設配置</span>' : "") + ' <span class="reg">' + esc(r.reg) + "</span>" + links(r) + xferCell(r) + "</div>" +
             '<div class="sx-cls">' + [0,1,2,3].map(function(i){ return cell(r, i); }).join("") + "</div>" +
-            '<div class="sx-tot' + (hasB ? " two" : "") + '"><div><u>合計空位</u><b>' + tot + "</b>" + (ov ? "<em>含超賣艙等</em>" : "") + "</div>" +
+            '<div class="sx-tot' + (hasB ? " two" : "") + '"><div><u>合計空位</u><b' + (tot < 0 ? ' style="color:var(--no)"' : "") + '>' + tot + "</b>" + (ov ? "<em>已扣超賣 " + ovn + "</em>" : "") + "</div>" +
               (hasB ? '<div class="bk"><u>TTL 訂位</u><b>' + bk + "</b>" + (cp && !r.noCap ? "<small>/ " + cp + " 座</small>" : "") + "</div>" : "") + "</div>" +
           "</div>";
         }).join("") + "</div></div>";
@@ -5233,7 +5235,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
         }
         render();
       }
-    }, function(e){ R.err = "讀取失敗：" + (e && e.message || e); if(useCache()) render(); }).then(function(){ R.busy = false; bar(); });
+    }, function(e){ R.err = "讀取失敗：" + (e && e.message || e); useCache(); if(S.rows.length) render(); }).then(function(){ R.busy = false; bar(); });
     return R.p;
   }
   function onShow(){ load(false); }
@@ -5836,7 +5838,7 @@ const I18N = (()=>{
     "已複製，可直接貼到 LINE／Email":"Copied — paste into LINE / Email","重新讀取":"Reload","更新頻率":"Update frequency",
     "AMP值班台":"AMP Duty Desk","值班台":"Duty Desk","機場即時資料":"Airport live data","讀取中":"Loading","・讀取中":" · loading",
     "台灣出發":"From Taiwan","外站回台":"To Taiwan","美國線":"US routes","航班數":"Flights","超賣班次":"Oversold flights",
-    "經濟艙緊張（":"Y tight (","含超賣艙等":"incl. oversold","合計空位":"Total avail.","TTL 訂位":"TTL booked","出發地區":"Origin region","目的地區域":"Destination region",
+    "經濟艙緊張（":"Y tight (","含超賣艙等":"incl. oversold","已扣超賣":"oversold deducted","總空位（已扣超賣）":"Total avail. (net of oversold)","合計空位":"Total avail.","TTL 訂位":"TTL booked","出發地區":"Origin region","目的地區域":"Destination region",
     "出發場站":"Origin station","目的地站":"Destination","起飛 ETD（自動串接）":"ETD (auto)","起飛 ETD":"ETD","起飛 ETD（當地）":"ETD (local)",
     "抵達 ETA（當地）":"ETA (local)","時差（小時）":"Time diff (h)","抵達→靠檔":"Arrival→on-block","＋ 增加下一個場站":"+ Add next station",
     "供續飛下一站":"for continuing to next station","可再起飛":"Ready to depart","再起飛":"Re-dep","回自動":"Auto","待填時間":"Time pending",
