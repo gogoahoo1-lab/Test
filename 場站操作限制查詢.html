@@ -753,7 +753,7 @@ html[data-skin] .sky{ border-color:var(--line); }
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-22f（各站資料庫更新：CRK 宵禁備註）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-22h（資安強化：碼改標頭傳送、錯誤封鎖、登出）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4884,9 +4884,35 @@ renderList(); renderDetail(); window.scrollTo({top:0});
      讀取用「查看碼」，寫入另需「編輯碼」；中繼還沒部署時自動退回只存本機 */
   var XFER_URL = "https://flight-xfer.gogoahoo.workers.dev";
   var XK = "sxXfer", XF = {}, XS = { on:null, t:0, pend:{}, timer:0, busy:false, err:"", deferred:false };
-  try{ XF = JSON.parse(localStorage.getItem(XK) || "{}") || {}; }catch(e){ XF = {}; }
-  try{ XS.pend = JSON.parse(localStorage.getItem(XK + "Pend") || "{}") || {}; }catch(e){ XS.pend = {}; }
-  function editCode(){ try{ return localStorage.getItem("sxXedit") || ""; }catch(e){ return ""; } }
+  /* 資安：查看碼／編輯碼的存放。勾「記住這台裝置」才放 localStorage，否則只放 sessionStorage（關掉瀏覽器就消失） */
+  var CRED = window.CRED || (window.CRED = {
+    get:function(k){ try{ return sessionStorage.getItem(k) || localStorage.getItem(k) || ""; }catch(e){ return ""; } },
+    set:function(k, v, remember){ try{ sessionStorage.removeItem(k); localStorage.removeItem(k); if(v) (remember ? localStorage : sessionStorage).setItem(k, v); }catch(e){} },
+    remembered:function(k){ try{ return !!localStorage.getItem(k); }catch(e){ return false; } },
+    any:function(){ return !!(this.get("sxCode") || this.get("sxXedit")); },
+    logout:function(){
+      var np = 0; try{ np = Object.keys(JSON.parse(localStorage.getItem("sxXferPend") || "{}")).length; }catch(e){}
+      if(!confirm("登出這台裝置？\n會清除這台裝置上的查看碼、編輯碼，以及暫存的空位清單和轉機人數。" + (np ? "\n\n⚠ 還有 " + np + " 筆轉機人數尚未送出，登出後會遺失。" : ""))) return;
+      this.wipe(); location.reload();
+    },
+    wipe:function(){ ["sxCode","sxXedit","sxSeatCache","sxRoutes","sxXfer","sxXferPend"].forEach(function(k){ try{ sessionStorage.removeItem(k); localStorage.removeItem(k); }catch(e){} }); }
+  });
+  /* 資安：伺服器或本機存的資料一律重新驗證，鍵只收「班號|日期」格式、值只收 0–999 整數，避免被塞入 HTML */
+  var XKEY_RE = /^[A-Z0-9]{2}\d{1,4}[A-Z]?\|(\d{4}-\d{2}-\d{2}|\*)$/;
+  function xNumOk(v){ var n = Number(v); return typeof v !== "boolean" && v !== "" && isFinite(n) && n >= 0 && n <= 999 ? Math.round(n) : null; }
+  function xClean(o, keepNull){
+    var out = {}; if(!o || typeof o !== "object") return out;
+    Object.keys(o).forEach(function(k){
+      if(k === "__clear"){ if(keepNull && o[k] === true) out[k] = true; return; }
+      if(!XKEY_RE.test(k)) return;
+      if(o[k] === null){ if(keepNull) out[k] = null; return; }
+      var n = xNumOk(o[k]); if(n != null) out[k] = n;
+    });
+    return out;
+  }
+  try{ XF = xClean(JSON.parse(localStorage.getItem(XK) || "{}")); }catch(e){ XF = {}; }
+  try{ XS.pend = xClean(JSON.parse(localStorage.getItem(XK + "Pend") || "{}"), true); }catch(e){ XS.pend = {}; }
+  function editCode(){ return CRED.get("sxXedit"); }
   function canEdit(){ return XS.on !== true || !!editCode(); }
   function xStore(){ try{ localStorage.setItem(XK, JSON.stringify(XF)); localStorage.setItem(XK + "Pend", JSON.stringify(XS.pend)); }catch(e){} }
   function xSave(){ xStore(); xCount(); }
@@ -4903,7 +4929,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     var a = XF[fnN(r.flt) + "|*"]; return a != null ? a : null;
   }
   function xferCell(r){
-    var v = xferOf(r), ro = !canEdit();
+    var v = xNumOk(xferOf(r)), ro = !canEdit();
     return '<label class="sx-xf' + (v != null ? " has" : "") + '">🔁 轉機 <input type="text" inputmode="numeric" data-xfer="' + esc(xKey(r)) + '" value="' + (v != null ? v : "") + '" placeholder="—" aria-label="轉機人數"' + (ro ? ' readonly title="輸入編輯碼才能修改"' : "") + '> 人' +
       (v != null && r.pax ? '<small>／訂位 ' + r.pax.reduce(function(a, x){ return a + (x || 0); }, 0) + "</small>" : "") + "</label>";
   }
@@ -4933,32 +4959,38 @@ renderList(); renderDetail(); window.scrollTo({top:0});
   }
   /* 套用一批變更：v 為 null 表示刪除 */
   function xSet(ch){
+    ch = xClean(ch, true);
     for(var k in ch){ if(ch[k] == null) delete XF[k]; else XF[k] = ch[k]; XS.pend[k] = ch[k]; }
     xSave(); clearTimeout(XS.timer); XS.timer = setTimeout(xFlush, 700);
   }
   function xApply(j){   /* 伺服器資料＋尚未送出的本機變更 */
-    var d = (j && j.data) || {}; XF = {};
+    var d = xClean(j && j.data); XF = {};
     for(var k in d) XF[k] = d[k];
     if(XS.pend.__clear) XF = {};
     for(var p in XS.pend){ if(p === "__clear") continue; if(XS.pend[p] == null) delete XF[p]; else XF[p] = XS.pend[p]; }
     XS.t = +(j && j.t) || 0; xStore();
   }
   function xReq(method, body, since){
-    return fetch(XFER_URL + "/xfer?code=" + encodeURIComponent(code()) + (since ? "&since=" + since : ""), {
-      method:method, cache:"no-store",
-      headers: body ? { "Content-Type":"application/json", "X-Edit-Code": editCode() } : {},
+    var h = { "X-View-Code": code() };
+    if(body){ h["Content-Type"] = "application/json"; h["X-Edit-Code"] = editCode(); }
+    return fetch(XFER_URL + "/xfer" + (since ? "?since=" + since : ""), {
+      method:method, cache:"no-store", referrerPolicy:"no-referrer", headers:h,
       body: body ? JSON.stringify(body) : undefined
     }).then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ return { s:r.status, j:j }; }); });
   }
   function xPull(){
     if(XS.busy) return;
+    if(!code()){ return; }                                   /* 沒有查看碼就不去問中繼 */
+    if(XS.halt && XS.haltCode === code()) return;            /* 碼錯或被封鎖後停止輪詢，換了碼才再試，避免自己把自己鎖住 */
+    XS.halt = false;
     XS.busy = true; xCount();
     var quick = XS.t && XS.on === true && !Object.keys(XS.pend).length && !XS.err;
     xReq("GET", null, quick ? XS.t : 0).then(function(x){
       if(x.s === 404){ XS.on = false; return; }
       XS.on = true;
       if(x.s === 204){ XS.same = true; return; }   /* 沒有變更，不重畫 */
-      if(x.s === 403){ XS.err = "查看碼不正確，讀不到大家的轉機人數"; return; }
+      if(x.s === 429){ XS.err = "錯誤次數太多，已暫時封鎖約 " + Math.ceil(((x.j && x.j.retryAfter) || 900)/60) + " 分鐘"; XS.halt = true; XS.haltCode = code(); setTimeout(function(){ XS.halt = false; }, ((x.j && x.j.retryAfter) || 900) * 1000); return; }
+      if(x.s === 403){ XS.err = "查看碼不正確，讀不到大家的轉機人數"; XS.halt = true; XS.haltCode = code(); return; }
       if(x.s !== 200) throw new Error("HTTP " + x.s);
       if(XS.err && !/編輯碼/.test(XS.err)) XS.err = "";
       xApply(x.j);
@@ -4974,6 +5006,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     var set = {}; for(var k0 in send) if(k0 !== "__clear") set[k0] = send[k0];
     var body = { clear:!!send.__clear, set:set };
     xReq("POST", body).then(function(x){
+      if(x.s === 429){ XS.err = "錯誤次數太多，已暫時封鎖約 " + Math.ceil(((x.j && x.j.retryAfter) || 900)/60) + " 分鐘"; restore(); return; }
       if(x.s === 401){ XS.err = "編輯碼不正確，變更沒有送出"; restore(); return; }
       if(x.s === 403){ XS.err = "查看碼不正確"; restore(); return; }
       if(x.s !== 200) throw new Error("HTTP " + x.s);
@@ -5001,9 +5034,10 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     clearTimeout(XS.timer); XS.timer = setTimeout(xFlush, 50);
   };
   $("sxXcode").onclick = function(){
-    var v = prompt("輸入編輯碼（向 " + SRC_NAME + " 索取；清空後按確定可改回唯讀）", editCode());
+    var v = prompt("輸入編輯碼（向 " + SRC_NAME + " 索取；清空後按確定可改回唯讀）", "");
     if(v == null) return;
-    try{ v.trim() ? localStorage.setItem("sxXedit", v.trim()) : localStorage.removeItem("sxXedit"); }catch(e){}
+    v = v.trim();
+    CRED.set("sxXedit", v, v ? confirm("要在這台裝置記住編輯碼嗎？\n\n按「確定」：下次打開不用再輸入\n按「取消」：關掉瀏覽器就自動忘記（共用電腦請選這個）") : false);
     if(/編輯碼/.test(XS.err)) XS.err = "";
     xMsg(""); xCount(); render();
     if(Object.keys(XS.pend).length) xFlush();
@@ -5023,11 +5057,19 @@ renderList(); renderDetail(); window.scrollTo({top:0});
   };
 
   /* 上傳：.xlsx/.xls 用 SheetJS（第一次使用時才載入），.csv 直接讀 */
-  var XLSX_URL = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js", xlsxP = null;
+  /* SheetJS 0.20.3（官方 CDN，已修補 CVE-2023-30533／CVE-2024-22363）；連不到時才退回 cdnjs 0.18.5 */
+  var XLSX_URLS = ["https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js",
+                   "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"], xlsxP = null;
   function needXlsx(){
     if(window.XLSX) return Promise.resolve(window.XLSX);
-    return xlsxP || (xlsxP = new Promise(function(ok, no){ var sc = document.createElement("script"); sc.src = XLSX_URL;
-      sc.onload = function(){ ok(window.XLSX); }; sc.onerror = function(){ xlsxP = null; no(new Error("Excel 解析元件載入失敗（需要網路），可改存成 CSV 上傳")); }; document.head.appendChild(sc); }));
+    function tryAt(i, ok, no){
+      if(i >= XLSX_URLS.length){ xlsxP = null; no(new Error("Excel 解析元件載入失敗（需要網路），可改存成 CSV 上傳")); return; }
+      var sc = document.createElement("script"); sc.src = XLSX_URLS[i]; sc.crossOrigin = "anonymous"; sc.referrerPolicy = "no-referrer";
+      sc.onload = function(){ window.XLSX ? ok(window.XLSX) : tryAt(i + 1, ok, no); };
+      sc.onerror = function(){ sc.remove(); tryAt(i + 1, ok, no); };
+      document.head.appendChild(sc);
+    }
+    return xlsxP || (xlsxP = new Promise(function(ok, no){ tryAt(0, ok, no); }));
   }
   function csvRows(t){
     var out = [], row = [], cur = "", q = false;
@@ -5114,8 +5156,11 @@ renderList(); renderDetail(); window.scrollTo({top:0});
   var R = { t:0, busy:false, err:"", need:false, lastTry:0 };
   function code(){
     var m = /(?:^|[#&])code=([^&]+)/.exec(location.hash);
-    if(m){ try{ localStorage.setItem("sxCode", decodeURIComponent(m[1])); }catch(e){} }
-    try{ return localStorage.getItem("sxCode") || ""; }catch(e){ return ""; }
+    if(m){   /* 網址帶 #code= 時存起來，並立刻從網址列移除，避免留在瀏覽紀錄或被轉傳 */
+      try{ CRED.set("sxCode", decodeURIComponent(m[1]), true); }catch(e){}
+      try{ var h = location.hash.replace(/(^#|&)code=[^&]*/, "$1").replace(/^#&/, "#").replace(/&$/, ""); history.replaceState(null, "", location.pathname + location.search + (h === "#" ? "" : h)); }catch(e){}
+    }
+    return CRED.get("sxCode");
   }
   /* ---------- 資料更新狀態：每個來源幾點幾分更新、多久前（綠＝正常、橘＝偏舊、紅＝過舊） ---------- */
   R.okAt = 0;
@@ -5142,20 +5187,22 @@ renderList(); renderDetail(); window.scrollTo({top:0});
   function bar(){
     var el = $("sxBar");
     if(R.need){
-      el.innerHTML = '🔒 請輸入查看碼（向 ' + SRC_NAME + ' 索取，只要輸入一次）<input id="sxCodeIn" type="text" autocomplete="off"><button class="sx-btn" id="sxCodeOk" type="button">確定</button>' +
+      el.innerHTML = '🔒 請輸入查看碼（向 ' + SRC_NAME + ' 索取）<input id="sxCodeIn" type="password" autocomplete="off"><label class="sx-only" style="font-size:12.5px"><input type="checkbox" id="sxCodeRem" checked> 記住這台裝置（共用電腦請取消）</label><button class="sx-btn" id="sxCodeOk" type="button">確定</button>' + (CRED.any() ? '<button class="sx-btn ghost" id="sxLogout" type="button" title="清除這台裝置上的查看碼、編輯碼與快取資料">🚪 登出本機</button>' : "") +
         (R.err ? '<span class="err">' + esc(R.err) + "</span>" : "");
-      $("sxCodeOk").onclick = function(){ try{ localStorage.setItem("sxCode", $("sxCodeIn").value.trim()); }catch(e){} R.need = false; R.err = ""; R.t = 0; load(true); };
+      $("sxCodeOk").onclick = function(){ CRED.set("sxCode", $("sxCodeIn").value.trim(), $("sxCodeRem").checked); R.need = false; R.err = ""; R.t = 0; load(true); };
       $("sxCodeIn").onkeydown = function(e){ if(e.key === "Enter") $("sxCodeOk").click(); };
+      if($("sxLogout")) $("sxLogout").onclick = function(){ CRED.logout(); };
       return;
     }
     var stale = S.t && Date.now() - S.t > 5*3600000;
     el.innerHTML = '<span>📡 空位清單來自 <b>' + SRC_NAME + "</b>" +
       (S.t ? "・系統清單 " + dayHm(S.t) + " 更新" + (stale ? '<span class="err">（超過 5 小時未更新）</span>' : "・預計下次約 " + dayHm(S.t + 3*3600000)) : "") +
       (!R.cached && R.t ? airsBadge() : "") + (R.cached ? '・<span class="err">連線失敗，顯示上次快取</span>' : "") + (R.busy ? "・讀取中…" : "") + (R.err ? '・<span class="err">' + esc(R.err) + "</span>" : "") + "</span>" +
-      '<button class="sx-btn ghost" id="sxReload" type="button">重新讀取</button>' +
+      '<button class="sx-btn ghost" id="sxReload" type="button">重新讀取</button>' + (CRED.any() ? '<button class="sx-btn ghost" id="sxLogout" type="button" title="清除這台裝置上的查看碼、編輯碼與快取資料">🚪 登出本機</button>' : "") +
       '<div data-dstat style="flex-basis:100%">' + statusHtml() + '</div>' +
       (R.warn && !R.cached ? '<div class="sx-warn"><b>⚠ 值班台回報（' + clockOf(R.warn.t) + '）</b><ul data-noi18n>' + R.warn.msgs.map(function(m){ return "<li>" + esc(m) + "</li>"; }).join("") + "</ul></div>" : "");
     $("sxReload").onclick = function(){ load(true); };
+    if($("sxLogout")) $("sxLogout").onclick = function(){ CRED.logout(); };
     paintStatus();
   }
   function load(force){
@@ -5809,7 +5856,7 @@ const I18N = (()=>{
     "推算":"Est.","裕度":"Margin","延誤":"Delay","取消":"Cancelled","調機":"Ferry","回航":"RTB","地停待修":"AOG","地停":"Ground",
     "轉降":"Diversion","下客":"Deplane","入境":"Entry","加油":"Fuel","上餐":"Catering","免稅":"Duty-free","組員":"Crew","宵禁":"Curfew",
     "場站作業":"Station ops","場站":"Station","出發站":"Origin","抵達站":"Arrival stn","出發":"Depart","抵達":"Arrival","抵台":"Arr. TW",
-    "轉機人數合計":"Transfer pax total","班已填":" flts filled","轉機人數":"Transfer pax","其中轉機":"incl. transfer","轉機":"Transfer","上傳 Excel":"Upload Excel","下載範本":"Download template","清除全部":"Clear all","抵台":"Arr TW","當地出發":"local dep.","抵台日期":"Arr. date (TW)","依抵台日期・外站出發時間為當地時間":"By Taiwan arrival date · departure times local","總空位（全艙）":"Total avail. (all cabins)","總訂位（TTL）":"Total booked (TTL)","全部日期":"All dates","班中":" flts,","目前畫面":"Current view","搜尋結果":"Search results","搜尋航班":"Search flights","輸入編輯碼":"Enter edit code","編輯碼":"Edit code","已與大家同步":"Synced","同步中":"Syncing","唯讀":"Read-only","僅存本機（中繼尚未啟用轉機同步）":"Local only (relay sync not enabled)","臨時":"Temp","起飛":"Dep","接飛":"Onward","直飛":"Direct","回台後":"after return","折返":"Return","機號":"Reg","日期":"Date","飛時":"Flight time",
+    "轉機人數合計":"Transfer pax total","班已填":" flts filled","轉機人數":"Transfer pax","其中轉機":"incl. transfer","轉機":"Transfer","上傳 Excel":"Upload Excel","下載範本":"Download template","清除全部":"Clear all","🚪 登出本機":"🚪 Sign out device","記住這台裝置（共用電腦請取消）":"Remember this device (untick on shared PCs)","抵台":"Arr TW","當地出發":"local dep.","抵台日期":"Arr. date (TW)","依抵台日期・外站出發時間為當地時間":"By Taiwan arrival date · departure times local","總空位（全艙）":"Total avail. (all cabins)","總訂位（TTL）":"Total booked (TTL)","全部日期":"All dates","班中":" flts,","目前畫面":"Current view","搜尋結果":"Search results","搜尋航班":"Search flights","輸入編輯碼":"Enter edit code","編輯碼":"Edit code","已與大家同步":"Synced","同步中":"Syncing","唯讀":"Read-only","僅存本機（中繼尚未啟用轉機同步）":"Local only (relay sync not enabled)","臨時":"Temp","起飛":"Dep","接飛":"Onward","直飛":"Direct","回台後":"after return","折返":"Return","機號":"Reg","日期":"Date","飛時":"Flight time",
     "頭等":"First","商務":"Business","豪經":"Prem Econ","經濟":"Economy","空位":"Seats","超賣":"Oversold","跨日":"next day",
     "今天":"Today","明天":"Tomorrow","後天":"In 2 days","昨天":"Yesterday","之後":"after","更新":"updated","未知":"Unknown",
     "增加":"Add","移除":"Remove","減少":"Decrease","確定":"OK","關閉":"Closed","請確認":"Please confirm","的航班":" flights",
