@@ -646,6 +646,24 @@ html[data-skin] dialog.sr{ box-shadow:0 24px 60px rgba(0,0,0,.25); }
 html[data-skin] .f input::-webkit-calendar-picker-indicator, html[data-skin] .srtime input::-webkit-calendar-picker-indicator{ filter:none; }
 html[data-skin] .sky{ border-color:var(--line); }
 </style>
+<style>
+/* ---------- 空位查詢篩選：2×2 下拉選單（方案 B） ---------- */
+#sxFilt{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}
+#sxFilt .sx-dir{grid-column:1/-1;margin-bottom:4px}
+#sxFilt .sx-f{display:block;margin:0;position:relative;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:7px 34px 7px 12px;min-width:0}
+#sxFilt .sx-f[hidden]{display:none}
+#sxFilt .sx-f>span{display:block;padding:0;font-size:11.5px;color:var(--muted);line-height:1.3}
+#sxFilt .sx-f .sx-chips{display:none}
+#sxFilt .sx-f::after{content:"";position:absolute;right:13px;top:50%;width:8px;height:8px;border-right:2px solid var(--gold);border-bottom:2px solid var(--gold);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+#sxFilt .sx-sel{appearance:none;-webkit-appearance:none;width:100%;border:0;background:transparent;color:var(--text);font:inherit;font-size:15px;font-weight:700;padding:2px 0 0;margin:0;cursor:pointer;text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
+#sxFilt .sx-sel:focus-visible{outline:2px solid var(--gold);outline-offset:4px;border-radius:4px}
+#sxFilt .sx-sel:disabled{color:var(--dim);cursor:default}
+#sxFilt .sx-f:has(.sx-sel:disabled){opacity:.7}
+#sxFilt .sx-f:has(.sx-sel:disabled)::after{opacity:.4}
+@media (min-width:821px){ #sxFilt{grid-template-columns:repeat(4,minmax(0,1fr))} }
+#sxMain > .sx-f:has(#sxOnly){display:block}
+#sxMain > .sx-f:has(#sxOnly) > span{display:none}
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -713,7 +731,6 @@ html[data-skin] .sky{ border-color:var(--line); }
 
 <!-- ===== 到離試算 ===== -->
 <section id="p-calc" role="tabpanel" aria-labelledby="t-calc" class="hidden">
-  <p class="calcnote">以場站為單位往下串接：每一格代表航路上的一個場站，每個場站只填一次。第一站填出發時間與飛時；之後每站（含最後一站）填時差、抵達→靠檔與地停，系統自動推算抵達與可再起飛時間，並比對該站宵禁算出剩餘裕度。每站的「起飛 ETD」都可用 − ＋ 微調作業裕度（可按「回自動」還原），飛時也可先設好，按「＋ 增加下一個場站」即直接串接下一段。欄位可直接輸入，也可用 − ＋ 微調（飛時 20 分鐘一階、其餘時間 10 分鐘一階、時差 1 小時一階），或用鍵盤上下鍵。時差填「本站時間 − 上一站時間」，例如 TPE 飛 NRT 填 +1。</p>
   <datalist id="codes"></datalist>
   <div id="legs"></div>
   <button class="addleg" id="addLeg">＋ 增加下一個場站</button>
@@ -754,7 +771,7 @@ html[data-skin] .sky{ border-color:var(--line); }
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-24c（到離試算標題：抵達/出發）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-24e（空位篩選改下拉選單）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -6024,6 +6041,48 @@ const I18N = (()=>{
 })();
 I18N.init();
 
+</script>
+<script>
+/* ---------- 空位查詢篩選：把原本的選項按鈕轉成下拉選單；選單改變時按下對應的原按鈕，篩選邏輯完全沿用 ---------- */
+(function(){
+  var IDS = ["sxDates","sxA","sxB","sxC"];
+  function txt(b){
+    var n = b.querySelector(".n"), t = b.cloneNode(true), nn = t.querySelector(".n"); if(nn) nn.remove();
+    var label = t.textContent.replace(/\s+/g, " ").trim();
+    if(/今天|明天|後天/.test(label)) label = label.replace(/（.）\s*/, " ");   /* 手機上放得下：10/25 明天 */
+    return label + (n ? "・" + n.textContent.trim() : "");
+  }
+  function build(id){
+    var box = document.getElementById(id); if(!box) return;
+    var row = box.closest(".sx-f"); if(!row) return;
+    var sel = row.querySelector("select.sx-sel");
+    if(!sel){
+      sel = document.createElement("select"); sel.className = "sx-sel";
+      var lab = row.querySelector(":scope > span"); if(lab){ if(!lab.id) lab.id = id + "Lab"; sel.setAttribute("aria-labelledby", lab.id); }
+      sel.addEventListener("change", function(){
+        var b = box.querySelectorAll("button")[+sel.value]; if(b) b.click();
+      });
+      row.insertBefore(sel, box);
+    }
+    var btns = box.querySelectorAll("button"), html = "", cur = -1;
+    btns.forEach(function(b, i){
+      if(b.getAttribute("aria-pressed") === "true") cur = i;
+      html += '<option value="' + i + '">' + txt(b).replace(/&/g,"&amp;").replace(/</g,"&lt;") + "</option>";
+    });
+    if(!btns.length){
+      var hint = box.textContent.trim();
+      html = '<option value="">' + (hint && hint.length < 14 ? hint : /地區/.test(hint) ? "先選地區" : "先選區域").replace(/</g,"&lt;") + "</option>";
+    }
+    if(sel.innerHTML !== html) sel.innerHTML = html;
+    sel.disabled = !btns.length;
+    sel.value = cur >= 0 ? String(cur) : (btns.length ? "0" : "");
+  }
+  IDS.forEach(function(id){
+    var box = document.getElementById(id); if(!box) return;
+    build(id);
+    new MutationObserver(function(){ build(id); }).observe(box, { childList:true, subtree:true, attributes:true, attributeFilter:["aria-pressed"] });
+  });
+})();
 </script>
 </body>
 </html>
