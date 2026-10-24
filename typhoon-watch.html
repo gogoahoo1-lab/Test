@@ -472,7 +472,7 @@ const S = {
   sched: store.get('sched', ''),
   tcName: store.get('tcName', '薔琵 CHAMPI'),
   tafText: store.get('tafText', ''), taf: {}, jmaErr: '',
-  rot: Object.assign({base:'TPE', minLv:3, buf:2, turn:90, minHours:2, asiaSeats:2000, lhSeats:1500, lf:85, extra:10, nbRatio:60, staffCap:70, bPolicy:'cancel', cPolicy:'shelter', off:{}}, store.get('rot', {})),
+  rot: Object.assign({base:'TPE', minLv:3, buf:2, turn:90, minHours:2, asiaSeats:2000, lhSeats:1500, lf:85, extra:10, nbRatio:60, bPolicy:'cancel', cPolicy:'shelter'}, store.get('rot', {})),
   banks: store.get('banks', null),
   wx: {}, wxAt: null, wxErr: '',
   t0: 0, H: [], sliderI: 0,
@@ -1537,8 +1537,8 @@ const BANK_DEF = [
   {k:'LHO', name:'長程出發', note:'飛美／歐',   s:19, e:24},
 ];
 const BANK_COL = {LHI:'#3d6f8e', AO:'#7E8F35', AR:'#9a7b2f', LHO:'#151515'};
-const SCN_LV = {D:3, A:3, B:3, C:3, E:2, O:2, N:1, W:1, OK:0};
-const SCN_NAME = {D:'情境 D　全天以上', A:'情境 A　早上受影響', B:'情境 B　白天受影響、晚上前恢復', C:'情境 C　傍晚開始、持續到隔天', E:'情境 E　長程出發受影響', N:'回程緩衝不足', W:'警戒', O:'停班停課（作業減量）', OK:'正常作業'};
+const SCN_LV = {D:3, A:3, B:3, C:3, E:2, N:1, W:1, OK:0};
+const SCN_NAME = {D:'情境 D　全天以上', A:'情境 A　早上受影響', B:'情境 B　白天受影響、晚上前恢復', C:'情境 C　傍晚開始、持續到隔天', E:'情境 E　長程出發受影響', N:'回程緩衝不足', W:'警戒', OK:'正常作業'};
 function bankList(){ return S.banks || BANK_DEF; }
 function hourLvMap(){
   const ap = apBy(S.rot.base), m = new Map();
@@ -1557,15 +1557,8 @@ function computeBankDays(){
       return Object.assign({}, b, {a, z, closed, warn, known, past: z <= now});
     });
     const key = (q => `${q.y}-${p2(q.m)}-${p2(q.d)}`)(twParts(d));
-    const day = {d, key, banks, lvMap, closedW, off: !!(S.rot.off || {})[key]};
+    const day = {d, key, banks, lvMap, closedW};
     Object.assign(day, bankDecide(day, closedW));
-    if(day.off && day.scn !== 'PAST'){
-      const Bn = (apBy(S.rot.base) || {}).name || S.rot.base;
-      day.imp.push(`已勾選停班停課：地勤、航廈人力與旅客到場都會受限，就算風可以飛，可執行的班次也會減少（設定為約 ${S.rot.staffCap}%）。`);
-      day.act.push('依可到班人力決定可執行的班次量；優先保長程與疏運航班', '提前通知旅客報到時間與交通（機捷、客運可能停駛）');
-      day.prs.push(`${Bn}：人力不足時，櫃檯、轉機、行李作業都會變慢，旅客等候時間拉長`);
-      if(['OK','W','N'].includes(day.scn)) day.scn = 'O';
-    }
     day.load = bankLoad(day, closedW);
     days.push(day);
   }
@@ -1712,14 +1705,13 @@ function bankLoad(day, closedW){
       break;
     }
   }
-  if(day.off && day.scn !== 'D') asia += 2*P.asiaSeats*lf*(1 - P.staffCap/100);
   const r = x => Math.round(x);
   if(opts) Object.values(opts).forEach(o => { o.asia = r(o.asia); o.lh = r(o.lh); });
   return {asia: r(asia), lh: r(lh), opts};
 }
 const spareOf = seats => 2*seats*Math.max(0, 1 - S.rot.lf/100 + S.rot.extra/100);   // 每天雙向可用來消化積壓的座位
 function simulateBacklog(days){
-  const hit = new Set(['D','A','B','C','O']);
+  const hit = new Set(['D','A','B','C']);
   let a = 0, l = 0, peakA = 0, peakL = 0; const rows = [];
   const live = days.filter(d => d.scn !== 'PAST'); if(!live.length) return {rows, peakA, peakL};
   const last = live[live.length-1].d;
@@ -1792,7 +1784,7 @@ function bankStrip(day){
   return s + '</svg>';
 }
 function renderSnowTable(){
-  const F = [['asiaSeats','每日亞洲線座位（單向）','座'],['lhSeats','每日長程座位（單向）','座'],['lf','平均載客率','%'],['extra','疏運可增加運能（每日，加開／加大機型）','%'],['nbRatio','窄體／廣體座位比','%'],['staffCap','停班停課時可執行的班次比例','%']];
+  const F = [['asiaSeats','每日亞洲線座位（單向）','座'],['lhSeats','每日長程座位（單向）','座'],['lf','平均載客率','%'],['extra','疏運可增加運能（每日，加開／加大機型）','%'],['nbRatio','窄體／廣體座位比','%']];
   $('#snowTbl').innerHTML = F.map(([k, lab, u]) => `<tr><td class="small">${lab}</td><td><input class="cell" type="number" data-sk="${k}" value="${S.rot[k]}" style="width:110px"> <span class="small muted">${u}</span></td></tr>`).join('') +
     `<tr><td class="small">情境 B 假設採用</td><td><select data-sk="bPolicy">${Object.entries(B_POL).map(([k,v]) => `<option value="${k}" ${S.rot.bPolicy===k?'selected':''}>${v}</option>`).join('')}</select></td></tr>
      <tr><td class="small">情境 C 假設採用</td><td><select data-sk="cPolicy">${Object.entries(C_POL).map(([k,v]) => `<option value="${k}" ${S.rot.cPolicy===k?'selected':''}>${v}</option>`).join('')}</select></td></tr>`;
@@ -1829,7 +1821,7 @@ function renderBanks(){
     const p = twParts(d.d), lv = SCN_LV[d.scn] ?? 0;
     const list = (title, arr) => arr.length ? `<div style="margin-top:10px"><div class="small" style="font-weight:600">${title}</div>${arr.map(x => `<div class="small" style="margin:3px 0 0 0;line-height:1.65">${esc(typeof x === 'string' ? x : x.txt)}</div>`).join('')}</div>` : '';
     return `<div class="src-card" style="border-left:5px solid ${LVCOL[lv]}">
-      <div class="src-head"><div><b class="num" style="font-size:18px">${p.m}/${p.d}（${WK[p.wd]}）</b>　<span class="pill lv${lv}">${esc(SCN_NAME[d.scn])}</span>　<label class="small"><input type="checkbox" data-off="${d.key}" ${d.off ? 'checked' : ''}> 北北桃停班停課</label></div>
+      <div class="src-head"><div><b class="num" style="font-size:18px">${p.m}/${p.d}（${WK[p.wd]}）</b>　<span class="pill lv${lv}">${esc(SCN_NAME[d.scn])}</span></div>
         <div class="small muted">${d.banks.map(b => `${b.name}${b.past ? ' 已過' : b.closed.length ? ' ✕' : b.warn.length ? ' △' : ' ○'}`).join('　')}</div></div>
       ${bankStrip(d)}
       ${list('會發生什麼', d.imp)}
@@ -1841,10 +1833,6 @@ function renderBanks(){
   }).join('');
   h += `<div class="small muted">圖例：上方色條為${esc(B)}每小時狀態（紅＝無法起降、橙＝警戒、灰＝超出預報範圍），下方為作業波段。○ 正常、△ 警戒、✕ 無法起降。決策時間依典型作業前置時間估算，請依公司規定調整。</div>`;
   $('#bankDays').innerHTML = h;
-  $$('#bankDays [data-off]').forEach(el => el.addEventListener('change', () => {
-    S.rot.off = Object.assign({}, S.rot.off); if(el.checked) S.rot.off[el.dataset.off] = true; else delete S.rot.off[el.dataset.off];
-    store.set('rot', S.rot); renderBanks();
-  }));
 }
 
 /* ================= 簡報 ================= */
