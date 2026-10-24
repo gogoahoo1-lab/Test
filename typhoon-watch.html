@@ -220,6 +220,53 @@ input.cell{width:100%;min-width:60px;border-radius:10px;padding:5px 8px}
   </div>
 </div>
 
+<!-- TAB: 機隊輪轉 -->
+<div class="tab" id="tab-rot">
+  <div class="card" style="margin-top:16px">
+    <h2><span class="key">⟳</span><span id="rotBaseTitle">桃園</span>作業波段影響</h2>
+    <div class="hint">不用輸入航班。工具依颱風影響時段，判斷每天四個作業波段（長程入境 → 亞洲去程 → 亞洲回程 → 長程出發）哪個受影響、會發生什麼、建議怎麼決策、最晚何時要決定。時間為台灣時間。</div>
+    <div class="row">
+      <label class="small">基地</label><select id="rotBase"><option>TPE</option><option>TSA</option><option>KHH</option><option>RMQ</option></select>
+      <label class="small">視為無法起降</label><select id="rotMinLv"><option value="3">高風險</option><option value="2">警戒以上</option></select>
+      <label class="small">回程緩衝</label><select id="rotBuf"><option value="1">1 小時</option><option value="2">2 小時</option><option value="3">3 小時</option></select>
+      <label class="small">廣體最短過站</label><select id="rotTurn"><option value="60">60 分</option><option value="90">90 分</option><option value="120">120 分</option></select>
+      <label class="small">至少連續</label><select id="rotMinH"><option value="1">1 小時</option><option value="2">2 小時</option><option value="3">3 小時</option></select>
+      <label class="small"><input type="checkbox" id="rotRingCap"> 有風場時以風為準（暴風圈最多算警戒）</label>
+    </div>
+    <details style="margin-bottom:12px"><summary class="small" style="cursor:pointer">調整波段時間（預設為典型值，請依實際班表校正）</summary>
+      <div class="tbl-wrap" style="margin-top:8px"><table id="bankTbl"></table></div>
+      <div class="row" style="margin-top:8px"><button class="btn ghost" id="bankReset">還原預設</button></div>
+    </details>
+    <details style="margin-bottom:12px"><summary class="small" style="cursor:pointer">疏運參數（估算積壓旅客用，請改成實際數字）</summary>
+      <div class="tbl-wrap" style="margin-top:8px"><table id="snowTbl"></table></div>
+    </details>
+    <div id="bankDays"></div>
+  </div>
+
+  <details class="card" style="margin-top:16px">
+    <summary style="cursor:pointer;font-weight:600">進階：貼上實際班表逐班檢查（選填）</summary>
+  <div style="margin-top:14px">
+    <div class="hint">每行一班，開頭寫<b>同一架飛機的代號加冒號</b>（機號或 R1、R2 都可以），後面跟航班格式相同：<span class="mono">R1: 10/24 JX800 TPE NRT 08:20 12:40 轉 45</span>。「轉 45」是本班轉機旅客數，選填。沒有代號時可按「自動配對」。</div>
+    <div class="row">
+      <label class="small">預設日期</label><input type="date" id="rotDate">
+      <button class="btn" id="rotRun">分析</button>
+      <button class="btn ghost" id="rotAuto">自動配對</button>
+      <button class="btn ghost" id="rotSample">填入範例</button>
+    </div>
+    <textarea id="rotText" style="min-height:160px" placeholder="R1: 10/23 JX001 LAX TPE 00:50 06:20 轉 80&#10;R1: 10/24 JX800 TPE NRT 08:20 12:40 轉 45"></textarea>
+    <div class="msg" id="rotMsg"></div>
+    <div id="rotWins" style="display:none"></div>
+    <h2 style="margin-top:18px"><span class="key">▤</span>輪轉甘特圖</h2>
+    <div class="hint">紅色底＝無法起降時段，橙色底＝警戒時段。航班條：紅＝需處置、橙＝受連帶影響、黃＝要留意、黑＝正常。</div>
+    <div id="rotGantt" class="tl"></div>
+    <div class="grid g2">
+      <div><h2><span class="key l">!</span>各輪轉判斷與建議</h2><div id="rotFinds"></div></div>
+      <div><h2><span class="key">⚑</span>轉機旅客與場站準備</h2><div id="rotPax"></div></div>
+    </div>
+  </div>
+  </details>
+</div>
+
 <!-- TAB: 簡報 -->
 <div class="tab" id="tab-brief">
   <div class="card" style="margin-top:16px">
@@ -274,6 +321,7 @@ input.cell{width:100%;min-width:60px;border-radius:10px;padding:5px 8px}
   <button data-tab="map" class="on">總覽</button>
   <button data-tab="timeline">時間軸</button>
   <button data-tab="flights">航班</button>
+  <button data-tab="rot">機隊輪轉</button>
   <button data-tab="brief">簡報</button>
   <button data-tab="settings">設定</button>
 </nav>
@@ -381,7 +429,7 @@ const DEFAULT_AC = {
   'A350-1000':{xw:35, tw:10},
   '公司統一': {xw:30, tw:10},
 };
-const DEFAULT_THR = {wetFactor:0.8, gust1:30, gust2:40, gust3:50, sus3:34, ringBuf:150, focusKm:1500, defR7:250, defR10:100};
+const DEFAULT_THR = {wetFactor:0.8, gust1:30, gust2:40, gust3:50, sus3:34, ringBuf:150, focusKm:1500, defR7:250, defR10:100, ringCap:1};
 
 // 菲律賓氣象局 10/18 23:00 發布之預報點（台灣時間），風速 km/h 已換算 kt。示範用，請以最新報更新。
 const SEED_TRACKS = {
@@ -424,6 +472,8 @@ const S = {
   sched: store.get('sched', ''),
   tcName: store.get('tcName', '薔琵 CHAMPI'),
   tafText: store.get('tafText', ''), taf: {}, jmaErr: '',
+  rot: Object.assign({base:'TPE', minLv:3, buf:2, turn:90, minHours:2, asiaSeats:2000, lhSeats:1500, lf:85, extra:10, nbRatio:60, staffCap:70, bPolicy:'cancel', cPolicy:'shelter', off:{}}, store.get('rot', {})),
+  banks: store.get('banks', null),
   wx: {}, wxAt: null, wxErr: '',
   t0: 0, H: [], sliderI: 0,
   metar: null,
@@ -623,12 +673,16 @@ function risk(ap, t){
     else if(xw > L.xw*0.85 || g >= T.gust2) wl = 2;
     else if(xw > L.xw*0.65 || g >= T.gust1) wl = 1;
     if(rw && xw > L.xw*0.65) why.push(`${w.src==='TAF'?'TAF ':''}側風 ${xw.toFixed(0)}kt (${rw.name})`);
-    if(g >= T.gust1) why.push(`陣風 ${g.toFixed(0)}kt`);
+    if(g >= T.gust3 || w.spd >= T.sus3) why.push(`超過地面作業門檻（平均 ${w.spd.toFixed(0)}／陣風 ${g.toFixed(0)}kt）`);
+    else if(g >= T.gust1) why.push(`陣風 ${g.toFixed(0)}kt`);
   }
   const tl = trackLevel(ap, t);
-  if(tl.lv >= 2) why.push(tl.lv===3 ? '在十級風圈內' : '在七級風圈內');
+  // 有風場資料時，暴風圈距離最多只算「警戒」，以實際風為準（避免地形屏障造成誤判）
+  const tlv = (w && T.ringCap) ? Math.min(tl.lv, 2) : tl.lv;
+  if(tl.lv >= 2) why.push(tl.lv===3 ? (tlv===3 ? '在十級風圈內' : '在十級風圈內（以風場為準）') : '在七級風圈內');
   else if(tl.lv === 1) why.push('接近七級風圈');
-  const lv = (wl==null && !tl.c) ? null : Math.max(wl ?? 0, tl.lv);
+  tl.lvRaw = tl.lv; tl.lv = tlv;
+  const lv = (wl==null && !tl.c) ? null : Math.max(wl ?? 0, tlv);
   return {lv, wl, tl, w, rw, why};
 }
 function maxRiskWindow(ap, t, spanH=1){
@@ -1217,6 +1271,582 @@ function renderHistory(){
   $$('[data-hdel]').forEach(el => el.addEventListener('click', () => { S.history.splice(+el.dataset.hdel,1); store.set('history', S.history); renderHistory(); drawTracks(); }));
 }
 
+/* ================= 機隊輪轉 ================= */
+const ROT_DEF = {base:'TPE', minLv:3, buf:2, turn:90};
+const apBy = c => S.airports.find(a => a.code === c);
+const ROT_ST_COL = {stop:'#E5484D', warn:'#F4A261', info:'#E3C34B', ok:'#151515'};
+const SCN = {
+  A:{t:'早上受影響', d:'長程入境班撞上颱風；早上沒有飛機接亞洲線；美→亞轉機客卡在台灣。', a:'長程入境在起飛地延後，讓它在恢復後抵台，不要起飛後再備降；早上亞洲線順延或取消。'},
+  B:{t:'白天受影響、晚上前恢復', d:'早上亞洲線飛得出去，回程卻落在影響時段 → 回不來；晚上桃園已恢復，長程卻沒有飛機。', a:'最需要提前決策：回程會落在時段內的亞洲線提前、改窄體或取消，讓廣體機留在基地接晚上長程。'},
+  C:{t:'傍晚開始、持續到隔天', d:'亞洲回程回不來，但晚上長程本來就飛不了；真正的壓力在隔天早上的入境與復飛。', a:'亞洲線可飛並在外站避颱（先確認停機位、組員過夜、旅客安置）；晚上長程取消；隔天入境在起飛地延後。'},
+  D:{t:'全天以上', d:'兩頭都不能飛，旅客滯留在兩端。', a:'提前 24–48 小時全面取消，讓旅客留在出發地；評估疏散機隊到外站避颱，重點放在復飛計畫。'},
+  E:{t:'深夜到清晨短暫受影響', d:'晚上長程可能要提前或延後出發；清晨抵台的長程入境可能要延後。', a:'長程提前起飛、入境延後抵台，通常不必取消；亞洲線照常。'},
+};
+function baseWindows(minLv){
+  const ap = apBy(S.rot.base); if(!ap) return [];
+  const out = []; let cur = null;
+  S.H.forEach(t => {
+    const lv = risk(ap, t).lv ?? 0;
+    if(lv >= minLv){
+      if(cur && t - cur.e <= 2*HR){ cur.e = t + HR; cur.mx = Math.max(cur.mx, lv); }
+      else { cur = {s:t, e:t+HR, mx:lv}; out.push(cur); }
+    }
+  });
+  const minH = Math.max(1, S.rot.minHours || 1);
+  return out.filter(w => (w.e - w.s) >= minH*HR || w.s <= S.H[0]);   // 過濾單點陣風雜訊
+}
+const winHit = (wins, a, b) => wins.find(w => w.s < b && w.e > a) || null;
+function classifyWin(w){
+  const dur = (w.e - w.s)/HR, s = twParts(w.s), e = twParts(w.e);
+  const sameDay = s.d === twParts(w.e - 1).d;
+  if(dur >= 20) return 'D';
+  if(s.h < 10) return 'A';
+  if(s.h < 19) return sameDay ? 'B' : 'C';
+  return (e.h <= 7 && dur <= 10) ? 'E' : 'C';
+}
+function isLongHaul(f){
+  const b = apBy(S.rot.base); if(!b) return false;
+  const o = f.dep.code === S.rot.base ? f.arr : f.arr.code === S.rot.base ? f.dep : null;
+  const d = o ? distKm(b.lat, b.lon, o.lat, o.lon) : distKm(f.dep.lat, f.dep.lon, f.arr.lat, f.arr.lon);
+  return d > 4500;
+}
+function parseRot(text, defDate){
+  const out = [];
+  String(text||'').split(/\n/).forEach(raw => {
+    let line = raw.trim(); if(!line || line.startsWith('#')) return;
+    let tag = '', m;
+    if((m = line.match(/^([^\s:：]{1,14})\s*[:：]\s*(.*)$/))){ tag = m[1]; line = m[2]; }
+    let xfer = null, pax = null;
+    if((m = line.match(/轉(?:機)?\s*[:：]?\s*(\d+)\s*人?/))){ xfer = +m[1]; line = line.replace(m[0], ' '); }
+    if((m = line.match(/(?:PAX|載客|旅客)\s*[:：]?\s*(\d+)\s*人?/i))){ pax = +m[1]; line = line.replace(m[0], ' '); }
+    const f = parseSchedule(line, defDate)[0]; if(!f) return;
+    out.push(Object.assign(f, {raw, tag, xfer, pax}));
+  });
+  return out;
+}
+const xf = f => f.xfer == null ? '?' : f.xfer;
+function analyzeRot(){
+  const dv = ($('#rotDate').value || '').split('-').map(Number);
+  const all = parseRot($('#rotText').value, {y:dv[0], m:dv[1], d:dv[2]});
+  const bad = all.filter(f => f.err), fl = all.filter(f => !f.err);
+  const B = S.rot.base, buf = S.rot.buf*HR, turn = S.rot.turn*60e3, now = Date.now();
+  const closed = baseWindows(S.rot.minLv), warnW = S.rot.minLv > 2 ? baseWindows(2) : [];
+  const groups = {}; fl.forEach((f,i) => { const k = f.tag || ('未分組' + (i+1)); (groups[k] = groups[k] || []).push(f); });
+  const rots = Object.entries(groups).map(([tag, list]) => {
+    list.sort((a,b) => a.std - b.std);
+    const finds = []; const add = (lv, txt, act) => finds.push({lv, txt, act});
+    const mark = (f, st) => { const o = {ok:0, info:1, warn:2, stop:3}; if(o[st] > o[f.st]) f.st = st; };
+    list.forEach(f => { f.lh = isLongHaul(f); f.st = 'ok'; f.e = evalFlight(f); f.cxl = false; });
+    for(let i=0; i<list.length; i++){
+      const f = list[i], g = list[i+1];
+      const fromB = f.dep.code === B, toB = f.arr.code === B;
+      const prevReady = i > 0 ? list[i-1].sta + turn : -Infinity;
+      // 1. 長程入境撞上基地無法起降時段
+      if(f.lh && toB){
+        const w = winHit(closed, f.sta - 0.5*HR, f.sta + 0.5*HR);
+        if(w){
+          const d = Math.ceil((w.e + 0.5*HR - f.sta)/HR); mark(f, 'stop');
+          add(3, `${f.flt} ${f.dep.code}→${B} 預計 ${fmtTW(f.sta)} 抵台，落在無法起降時段（${fmtTW(w.s)}～${fmtTW(w.e)}）。`,
+            `在 ${f.dep.code} 延後約 ${d} 小時起飛（當地 ${fmtLocal(f.std + d*HR, f.dep.tz)}），讓它在恢復後抵台，不要起飛後再備降。`);
+          const ready = f.sta + d*HR + turn;
+          if(g && g.dep.code === B && g.std < ready){
+            mark(g, 'warn'); g.cxl = true;
+            add(2, `接續的 ${g.flt} 原定 ${fmtTW(g.std)} 出發，但飛機最快 ${fmtTW(ready)} 才能準備好。`,
+              `${g.flt} 延後約 ${Math.ceil((ready - g.std)/HR)} 小時、換機，或取消（取消時本班 ${xf(g)} 位轉機客會留在${B}）。`);
+          }
+        }
+      }
+      // 2. 從基地出發的亞洲來回
+      if(!f.lh && fromB && g && g.dep.code === f.arr.code && g.arr.code === B){
+        const ret = g.sta, lh = list.slice(i+2).find(h => h.lh && h.dep.code === B);
+        const outW = winHit(closed, f.std - 0.5*HR, f.std + 0.5*HR);
+        const w = winHit(closed, ret - 0.5*HR, ret + buf);
+        if(outW){
+          mark(f, 'stop'); mark(g, 'stop'); f.cxl = g.cxl = true;
+          add(3, `${f.flt} 出發時（${fmtTW(f.std)}）${B} 在無法起降時段。`, `${f.flt}／${g.flt} 取消，或延後到 ${fmtTW(outW.e)} 之後；本班 ${xf(f)} 位轉機客會留在${B}。`);
+        } else if(w){
+          mark(g, 'stop'); mark(f, 'warn');
+          const adv = Math.ceil((ret + buf - w.s)/HR*2)/2;
+          const newStd = f.std - adv*HR;
+          const canAdv = newStd >= Math.max(prevReady, now + HR);
+          const extOk = evalFlight(f, -adv*HR).lv < 3 && evalFlight(g, -adv*HR).lv < 3;
+          const optAdv = canAdv && extOk
+            ? `① 提前 ${adv} 小時：${f.flt} 改當地 ${fmtLocal(newStd, f.dep.tz)} 出發，${g.flt} 約 ${fmtTW(ret - adv*HR)} 回到${B}（保留 ${S.rot.buf} 小時緩衝）`
+            : `① 提前不可行（${!canAdv ? '前一段飛機或時間來不及' : '提前後外站或航路仍有高風險'}）`;
+          if(lh && w.e + turn <= lh.std){
+            const lhDelay = Math.max(0, w.e + turn - lh.std);
+            mark(lh, 'warn'); f.cxl = g.cxl = true;
+            add(3, `情境 B：${g.flt} 回程 ${fmtTW(ret)} 落在無法起降時段（${fmtTW(w.s)}～${fmtTW(w.e)}），但 ${lh.flt}（${fmtTW(lh.std)}）出發時已恢復 → 不處理的話，晚上長程會沒有飛機。`,
+              [optAdv,
+               `② 改用窄體機飛 ${f.flt}／${g.flt}，廣體機留在${B}接 ${lh.flt}`,
+               `③ 取消 ${f.flt}／${g.flt}，保住 ${lh.flt} 準點（${xf(f)} 位轉機客留在${B}、${xf(g)} 位留在 ${f.arr.code}）`,
+               `④ 照飛，在 ${f.arr.code} 等恢復再回：${g.flt} 約 ${fmtTW(w.e)} 抵台，${lh.flt} ${lhDelay > 0 ? '約延誤 '+(lhDelay/HR).toFixed(1)+' 小時' : '仍可準點，但過站時間很緊'}；先確認組員執勤時間與 ${f.arr.code} 宵禁`].join('\n'));
+          } else if(lh){
+            mark(lh, 'stop'); lh.cxl = true;
+            add(2, `情境 C：${g.flt} 回程 ${fmtTW(ret)} 落在無法起降時段，且 ${lh.flt}（${fmtTW(lh.std)}）出發時${B}仍未恢復（約 ${fmtTW(w.e)} 恢復）。`,
+              `長程本來就難以準時，缺機不是主要問題。亞洲線可以飛，讓飛機在 ${f.arr.code} 過夜避颱（先確認停機位、組員過夜、回程旅客安置），恢復後第一波飛回；或一併取消。${lh.flt} 的 ${xf(lh)} 位轉機客建議提前通知改期。`);
+          } else {
+            add(2, `${g.flt} 回程 ${fmtTW(ret)} 落在無法起降時段（${fmtTW(w.s)}～${fmtTW(w.e)}）。`, `${optAdv.replace('① ','')}；或在 ${f.arr.code} 過夜，恢復後再回。`);
+          }
+        } else {
+          const nw = closed.find(x => x.s >= ret);
+          if(nw && nw.s - ret < buf + 3*HR){
+            mark(g, 'info');
+            add(1, `${g.flt} 回程 ${fmtTW(ret)} 抵台，距無法起降時段開始（${fmtTW(nw.s)}）只剩 ${((nw.s - ret)/HR).toFixed(1)} 小時。`, `來回任一段延誤就可能回不來；可考慮提前出發，並先備好延誤時的方案。`);
+          }
+        }
+      }
+      // 3. 長程出發撞上基地無法起降時段
+      if(f.lh && fromB){
+        const w = winHit(closed, f.std - 0.5*HR, f.std + 0.5*HR);
+        if(w){
+          mark(f, 'stop'); f.cxl = true;
+          const early = w.s - HR;
+          const act = early >= Math.max(prevReady, now + HR)
+            ? `提前到 ${fmtTW(early)} 前出發，或延後到 ${fmtTW(w.e)} 之後`
+            : `延後到 ${fmtTW(w.e)} 之後（約延誤 ${((w.e - f.std)/HR).toFixed(1)} 小時），或取消`;
+          add(3, `${f.flt} 長程出發 ${fmtTW(f.std)} 落在無法起降時段（${fmtTW(w.s)}～${fmtTW(w.e)}）。`, `${act}；本班 ${xf(f)} 位轉機客會在${B}等候。`);
+        }
+      }
+      // 4. 外站風險
+      if(!fromB && (f.e.dr.lv ?? 0) >= 3){ mark(f, 'stop'); add(2, `${f.flt} 在 ${f.dep.code} 出發時外站高風險。`, '確認外站天氣與機場運作，評估延後。'); }
+      if(!toB && (f.e.ar.lv ?? 0) >= 3){ mark(f, 'stop'); add(2, `${f.flt} 抵達 ${f.arr.code} 時外站高風險。`, '評估延後、備降與加油。'); }
+      // 5. 基地警戒時段
+      if(f.st === 'ok' && warnW.length){
+        const t = fromB ? f.std : toB ? f.sta : null;
+        if(t != null && winHit(warnW, t - 0.5*HR, t + 0.5*HR)){ mark(f, 'info'); add(1, `${f.flt} 在${B}${fromB ? '出發' : '抵達'}時屬警戒時段（側風或陣風偏大）。`, '留意側風，可能延誤。'); }
+      }
+    }
+    return {tag, list, finds, mx: Math.max(0, ...finds.map(x => x.lv))};
+  });
+  // 轉機客估算（假設建議取消的班次都取消）
+  let atBase = 0, atOut = 0, unknown = 0; const hitBase = [], hitOut = [];
+  rots.forEach(r => r.list.forEach((f, i) => {
+    if(!f.cxl) return;
+    const feeder = r.list[i-1];
+    if(f.dep.code === B && feeder && feeder.lh && feeder.arr.code === B && feeder.st === 'stop') return; // 前段長程已在起飛地延後，旅客還在起飛地
+    if(f.xfer == null){ unknown++; return; }
+    if(f.dep.code === B){ atBase += f.xfer; hitBase.push(f); }
+    else if(f.arr.code === B && !f.lh){ atOut += f.xfer; hitOut.push(f); }
+  }));
+  return {rots, bad, closed, warnW, atBase, atOut, unknown, hitBase, hitOut, n: fl.length};
+}
+function renderRotWins(R){
+  const B = S.rot.base; $('#rotBaseTitle').textContent = (apBy(B) || {}).name || B;
+  if(!R.closed.length){
+    $('#rotWins').innerHTML = `<div class="note">未來 120 小時內，${B} 沒有達「${S.rot.minLv >= 3 ? '高風險' : '警戒'}」的時段。${R.warnW.length ? '警戒時段：' + R.warnW.map(w => `${fmtTW(w.s,true)}～${fmtTW(w.e)}`).join('、') + '。' : ''}${isDemo() ? '（目前為示範路徑）' : ''}</div>`;
+    return;
+  }
+  $('#rotWins').innerHTML = R.closed.map(w => {
+    const k = classifyWin(w), c = SCN[k];
+    return `<div class="src-card"><div class="src-head"><div><span class="pill lv3">情境 ${k}</span> <b>${c.t}</b></div><div class="num">${fmtTW(w.s,true)} ～ ${fmtTW(w.e,true)}　<span class="muted small">約 ${Math.round((w.e-w.s)/HR)} 小時${w.s <= S.H[0] ? '（進行中）' : ''}</span></div></div>
+      <div class="small" style="line-height:1.7"><b>會發生：</b>${c.d}<br><b>建議：</b>${c.a}</div></div>`;
+  }).join('') + `<div class="small muted">情境依時段的開始時間與長度自動判斷；實際影響仍要看各班的時間，請參考下方逐班判斷。</div>`;
+}
+function rotGantt(R){
+  if(!R.rots.length) return '<div class="muted small">尚未輸入輪轉班表。</div>';
+  const t0 = S.H[0], t1 = S.H[S.H.length-1];
+  const W = 1100, Lw = 96, Rw = 12, rowH = 50, top = 46, H = top + R.rots.length*rowH + 8;
+  const x = t => Lw + (W - Lw - Rw) * Math.max(0, Math.min(1, (t - t0)/(t1 - t0)));
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;min-width:900px;height:auto;display:block;font-family:Inter,'Noto Sans TC',sans-serif">`;
+  R.warnW.forEach(w => s += `<rect x="${x(w.s)}" y="${top-6}" width="${Math.max(1, x(w.e)-x(w.s))}" height="${H-top}" fill="${LVCOL[2]}" opacity=".35"/>`);
+  R.closed.forEach(w => s += `<rect x="${x(w.s)}" y="${top-6}" width="${Math.max(1, x(w.e)-x(w.s))}" height="${H-top}" fill="${LVCOL[3]}" opacity=".22"/>`);
+  S.H.forEach(t => { const p = twParts(t); if(p.h % 6) return;
+    s += `<line x1="${x(t)}" x2="${x(t)}" y1="${top-8}" y2="${H}" stroke="${p.h===0 ? '#b9b9b0' : '#ecece6'}" ${p.h===0 ? '' : 'stroke-dasharray="2 3"'}/>`;
+    s += `<text x="${x(t)}" y="${top-12}" text-anchor="middle" font-size="10" fill="${p.h===0?'#151515':'#8a8a82'}">${p2(p.h)}</text>`;
+    if(p.h === 0) s += `<text x="${x(t)+3}" y="${top-28}" font-size="11.5" font-weight="600" fill="#151515">${p.m}/${p.d}(${WK[p.wd]})</text>`; });
+  R.rots.forEach((r, ri) => {
+    const y = top + ri*rowH;
+    s += `<text x="4" y="${y+26}" font-size="12" font-weight="600" fill="#151515">${esc(r.tag)}</text>`;
+    s += `<line x1="${Lw}" x2="${W-Rw}" y1="${y+rowH-2}" y2="${y+rowH-2}" stroke="#f0f0ec"/>`;
+    let lastEnd = -1e9, below = false;
+    r.list.forEach(f => {
+      if(f.sta < t0 || f.std > t1) return;
+      const a = x(f.std), b = x(f.sta), col = ROT_ST_COL[f.st];
+      const lab = `${f.flt} ${f.dep.code === S.rot.base ? '→'+f.arr.code : f.dep.code+'→'}`;
+      below = a < lastEnd + 4 ? !below : false;          // 與前一個標籤太近就換到下方
+      s += `<rect x="${a}" y="${y+18}" width="${Math.max(3, b-a)}" height="13" rx="5" fill="${col}"><title>${esc(f.flt)} ${f.dep.code}→${f.arr.code}　${fmtTW(f.std)} → ${fmtTW(f.sta)}</title></rect>`;
+      s += `<text x="${a+2}" y="${below ? y+44 : y+13}" font-size="10" fill="#4a4b44">${esc(lab)}</text>`;
+      lastEnd = Math.max(lastEnd, a + 2 + lab.length*5.6);
+    });
+  });
+  return s + '</svg>';
+}
+function renderRot(){
+  renderBanks();
+  if(!$('#rotText')) return;
+  store.set('rotText', $('#rotText').value);
+  const R = analyzeRot(); S.rotResult = R;
+  renderRotWins(R);
+  $('#rotMsg').className = 'msg' + (R.bad.length ? ' err' : '');
+  $('#rotMsg').textContent = R.bad.length ? `有 ${R.bad.length} 行無法解析：` + R.bad.map(b => b.raw).slice(0,3).join('｜') : (R.n ? `已讀入 ${R.n} 班、${R.rots.length} 個輪轉` : '');
+  $('#rotGantt').innerHTML = rotGantt(R);
+  const sorted = R.rots.slice().sort((a,b) => b.mx - a.mx);
+  $('#rotFinds').innerHTML = sorted.length ? sorted.map(r => {
+    const chain = r.list.map(f => f.dep.code).concat(r.list.length ? [r.list[r.list.length-1].arr.code] : []).join('→');
+    const pill = r.mx >= 3 ? '<span class="pill lv3">需處置</span>' : r.mx === 2 ? '<span class="pill lv2">受影響</span>' : r.mx === 1 ? '<span class="pill lv1">留意</span>' : '<span class="pill lv0">正常</span>';
+    const body = r.finds.length ? r.finds.sort((a,b) => b.lv - a.lv).map(x => `<div style="margin:8px 0;padding-left:10px;border-left:3px solid ${LVCOL[x.lv]}"><div class="small">${esc(x.txt)}</div><div class="small muted" style="white-space:pre-line;margin-top:3px">${esc(x.act)}</div></div>`).join('') : '<div class="small muted">沒有發現問題。</div>';
+    return `<div class="src-card"><div class="src-head"><div><b>${esc(r.tag)}</b>　<span class="small muted">${esc(chain)}</span></div>${pill}</div>${body}</div>`;
+  }).join('') : '<div class="muted small">輸入輪轉班表後按「分析」。</div>';
+  const B = S.rot.base;
+  const unk = R.unknown ? `<div class="small muted">另有 ${R.unknown} 班受影響航班沒有填轉機人數，未計入。</div>` : '';
+  const list = arr => arr.map(f => `${esc(f.flt)}（${f.xfer}）`).join('、');
+  $('#rotPax').innerHTML = !R.n ? '<div class="muted small">輸入輪轉班表後顯示。</div>' : `
+    <div class="kv"><div>可能滯留${esc(B)}<b class="num">${R.atBase}</b></div><div>可能滯留外站<b class="num">${R.atOut}</b></div></div>
+    <div class="small muted" style="margin-top:6px">估算方式：假設建議選項含「取消」的班次都取消。從${esc(B)}出發的班次，轉機客會留在${esc(B)}；回${esc(B)}的亞洲線，轉機客會留在外站。前段長程若已建議在起飛地延後，該班轉機客不計入（他們還在起飛地）。</div>
+    ${R.hitBase.length ? `<div class="small" style="margin-top:8px">${esc(B)}：${list(R.hitBase)}</div>` : ''}${R.hitOut.length ? `<div class="small">外站：${list(R.hitOut)}</div>` : ''}${unk}
+    <div class="note" style="margin-top:12px">${R.atBase > 0 || R.hitBase.length ? `<b>${esc(B)} 場站要準備：</b><br>・提前 24–48 小時關閉受影響航班的轉機銷售，主動通知轉機客改期，讓旅客留在出發地<br>・改票與補位（含轉搭他家航空）、餐券<br>・過境旅館房量；沒有台灣免簽資格的旅客，先確認能否臨時入境<br>・直掛行李的處理與保管<br>・貴賓室容量、地勤與客服加班人力` : '目前沒有估算到會滯留在基地的轉機客。'}${R.atOut > 0 ? `<br><br><b>外站：</b>提前通知外站代理準備住宿與改票，確認旅館量能。` : ''}</div>`;
+}
+function rotAutoPair(){
+  const dv = ($('#rotDate').value || '').split('-').map(Number);
+  const fl = parseRot($('#rotText').value, {y:dv[0], m:dv[1], d:dv[2]}).filter(f => !f.err).sort((a,b) => a.std - b.std);
+  const turn = S.rot.turn*60e3, chains = [];
+  fl.forEach(f => {
+    let best = null;
+    chains.forEach(c => { const l = c[c.length-1]; const gap = f.std - l.sta;
+      if(l.arr.code === f.dep.code && gap >= turn && gap <= 14*HR && (!best || gap < best.gap)) best = {c, gap}; });
+    if(best) best.c.push(f); else chains.push([f]);
+  });
+  const lines = [];
+  chains.forEach((c, i) => c.forEach(f => lines.push(`R${i+1}: ${f.raw.replace(/^([^\s:：]{1,14})\s*[:：]\s*/, '')}`)));
+  $('#rotText').value = lines.join('\n');
+  renderRot();
+  $('#rotMsg').className = 'msg'; $('#rotMsg').textContent = `已依機場與過站時間自動配成 ${chains.length} 個輪轉，請確認是否與實際派遣相同。`;
+}
+function rotSample(){
+  const w = baseWindows(S.rot.minLv)[0];
+  const d0 = w ? w.s : Date.now() + 24*HR;
+  const P = t => { const q = twParts(t); return `${q.y}-${p2(q.m)}-${p2(q.d)}`; };
+  const D = P(d0), Dm1 = P(d0 - 24*HR);
+  $('#rotDate').value = D;
+  $('#rotText').value = [
+    `# 範例班表：航班號與時間僅為示意，日期對齊颱風影響當天`,
+    `R1: ${Dm1} JX001 LAX TPE 00:50 06:20 轉 80`, `R1: ${D} JX800 TPE NRT 08:20 12:40 轉 45`, `R1: ${D} JX801 NRT TPE 14:00 16:50 轉 70`, `R1: ${D} JX002 TPE LAX 23:40 19:30 轉 110`,
+    `R2: ${Dm1} JX005 SFO TPE 01:20 06:40 轉 60`, `R2: ${D} JX862 TPE HKG 08:50 10:50 轉 30`, `R2: ${D} JX863 HKG TPE 12:20 14:10 轉 40`, `R2: ${D} JX006 TPE SFO 23:55 19:50 轉 95`,
+    `R3: ${Dm1} JX021 PRG TPE 12:30 06:50 轉 50`, `R3: ${D} JX741 TPE BKK 07:50 10:40 轉 35`, `R3: ${D} JX742 BKK TPE 11:50 16:30 轉 55`, `R3: ${D} JX022 TPE PRG 23:20 07:00 轉 70`,
+    `R4: ${Dm1} JX031 SEA TPE 01:40 05:50 轉 55`, `R4: ${D} JX820 TPE KIX 09:20 12:50 轉 25`, `R4: ${D} JX821 KIX TPE 14:10 16:20 轉 50`, `R4: ${D} JX032 TPE SEA 23:10 18:40 轉 85`,
+  ].join('\n');
+  renderRot();
+}
+
+/* ================= 作業波段 ================= */
+const BANK_DEF = [
+  {k:'LHI', name:'長程入境', note:'美／歐抵台', s:4,  e:8},
+  {k:'AO',  name:'亞洲去程', note:'廣體機飛出', s:7,  e:11},
+  {k:'AR',  name:'亞洲回程', note:'廣體機回台', s:13, e:20},
+  {k:'LHO', name:'長程出發', note:'飛美／歐',   s:19, e:24},
+];
+const BANK_COL = {LHI:'#3d6f8e', AO:'#7E8F35', AR:'#9a7b2f', LHO:'#151515'};
+const SCN_LV = {D:3, A:3, B:3, C:3, E:2, O:2, N:1, W:1, OK:0};
+const SCN_NAME = {D:'情境 D　全天以上', A:'情境 A　早上受影響', B:'情境 B　白天受影響、晚上前恢復', C:'情境 C　傍晚開始、持續到隔天', E:'情境 E　長程出發受影響', N:'回程緩衝不足', W:'警戒', O:'停班停課（作業減量）', OK:'正常作業'};
+function bankList(){ return S.banks || BANK_DEF; }
+function hourLvMap(){
+  const ap = apBy(S.rot.base), m = new Map();
+  S.H.forEach(t => m.set(t, ap ? (risk(ap, t).lv ?? 0) : 0));
+  return m;
+}
+function computeBankDays(){
+  const lvMap = hourLvMap(), minLv = S.rot.minLv, now = Date.now();
+  const closedW = baseWindows(minLv);
+  const f = twParts(S.H[0]); const end = S.H[S.H.length-1];
+  const days = [];
+  for(let d = twToUtc(f.y, f.m, f.d, 0, 0); d <= end; d += 24*HR){
+    const banks = bankList().map(b => {
+      const a = d + b.s*HR, z = d + b.e*HR; const closed = [], warn = []; let known = 0;
+      for(let t = a; t < z; t += HR){ if(!lvMap.has(t)) continue; known++; const lv = lvMap.get(t); if(closedW.some(w => t >= w.s && t < w.e)) closed.push(t); else if(lv >= 2) warn.push(t); }
+      return Object.assign({}, b, {a, z, closed, warn, known, past: z <= now});
+    });
+    const key = (q => `${q.y}-${p2(q.m)}-${p2(q.d)}`)(twParts(d));
+    const day = {d, key, banks, lvMap, closedW, off: !!(S.rot.off || {})[key]};
+    Object.assign(day, bankDecide(day, closedW));
+    if(day.off && day.scn !== 'PAST'){
+      const Bn = (apBy(S.rot.base) || {}).name || S.rot.base;
+      day.imp.push(`已勾選停班停課：地勤、航廈人力與旅客到場都會受限，就算風可以飛，可執行的班次也會減少（設定為約 ${S.rot.staffCap}%）。`);
+      day.act.push('依可到班人力決定可執行的班次量；優先保長程與疏運航班', '提前通知旅客報到時間與交通（機捷、客運可能停駛）');
+      day.prs.push(`${Bn}：人力不足時，櫃檯、轉機、行李作業都會變慢，旅客等候時間拉長`);
+      if(['OK','W','N'].includes(day.scn)) day.scn = 'O';
+    }
+    day.load = bankLoad(day, closedW);
+    days.push(day);
+  }
+  return {days, closedW, sim: simulateBacklog(days)};
+}
+function bankDecide(day, closedW){
+  const g = k => day.banks.find(b => b.k === k);
+  const LHI = g('LHI'), AO = g('AO'), AR = g('AR'), LHO = g('LHO');
+  const B = S.rot.base, Bn = (apBy(B) || {}).name || B, buf = S.rot.buf*HR, turn = S.rot.turn*60e3;
+  const C = b => !!b && !b.past && b.closed.length > 0;
+  const Wn = b => !!b && !b.past && b.warn.length > 0 && b.closed.length === 0;
+  const wOf = b => closedW.find(w => w.s < b.z && w.e > b.a);
+  const T = t => fmtTW(t, true), hh = b => `${p2(b.s)}–${p2(b.e % 24)} 時`;
+  const imp = [], act = [], ddl = [], prs = [];
+  const live = [LHI, AO, AR, LHO].filter(b => b && !b.past);
+  let scn = 'OK';
+  if(!live.length) return {scn:'PAST', imp, act, ddl, prs};
+  if(live.every(C)){
+    scn = 'D';
+    const ws = closedW.filter(w => w.s < LHO.z && w.e > LHI.a);
+    imp.push(`四個作業波段都在無法起降時段（${ws.map(w => T(w.s)+'～'+T(w.e)).join('、')}），兩頭都不能飛，旅客會滯留在兩端。`);
+    act.push('提前 24–48 小時決定全面停飛，讓旅客留在出發地', '評估把廣體機疏散到外站避颱，恢復後第一波飛回', '長程入境在起飛地取消，或延到恢復後');
+    ddl.push({t: LHI.a - 24*HR, txt:'決定是否全面停飛（讓旅客留在出發地）'});
+    prs.push(`${Bn}：已抵台的轉機客滯留，需過境旅館、餐券、改票`, '外站：回程旅客由外站代理安置');
+    return {scn, imp, act, ddl, prs};
+  }
+  // 長程入境
+  if(C(LHI)){
+    const w = wOf(LHI), ok = w.e + 0.5*HR;
+    imp.push(`長程入境波（${hh(LHI)}）落在無法起降時段（${T(w.s)}～${T(w.e)}），抵台班次需要備降或延後。`);
+    act.push(`長程入境在起飛地延後起飛，讓班機在 ${T(ok)} 之後抵台；不要起飛後再備降`);
+    ddl.push({t: LHI.a - 16*HR, txt:'長程入境班是否在起飛地延後（約在抵台前 13–16 小時從起飛地出發）'});
+    if(!C(AO) && AO && !AO.past){
+      imp.push(`早上的亞洲去程會因飛機晚到而延誤：最快 ${T(ok + turn)} 才有廣體機可用。`);
+      act.push('亞洲去程順延，或改派其他飛機／窄體機');
+    }
+    prs.push('美→亞轉機客跟著入境班在起飛地延後，壓力主要在外站；桃園要準備延誤後的轉機銜接');
+  }
+  // 亞洲去程
+  if(C(AO)){
+    const w = wOf(AO);
+    imp.push(`亞洲去程（${hh(AO)}）落在無法起降時段（${T(w.s)}～${T(w.e)}），廣體機飛不出去。`);
+    act.push(`亞洲去程延後到 ${T(w.e)} 之後，或取消`);
+    if(!C(LHI)) act.push('前一天就在美國端停止接受轉往受影響亞洲班次的旅客，或改到隔天');
+    ddl.push({t: AO.a - 3*HR, txt:'亞洲去程延後或取消（組員報到前）'});
+    if(!C(LHI) && LHI && !LHI.past) ddl.push({t: LHI.a - 16*HR, txt:'美國端是否停止接受轉亞洲的旅客（長程入境出發前）'});
+    prs.push(C(LHI) ? `若長程入境已在起飛地延後，轉機客還在起飛地，${Bn}壓力較小` : `${Bn}：清晨抵台、要轉亞洲的旅客會卡在${Bn}（壓力最大）——過境旅館、餐券、改票、行李、貴賓室與人力`);
+  }
+  // 亞洲回程 × 長程出發
+  if(!C(AO) && C(AR)){
+    const w = wOf(AR);
+    const latest = w.s - buf;                 // 回程最晚落地時間
+    const hitFrom = Math.max(AR.a, latest);
+    const lw = C(LHO) ? wOf(LHO) : null;
+    const lhoRecover = !lw || (lw.e + turn <= LHO.z - HR);   // 恢復後長程波還有時間可飛
+    if(lhoRecover){
+      scn = 'B';
+      imp.push(`亞洲去程照常飛得出去，但亞洲回程（${hh(AR)}）落在無法起降時段（${T(w.s)}～${T(w.e)}）→ ${T(hitFrom)} 之後才回來的飛機回不來。`);
+      imp.push(`${T(w.e)} 後${Bn}已恢復，但晚上長程出發（${hh(LHO)}）會沒有廣體機可飛。`);
+      if(lw) imp.push(`長程出發波的前段（${T(Math.max(lw.s, LHO.a))}～${T(lw.e)}）也在時段內，這段的長程要延到 ${T(lw.e + turn)} 之後。`);
+      const roundTrip = AR.a - AO.a;                       // 典型亞洲來回所需時間
+      const earliestRet = (LHI && !LHI.past ? LHI.z : Date.now()) + turn + roundTrip;
+      const shift = Math.ceil((AR.z - latest)/HR);
+      act.push(earliestRet <= latest
+        ? `① 提前：亞洲去程提前約 ${shift} 小時，讓回程都在 ${T(latest)} 前落地（保留 ${S.rot.buf} 小時緩衝）`
+        : `① 提前不可行：廣體機最早 ${T((LHI && !LHI.past ? LHI.z : Date.now()) + turn)} 才備妥，來不及在 ${T(latest)} 前飛完一趟亞洲來回`);
+      act.push(`② ${T(hitFrom)} 之後才回來的亞洲線改用窄體機，廣體機留在${Bn}接晚上長程`);
+      act.push(`③ 取消這些亞洲來回，保住晚上長程準點`);
+      act.push(`④ 照飛，在外站等到 ${T(w.e)} 恢復再回：晚上長程最快 ${T(w.e + turn)} 才能出發${w.e + turn > LHO.a ? `（約延誤 ${((w.e + turn - LHO.a)/HR).toFixed(1)} 小時）` : ''}；先確認組員執勤時間與外站宵禁`);
+      ddl.push({t: AO.a - 12*HR, txt:'選定亞洲線處置方式（提前／窄體／取消／照飛），並通知外站'});
+      ddl.push({t: AO.a - 3*HR, txt:'最後確認亞洲去程是否出發（組員報到前）'});
+      prs.push(`若取消亞洲線：清晨抵台、要轉亞洲的旅客卡在${Bn}；亞洲要轉美國的旅客留在外站（在出發地等，較好處理）`);
+      prs.push(`若照飛延後回：晚上長程延誤，亞→美轉機客在${Bn}等候，可能超過午夜`);
+    } else {
+      scn = 'C';
+      const w2 = wOf(LHO) || w;
+      imp.push(`亞洲回程（${hh(AR)}）與晚上長程出發（${hh(LHO)}）都在無法起降時段（${T(w.s)}～${T(w2.e)}），晚上長程本來就飛不了，缺機不是主要問題。`);
+      imp.push(`真正的壓力在恢復後：外站的廣體機要飛回、隔天長程入境要延後。`);
+      act.push('亞洲線可以飛，讓廣體機在外站過夜避颱（先確認停機位、組員過夜、回程旅客安置），恢復後第一波飛回；或一併取消');
+      act.push(`晚上長程取消，或延到 ${T(w2.e)} 之後`);
+      act.push('檢查隔天的長程入境波（見下一天）');
+      ddl.push({t: AO.a - 3*HR, txt:'亞洲線是否出去外站避颱'});
+      ddl.push({t: LHO.a - 24*HR, txt:'通知晚上長程的轉機客改期'});
+      prs.push(`亞→美轉機客：亞洲線照飛的話會卡在外站；已在${Bn}的長程旅客滯留${Bn}`);
+    }
+  } else if(!C(AR) && C(LHO)){
+    const w = wOf(LHO);
+    if(scn === 'OK') scn = 'E';
+    imp.push(`晚上長程出發（${hh(LHO)}）落在無法起降時段（${T(w.s)}～${T(w.e)}）。亞洲線可以照常回來。`);
+    if(w.s > LHO.a + HR) act.push(`長程出發提前到 ${T(w.s - HR)} 之前`);
+    act.push(`或延後到 ${T(w.e)} 之後；延後會連帶影響隔天的回程`);
+    ddl.push({t: LHO.a - 12*HR, txt:'長程出發提前或延後'});
+    prs.push(`亞→美轉機客在${Bn}等候；若延到深夜，需要餐券與休息區`);
+  }
+  if(scn === 'OK' && (C(LHI) || C(AO))) scn = 'A';
+  // 回程緩衝不足（還沒進入時段，但很接近）
+  if(!C(AR) && AR && !AR.past){
+    const nw = closedW.find(w => w.s >= AR.z - HR && w.s < AR.z + buf + 3*HR);
+    if(nw){
+      if(scn === 'OK') scn = 'N';
+      imp.push(`亞洲回程結束（${p2(AR.e)} 時）距離無法起降時段開始（${T(nw.s)}）只剩約 ${Math.max(0, (nw.s - AR.z)/HR).toFixed(1)} 小時，任一班延誤就可能回不來。`);
+      act.push('回程較晚的班次提前，或先備好延誤時的替代方案（窄體機、外站過夜）');
+    }
+  }
+  // 警戒
+  [LHI, AO, AR, LHO].forEach(b => { if(Wn(b)){ if(scn === 'OK') scn = 'W'; imp.push(`${b.name}（${hh(b)}）屬警戒時段（側風或陣風偏大）：可能延誤，部分機型受限。`); } });
+  if(scn === 'OK') imp.push('四個作業波段都不受影響，正常作業。');
+  return {scn, imp, act, ddl, prs};
+}
+/* ================= 積壓旅客（滾雪球）估算 ================= */
+const B_POL = {cancel:'取消受影響的亞洲來回', nb:'改用窄體機', fly:'照飛、外站等恢復（預報準確）', stuck:'照飛，但預報失準、飛機卡在外站'};
+const C_POL = {shelter:'亞洲線照飛、外站過夜避颱', cancel:'亞洲線一併取消'};
+function bankLoad(day, closedW){
+  const P = S.rot, lf = P.lf/100, nb = P.nbRatio/100, buf = P.buf*HR;
+  const g = k => day.banks.find(b => b.k === k);
+  const AO = g('AO'), AR = g('AR'), LHO = g('LHO');
+  const len = b => Math.max(1, b.e - b.s);
+  const fr = b => b && !b.past ? b.closed.length / len(b) : 0;
+  const a1 = P.asiaSeats*lf, l1 = P.lhSeats*lf;          // 單向、整個波段的旅客
+  let asia = 0, lh = 0, opts = null;
+  switch(day.scn){
+    case 'D': asia = 2*a1; lh = 2*l1; break;
+    case 'A': asia = 2*a1*fr(AO); break;                   // 長程入境在起飛地延後，不算積壓
+    case 'B': {
+      const w = closedW.find(x => x.s < AR.z && x.e > AR.a);
+      const hitFrom = w ? Math.max(AR.a, w.s - buf) : AR.a;
+      const fa = Math.min(1, Math.max(0, (AR.z - hitFrom)/HR / len(AR)));
+      opts = {
+        cancel: {asia: 2*a1*fa, lh: 0},
+        nb:     {asia: 2*a1*fa*(1-nb), lh: 0},
+        fly:    {asia: 0, lh: 0},
+        stuck:  {asia: 2*a1*fa, lh: 2*l1*fa},              // 回程旅客延一天＋隔天亞洲去程因飛機要先飛回而少飛；今晚長程＋明早長程入境都少一架
+      };
+      ({asia, lh} = opts[P.bPolicy] || opts.cancel); break;
+    }
+    case 'C': {
+      const fa = fr(AR), fl = fr(LHO);
+      opts = {shelter: {asia: 0, lh: 2*l1*fl}, cancel: {asia: 2*a1*fa, lh: 2*l1*fl}};
+      ({asia, lh} = opts[P.cPolicy] || opts.shelter); break;
+    }
+    case 'E': {
+      const w = closedW.find(x => x.s < LHO.z && x.e > LHO.a);
+      if(w && w.e - LHO.a > 8*HR) lh = 2*l1*fr(LHO);       // 延太久就等於取消
+      break;
+    }
+  }
+  if(day.off && day.scn !== 'D') asia += 2*P.asiaSeats*lf*(1 - P.staffCap/100);
+  const r = x => Math.round(x);
+  if(opts) Object.values(opts).forEach(o => { o.asia = r(o.asia); o.lh = r(o.lh); });
+  return {asia: r(asia), lh: r(lh), opts};
+}
+const spareOf = seats => 2*seats*Math.max(0, 1 - S.rot.lf/100 + S.rot.extra/100);   // 每天雙向可用來消化積壓的座位
+function simulateBacklog(days){
+  const hit = new Set(['D','A','B','C','O']);
+  let a = 0, l = 0, peakA = 0, peakL = 0; const rows = [];
+  const live = days.filter(d => d.scn !== 'PAST'); if(!live.length) return {rows, peakA, peakL};
+  const last = live[live.length-1].d;
+  for(let i = 0; i < live.length + 30; i++){
+    const d = i < live.length ? live[i] : {d: last + (i - live.length + 1)*24*HR, scn:'OK', load:{asia:0, lh:0}, ext:true};
+    const blocked = hit.has(d.scn);
+    const sa = blocked ? 0 : spareOf(S.rot.asiaSeats), sl = blocked ? 0 : spareOf(S.rot.lhSeats);
+    a = Math.max(0, a + d.load.asia - sa); l = Math.max(0, l + d.load.lh - sl);
+    peakA = Math.max(peakA, a); peakL = Math.max(peakL, l);
+    rows.push({d: d.d, scn: d.scn, newA: d.load.asia, newL: d.load.lh, a: Math.round(a), l: Math.round(l), ext: !!d.ext});
+    if(d.ext && a === 0 && l === 0) break;
+  }
+  const lastHit = rows.reduce((m, r) => (r.newA || r.newL) ? r.d : m, null);
+  const clear = key => { const r = rows.find(x => lastHit != null && x.d >= lastHit && x[key] === 0); return r ? r.d : null; };
+  return {rows, peakA: Math.round(peakA), peakL: Math.round(peakL), clearA: clear('a'), clearL: clear('l'), lastHit};
+}
+const daysToClear = (n, seats) => { const s = spareOf(seats); return n <= 0 ? 0 : s <= 0 ? Infinity : Math.ceil(n / s); };
+function renderSnowball(R){
+  const sim = R.sim, P = S.rot, md = t => { const q = twParts(t); return `${q.m}/${q.d}（${WK[q.wd]}）`; };
+  const sA = Math.round(spareOf(P.asiaSeats)), sL = Math.round(spareOf(P.lhSeats));
+  const pct = Math.round((1 - P.lf/100 + P.extra/100)*100);
+  let h = `<div class="src-card"><div class="src-head"><b>積壓旅客與疏解（滾雪球估算）</b><span class="small muted">依疏運參數估算，數字是量級參考</span></div>`;
+  if(!sim.lastHit){
+    h += `<div class="small muted">依目前的情境假設，沒有估算到需要疏運的積壓旅客。</div>`;
+  } else {
+    h += `<div class="kv"><div>亞洲線積壓高峰<b class="num">${sim.peakA.toLocaleString()}</b></div><div>長程積壓高峰<b class="num">${sim.peakL.toLocaleString()}</b></div>
+      <div>亞洲線疏解完<b class="num" style="font-size:16px">${sim.peakA ? (sim.clearA ? md(sim.clearA) : '30 天內無法') : '—'}</b></div>
+      <div>長程疏解完<b class="num" style="font-size:16px">${sim.peakL ? (sim.clearL ? md(sim.clearL) : '30 天內無法') : '—'}</b></div></div>
+      <div class="note" style="margin-top:10px">載客率 ${P.lf}%、可加開 ${P.extra}% 時，正常日每天只有約 <b>${pct}%</b> 的座位能拿來消化積壓：亞洲線每天約 ${sA.toLocaleString()} 人、長程每天約 ${sL.toLocaleString()} 人（雙向）。
+      停飛一天產生的積壓，要靠之後好幾天的空位慢慢消化；如果飛機卡在外站、又多停一個波段，積壓會疊上去，像滾雪球一樣越來越難疏解。長程航點每天往往只有一班，實際疏解通常比估算更慢。</div>
+      <div class="tbl-wrap" style="margin-top:10px"><table><tr><th>日期</th><th>狀況</th><th>新增積壓（亞洲／長程）</th><th>累積積壓（亞洲／長程）</th></tr>` +
+      sim.rows.filter(r => !r.ext || r.a || r.l || r.d === sim.clearA || r.d === sim.clearL).map(r => `<tr><td class="num">${md(r.d)}</td><td class="small">${r.ext ? '<span class="muted">正常（疏運中）</span>' : esc(SCN_NAME[r.scn] || '')}</td>
+        <td class="num">${r.newA || r.newL ? `${r.newA.toLocaleString()}／${r.newL.toLocaleString()}` : '—'}</td>
+        <td class="num"><b style="font-weight:600">${r.a.toLocaleString()}／${r.l.toLocaleString()}</b></td></tr>`).join('') + `</table></div>`;
+  }
+  h += `</div>`;
+  return h;
+}
+function optionTable(d){
+  const o = d.load && d.load.opts; if(!o) return '';
+  const pol = d.scn === 'B' ? B_POL : C_POL, cur = d.scn === 'B' ? S.rot.bPolicy : S.rot.cPolicy;
+  const rows = Object.entries(o).map(([k, v]) => {
+    const da = daysToClear(v.asia, S.rot.asiaSeats), dl = daysToClear(v.lh, S.rot.lhSeats);
+    const dd = Math.max(da, dl);
+    return `<tr${k === cur ? ' style="background:#f7f8f1"' : ''}><td class="small">${k === cur ? '▶ ' : ''}${pol[k]}</td><td class="num">${v.asia.toLocaleString()}</td><td class="num">${v.lh.toLocaleString()}</td>
+      <td><span class="pill ${dd >= 5 ? 'lv3' : dd >= 2 ? 'lv2' : dd >= 1 ? 'lv1' : 'lv0'}">${dd === Infinity ? '無法消化' : dd === 0 ? '不需疏運' : '約 ' + dd + ' 天'}</span></td></tr>`;
+  }).join('');
+  return `<div style="margin-top:10px"><div class="small" style="font-weight:600">各選項的後續影響（單看這一天）</div>
+    <div class="tbl-wrap"><table><tr><th>選項</th><th>亞洲線積壓</th><th>長程積壓</th><th>疏解需要</th></tr>${rows}</table></div>
+    <div class="small muted">▶ 為目前在「疏運參數」裡假設採用的選項，會用在上方的滾雪球估算。${d.scn === 'B' ? '「預報失準」是指恢復時間比預報晚、廣體機當晚飛不回來：今晚長程與明早長程入境都會少飛機，隔天早上飛機還要先飛回台灣，亞洲去程也跟著少飛。長程每天班次少、載客率高，積壓最難消化。' : ''}</div></div>`;
+}
+
+function bankStrip(day){
+  const W = 1000, pL = 8, pR = 8, H = 92, x = h => pL + (W-pL-pR)*h/24;
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;font-family:Inter,'Noto Sans TC',sans-serif">`;
+  for(let h=0; h<24; h++){
+    const t = day.d + h*HR, lv = day.lvMap.get(t);
+    const inW = day.closedW.some(w => t >= w.s && t < w.e);
+    const fill = lv == null ? '#eeeee9' : inW ? LVCOL[3] : lv >= 2 ? LVCOL[2] : '#f4f6ee';
+    s += `<rect x="${x(h)}" y="8" width="${x(h+1)-x(h)-1}" height="22" fill="${fill}" ${inW ? '' : 'opacity=".85"'}><title>${fmtTW(t,true)} ${lv == null ? '超出預報範圍' : inW ? '無法起降' : LVTXT[Math.min(lv,2)]}</title></rect>`;
+  }
+  const now = Date.now(); if(now > day.d && now < day.d + 24*HR){ const hx = x((now - day.d)/HR); s += `<line x1="${hx}" x2="${hx}" y1="4" y2="34" stroke="#151515" stroke-width="2"/><text x="${hx+3}" y="7" font-size="9.5" fill="#151515">現在</text>`; }
+  day.banks.forEach((b, i) => {
+    const y = i % 2 ? 62 : 40, a = x(b.s), z = x(Math.min(24, b.e));
+    const col = b.closed.length && !b.past ? LVCOL[3] : b.warn.length && !b.past ? LVCOL[2] : BANK_COL[b.k];
+    s += `<rect x="${a}" y="${y}" width="${z-a}" height="18" rx="6" fill="${col}" opacity="${b.past ? .3 : 1}"/>`;
+    s += `<text x="${a+6}" y="${y+13}" font-size="11" fill="${col === LVCOL[2] ? '#151515' : '#fff'}">${b.name}</text>`;
+  });
+  for(let h=0; h<=24; h+=3) s += `<text x="${x(h)}" y="${H-1}" text-anchor="${h===0?'start':h===24?'end':'middle'}" font-size="9.5" fill="#8a8a82">${p2(h%24)}</text>`;
+  return s + '</svg>';
+}
+function renderSnowTable(){
+  const F = [['asiaSeats','每日亞洲線座位（單向）','座'],['lhSeats','每日長程座位（單向）','座'],['lf','平均載客率','%'],['extra','疏運可增加運能（每日，加開／加大機型）','%'],['nbRatio','窄體／廣體座位比','%'],['staffCap','停班停課時可執行的班次比例','%']];
+  $('#snowTbl').innerHTML = F.map(([k, lab, u]) => `<tr><td class="small">${lab}</td><td><input class="cell" type="number" data-sk="${k}" value="${S.rot[k]}" style="width:110px"> <span class="small muted">${u}</span></td></tr>`).join('') +
+    `<tr><td class="small">情境 B 假設採用</td><td><select data-sk="bPolicy">${Object.entries(B_POL).map(([k,v]) => `<option value="${k}" ${S.rot.bPolicy===k?'selected':''}>${v}</option>`).join('')}</select></td></tr>
+     <tr><td class="small">情境 C 假設採用</td><td><select data-sk="cPolicy">${Object.entries(C_POL).map(([k,v]) => `<option value="${k}" ${S.rot.cPolicy===k?'selected':''}>${v}</option>`).join('')}</select></td></tr>`;
+  $$('#snowTbl [data-sk]').forEach(el => el.addEventListener('change', () => {
+    const k = el.dataset.sk; S.rot[k] = el.tagName === 'SELECT' ? el.value : Math.max(0, +el.value); store.set('rot', S.rot); renderBanks();
+  }));
+}
+function renderBankTable(){
+  $('#bankTbl').innerHTML = `<tr><th>波段</th><th>說明</th><th>開始（時）</th><th>結束（時）</th></tr>` + bankList().map((b,i) =>
+    `<tr><td><span class="swatch" style="background:${BANK_COL[b.k]}"></span>${b.name}</td><td class="small muted">${b.note}</td>
+     <td><input class="cell" type="number" min="0" max="23" data-bi="${i}" data-bf="s" value="${b.s}" style="width:70px"></td>
+     <td><input class="cell" type="number" min="1" max="24" data-bi="${i}" data-bf="e" value="${b.e}" style="width:70px"></td></tr>`).join('');
+  $$('#bankTbl input').forEach(el => el.addEventListener('change', () => {
+    S.banks = clone(bankList()); const v = Math.max(0, Math.min(24, Math.round(+el.value)));
+    S.banks[+el.dataset.bi][el.dataset.bf] = v; store.set('banks', S.banks); renderBanks();
+  }));
+}
+function renderBanks(){
+  if(!$('#bankDays')) return;
+  const B = S.rot.base; $('#rotBaseTitle').textContent = (apBy(B) || {}).name || B;
+  const R = computeBankDays(); S.bankResult = R;
+  const now = Date.now();
+  const ddls = R.days.flatMap(d => d.ddl.map(x => Object.assign({day:d}, x))).filter(x => x.t > now - HR).sort((a,b) => a.t - b.t);
+  const live = R.days.filter(d => d.scn !== 'PAST');
+  let h = '';
+  if(isDemo()) h += `<div class="note" style="margin-bottom:12px">目前是示範路徑，結果僅供參考；請先讓工具抓到最新颱風路徑。</div>`;
+  h += `<div class="src-card"><div class="src-head"><b>決策時程</b><span class="small muted">依各天的情境自動排出，最晚要在這個時間前決定</span></div>` +
+    (ddls.length ? `<div class="tbl-wrap"><table><tr><th>最晚決定</th><th>還剩</th><th>事項</th><th>對應</th></tr>` + ddls.map(x => {
+      const left = (x.t - now)/HR;
+      return `<tr><td class="num">${fmtTW(x.t,true)}</td><td><span class="pill ${left < 0 ? 'lv3' : left < 6 ? 'lv3' : left < 24 ? 'lv2' : 'lv1'}">${left < 0 ? '已過' : left < 1 ? '不到 1 小時' : Math.floor(left)+' 小時'}</span></td><td class="small">${esc(x.txt)}</td><td class="small muted">${twParts(x.day.d).m}/${twParts(x.day.d).d} ${esc(SCN_NAME[x.day.scn].split('　')[0])}</td></tr>`; }).join('') + `</table></div>`
+     : `<div class="small muted">未來幾天沒有需要提前決策的波段。</div>`) + `</div>`;
+  h += renderSnowball(R);
+  h += live.map(d => {
+    const p = twParts(d.d), lv = SCN_LV[d.scn] ?? 0;
+    const list = (title, arr) => arr.length ? `<div style="margin-top:10px"><div class="small" style="font-weight:600">${title}</div>${arr.map(x => `<div class="small" style="margin:3px 0 0 0;line-height:1.65">${esc(typeof x === 'string' ? x : x.txt)}</div>`).join('')}</div>` : '';
+    return `<div class="src-card" style="border-left:5px solid ${LVCOL[lv]}">
+      <div class="src-head"><div><b class="num" style="font-size:18px">${p.m}/${p.d}（${WK[p.wd]}）</b>　<span class="pill lv${lv}">${esc(SCN_NAME[d.scn])}</span>　<label class="small"><input type="checkbox" data-off="${d.key}" ${d.off ? 'checked' : ''}> 北北桃停班停課</label></div>
+        <div class="small muted">${d.banks.map(b => `${b.name}${b.past ? ' 已過' : b.closed.length ? ' ✕' : b.warn.length ? ' △' : ' ○'}`).join('　')}</div></div>
+      ${bankStrip(d)}
+      ${list('會發生什麼', d.imp)}
+      ${list('建議決策', d.act)}
+      ${d.ddl.length ? `<div style="margin-top:10px"><div class="small" style="font-weight:600">最晚決策時間</div>${d.ddl.map(x => `<div class="small" style="margin-top:3px">${fmtTW(x.t,true)}　${esc(x.txt)}</div>`).join('')}</div>` : ''}
+      ${optionTable(d)}
+      ${list('場站壓力', d.prs)}
+    </div>`;
+  }).join('');
+  h += `<div class="small muted">圖例：上方色條為${esc(B)}每小時狀態（紅＝無法起降、橙＝警戒、灰＝超出預報範圍），下方為作業波段。○ 正常、△ 警戒、✕ 無法起降。決策時間依典型作業前置時間估算，請依公司規定調整。</div>`;
+  $('#bankDays').innerHTML = h;
+  $$('#bankDays [data-off]').forEach(el => el.addEventListener('change', () => {
+    S.rot.off = Object.assign({}, S.rot.off); if(el.checked) S.rot.off[el.dataset.off] = true; else delete S.rot.off[el.dataset.off];
+    store.set('rot', S.rot); renderBanks();
+  }));
+}
+
 /* ================= 簡報 ================= */
 function genBrief(){
   const tr = primaryTrack(); const now = Date.now(); const L_ = limits();
@@ -1250,6 +1880,31 @@ function genBrief(){
     lines.push(''); lines.push(`■ 受影響航班（${hit.length}/${fl.length} 班達警戒以上）`);
     hit.forEach(({f,e}) => lines.push(`・${f.flt||''} ${f.dep.code}→${f.arr.code} ${fmtLocal(f.std,f.dep.tz)}：出發${LVTXT[e.dr.lv??0]}／抵達${LVTXT[e.ar.lv??0]}／航路${LVTXT[e.rr.lv]}`));
   }
+  const BR = S.bankResult;
+  if(BR){
+    const hitDays = BR.days.filter(d => !['OK','PAST'].includes(d.scn));
+    if(hitDays.length){
+      lines.push(''); lines.push(`■ 作業波段影響（基地 ${S.rot.base}）`);
+      hitDays.forEach(d => {
+        const p = twParts(d.d);
+        lines.push(`・${p.m}/${p.d}（${WK[p.wd]}）${SCN_NAME[d.scn]}：${d.imp[0] || ''}`);
+        if(d.act.length) lines.push(`　建議：${d.act.slice(0,3).join('；')}`);
+        d.ddl.forEach(x => lines.push(`　最晚 ${fmtTW(x.t,true)}：${x.txt}`));
+      });
+      const sm = BR.sim;
+      if(sm && sm.lastHit){
+        const md = t => { const q = twParts(t); return `${q.m}/${q.d}`; };
+        lines.push(`・積壓旅客估算：亞洲線高峰約 ${sm.peakA} 人${sm.peakA ? `（約 ${sm.clearA ? md(sm.clearA) : '30 天後'} 疏解完）` : ''}、長程高峰約 ${sm.peakL} 人${sm.peakL ? `（約 ${sm.clearL ? md(sm.clearL) : '30 天後'} 疏解完）` : ''}；載客率 ${S.rot.lf}%、加開 ${S.rot.extra}% 估算`);
+      }
+    }
+  }
+  const RR = S.rotResult;
+  if(RR && RR.n){
+    lines.push(''); lines.push(`■ 機隊輪轉（基地 ${S.rot.base}）`);
+    RR.closed.forEach(w => { const k = classifyWin(w); lines.push(`・無法起降時段 ${fmtTW(w.s,true)}～${fmtTW(w.e)}：情境 ${k} ${SCN[k].t}`); });
+    RR.rots.forEach(r => r.finds.filter(x => x.lv >= 2).forEach(x => lines.push(`・${r.tag}：${x.txt}`)));
+    lines.push(`・若取消建議班次，估計轉機客滯留：${S.rot.base} 約 ${RR.atBase} 人、外站約 ${RR.atOut} 人${RR.unknown ? '（部分航班未填轉機人數）' : ''}`);
+  }
   lines.push('');
   lines.push(`■ 判斷基準：${S.acSel} 側風上限 ${L_.xw}kt${S.rwyCond==='wet'?'（濕跑道）':''}、順風 ${L_.tw}kt；無 TAF 的時段風場為 Open-Meteo 模式，颱風核心附近可能低估。實際以 METAR／TAF、公司 OCC 與簽派判斷為準。`);
   $('#briefText').value = lines.join('\n');
@@ -1266,7 +1921,7 @@ function renderSettings(){
   $('#acTbl').innerHTML = `<tr><th>機型</th><th>側風上限 kt</th><th>順風上限 kt</th></tr>` +
     Object.entries(S.ac).map(([k,v]) => `<tr><td>${esc(k)}</td><td><input class="cell" type="number" data-ac="${esc(k)}" data-f="xw" value="${v.xw}"></td><td><input class="cell" type="number" data-ac="${esc(k)}" data-f="tw" value="${v.tw}"></td></tr>`).join('');
   $$('#acTbl input').forEach(el => el.addEventListener('change', () => { S.ac[el.dataset.ac][el.dataset.f] = +el.value; store.set('ac', S.ac); renderAll(); }));
-  const T = S.thr; const lab = {wetFactor:'濕跑道側風折減係數', gust1:'注意：陣風 ≥ kt', gust2:'警戒：陣風 ≥ kt', gust3:'高風險：陣風 ≥ kt', sus3:'高風險：平均風 ≥ kt', ringBuf:'七級風圈外「注意」緩衝 km', focusKm:'時間軸顯示範圍 km', defR7:'預設七級風半徑 km', defR10:'預設十級風半徑 km'};
+  const T = S.thr; const lab = {wetFactor:'濕跑道側風折減係數', gust1:'注意：陣風 ≥ kt', gust2:'警戒：陣風 ≥ kt', gust3:'地面作業停止（高風險）：陣風 ≥ kt', sus3:'地面作業停止（高風險）：平均風 ≥ kt', ringBuf:'七級風圈外「注意」緩衝 km', focusKm:'時間軸顯示範圍 km', defR7:'預設七級風半徑 km', defR10:'預設十級風半徑 km'};
   $('#thrTbl').innerHTML = Object.keys(lab).map(k => `<tr><td>${lab[k]}</td><td><input class="cell" type="number" step="any" data-thr="${k}" value="${T[k]}" style="width:100px"></td></tr>`).join('');
   $('#tcNameIn').value = S.tcName;
 }
@@ -1288,7 +1943,7 @@ function showTab(name){
 }
 function renderAll(){
   buildHours();
-  renderHero(); renderDataCard(); renderCPA(); renderTimeline(); renderXWSelect(); renderXW(); renderFlights();
+  renderHero(); renderDataCard(); renderCPA(); renderTimeline(); renderXWSelect(); renderXW(); renderFlights(); renderRot();
   drawTracks(); drawTime(); updateTafLink();
 }
 function defaultMetarIds(){
@@ -1315,6 +1970,19 @@ function bind(){
   const p = twParts(Date.now() + 24*HR); $('#schedDate').value = `${p.y}-${p2(p.m)}-${p2(p.d)}`;
   $('#schedText').value = S.sched;
   $('#schedRun').addEventListener('click', renderFlights);
+  { const q = twParts(Date.now()); $('#rotDate').value = `${q.y}-${p2(q.m)}-${p2(q.d)}`; }
+  $('#rotText').value = store.get('rotText', '');
+  [['rotBase','base',String],['rotMinLv','minLv',Number],['rotBuf','buf',Number],['rotTurn','turn',Number]].forEach(([id,k,cv]) => {
+    $('#'+id).value = String(S.rot[k]);
+    $('#'+id).addEventListener('change', e => { S.rot[k] = cv(e.target.value); store.set('rot', S.rot); renderRot(); });
+  });
+  $('#rotRun').addEventListener('click', renderRot);
+  renderBankTable(); renderSnowTable();
+  $('#rotMinH').value = String(S.rot.minHours); $('#rotMinH').addEventListener('change', e => { S.rot.minHours = +e.target.value; store.set('rot', S.rot); renderAll(); });
+  $('#rotRingCap').checked = !!S.thr.ringCap; $('#rotRingCap').addEventListener('change', e => { S.thr.ringCap = e.target.checked ? 1 : 0; store.set('thr', S.thr); renderAll(); });
+  $('#bankReset').addEventListener('click', () => { S.banks = null; store.set('banks', null); renderBankTable(); renderBanks(); });
+  $('#rotAuto').addEventListener('click', rotAutoPair);
+  $('#rotSample').addEventListener('click', rotSample);
   $('#schedSample').addEventListener('click', () => {
     const q = twParts(Date.now() + 4*24*HR); const d = `${q.y}-${p2(q.m)}-${p2(q.d)}`;
     $('#schedText').value = [`${d} JX800 TPE NRT 08:20 12:40`, `${d} JX801 NRT TPE 14:00 17:00`, `${d} JX882 TPE OKA 10:00 12:30`, `${d} JX883 OKA TPE 13:40 14:20`, `${d} JX786 TPE MNL 07:30 09:50`, `${d} JX840 TPE FUK 09:00 12:15`, `${d} JX002 TPE LAX 23:40 19:40`].join('\n');
