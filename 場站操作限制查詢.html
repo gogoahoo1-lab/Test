@@ -773,7 +773,7 @@ html[data-skin] .sky{ border-color:var(--line); }
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-24g（深度除錯）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-24h（移除北美國旗）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -4612,7 +4612,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
   function chip(attr, val, cur, label, n){
     return '<button type="button" class="chip" ' + attr + '="' + esc(val) + '" aria-pressed="' + (cur === val) + '">' + label + (n != null ? '<span class="n">' + n + "</span>" : "") + "</button>";
   }
-  function regLabel(g){ return g === "北美" ? "🇺🇸 北美" : g; }
+  function regLabel(g){ return g; }
   function dayLabel(k){
     var p = k.split("-"), d = new Date(Date.UTC(+p[0], +p[1]-1, +p[2]));
     var t = dkey(Date.now()), t1 = dkey(Date.now() + 86400000), t2 = dkey(Date.now() + 2*86400000);
