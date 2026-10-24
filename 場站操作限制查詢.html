@@ -656,7 +656,9 @@ html[data-skin] .sky{ border-color:var(--line); }
 #sxFilt .sx-f .sx-chips{display:none}
 #sxFilt .sx-f::after{content:"";position:absolute;right:13px;top:50%;width:8px;height:8px;border-right:2px solid var(--gold);border-bottom:2px solid var(--gold);transform:translateY(-70%) rotate(45deg);pointer-events:none}
 #sxFilt .sx-sel{appearance:none;-webkit-appearance:none;width:100%;border:0;background:transparent;color:var(--text);font:inherit;font-size:15px;font-weight:700;padding:2px 0 0;margin:0;cursor:pointer;text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
-#sxFilt .sx-sel:focus-visible{outline:2px solid var(--gold);outline-offset:4px;border-radius:4px}
+#sxFilt .sx-sel,#sxFilt .sx-sel:focus,#sxFilt .sx-sel:focus-visible{outline:none;box-shadow:none}
+/* 選取中的外框改畫在整格卡片上，不再壓到上方的標題文字 */
+#sxFilt .sx-f:focus-within{border-color:var(--gold);box-shadow:0 0 0 2px rgba(168,120,44,.25)}
 #sxFilt .sx-sel:disabled{color:var(--dim);cursor:default}
 #sxFilt .sx-f:has(.sx-sel:disabled){opacity:.7}
 #sxFilt .sx-f:has(.sx-sel:disabled)::after{opacity:.4}
@@ -771,7 +773,7 @@ html[data-skin] .sky{ border-color:var(--line); }
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-24e（空位篩選改下拉選單）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-24g（深度除錯）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -5937,6 +5939,22 @@ const I18N = (()=>{
     "斯德哥爾摩":"Stockholm","赫爾辛基":"Helsinki","華沙":"Warsaw","布拉格":"Prague","約翰尼斯堡":"Johannesburg","開羅":"Cairo",
     "阿迪斯阿貝巴":"Addis Ababa","奈洛比":"Nairobi","特拉維夫":"Tel Aviv",
   };
+  /* 新功能（轉機人數、搜尋、篩選）的整句譯法，放在逐字翻譯之前，避免「已扣Oversold」這類半中半英 */
+  Object.assign(LONG, {
+    "總空位（已扣超賣）":"Total avail. (net of oversold)","已扣超賣":"net of oversold","班已填":" flts filled","已填":"filled",
+    "（超過 5 小時未更新）":"(over 5 h without update)","超過 5 小時未更新":"over 5 h without update",
+    "尚未填寫（可在每班下方直接輸入，或上傳 Excel）":"Not filled yet (enter under each flight or upload Excel)","尚未填寫":"Not filled yet",
+    "目前沒有人填寫":"No one has filled in yet","連線中繼中…":"Connecting to relay…","／訂位 ":"/ booked "," 座":" seats",
+    "先選區域":"Pick a region first","先選地區":"Pick a region first","僅存本機（中繼尚未啟用轉機同步）":"Local only (relay sync not enabled)",
+    "已與大家同步":"Synced with everyone","同步中…":"Syncing…","🔒 唯讀":"🔒 Read-only","編輯碼 ✓":"Edit code ✓","🚪 登出本機":"🚪 Sign out this device",
+    "查看碼不正確，讀不到大家的轉機人數":"Wrong view code; cannot read shared transfer pax","編輯碼不正確，變更沒有送出":"Wrong edit code; changes not sent",
+    "連不到中繼，顯示上次資料":"Relay unreachable; showing last data","同步失敗，15 秒後重送":"Sync failed; retrying in 15 s",
+    "錯誤次數太多，已暫時封鎖約 ":"Too many wrong attempts; blocked for about ","搜尋結果":"Search results",
+    "已略過上方的方向、日期與地區篩選":"direction, date and region filters are skipped","仍套用「只看經濟艙還有空位」":"still applying \"Y seats only\"",
+    "沒有找到航班。可以輸入班號（JX800 或 800）、場站代碼（NRT）或機號（B58501）":"No flights found. Try a flight no. (JX800 or 800), station code (NRT) or registration (B58501)",
+    "抵達/出發":"Arrival/Depart","當地出發":"local dep.","抵台日期":"Arr. date (TW)","依抵台日期・外站出發時間為當地時間":"By Taiwan arrival date · departure times local",
+    "表定抵台":"Sched. arr. TW","抵台":"Arr TW"
+  });
   const PUNCT = [["（"," ("],["）",")"],["｜"," | "],["、",", "],["，",", "],["。",". "],["：",": "],["；","; "],["・"," · "],
                  ["／","/"],["「","\""],["」","\""],["　"," "],["～","~"],["＋","+"],["？","?"],["！","!"]];
 
