@@ -262,6 +262,7 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
 .cf-no{box-shadow:inset 3px 0 0 var(--no)} .cf-no .verdict{color:var(--no)}
 .cf-na{box-shadow:inset 3px 0 0 var(--na)} .cf-na .verdict{color:var(--na)}
 .stn input{text-transform:uppercase;letter-spacing:.09em;font-weight:700}
+#srStn,#srDst,#srFlt{text-transform:uppercase}
 .addleg{
   width:100%;padding:12px;border:1px dashed var(--line);background:transparent;color:var(--muted);
   border-radius:var(--r);font:inherit;font-size:14px;cursor:pointer
@@ -753,7 +754,7 @@ html[data-skin] .sky{ border-color:var(--line); }
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-23b（各站資料庫更新：MFM 宵禁備註）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-24c（到離試算標題：抵達/出發）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -765,9 +766,9 @@ html[data-skin] .sky{ border-color:var(--line); }
   <div class="srbody">
     <div id="srStatus"></div>
     <div class="srform">
-      <div class="f stn"><label for="srStn">事發場站（出發站）</label><input id="srStn" list="codes" maxlength="4" autocomplete="off" placeholder="NRT"></div>
-      <div class="f"><label for="srFlt">航班</label><input id="srFlt" list="srFlts" autocomplete="off" placeholder="JX800"></div>
-      <div class="f stn"><label for="srDst">旅客目的地</label><input id="srDst" list="codes" maxlength="4" autocomplete="off" placeholder="自動"></div>
+      <div class="f stn"><label for="srStn">事發場站（出發站）</label><input id="srStn" list="codes" maxlength="4" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="NRT"></div>
+      <div class="f"><label for="srFlt">航班</label><input id="srFlt" list="srFlts" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="JX800"></div>
+      <div class="f stn"><label for="srDst">旅客目的地</label><input id="srDst" list="codes" maxlength="4" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="自動"></div>
       <div class="f"><label for="srPax">受影響人數</label><input id="srPax" inputmode="numeric" autocomplete="off" placeholder="自動帶入"></div>
       <div class="f"><label for="srWin">替代航班範圍</label>
         <select id="srWin"><option value="12">12 小時內</option><option value="24" selected>24 小時內</option><option value="48">48 小時內</option></select></div>
@@ -3523,12 +3524,13 @@ function stationField(label,i){
   return `<div class="f stn">
     <label>${label}</label>
     <input data-i="${i}" data-k="code" value="${esc(stops[i].code||"")}" list="codes"
-           placeholder="TPE" maxlength="4">
+           placeholder="TPE" maxlength="4" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
     <div class="sub2"></div></div>`;
 }
 
-function renderLegs(focusKey){
-  const host = document.getElementById("legs");
+function renderLegs(focusKey, patch){
+  const real = document.getElementById("legs");
+  const host = patch ? document.createElement("div") : real;
   const {arr, dep} = chain();
   host.innerHTML = stops.map((S,i)=>{
     const first = i===0, last = i===stops.length-1;
@@ -3565,9 +3567,8 @@ function renderLegs(focusKey){
       : [curfewRow("抵達", code, arr[i]), curfewRow("再起飛", code, dep[i])]
     ).filter(Boolean).join("");
 
-    const via = first
-      ? `${code||"—"} 出發`
-      : `${(stops[i-1].code||"—").toUpperCase()} → ${code||"—"}`;
+    /* 卡片標題只寫這一站：第一站「XXX 出發」，之後各站有抵達也有再起飛，寫「XXX 抵達/出發」 */
+    const via = `${code||"—"} ${first ? "出發" : "抵達/出發"}`;
 
     return `<div class="leg">
       <div class="lhead"><span class="n">${i+1}</span><strong>${via}</strong>
@@ -3578,16 +3579,45 @@ function renderLegs(focusKey){
     </div>`;
   }).join("");
 
+  if(patch){
+    /* 只換掉計算結果與標題，使用者正在打字的欄位原封不動 */
+    const nl = host.querySelectorAll(".leg"), ol = real.querySelectorAll(".leg");
+    if(nl.length !== ol.length){ renderLegs(); return; }
+    nl.forEach((n, j)=>{
+      const o = ol[j];
+      ["lhead", "out"].forEach(c=>{ const a = o.querySelector("."+c), b = n.querySelector("."+c); if(a && b && a.innerHTML !== b.innerHTML) a.innerHTML = b.innerHTML; });
+      const oc = o.querySelector(".cfbox"), nc = n.querySelector(".cfbox");
+      if(oc && nc){ if(oc.innerHTML !== nc.innerHTML) oc.innerHTML = nc.innerHTML; } else if(oc) oc.remove(); else if(nc) o.appendChild(nc);
+      const of = o.querySelectorAll(".fields .f"), nf = n.querySelectorAll(".fields .f");
+      of.forEach((f, q)=>{
+        const g = nf[q]; if(!g) return;
+        const oi = f.querySelector("input"), ni = g.querySelector("input");
+        if(oi && ni && oi !== document.activeElement && oi.value !== ni.value) oi.value = ni.value;
+        const os = f.querySelector(".sub2"), ns = g.querySelector(".sub2");
+        if(os && ns && os.innerHTML !== ns.innerHTML) os.innerHTML = ns.innerHTML;
+      });
+    });
+    bindLegs(real);
+    return;
+  }
+  bindLegs(host);
+  if(focusKey){
+    const [i,k] = focusKey.split(":");
+    const el = document.querySelector(`input[data-i="${i}"][data-k="${k}"]`);
+    if(el && document.activeElement!==el) el.focus();
+  }
+}
+function bindLegs(host){
   host.querySelectorAll("input[data-k]").forEach(inp=>{
     if(!inp.readOnly){
-      inp.oninput = ()=>{
+      inp.oninput = ev=>{
+        if(ev && ev.isComposing) return;
         const i = +inp.dataset.i, k = inp.dataset.k;
         stops[i][k] = k==="code" ? inp.value.toUpperCase() : inp.value;
-        const pos = inp.selectionStart;
-        renderLegs(i+":"+k);
-        const again = document.querySelector(`input[data-i="${i}"][data-k="${k}"]`);
-        if(again){ again.focus(); try{ again.setSelectionRange(pos,pos); }catch(e){} }
+        renderLegs(null, true);
       };
+      inp.oncompositionend = ()=>{ if(inp.oninput) inp.oninput({}); };
+      if(inp.dataset.k === "code") inp.onblur = ()=>{ const u = inp.value.toUpperCase().trim(); if(inp.value !== u) inp.value = u; };   /* 打完字才轉大寫 */
     }
     inp.onkeydown = ev=>{
       if(ev.key!=="ArrowUp" && ev.key!=="ArrowDown") return;
@@ -3607,12 +3637,6 @@ function renderLegs(focusKey){
   host.querySelectorAll("[data-rm]").forEach(b=>{
     b.onclick = ()=>{ stops.splice(+b.dataset.rm,1); stops[0].delta=0; renderLegs(); };
   });
-
-  if(focusKey){
-    const [i,k] = focusKey.split(":");
-    const el = document.querySelector(`input[data-i="${i}"][data-k="${k}"]`);
-    if(el && document.activeElement!==el) el.focus();
-  }
 }
 document.getElementById("addLeg").onclick = ()=>{
   stops.push({code:"", tz:"0", aabi:"00:10", gt:"01:00", dep:"", delta:0, ft:"03:00"});
@@ -5652,9 +5676,10 @@ const SR = (()=>{
   $("srFab").onclick = ()=>open();
   $("srClose").onclick = close;
   dlg.addEventListener("click", e=>{ if(e.target===dlg) close(); });
-  $("srStn").addEventListener("input", e=>{ const el=e.target, p=el.selectionStart; el.value=el.value.toUpperCase(); stnTouched=!!el.value.trim(); try{el.setSelectionRange(p,p);}catch(_){} render(); });
+  $("srStn").addEventListener("input", e=>{ if(e.isComposing) return; stnTouched=!!e.target.value.trim(); render(); });
   $("srFlt").addEventListener("input", ()=>{ fltChanged=true; render(); });
-  $("srDst").addEventListener("input", e=>{ e.target.value=e.target.value.toUpperCase(); dstTouched=!!e.target.value.trim(); render(); });
+  $("srDst").addEventListener("input", e=>{ if(e.isComposing) return; dstTouched=!!e.target.value.trim(); render(); });
+  ["srStn","srDst","srFlt"].forEach(id=>$(id).addEventListener("blur", e=>{ const u=e.target.value.toUpperCase().trim(); if(e.target.value!==u) e.target.value=u; }));
   $("srWin").addEventListener("change", render);
   $("srPax").addEventListener("input", e=>{ paxTouched=!!e.target.value.trim(); render(); });
   function flash(id){ const el=$(id); el.classList.remove("srflash"); void el.offsetWidth; el.classList.add("srflash"); }
