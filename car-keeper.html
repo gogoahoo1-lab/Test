@@ -132,6 +132,9 @@ textarea{min-height:64px;resize:vertical}
 .review .warn-line{font-size:12px;color:var(--warn)}
 .paste{display:flex;flex-direction:column;gap:10px;background:rgba(255,255,255,.08);border-radius:20px;padding:12px 14px}
 .paste .steps{margin:0}
+.clip-btn{width:100%;padding:14px;font-size:16px}
+.clip-msg{background:rgba(255,208,138,.16);border-left:3px solid var(--warn);border-radius:8px;padding:8px 10px}
+.paste-ta{width:100%}
 .wty{display:flex;flex-direction:column;gap:6px;padding-block:12px;border-bottom:1px solid var(--line)}
 .wty:last-child{border-bottom:0}
 .wty-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -461,10 +464,13 @@ b.money{color:var(--accent);font-weight:700}
         <ol class="steps small">
           <li>到「照片」打開保單照片，點右下角的「原況文字」圖示（框框裡有三條線）。</li>
           <li>長按文字選「全選」，再按「拷貝」。</li>
-          <li>回到這裡，在下面的框裡長按選「貼上」，再按「分析文字」。</li>
+          <li>回到這裡按「從剪貼簿貼上」，再點 iPhone 跳出的「貼上」，就會自動分析。</li>
         </ol>
-        <label for="scanText">保單文字<textarea id="scanText" rows="6" placeholder="把保單上的文字貼在這裡"></textarea></label>
-        <div class="btns"><button class="btn primary" type="button" id="pasteGo">分析文字</button><button class="btn ghost" type="button" id="pasteClose">收起</button></div>
+        <button class="btn primary clip-btn" type="button" data-clip="scanText">📋 從剪貼簿貼上</button>
+        <div class="small clip-msg" data-clipmsg="scanText" hidden></div>
+        <label class="small muted" for="scanText">或長按下面的框，選「貼上」：</label>
+        <textarea id="scanText" class="paste-ta" rows="6" placeholder="把保單上的文字貼在這裡"></textarea>
+        <div class="btns"><button class="btn" type="button" id="pasteGo" data-paste-go="scanText">分析文字</button><button class="btn ghost" type="button" id="pasteClose" data-paste-close="scanText">收起</button></div>
       </div>
       <div id="scanThumbs" class="thumbs" hidden></div>
       <div id="scanStatus" class="small" hidden></div>
@@ -1166,9 +1172,12 @@ function scanUI(p,title,desc){
       <button class="btn" type="button" data-a="pasteOpen">貼上文字</button>
     </div>
     <div class="paste" data-a="pasteBox" hidden>
-      <div class="small">用 iPhone「原況文字」：在照片 App 打開截圖，點右下角原況文字圖示 → 全選 → 拷貝，回來貼上。</div>
-      <label for="${p}-text">文字內容<textarea id="${p}-text" data-a="text" rows="6" placeholder="把文字貼在這裡"></textarea></label>
-      <div class="btns"><button class="btn primary" type="button" data-a="pasteGo">分析文字</button><button class="btn ghost" type="button" data-a="pasteClose">收起</button></div>
+      <div class="small">用 iPhone「原況文字」：在照片 App 打開截圖，點右下角原況文字圖示 → 全選 → 拷貝，回來按下面的按鈕。</div>
+      <button class="btn primary clip-btn" type="button" data-clip="${p}-text">📋 從剪貼簿貼上</button>
+      <div class="small clip-msg" data-clipmsg="${p}-text" hidden></div>
+      <label class="small muted" for="${p}-text">或長按下面的框，選「貼上」：</label>
+      <textarea id="${p}-text" class="paste-ta" data-a="text" rows="6" placeholder="把文字貼在這裡"></textarea>
+      <div class="btns"><button class="btn" type="button" data-a="pasteGo" data-paste-go="${p}-text">分析文字</button><button class="btn ghost" type="button" data-a="pasteClose" data-paste-close="${p}-text">收起</button></div>
     </div>
     <div class="thumbs" data-a="thumbs" hidden></div>
     <div class="small" data-a="status" hidden></div>
@@ -1184,7 +1193,7 @@ function mountScan(p,wrap,cfg){
   const label=()=>{const key=(S.scanKey||'').trim();q('engine').textContent=SC.imgOk?'由 Claude 讀取':key?'用你的 API 金鑰':'手機本機辨識・免費';q('pasteOpen').hidden=SC.imgOk};
   const thumbs=()=>{const b=q('thumbs');b.querySelectorAll('img').forEach(i=>URL.revokeObjectURL(i.src));b.hidden=!st.blobs.length;q('run').hidden=!st.blobs.length;
     b.innerHTML=st.blobs.map((x,i)=>`<figure><img src="${URL.createObjectURL(x.blob)}" alt="${esc(x.label)}"><figcaption>${esc(x.label)}</figcaption><button type="button" data-rm="${i}" aria-label="移除">✕</button></figure>`).join('')};
-  const reset=()=>{st.blobs=[];st.pdfText='';st.results=null;thumbs();q('review').hidden=true;q('review').innerHTML='';status('');q('cam').value='';q('file').value='';q('text').value='';q('pasteBox').hidden=true};
+  const reset=()=>{pasteSave(p+'-text','');st.blobs=[];st.pdfText='';st.results=null;thumbs();q('review').hidden=true;q('review').innerHTML='';status('');q('cam').value='';q('file').value='';q('text').value='';q('pasteBox').hidden=true};
   const show=list=>{
     if(!list.length){status(cfg.emptyMsg);return}
     st.results=list;if(p==='rc')SCR.rcpt=list;status('');const r=q('review');r.hidden=false;
@@ -1514,6 +1523,39 @@ document.addEventListener('click',e=>{
   setTimeout(()=>{const d=document.querySelector('#insList details[data-edit="'+i+'"]');if(d)d.scrollIntoView({behavior:'smooth',block:'center'})},50);
 });
 
+/* ---------- 貼上文字：剪貼簿按鈕、自動分析、切 App 回來不遺失 ---------- */
+const PASTE_KEY='carkeeper.paste';
+function pasteStore(){try{return JSON.parse(localStorage.getItem(PASTE_KEY)||'{}')}catch(e){return {}}}
+function pasteSave(id,text){try{const d=pasteStore();if(text)d[id]=text;else delete d[id];localStorage.setItem(PASTE_KEY,JSON.stringify(d))}catch(e){}}
+function pasteAnalyze(id){const b=document.querySelector('[data-paste-go="'+id+'"]');if(b)b.click()}
+function clipMsg(id,t){const m=document.querySelector('[data-clipmsg="'+id+'"]');if(m){m.hidden=!t;m.textContent=t||''}}
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-clip]');if(!b)return;
+  const id=b.dataset.clip,ta=document.getElementById(id);clipMsg(id,'');
+  try{
+    if(!navigator.clipboard||!navigator.clipboard.readText)throw new Error('no');
+    const t=await navigator.clipboard.readText();
+    if(!t||!t.trim()){clipMsg(id,'剪貼簿是空的。請先在照片 App 用「原況文字」全選並拷貝，再回來按一次。');return}
+    ta.value=t;pasteSave(id,t);pasteAnalyze(id);
+  }catch(err){
+    clipMsg(id,'沒辦法直接讀取剪貼簿。請長按下面的框，選「貼上」，貼上後會自動分析。');
+    ta.focus();
+  }
+});
+document.addEventListener('paste',e=>{
+  const ta=e.target.closest&&e.target.closest('.paste-ta');if(!ta)return;
+  setTimeout(()=>{pasteSave(ta.id,ta.value);if(ta.value.trim().length>=15){clipMsg(ta.id,'');pasteAnalyze(ta.id)}},60);
+});
+document.addEventListener('input',e=>{const ta=e.target.closest&&e.target.closest('.paste-ta');if(ta)pasteSave(ta.id,ta.value)});
+document.addEventListener('click',e=>{const c=e.target.closest('[data-paste-close]');if(c){pasteSave(c.dataset.pasteClose,'');const ta=document.getElementById(c.dataset.pasteClose);if(ta)ta.value=''}});
+// 從照片 App 切回來時 iPhone 可能重新載入頁面：把貼上框和文字還原
+function restorePaste(){
+  const d=pasteStore();
+  Object.entries(d).forEach(([id,t])=>{const ta=document.getElementById(id);if(!ta||!t)return;ta.value=t;const box=ta.closest('.paste');if(box)box.hidden=false;
+    const sec=ta.closest('section');if(sec&&sec.hidden){const v=sec.id.replace('v-','');go(v)}
+    const wrap=ta.closest('#wtyScanWrap');if(wrap)wrap.hidden=false;});
+}
+
 /* ---------- 事故處理原則 ---------- */
 const PHOTO_ITEMS=['兩車撞擊點','雙方車牌','車輛相對位置','煞車痕','車道線','週邊標誌標線','車頭','車尾','碰撞細節特寫','現場全景'];
 let photoDone=new Set();
@@ -1841,7 +1883,7 @@ function renderReview(){
 }
 const _renderReview=renderReview;renderReview=function(){_renderReview();_rr()};
 function _rr(){fmtDates($('#scanReview'))}
-function resetScan(){SC.blobs=[];SC.results=null;SC.pdfText='';renderThumbs();$('#scanReview').hidden=true;$('#scanReview').innerHTML='';scanStatus('');$('#scanCam').value='';$('#scanFile').value=''}
+function resetScan(){pasteSave('scanText','');SC.blobs=[];SC.results=null;SC.pdfText='';renderThumbs();$('#scanReview').hidden=true;$('#scanReview').innerHTML='';scanStatus('');$('#scanCam').value='';$('#scanFile').value=''}
 $('#scanCam').addEventListener('change',e=>addScanFiles(e.target.files));
 $('#scanFile').addEventListener('change',e=>addScanFiles(e.target.files));
 $('#scanGo').addEventListener('click',runScan);
@@ -2127,6 +2169,7 @@ const SCANS=[];
 render();
 SCANS.push(mountScan('wt','#wtyScanWrap',WTY_CFG),mountScan('rc','#rcptScanWrap',RCPT_CFG));
 scanInit();
+restorePaste();
 setSpeed(null);
 $('#syncLine').textContent='資料存在這台裝置的瀏覽器';
 (async()=>{
