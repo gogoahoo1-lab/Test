@@ -1,15 +1,16 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="愛車管家"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#1f2a36"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}img{max-width:100%}</style></head><body><title>愛車管家</title>
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="愛車管家"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#8a5a62"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}img{max-width:100%}</style></head><body><title>愛車管家</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap">
 <style>
-/* Layout: one-column phone app on a slate-blue haze; frosted squircle cards, dot-matrix LED numerals, sky→cream gradient tiles, white pill actions, floating glass tab bar */
+/* 版面：單欄手機 App，勃根地酒紅霧面底配玫瑰金點綴；大圓角霧面卡片、點陣 LED 數字、淡粉到奶油色的漸層卡、白色膠囊按鈕、懸浮霧面頁籤列 */
 :root{
-  --bg:#5c7084; --haze:#9fb3c7; --glass:rgba(255,255,255,.11); --glass-hi:rgba(255,255,255,.2);
-  --panel:rgba(255,255,255,.11); --ink:#f5f8fb; --muted:rgba(236,243,249,.66); --line:rgba(255,255,255,.16);
-  --accent:#d6f25e; --accent-ink:#20290a; --road:rgba(255,255,255,.11); --road-ink:#f5f8fb;
-  --ok:#86e3b0; --warn:#ffd27a; --bad:#ff6f61; --bad-ink:#ffffff; --chip:rgba(255,255,255,.14);
-  --slate:#2b3947; --tile:linear-gradient(170deg,#86b8ea 0%,#b9d0e6 48%,#ece3cc 100%);
+  --bg:#5c3740; --haze:#8a5a62; --glass:rgba(255,255,255,.11); --glass-hi:rgba(255,255,255,.2);
+  --panel:rgba(255,255,255,.11); --ink:#ffffff; --muted:rgba(255,246,248,.86); --line:rgba(255,255,255,.18);
+  --accent:#f6c9a7; --accent-ink:#3a1a0a; --road:rgba(255,255,255,.11); --road-ink:#ffffff;
+  --ok:#a9e3b4; --warn:#ffd08a; --bad:#ff6f61; --bad-ink:#ffffff; --chip:rgba(255,255,255,.14);
+  --slate:#4a2430; --tile:linear-gradient(170deg,#f2c4c6 0%,#f1d8d0 50%,#f8efe4 100%); --tile-ink:#4a2430;
+  --g1:#71454e; --g3:#42262d; --tabbar:rgba(52,30,36,.8); --sheet:rgba(80,48,56,.97);
   --r-card:30px; --r-ctl:999px;
   --f-num:"Manrope","Noto Sans TC",system-ui,sans-serif;
   --f-body:"Manrope","Noto Sans TC","PingFang TC",system-ui,sans-serif;
@@ -83,7 +84,8 @@ textarea{min-height:64px;resize:vertical}
 .phone .tel{font-family:var(--f-num);font-size:17px;user-select:all}
 .phone .acts{display:flex;gap:6px;flex-shrink:0}
 .phone .acts .btn{padding:8px 10px}
-.logtbl{width:100%;border-collapse:collapse;font-size:14px}
+.logtbl{width:100%;min-width:460px;border-collapse:collapse;font-size:14px}
+.logtbl td:nth-child(3){min-width:150px}
 .logtbl th,.logtbl td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
 .logtbl th{font-size:12px;color:var(--muted);font-weight:500}
 .logtbl td.n{font-family:var(--f-num);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -120,6 +122,7 @@ textarea{min-height:64px;resize:vertical}
 /* policy scan */
 .scan{background:var(--panel);border:2px dashed var(--accent);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
 .scan-pick{cursor:pointer}
+#scanCard>.btns .btn{white-space:nowrap;padding-inline:12px}
 .thumbs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
 .thumbs figure{margin:0;flex:0 0 auto;position:relative}
 .thumbs img{width:72px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block}
@@ -127,6 +130,21 @@ textarea{min-height:64px;resize:vertical}
 .thumbs button{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:0;background:var(--ink);color:var(--bg);font-size:12px;cursor:pointer}
 .review{border:1px solid var(--accent);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
 .review .warn-line{font-size:12px;color:var(--warn)}
+.paste{display:flex;flex-direction:column;gap:10px;background:rgba(255,255,255,.08);border-radius:20px;padding:12px 14px}
+.paste .steps{margin:0}
+.wty{display:flex;flex-direction:column;gap:6px;padding-block:12px;border-bottom:1px solid var(--line)}
+.wty:last-child{border-bottom:0}
+.wty-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.wty-head b{font-weight:600;font-size:15px}
+.wty .bar{height:6px}
+.wty-edit{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1.3fr);gap:8px}
+.wty-edit label{font-size:11px}
+.wty-acts{display:flex;justify-content:flex-end;gap:8px}
+.wty-acts .btn{padding:6px 12px;font-size:13px}
+.wsum{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+.wsum-row{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:14px}
+.wsum-row span:last-child{color:var(--muted);text-align:right}
+.rv-items{font-size:14px;margin:0;padding-left:18px}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite;vertical-align:-2px;margin-right:6px}
 @keyframes sp{to{transform:rotate(360deg)}}
 /* sms recipients */
@@ -171,8 +189,8 @@ h2{font-weight:500;font-size:17px;letter-spacing:.01em}
 .apphead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding:6px 4px 14px}
 .apphead>div{min-width:0}
 /* 背景漸層放在固定圖層，只畫一次；卡片用半透明漸層模擬霧面，不做即時模糊，切頁和捲動才順 */
-body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(180deg,var(--haze) 0%,#7489a0 22%,var(--bg) 48%,#4f6175 100%)}
-.hero,.due,.panel,.drive,.scan,.item,.review,.dialnums a{background:linear-gradient(180deg,rgba(255,255,255,.15),rgba(255,255,255,.07));border:1px solid var(--line);border-radius:var(--r-card);box-shadow:0 14px 30px -22px rgba(20,32,48,.55)}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(180deg,var(--haze) 0%,var(--g1) 22%,var(--bg) 48%,var(--g3) 100%)}
+.hero,.due,.panel,.drive,.scan,.item,.review,.dialnums a{background:linear-gradient(180deg,rgba(30,10,16,.06),rgba(30,10,16,.14));border:1px solid var(--line);border-radius:var(--r-card);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 14px 30px -22px rgba(30,10,16,.6)}
 .hero{color:var(--ink);padding:20px}
 .panel,.due{padding:18px}
 .item{border-radius:22px}
@@ -182,9 +200,9 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;bac
 .odo svg{height:46px;width:auto;display:block}
 .odo em{font-style:normal;font-size:14px;color:var(--muted);padding-bottom:2px}
 .odo-row input{background:var(--chip);border:1px solid var(--line);color:var(--ink);border-radius:var(--r-ctl);padding:11px 16px;font:400 16px var(--f-num)}
-.odo-row input::placeholder{color:var(--muted);opacity:1}
+.odo-row input::placeholder{color:rgba(255,246,248,.66);opacity:1}
 input,textarea,select{background:var(--chip);border:1px solid var(--line);color:var(--ink);border-radius:14px}
-input::placeholder,textarea::placeholder{color:var(--muted)}
+input::placeholder,textarea::placeholder{color:rgba(255,246,248,.66)}
 select option{color:#1d2733}
 .btn{background:var(--chip);color:var(--ink);border-radius:var(--r-ctl);font-weight:600;padding:11px 18px;border:1px solid transparent}
 .btn.primary{background:#ffffff;color:var(--slate)}
@@ -209,10 +227,10 @@ select option{color:#1d2733}
 .due-stats b small{font-size:13px;color:var(--muted);font-weight:400}
 /* sky→cream tiles */
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.tile{background:var(--tile);color:var(--slate);border-radius:34px;padding:16px 16px 18px;min-height:168px;display:flex;flex-direction:column;justify-content:space-between;gap:10px;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 20px 40px -22px rgba(20,32,48,.6);text-decoration:none;cursor:pointer;border:0;font:inherit;text-align:left}
+.tile{background:var(--tile);color:var(--tile-ink);border-radius:34px;padding:16px 16px 18px;min-height:168px;display:flex;flex-direction:column;justify-content:space-between;gap:10px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 20px 40px -22px rgba(34,12,18,.6);text-decoration:none;cursor:pointer;border:0;font:inherit;text-align:left}
 .tile .tt{font-size:13px;font-weight:600;opacity:.75}
-.tile .dn svg{height:34px;width:auto;color:var(--slate)}
+.tile .dn svg{height:34px;width:auto;color:var(--tile-ink)}
 .tile .sub{font-size:12px;opacity:.72}
 .tile-top{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
 .tile .chip{flex-shrink:0;white-space:nowrap;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;background:rgba(43,57,71,.12)}
@@ -221,7 +239,7 @@ select option{color:#1d2733}
 .tiles-head a,.tiles-head button{color:var(--muted);background:none;border:0;font:inherit;font-size:13px;cursor:pointer}
 /* white pill action */
 .pillbar{width:100%;display:flex;align-items:center;gap:12px;background:#fff;color:var(--slate);border:0;border-radius:999px;padding:8px;cursor:pointer;font:600 16px var(--f-body);
-  box-shadow:0 24px 40px -20px rgba(20,32,48,.65)}
+  box-shadow:0 24px 40px -20px rgba(34,12,18,.65)}
 .pillbar .pb-tx{flex:1;text-align:center}
 .pb-ic{width:48px;height:48px;border-radius:50%;background:#eef1f4;display:grid;place-items:center;flex-shrink:0}
 .pb-ic svg{width:20px;height:20px}
@@ -229,7 +247,7 @@ select option{color:#1d2733}
 .pillbar:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 /* tab bar: floating glass */
 .tabs{left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:calc(10px + env(safe-area-inset-bottom,0px));
-  padding:6px;border-radius:28px;background:rgba(60,76,94,.55);border:1px solid var(--line);-webkit-backdrop-filter:blur(26px) saturate(1.3);backdrop-filter:blur(26px) saturate(1.3);box-shadow:0 18px 40px -18px rgba(10,20,32,.6)}
+  padding:6px;border-radius:28px;background:var(--tabbar);border:1px solid var(--line);-webkit-backdrop-filter:blur(26px) saturate(1.3);backdrop-filter:blur(26px) saturate(1.3);box-shadow:0 18px 40px -18px rgba(30,10,16,.6)}
 .tab{color:var(--muted);border-radius:22px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .08s}
 .tab:active{transform:scale(.92)}
 button,a,label{-webkit-tap-highlight-color:transparent}
@@ -273,8 +291,8 @@ input[type=date],input[type=month]{position:relative}
 .plate svg{width:13px;height:13px;opacity:.75}
 .sheet{position:fixed;inset:0;z-index:15;background:rgba(20,30,42,.45);display:flex;align-items:flex-end;justify-content:center;
   padding:0 max(12px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
-.sheet-in{width:100%;max-width:520px;background:rgba(84,101,120,.92);border:1px solid var(--line);border-radius:30px;padding:20px;display:flex;flex-direction:column;gap:14px;
-  -webkit-backdrop-filter:blur(26px);backdrop-filter:blur(26px);box-shadow:0 30px 60px -20px rgba(10,20,32,.7)}
+.sheet-in{width:100%;max-width:520px;background:var(--sheet);border:1px solid var(--line);border-radius:30px;padding:20px;display:flex;flex-direction:column;gap:14px;
+  -webkit-backdrop-filter:blur(26px);backdrop-filter:blur(26px);box-shadow:0 30px 60px -20px rgba(30,10,16,.7)}
 .plate-in{font:600 26px var(--f-num)!important;letter-spacing:.12em;text-transform:uppercase;text-align:center;border-radius:18px!important;padding:12px!important}
 /* 固定頁面：不准左右滑動；輸入框 16px 以上，iPhone 點欄位時才不會自動放大而偏移 */
 html,body{overflow-x:hidden;max-width:100%;overscroll-behavior-x:none}
@@ -288,9 +306,29 @@ input,select,textarea{font-size:16px!important}
 .dwrap>input::-webkit-datetime-edit{opacity:0}
 .dwrap>.dval{position:absolute;left:12px;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--ink);font-size:15px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .dwrap>.dval.empty{color:var(--muted)}
+.place{display:flex;flex-direction:column;gap:2px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.25)}
+.place b{font-size:18px;font-weight:700}
+.place span{font-size:16px;font-weight:600}
+.guide{gap:14px}
+.big-steps{font-size:16px;line-height:1.55;gap:10px}
+.big-steps b{font-weight:700}
+.seg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.seg-b{font:600 15px var(--f-body);padding:14px 8px;border-radius:18px;border:1px solid var(--line);background:var(--chip);color:var(--ink);cursor:pointer}
+.seg-b[aria-selected="true"]{background:#fff;color:var(--slate);border-color:#fff}
+.seg-b.hurt[aria-selected="true"]{background:var(--bad);color:#fff;border-color:var(--bad)}
+.gcase{display:flex;flex-direction:column;gap:10px;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:20px;padding:14px}
+.gtitle{font-weight:700;font-size:16px}
+.ok-t{color:var(--ok)} .bad-t{color:#ffb3aa}
+.gnote{font-size:15px}
+.gwarn{font-size:14px;background:rgba(255,207,138,.16);border-left:3px solid var(--warn);border-radius:8px;padding:8px 10px}
+.checks{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}
+.checks label{flex-direction:row;align-items:center;gap:8px;color:var(--ink);font-size:14px;background:var(--chip);border-radius:12px;padding:8px 10px}
+.checks input{width:20px!important;height:20px;flex-shrink:0}
+.checks label:has(input:checked){background:rgba(169,227,180,.22)}
+.checks-done{grid-column:1/-1;font-size:13px;color:var(--ok)}
 .odo-note{font-size:14px;line-height:1.5;background:rgba(255,255,255,.12);border:1px solid var(--line);border-radius:16px;padding:10px 14px}
 .linkbtn{background:none;border:0;padding:0 2px;color:var(--accent);font:inherit;font-weight:600;text-decoration:underline;cursor:pointer}
-.due.first{border-color:rgba(214,242,94,.45)}
+.due.first{border-color:rgba(246,201,167,.55)}
 .car-age{font-size:12px;color:var(--muted);margin-top:2px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 @media (max-width:360px){.odo span{font-size:28px;min-width:24px}.gauges,.grid2{grid-template-columns:1fr}}
@@ -319,6 +357,7 @@ input,select,textarea{font-size:16px!important}
     <div id="firstGap" style="height:14px" hidden></div>
     <div class="due" id="dueCard"></div>
     <div style="height:14px"></div>
+    <div id="wtySummary"></div>
     <div id="insSummary"></div>
     <div style="height:18px"></div>
     <button class="pillbar" data-go="sos" type="button">
@@ -350,6 +389,15 @@ input,select,textarea{font-size:16px!important}
       <p class="note" style="margin:0">里程或時間，哪個先到就以哪個為準。一般汽油車常見 5,000–10,000 公里或 6–12 個月，請依車主手冊。</p>
     </div>
     <div style="height:14px"></div>
+    <div class="panel" id="wtyPanel">
+      <div class="item-head"><h2>原廠保固</h2><span class="small muted" id="wtyBase"></span></div>
+      <div id="wtyList"></div>
+      <div class="btns"><button class="btn" type="button" id="wtyAdd">手動新增一項</button><button class="btn" type="button" id="wtyScanOpen">掃描保固說明</button></div>
+      <div id="wtyScanWrap" hidden></div>
+    </div>
+    <div style="height:14px"></div>
+    <div id="rcptScanWrap"></div>
+    <div style="height:14px"></div>
     <div class="panel">
       <h2>新增保養紀錄</h2>
       <form id="f-log" class="grid2">
@@ -374,8 +422,18 @@ input,select,textarea{font-size:16px!important}
       <div class="item-head"><h2>掃描保單，自動填入</h2><span class="small" id="scanEngine"></span></div>
       <p class="small" style="margin:0">拍下保單或上傳照片、PDF（可一次選多頁），會讀出保險公司、保單號碼、期間、保障內容和電話，確認後才存入。</p>
       <div class="btns">
-        <label class="btn primary scan-pick" for="scanCam">📷 拍照掃描<input id="scanCam" type="file" accept="image/*" capture="environment" hidden></label>
-        <label class="btn scan-pick" for="scanFile">上傳照片或 PDF<input id="scanFile" type="file" accept="image/*,application/pdf" multiple hidden></label>
+        <label class="btn primary scan-pick" for="scanCam">📷 拍照<input id="scanCam" type="file" accept="image/*" capture="environment" hidden></label>
+        <label class="btn scan-pick" for="scanFile">上傳檔案<input id="scanFile" type="file" accept="image/*,application/pdf" multiple hidden></label>
+        <button class="btn" type="button" id="pasteOpen">貼上文字</button>
+      </div>
+      <div id="pasteBox" class="paste" hidden>
+        <ol class="steps small">
+          <li>到「照片」打開保單照片，點右下角的「原況文字」圖示（框框裡有三條線）。</li>
+          <li>長按文字選「全選」，再按「拷貝」。</li>
+          <li>回到這裡，在下面的框裡長按選「貼上」，再按「分析文字」。</li>
+        </ol>
+        <label for="scanText">保單文字<textarea id="scanText" rows="6" placeholder="把保單上的文字貼在這裡"></textarea></label>
+        <div class="btns"><button class="btn primary" type="button" id="pasteGo">分析文字</button><button class="btn ghost" type="button" id="pasteClose">收起</button></div>
       </div>
       <div id="scanThumbs" class="thumbs" hidden></div>
       <div id="scanStatus" class="small" hidden></div>
@@ -385,9 +443,9 @@ input,select,textarea{font-size:16px!important}
       </div>
       <div id="scanReview" hidden></div>
       <details id="scanKeyBox" hidden>
-        <summary class="small"><b>在獨立網頁使用掃描</b>：需要 Anthropic API 金鑰</summary>
+        <summary class="small"><b>想讀得更準？</b>選填：使用 Anthropic API 金鑰</summary>
         <div class="small" style="display:flex;flex-direction:column;gap:8px;padding-top:8px">
-          <span>到 console.anthropic.com 建立 API 金鑰貼在下面。金鑰只存在這支手機，每次掃描約花費新台幣 1 元以內。</span>
+          <span>不填也能掃描，會用手機本機辨識（免費）。表格多、字小的保單，本機辨識可能漏字；填了金鑰就改由 Claude 讀圖，比較準確。金鑰只存在這支手機，每次約花費新台幣 1 元以內，到 console.anthropic.com 建立。</span>
           <label for="scanKey">API 金鑰<input id="scanKey" type="password" autocomplete="off" placeholder="sk-ant-..."></label>
         </div>
       </details>
@@ -466,20 +524,49 @@ input,select,textarea{font-size:16px!important}
       <div class="small" style="opacity:.85">按鈕若沒有反應，請直接用手機撥號：<b class="num" style="user-select:all">110</b>（警察）、<b class="num" style="user-select:all">119</b>（救護）。</div>
     </div>
     <div style="height:14px"></div>
-    <div class="panel" id="sosIns"></div>
-    <div style="height:14px"></div>
-    <div class="panel">
-      <h2>事故處理順序</h2>
-      <ol class="steps">
-        <li>開啟危險警告燈，人員移到護欄外或安全處。</li>
-        <li>放置三角警示牌：一般道路車後約 30–100 公尺，高速公路 100 公尺以上。</li>
-        <li>有人受傷先撥 119；車禍報案撥 110，說清楚位置與傷亡。</li>
-        <li>移車前拍照：車損、車牌、四周全景、煞車痕、路標或里程樁。</li>
-        <li>交換對方姓名、電話、車牌、保險公司。</li>
-        <li>通知保險公司報案，記下報案編號；需要拖吊找道路救援。</li>
-        <li>事後向警方申請「道路交通事故現場圖」與「初步分析研判表」。</li>
+    <div class="panel guide" id="guide">
+      <h2>現場第一步</h2>
+      <ol class="steps big-steps">
+        <li><b>開啟雙黃燈</b>（危險警告燈）：撞擊後第一時間按下。</li>
+        <li><b>放三角警示牌</b>：一般道路放車後 <b>30–100 公尺</b>；快速道路、高速公路放車後 <b>100 公尺以上</b>。</li>
+        <li><b>人員撤到安全處</b>：拍照完立刻站到路肩或護欄外，<b>不要站在車道上</b>理論或等候。</li>
+        <li><b>報警、通知保險公司</b>：撥 110 報案，並通知投保的產險公司處理理賠。</li>
       </ol>
+      <h2 style="margin-top:4px">有人受傷嗎？</h2>
+      <div class="seg" role="tablist" aria-label="有人受傷嗎">
+        <button class="seg-b" type="button" role="tab" data-hurt="no" aria-selected="false">沒有，只有車損</button>
+        <button class="seg-b hurt" type="button" role="tab" data-hurt="yes" aria-selected="false">有人受傷或死亡</button>
+      </div>
+      <div class="gcase" id="case-no" hidden>
+        <div class="gtitle ok-t">輕微事故：拍完照就移車，不要佔用車道</div>
+        <p class="small" style="margin:0">先拍照記錄，邊拍邊勾：</p>
+        <div class="checks" id="photoChecks"></div>
+        <div class="gnote">記錄完成後，盡快把車移到路邊或不妨礙交通的地方，再等警察到場。</div>
+        <div class="gwarn">無人傷亡、車還能開，卻佔著車道妨礙交通，警察可依《道路交通管理處罰條例》第 62 條第 2 項處 <b>600–1,800 元</b>罰鍰。</div>
+      </div>
+      <div class="gcase" id="case-yes" hidden>
+        <div class="gtitle bad-t">有人傷亡：原則上保持現場不動</div>
+        <div class="btns"><a class="btn red" href="tel:119">撥打 119 救護</a><a class="btn red" href="tel:110">撥打 110 報案</a></div>
+        <div class="gnote">立刻撥 110 報案、119 叫救護車，保持現場完整。</div>
+        <p class="small" style="margin:0"><b>可以或需要移車的例外：</b></p>
+        <ul class="steps">
+          <li>為了急救傷患，必須移動車輛。</li>
+          <li>停在原地有二次追撞等重大危險，例如高速公路、彎道、濃霧中。</li>
+        </ul>
+        <div class="gwarn">必須移車時，移動前一定要先標繪位置，或拍照、錄影記下<b>車輛與傷者的位置</b>。</div>
+      </div>
+      <details class="small"><summary>事後要做的事</summary>
+        <ul class="steps" style="margin-top:8px">
+          <li>交換對方姓名、電話、車牌、保險公司。</li>
+          <li>記下保險公司的報案編號；需要拖吊時找道路救援。</li>
+          <li>事後可向警方申請「道路交通事故現場圖」與「初步分析研判表」。</li>
+        </ul>
+      </details>
+      <p class="note" style="margin:0">依據《道路交通管理處罰條例》與《道路交通事故處理辦法》整理，實際以現場警方指示為準。</p>
     </div>
+    <div style="height:14px"></div>
+    <div class="panel" id="sosIns"></div>
+
   </section>
 
   <section id="v-drv" hidden>
@@ -766,19 +853,80 @@ function render(){
   renderGuard();
   renderTo();
   renderFirst();
+  renderWty();
   fmtDates();
 }
 
 /* ---------- SOS ---------- */
 let LOC=null,LOC_PENDING=false;
 const mapUrl=q=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);
+/* ---------- 座標 → 縣市、路口（OpenStreetMap） ---------- */
+let PLACE=null;          // {lat,lng,area,spot,full}
+function withTimeout(ms){const c=new AbortController();const t=setTimeout(()=>c.abort(),ms);return {signal:c.signal,done:()=>clearTimeout(t)}}
+function segDist(p,a,b){ // 點到線段的距離（公尺），小範圍用平面近似
+  const k=Math.cos(p.lat*Math.PI/180)*111320,K=110540;
+  const ax=(a.lon-p.lng)*k,ay=(a.lat-p.lat)*K,bx=(b.lon-p.lng)*k,by=(b.lat-p.lat)*K;
+  const dx=bx-ax,dy=by-ay,L=dx*dx+dy*dy;let t=L?-(ax*dx+ay*dy)/L:0;t=Math.max(0,Math.min(1,t));
+  return Math.hypot(ax+t*dx,ay+t*dy);
+}
+const baseRoad=n=>String(n||'').replace(/[一二三四五六七八九十0-9]+段$/,'').replace(/\s+/g,'');
+async function placeName(lat,lng,ms){
+  if(PLACE&&dist(PLACE,{lat,lng})<25)return PLACE;
+  const to1=withTimeout(ms||8000),to2=withTimeout(ms||8000);
+  const nomi=fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&addressdetails=1&accept-language=zh-TW&lat='+lat+'&lon='+lng,{signal:to1.signal}).then(r=>r.json()).finally(to1.done);
+  const q='[out:json][timeout:8];(way(around:80,'+lat+','+lng+')[highway][name];way(around:80,'+lat+','+lng+')[highway~"motorway|trunk"][ref];node(around:600,'+lat+','+lng+')[highway=milestone];);out tags geom;';
+  const over=fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:'data='+encodeURIComponent(q),headers:{'Content-Type':'application/x-www-form-urlencoded'},signal:to2.signal}).then(r=>r.json()).finally(to2.done);
+  const [a,b]=await Promise.allSettled([nomi,over]);
+  if(a.status!=='fulfilled'&&b.status!=='fulfilled')throw new Error('offline');
+  // 行政區
+  let area='',road='';
+  if(a.status==='fulfilled'&&a.value&&a.value.address){
+    const ad=a.value.address;
+    const city=ad.city||ad.county||ad.state||'';
+    const dist2=ad.city_district||ad.suburb||ad.town||ad.district||ad.village||'';
+    area=(city+(dist2&&dist2!==city?dist2:'')).replace(/臺/g,'台');
+    road=(ad.road||'')+(ad.house_number?' '+ad.house_number+' 號':'');
+  }
+  // 最近的道路與路口
+  let spot='';
+  if(b.status==='fulfilled'&&b.value&&b.value.elements){
+    const p={lat,lng},roads=[];let mile=null;
+    for(const el of b.value.elements){
+      if(el.type==='node'){if(el.tags&&(el.tags.distance||el.tags.name)){const d=dist(p,{lat:el.lat,lng:el.lon});if(!mile||d<mile.d)mile={d,v:String(el.tags.distance||el.tags.name).replace(/\s*km$/i,'')}}continue}
+      const t=el.tags||{},g=el.geometry||[];if(g.length<2||/footway|path|steps|cycleway|track|pedestrian|construction|proposed/.test(t.highway))continue;
+      let d=Infinity;for(let i=1;i<g.length;i++)d=Math.min(d,segDist(p,g[i-1],g[i]));
+      const fwy=/motorway|trunk/.test(t.highway)&&t.ref;
+      const nm=fwy?('國道'+String(t.ref).replace(/^(國道|國|N)/i,'').split(/[;,]/)[0]+'號'+(t.name?'（'+t.name+'）':'')):t.name;
+      if(nm)roads.push({nm,d,fwy:!!fwy,link:/_link/.test(t.highway)});
+    }
+    roads.sort((x,y)=>x.d-y.d);
+    const first=roads[0];
+    if(first&&first.d<=60){
+      if(first.fwy){spot=first.nm+(first.link?' 交流道':'')+(mile&&mile.d<=600?'・約 '+mile.v+'K 附近':'')}
+      else{
+        const second=roads.find(r=>!r.fwy&&baseRoad(r.nm)!==baseRoad(first.nm));
+        spot=second&&second.d<=45&&first.d<=35?first.nm+'與'+second.nm+(/[路街道]$/.test(second.nm)?'口':'路口')+'附近':first.nm+(road&&road.startsWith(first.nm)&&/號/.test(road)?road.slice(first.nm.length):'')+'附近';
+      }
+    }
+  }
+  if(!spot&&road)spot=road+' 附近';
+  if(!area&&!spot)throw new Error('none');
+  PLACE={lat,lng,area,spot,full:(area+' '+spot).trim()};
+  return PLACE;
+}
+function showPlace(pl){
+  const el=$('#placeLine');if(!el)return;
+  if(!pl){el.hidden=true;return}
+  el.hidden=false;el.innerHTML='<b>'+esc(pl.area||'')+'</b>'+(pl.spot?'<span>'+esc(pl.spot)+'</span>':'');
+}
 function buildMsg(force){
   const ta=$('#sos-msg'); if(!force&&ta.dataset.edited==='1')return;
   const now=new Date();
   const t=now.getFullYear()+'/'+(now.getMonth()+1)+'/'+now.getDate()+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
   const desc=$('#sos-desc').value.trim();
   let m='【緊急】我發生交通事故，需要協助。\n時間：'+t+'\n車牌：'+(S.car.plate||'')+'（'+(S.car.model||'')+'）';
-  if(desc)m+='\n地點：'+desc;
+  if(LOC&&PLACE&&dist(PLACE,LOC)<40&&PLACE.full)m+='\n所在地：'+PLACE.full;
+  if(desc)m+='\n補充位置：'+desc;
   if(LOC)m+='\n座標：'+LOC.lat.toFixed(6)+', '+LOC.lng.toFixed(6)+'（誤差約 '+Math.round(LOC.acc)+' 公尺）\nGoogle 地圖：'+mapUrl(LOC.lat.toFixed(6)+','+LOC.lng.toFixed(6));
   else if(desc)m+='\nGoogle 地圖：'+mapUrl(desc);
   else m+='\nGoogle 地圖：'+(LOC_PENDING?'定位中…':'尚未取得位置');
@@ -795,8 +943,11 @@ function locate(){
   navigator.geolocation.getCurrentPosition(p=>{LOC_PENDING=false;
     LOC={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};
     const u=mapUrl(LOC.lat.toFixed(6)+','+LOC.lng.toFixed(6));
-    box.innerHTML='<b class="num" style="user-select:all">'+LOC.lat.toFixed(6)+', '+LOC.lng.toFixed(6)+'</b><br>誤差約 '+Math.round(LOC.acc)+' 公尺・<a href="'+u+'" target="_blank" rel="noopener">在地圖上打開</a>';
+    box.innerHTML='<div class="place" id="placeLine"><span class="small">正在查詢縣市與路口…</span></div><b class="num" style="user-select:all">'+LOC.lat.toFixed(6)+', '+LOC.lng.toFixed(6)+'</b><br>誤差約 '+Math.round(LOC.acc)+' 公尺・<a href="'+u+'" target="_blank" rel="noopener">在地圖上打開</a>';
     $('#sos-msg').dataset.edited='0';buildMsg(true);toast('已取得位置');
+    const here=LOC;
+    placeName(here.lat,here.lng).then(pl=>{if(LOC!==here)return;showPlace(pl);$('#sos-msg').dataset.edited='0';buildMsg(true)})
+      .catch(()=>{const el=$('#placeLine');if(el)el.innerHTML='<span class="small">查不到地名（可能沒有網路），請在下方補充路名或地標。</span>'});
   },err=>{LOC_PENDING=false;buildMsg(true);
     box.innerHTML='無法取得定位（'+(err.code===1?'位置權限被拒絕':'訊號不足或逾時')+'）。<br>請在下方填路名、地標或國道里程樁；在 Claude 內預覽時無法定位，請用下載的檔案版在手機瀏覽器開啟。';
   },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
@@ -891,11 +1042,11 @@ $('#addIns').addEventListener('click',()=>{S.ins.push({type:'任意險',company:
 $('#clearEx').addEventListener('click',e=>{
   const b=e.currentTarget;
   if(b.dataset.armed!=='1'){b.dataset.armed='1';b.textContent='再按一次：清空所有範例';setTimeout(()=>{b.dataset.armed='0';b.textContent='清除範例資料，從頭填寫'},3000);return}
-  S={example:false,car:{plate:'',model:'',year:'',vin:'',odo:0,odoDate:iso(TODAY())},svc:{lastDate:iso(TODAY()),lastKm:0,intKm:10000,intMonths:6},logs:[],ins:[],contacts:[],guard:S.guard,drvLog:S.drvLog,sosTo:S.sosTo,scanKey:S.scanKey,first:S.first};
+  S={example:false,car:{plate:'',model:'',year:'',vin:'',odo:0,odoDate:iso(TODAY())},svc:{lastDate:iso(TODAY()),lastKm:0,intKm:10000,intMonths:6},logs:[],ins:[],contacts:[],guard:S.guard,drvLog:S.drvLog,sosTo:S.sosTo,scanKey:S.scanKey,first:S.first,warranty:S.warranty};
   save();render();toast('已清空，請填入你的資料');
 });
 // first real edit clears the example flag
-document.addEventListener('change',e=>{if(S&&S.example&&e.target.closest('section')&&!e.target.closest('#v-drv')&&!e.target.closest('#v-sos')&&!e.target.closest('#scanCard')&&!e.target.closest('#f-odo')&&e.target.id!=='sos-desc'){S.example=false;save();render()}},true);
+document.addEventListener('change',e=>{if(S&&S.example&&e.target.closest('section')&&!e.target.closest('#v-drv')&&!e.target.closest('#v-sos')&&!e.target.closest('.scan')&&!e.target.closest('#wtyPanel')&&!e.target.closest('#f-odo')&&e.target.id!=='sos-desc'){S.example=false;save();render()}},true);
 
 /* ---------- 新車首次保養 ---------- */
 function firstDue(){
@@ -944,6 +1095,275 @@ document.addEventListener('click',e=>{
 });
 ['f-km','f-mon'].forEach(id=>$('#'+id).addEventListener('change',e=>{const v=Math.round(Number(e.target.value));if(v>0){S.first[id==='f-km'?'km':'mon']=v;save();render()}}));
 $('#f-done').addEventListener('change',e=>{S.first.done=e.target.checked;S.first.doneAt=e.target.checked?iso(TODAY()):'';save();render()});
+
+/* ---------- 共用掃描元件（保固說明、保養單據） ---------- */
+function scanUI(p,title,desc){
+  return `<div class="scan" id="${p}Scan">
+    <div class="item-head"><h2>${title}</h2><span class="small" data-a="engine"></span></div>
+    <p class="small" style="margin:0">${desc}</p>
+    <div class="btns">
+      <label class="btn primary scan-pick" for="${p}-cam">📷 拍照<input id="${p}-cam" data-a="cam" type="file" accept="image/*" capture="environment" hidden></label>
+      <label class="btn scan-pick" for="${p}-file">上傳檔案<input id="${p}-file" data-a="file" type="file" accept="image/*,application/pdf" multiple hidden></label>
+      <button class="btn" type="button" data-a="pasteOpen">貼上文字</button>
+    </div>
+    <div class="paste" data-a="pasteBox" hidden>
+      <div class="small">用 iPhone「原況文字」：在照片 App 打開截圖，點右下角原況文字圖示 → 全選 → 拷貝，回來貼上。</div>
+      <label for="${p}-text">文字內容<textarea id="${p}-text" data-a="text" rows="6" placeholder="把文字貼在這裡"></textarea></label>
+      <div class="btns"><button class="btn primary" type="button" data-a="pasteGo">分析文字</button><button class="btn ghost" type="button" data-a="pasteClose">收起</button></div>
+    </div>
+    <div class="thumbs" data-a="thumbs" hidden></div>
+    <div class="small" data-a="status" hidden></div>
+    <div class="btns" data-a="run" hidden><button class="btn primary" type="button" data-a="go">開始讀取</button><button class="btn ghost" type="button" data-a="clear">清除</button></div>
+    <div data-a="review" hidden></div>
+  </div>`;
+}
+function mountScan(p,wrap,cfg){
+  $(wrap).innerHTML=scanUI(p,cfg.title,cfg.desc);
+  const root=$('#'+p+'Scan'),q=a=>root.querySelector('[data-a="'+a+'"]');
+  const st={blobs:[],pdfText:'',results:null};
+  const status=h=>{const el=q('status');el.hidden=!h;el.innerHTML=h||''};
+  const label=()=>{const key=(S.scanKey||'').trim();q('engine').textContent=SC.imgOk?'由 Claude 讀取':key?'用你的 API 金鑰':'手機本機辨識・免費';q('pasteOpen').hidden=SC.imgOk};
+  const thumbs=()=>{const b=q('thumbs');b.querySelectorAll('img').forEach(i=>URL.revokeObjectURL(i.src));b.hidden=!st.blobs.length;q('run').hidden=!st.blobs.length;
+    b.innerHTML=st.blobs.map((x,i)=>`<figure><img src="${URL.createObjectURL(x.blob)}" alt="${esc(x.label)}"><figcaption>${esc(x.label)}</figcaption><button type="button" data-rm="${i}" aria-label="移除">✕</button></figure>`).join('')};
+  const reset=()=>{st.blobs=[];st.pdfText='';st.results=null;thumbs();q('review').hidden=true;q('review').innerHTML='';status('');q('cam').value='';q('file').value='';q('text').value='';q('pasteBox').hidden=true};
+  const show=list=>{
+    if(!list.length){status(cfg.emptyMsg);return}
+    st.results=list;if(p==='rc')SCR.rcpt=list;status('');const r=q('review');r.hidden=false;
+    r.innerHTML=cfg.review(list,p)+`<div class="btns"><button class="btn primary" type="button" data-a="save">${cfg.saveLabel}</button><button class="btn ghost" type="button" data-a="discard">放棄</button></div>`;
+    fmtDates(r);r.scrollIntoView({behavior:'smooth',block:'start'});
+  };
+  async function add(files){
+    status('<span class="spin"></span>準備圖片中…');
+    for(const f of [...files]){
+      try{
+        if(f.type==='application/pdf'||/\.pdf$/i.test(f.name)){(await pdfToBlobs(f,st)).forEach((b,i)=>st.blobs.push({blob:b,label:'PDF 第'+(i+1)+'頁',src:'pdf'}))}
+        else st.blobs.push({blob:await shrink(f),label:'照片',src:'photo'});
+      }catch(e){status('「'+esc(f.name)+'」讀不出來，請改用截圖或照片。');thumbs();return}
+    }
+    const max=SC.imgOk?(SC.maxCount||5):8;if(st.blobs.length>max)st.blobs=st.blobs.slice(0,max);
+    status('');thumbs();
+  }
+  async function run(){
+    if(!st.blobs.length)return;const go=q('go');go.disabled=true;go.textContent='讀取中…';
+    const key=(S.scanKey||'').trim();
+    try{
+      let list;
+      if(SC.imgOk||key){
+        status('<span class="spin"></span>正在讀取，通常 10–40 秒…');
+        let arr=SC.imgOk?await SC.sample.json(cfg.prompt,{images:st.blobs.map(b=>b.blob)}):await scanWithApi(st.blobs.map(b=>b.blob),undefined,cfg.prompt);
+        if(!Array.isArray(arr))arr=arr&&typeof arr==='object'?[arr]:[];
+        list=cfg.norm(arr,false);
+      }else{
+        const cjk=t=>(t.match(/[一-鿿]/g)||[]).length;let text='';
+        if(cjk(st.pdfText)>=20)text+=st.pdfText+'\n';
+        const need=st.blobs.filter(b=>b.src!=='pdf'||cjk(st.pdfText)<20).map(b=>b.blob);
+        if(need.length)text+=await ocrBlobs(need,status);
+        list=cfg.parse(text);
+      }
+      show(list);
+    }catch(e){
+      const code=e&&e.code?e.code:(e&&e.message==='load'?'ocr_load':'upstream_error');
+      status(code==='ocr_load'?'無法下載辨識模型，請確認網路後再試；也可以用「貼上文字」。':(SCAN_ERR[code]||'讀取失敗，請再試一次，或改用「貼上文字」。'));
+    }finally{go.disabled=false;go.textContent='開始讀取'}
+  }
+  q('cam').addEventListener('change',e=>add(e.target.files));
+  q('file').addEventListener('change',e=>add(e.target.files));
+  root.addEventListener('click',e=>{
+    const a=e.target.closest('[data-a]')?.dataset.a, rm=e.target.closest('[data-rm]');
+    if(rm){st.blobs.splice(+rm.dataset.rm,1);thumbs();return}
+    if(a==='go')run();
+    else if(a==='clear'||a==='discard')reset();
+    else if(a==='pasteOpen'){const b=q('pasteBox');b.hidden=!b.hidden;if(!b.hidden)q('text').focus()}
+    else if(a==='pasteClose')q('pasteBox').hidden=true;
+    else if(a==='pasteGo'){const v=q('text').value;if(!v.trim()){status('請先貼上文字。');return}show(cfg.parse(v))}
+    else if(a==='save'){
+      const keep=st.results.filter((_,i)=>{const c=root.querySelector('[data-on="'+i+'"]');return !c||c.checked});
+      const sync=el=>{const i=+el.dataset.i,f=el.dataset.f;if(st.results[i])st.results[i][f]=el.type==='number'?Number(el.value):el.value};
+      root.querySelectorAll('[data-i][data-f]').forEach(sync);
+      if(!keep.length){toast('沒有勾選任何項目');return}
+      const msg=cfg.save(st.results.filter((_,i)=>{const c=root.querySelector('[data-on="'+i+'"]');return !c||c.checked}),root);
+      reset();save();render();toast(msg);
+    }
+  });
+  label();
+  return {label,reset,root};
+}
+function mmFromText(t){
+  // 「10萬公里」「100,000 km」「10 萬 km」→ 公里數
+  const m=String(t).match(/(\d+(?:\.\d+)?)\s*萬\s*(?:公里|km|KM|Km)?/);if(m)return Math.round(parseFloat(m[1])*10000);
+  const n=String(t).match(/(\d{1,3}(?:,\d{3})+|\d{4,7})\s*(?:公里|km|KM|Km)/);return n?Number(n[1].replace(/,/g,'')):0;
+}
+
+/* ---------- 原廠保固 ---------- */
+const WTY_PROMPT=`你會看到汽車原廠保固說明（保固手冊、保固卡、網頁截圖或交車文件）。請列出每一個保固項目，只回傳 JSON 陣列，不要其他文字。每個元素：
+{"name":"保固項目名稱","years":年數(數字，看不到填0),"km":公里數(數字，看不到填0),"note":"條件或例外，簡短一句"}
+規則：只寫圖片上看得到的內容，不要猜；「3年或10萬公里」→ years 3、km 100000；只有月份就換成年（6個月=0.5）；不是保固內容就回傳 []。`;
+function wtyCalc(w){
+  const start=w.start||S.car.buy||'';
+  const endDate=start&&w.years>0?addMonths(start,Math.round(w.years*12)):null;
+  const days=endDate?daysBetween(TODAY(),endDate):null;
+  const remKm=w.km>0?w.km-Number(S.car.odo||0):null;
+  const totalDays=endDate?Math.max(1,daysBetween(start,endDate)):null;
+  const pctT=endDate?Math.min(100,Math.max(0,100-days/totalDays*100)):0;
+  const pctK=w.km>0?Math.min(100,Math.max(0,Number(S.car.odo||0)/w.km*100)):0;
+  const expired=(days!=null&&days<0)||(remKm!=null&&remKm<0);
+  const soon=!expired&&((days!=null&&days<=90)||(remKm!=null&&remKm<=3000));
+  return {start,endDate,days,remKm,pct:Math.max(pctT,pctK),expired,soon};
+}
+function ymd(days){if(days==null)return '';const y=Math.floor(days/365),m=Math.floor((days%365)/30);return (y?y+' 年':'')+(m?(y?' ':'')+m+' 個月':'')||days+' 天'}
+function wtyLine(w){
+  const c=wtyCalc(w),parts=[];
+  if(c.days!=null)parts.push(c.days>0?'剩 '+ymd(c.days):c.days===0?'今天到期':'已過期');
+  if(c.remKm!=null)parts.push(c.remKm>=0?'剩 '+fmtN(c.remKm)+' 公里':'已超過里程');
+  return {c,text:parts.join('・')||(c.start?'未填年限或里程':'請先填簽約買車日期')};
+}
+function renderWty(){
+  const list=S.warranty;
+  $('#wtyBase').textContent=S.car.buy?'從 '+zhDate(S.car.buy,'date')+' 起算':'';
+  $('#wtyList').innerHTML=list.length?list.map((w,i)=>{const {c,text}=wtyLine(w);
+    return `<div class="wty">
+      <div class="wty-head"><b>${esc(w.name||'保固項目')}</b><span class="pill ${c.expired?'bad':c.soon?'warn':'ok'}">${c.expired?'已過保':c.soon?'快到期':'保固中'}</span></div>
+      <div class="bar"><i style="width:${c.pct}%;background:${barColor(c.pct)}"></i></div>
+      <div class="small muted">${text}${c.endDate?'・到 '+zhDate(iso(c.endDate),'date'):''}${w.km>0?' 或 '+fmtN(w.km)+' 公里':''}${w.note?'・'+esc(w.note):''}</div>
+      <details><summary class="small">修改</summary>
+        <div class="wty-edit" style="margin-top:8px">
+          <label for="w${i}-name">項目<input id="w${i}-name" data-w="${i}" data-f="name" value="${esc(w.name)}"></label>
+          <label for="w${i}-years">年<input id="w${i}-years" type="number" step="0.5" min="0" data-w="${i}" data-f="years" value="${w.years||''}"></label>
+          <label for="w${i}-km">公里<input id="w${i}-km" type="number" min="0" data-w="${i}" data-f="km" value="${w.km||''}"></label>
+        </div>
+        <label for="w${i}-start" class="small" style="margin-top:8px">起算日（空白就用簽約日）<input id="w${i}-start" type="date" data-w="${i}" data-f="start" value="${esc(w.start||'')}"></label>
+        <div class="wty-acts" style="margin-top:8px"><button class="btn ghost" type="button" data-wdel="${i}">刪除</button></div>
+      </details>
+    </div>`}).join(''):'<p class="small muted" style="margin:0">還沒有保固資料。可以拍下保固手冊或交車文件的保固頁，自動列出每個項目。</p>';
+  // 總覽摘要：最需要注意的前 3 項
+  const top=list.map(w=>({w,...wtyLine(w)})).filter(x=>x.c.start).sort((a,b)=>(b.c.expired-a.c.expired)||(b.c.soon-a.c.soon)||(b.c.pct-a.c.pct)).slice(0,3);
+  $('#wtySummary').innerHTML=top.length?`<div class="tiles-head"><h2>原廠保固</h2><button data-go="svc" type="button">全部 ›</button></div>
+    <div class="panel wsum">${top.map(x=>`<div class="wsum-row"><span>${esc(x.w.name)}</span><span><span class="pill ${x.c.expired?'bad':x.c.soon?'warn':'ok'}" style="margin-right:6px">${x.c.expired?'已過保':x.c.soon?'快到期':'保固中'}</span>${x.text}</span></div>`).join('')}</div>`:'';
+}
+document.addEventListener('change',e=>{const el=e.target;if(el.dataset.w!=null){const w=S.warranty[+el.dataset.w];if(!w)return;
+  w[el.dataset.f]=el.type==='number'?Number(el.value)||0:el.value;save();render()}});
+document.addEventListener('click',e=>{
+  const d=e.target.closest('[data-wdel]');if(d){if(d.dataset.armed!=='1'){d.dataset.armed='1';d.textContent='再按一次刪除';return}S.warranty.splice(+d.dataset.wdel,1);save();render();return}
+  if(e.target.id==='wtyAdd'){S.warranty.push({name:'新車保固',years:3,km:100000,start:'',note:''});save();render();
+    const ds=document.querySelectorAll('#wtyList details');if(ds.length)ds[ds.length-1].open=true}
+  if(e.target.id==='wtyScanOpen'){const w=$('#wtyScanWrap');w.hidden=!w.hidden}
+});
+function parseWarrantyText(raw){
+  const t=cleanText(raw),out=[];
+  for(const l of t.split(/\n+/).map(x=>x.trim()).filter(Boolean)){
+    if(!/保固|保證|保修/.test(l))continue;
+    const y=l.match(/(\d+(?:\.\d+)?)\s*年/),mo=l.match(/(\d+)\s*個?月/);
+    const years=y?parseFloat(y[1]):mo?Math.round(parseInt(mo[1])/6)/2:0;
+    const km=mmFromText(l);
+    if(!years&&!km)continue;
+    let name=l.replace(/[（(][^）)]*[）)]/g,'')
+      .replace(/\d+(?:\.\d+)?\s*萬?\s*(?:公里|km|KM|Km)/g,'').replace(/\d+(?:\.\d+)?\s*萬/g,'')
+      .replace(/\d+(?:\.\d+)?\s*(?:年|個?月)/g,'')
+      .replace(/以先到者為準|先到者為準|為準|或|\//g,'').replace(/[:：].*$/,'').replace(/[\s、,，。]+/g,'').trim();
+    name=name.replace(/(保固期間|期間|為|享有|提供)$/,'').slice(0,16)||'保固項目';
+    if(!out.some(o=>o.name===name))out.push({name,years,km,note:''});
+  }
+  return out;
+}
+function normWarranty(arr){return arr.filter(o=>o&&typeof o==='object').map(o=>({name:String(o.name||'保固項目').trim().slice(0,20),years:Math.max(0,Number(o.years)||0),km:Math.max(0,Number(o.km)||0),note:String(o.note||'').trim().slice(0,40)})).filter(o=>o.years||o.km)}
+const WTY_CFG={title:'掃描保固說明',desc:'拍下或截圖保固手冊、保固卡、交車文件的保固頁，會列出每個項目的年限和里程，確認後存入。',
+  prompt:WTY_PROMPT,parse:parseWarrantyText,norm:normWarranty,saveLabel:'存入勾選的保固項目',
+  emptyMsg:'沒有讀到保固項目（例如「3 年或 10 萬公里」）。請拍保固說明那一頁，或改用「貼上文字」。',
+  review:(list)=>'<h3 style="font-size:15px">讀到 '+list.length+' 個保固項目，請確認</h3>'+list.map((w,i)=>`<div class="review">
+    <div class="wty-edit"><label for="wr${i}-name">項目<input id="wr${i}-name" data-i="${i}" data-f="name" value="${esc(w.name)}"></label>
+    <label for="wr${i}-years">年<input id="wr${i}-years" type="number" step="0.5" data-i="${i}" data-f="years" value="${w.years||''}"></label>
+    <label for="wr${i}-km">公里<input id="wr${i}-km" type="number" data-i="${i}" data-f="km" value="${w.km||''}"></label></div>
+    ${w.note?`<div class="small muted">${esc(w.note)}</div>`:''}
+    <label class="small" for="wr${i}-on" style="flex-direction:row;align-items:center;gap:8px;color:var(--ink)"><input type="checkbox" id="wr${i}-on" data-on="${i}" checked style="width:auto"> 存入這項</label></div>`).join(''),
+  save:list=>{list.forEach(w=>{const k=S.warranty.findIndex(x=>x.name===w.name);const rec={name:w.name,years:Number(w.years)||0,km:Number(w.km)||0,start:'',note:w.note||''};if(k>=0)S.warranty[k]={...S.warranty[k],...rec,start:S.warranty[k].start};else S.warranty.push(rec)});
+    return '已存入 '+list.length+' 個保固項目'+(S.car.buy?'':'，記得填簽約買車日期才能倒數')}};
+
+/* ---------- 保養單據 ---------- */
+const RCPT_PROMPT=`你會看到汽車保養或維修的單據（工單、結帳單、發票或 App 截圖）。只回傳一個 JSON 陣列（通常一筆），不要其他文字。每個元素：
+{"date":"YYYY-MM-DD 進廠或結帳日","km":進廠里程(數字),"shop":"服務廠名稱","items":["更換或檢查的項目，每項一個字串，含零件名"],"total":總金額(數字，含稅),"nextKm":下次建議保養里程(數字，看不到填0),"nextDate":"YYYY-MM-DD 下次建議保養日期，看不到填空字串"}
+規則：只寫看得到的內容不要猜；民國年換成西元（民國年＋1911）；工資、折扣不要列成項目；不要輸出車主姓名、電話、地址、身分證或卡號；不是保養單據就回傳 []。`;
+const PART_KW=/機油|機油芯|機油濾|空氣濾|冷氣濾|空調濾|濾網|濾芯|汽油濾|燃油濾|煞車|剎車|來令|碟盤|雨刷|輪胎|胎|電瓶|電池|火星塞|點火|變速箱油|變速箱|齒輪油|冷卻液|水箱|防凍|皮帶|定位|平衡|對調|檢查|檢測|保養|雨刷|燈泡|節氣門|噴油嘴|積碳|冷媒|空調|底盤|球頭|避震|軸承|油水分離/;
+function parseReceiptText(raw){
+  const t=cleanText(raw);
+  if((t.match(/[一-鿿]/g)||[]).length<6)return [];
+  const lines=t.split(/\n+/).map(l=>l.trim()).filter(Boolean);
+  const ds=findDates(t);
+  const kmM=t.match(/(?:進廠里程|里程數|行駛里程|里程|公里數|里數|ODO)\s*[:：]?\s*([\d,]{2,8})/i);
+  const km=kmM?Number(kmM[1].replace(/,/g,'')):0;
+  const totM=t.match(/(?:應付金額|應收金額|實收金額|總金額|總計|合計|應收|實收|含稅)\s*[:：]?\s*(?:NT\$|\$|新台幣)?\s*([\d,]{2,9})/);
+  const total=totM?Number(totM[1].replace(/,/g,'')):0;
+  const shop=(lines.find(l=>/(服務廠|保養廠|服務中心|汽車|車業|輪胎|股份有限公司|保修)/.test(l)&&!/地址|電話|統一/.test(l))||'').replace(/(地址|電話).*/,'').slice(0,24);
+  const items=[];
+  for(const l of lines){
+    if(!PART_KW.test(l)||/下次|建議|地址|電話|統一編號|車主|車牌/.test(l))continue;
+    // 去掉行首序號、行尾的金額與數量，保留零件規格（例如 0W-20）
+    let name=l.replace(/^\s*\d{1,3}[.、)\s]\s*/,'');
+    for(let k=0;k<4;k++)name=name.replace(/\s+(?:NT\$|\$)?\s*[\d,]+(?:\.\d+)?\s*(?:元|L|公升|個|只|組|支|顆|條|式|H|小時|x|X)?\s*$/,'');
+    name=name.replace(/\s+/g,' ').replace(/[\s\-:：]+$/,'').trim();
+    if(name.length>=2&&!items.includes(name))items.push(name.slice(0,24));
+    if(items.length>=12)break;
+  }
+  const nx=t.match(/(?:下次保養|下次進廠|建議保養|下次)[^\n\d]{0,10}([\d,]{3,7})\s*(?:公里|km|KM|K)/);
+  const nxDate=(()=>{const m=t.match(/(?:下次保養|下次進廠|建議保養|下次)[^\n]{0,40}/);if(!m)return '';const d=findDates(m[0]);return d.length?d[0].iso:''})();
+  if(!items.length&&!km&&!total)return [];
+  return [{date:ds.length?ds[0].iso:iso(TODAY()),km,shop,items,total,nextKm:nx?Number(nx[1].replace(/,/g,'')):0,nextDate:nxDate}];
+}
+function normReceipt(arr){return arr.filter(o=>o&&typeof o==='object').map(o=>({date:normDate(o.date)||iso(TODAY()),km:Math.max(0,Number(o.km)||0),shop:String(o.shop||'').trim().slice(0,30),
+  items:(Array.isArray(o.items)?o.items:String(o.items||'').split(/[、,\n]/)).map(x=>String(x).trim()).filter(Boolean).slice(0,15),total:Math.max(0,Number(o.total)||0),
+  nextKm:Math.max(0,Number(o.nextKm)||0),nextDate:normDate(o.nextDate)}))}
+const RCPT_CFG={title:'掃描保養單據',desc:'拍下或截圖保養工單、結帳單、原廠 App 的保養紀錄，會讀出日期、里程、更換項目、金額，確認後加入保養紀錄。',
+  prompt:RCPT_PROMPT,parse:parseReceiptText,norm:normReceipt,saveLabel:'加入保養紀錄',
+  emptyMsg:'沒有讀到保養內容。請拍完整的單據（含日期、里程和項目），或改用「貼上文字」。',
+  review:(list)=>list.map((r,i)=>`<div class="review">
+    <h3 style="font-size:15px">保養單據 ${list.length>1?i+1:''}</h3>
+    <div class="grid2">
+      <label for="rc${i}-date">日期<input id="rc${i}-date" type="date" data-i="${i}" data-f="date" value="${esc(r.date)}"></label>
+      <label for="rc${i}-km">里程（公里）<input id="rc${i}-km" type="number" data-i="${i}" data-f="km" value="${r.km||''}"></label>
+      <label for="rc${i}-total">金額（元）<input id="rc${i}-total" type="number" data-i="${i}" data-f="total" value="${r.total||''}"></label>
+      <label for="rc${i}-shop">保養廠<input id="rc${i}-shop" data-i="${i}" data-f="shop" value="${esc(r.shop)}"></label>
+      <label for="rc${i}-items" style="grid-column:1/-1">項目（用頓號分隔）<textarea id="rc${i}-items" data-i="${i}" data-f="itemsText" rows="3">${esc(r.items.join('、'))}</textarea></label>
+    </div>
+    ${r.nextKm||r.nextDate?`<label class="small" for="rc${i}-next" style="flex-direction:row;align-items:center;gap:8px;color:var(--ink)"><input type="checkbox" id="rc${i}-next" data-next="${i}" checked style="width:auto"> 用單據上的下次保養建議（${r.nextKm?fmtN(r.nextKm)+' 公里':''}${r.nextKm&&r.nextDate?' 或 ':''}${r.nextDate?zhDate(r.nextDate,'date'):''}）更新保養週期</label>`:''}
+    ${!r.km?'<div class="review warn-line" style="padding:0;border:0;background:none">沒有讀到里程，請補上，保養倒數才會準。</div>':''}
+    <label class="small" for="rc${i}-on" style="flex-direction:row;align-items:center;gap:8px;color:var(--ink)"><input type="checkbox" id="rc${i}-on" data-on="${i}" checked style="width:auto"> 加入這筆</label></div>`).join(''),
+  save:(list,root)=>{
+    let n=0;
+    const wasEx=S.example;if(wasEx){S.logs=[]}
+    list.forEach(r=>{
+      const items=(r.itemsText!=null?r.itemsText:r.items.join('、')).split(/[、,，\n]/).map(x=>x.trim()).filter(Boolean);
+      const km=Number(r.km)||0;
+      S.logs.push({date:r.date,km,item:items.join('、')||'保養',cost:Number(r.total)||0,shop:r.shop||''});n++;
+      // 最新的一筆設為「上次保養」
+      // 以里程判斷哪筆最新；沒讀到里程才比日期
+      if(wasEx||(km?km>=Number(S.svc.lastKm||0):r.date>=(S.svc.lastDate||''))){S.svc.lastDate=r.date;if(km)S.svc.lastKm=km}
+      if(km>Number(S.car.odo||0)||(wasEx&&km)){S.car.odo=Math.max(km,wasEx?0:Number(S.car.odo||0));S.car.odoDate=r.date}
+      if(S.car.buy&&!S.first.done&&r.date>=S.car.buy){S.first.done=true;S.first.doneAt=r.date}
+      const nx=root.querySelector('[data-next="'+SCR.rcpt.indexOf(r)+'"]');
+      if(nx&&nx.checked){
+        if(r.nextKm&&km&&r.nextKm>km){const d=r.nextKm-km;if(d>=1000&&d<=40000)S.svc.intKm=d}
+        if(r.nextDate){const mo=Math.round(daysBetween(r.date,r.nextDate)/30.4);if(mo>=1&&mo<=24)S.svc.intMonths=mo}
+      }
+    });
+    if(S.example)S.example=false;
+    return '已加入 '+n+' 筆保養紀錄';
+  }};
+const SCR={rcpt:[]};
+
+/* ---------- 事故處理原則 ---------- */
+const PHOTO_ITEMS=['兩車撞擊點','雙方車牌','車輛相對位置','煞車痕','車道線','週邊標誌標線','車頭','車尾','碰撞細節特寫','現場全景'];
+let photoDone=new Set();
+function renderChecks(){
+  $('#photoChecks').innerHTML=PHOTO_ITEMS.map((t,i)=>`<label for="ph${i}"><input type="checkbox" id="ph${i}" data-ph="${i}" ${photoDone.has(i)?'checked':''}>${t}</label>`).join('')
+    +(photoDone.size===PHOTO_ITEMS.length?'<div class="checks-done">都拍好了，可以把車移到路邊。</div>':'<div class="checks-done" style="color:var(--muted)">已拍 '+photoDone.size+' / '+PHOTO_ITEMS.length+' 項，多角度多拍幾張更好。</div>');
+}
+document.addEventListener('click',e=>{
+  const h=e.target.closest('[data-hurt]');if(!h)return;
+  const v=h.dataset.hurt;
+  document.querySelectorAll('[data-hurt]').forEach(b=>b.setAttribute('aria-selected',b===h?'true':'false'));
+  $('#case-no').hidden=v!=='no';$('#case-yes').hidden=v!=='yes';
+  if(v==='no')renderChecks();
+});
+document.addEventListener('change',e=>{const c=e.target.closest('[data-ph]');if(!c)return;const i=+c.dataset.ph;c.checked?photoDone.add(i):photoDone.delete(i);renderChecks()});
 
 /* ---------- 中文日期 ---------- */
 function carAge(buy){
@@ -996,7 +1416,7 @@ $('#f-car').addEventListener('submit',e=>{
 });
 
 /* ---------- policy scan ---------- */
-const SC={files:[],blobs:[],sample:null,imgOk:false,ctl:null,results:null};
+const SC={files:[],blobs:[],sample:null,imgOk:false,ctl:null,results:null,pdfText:''};
 const SCAN_PROMPT=`你會看到台灣汽車保險文件的照片（保單、保險證、要保書、續保通知或保險卡），可能是同一份文件的多頁。
 請讀出每一張不同的保單，只回傳一個 JSON 陣列，不要其他文字。每個元素格式：
 {"type":"強制險|任意險|道路救援|其他","company":"保險公司全名","policy":"保單號碼","start":"YYYY-MM-DD","end":"YYYY-MM-DD","phone":"理賠或道路救援專線","cover":"保障內容，每項一行，含保額與自負額","plate":"車牌","note":"看不清楚或不確定的地方"}
@@ -1018,13 +1438,15 @@ async function scanInit(){
   scanEngineLabel();
 }
 function scanEngineLabel(){
+  (typeof SCANS!=='undefined'?SCANS:[]).forEach(x=>x.label());
   const key=(S.scanKey||'').trim();
-  $('#scanEngine').textContent=SC.imgOk?'由 Claude 讀取':key?'使用你的 API 金鑰':'';
+  $('#scanEngine').textContent=SC.imgOk?'由 Claude 讀取':key?'用你的 API 金鑰':'手機本機辨識・免費';
   $('#scanKeyBox').hidden=SC.imgOk;
-  if(!SC.imgOk&&!key)$('#scanKeyBox').open=false;
+  $('#pasteOpen').hidden=SC.imgOk;
 }
 function loadScript(src){return new Promise((ok,no)=>{const sc=document.createElement('script');sc.src=src;sc.onload=ok;sc.onerror=()=>no(new Error('load'));document.head.appendChild(sc)})}
-async function pdfToBlobs(file){
+async function pdfToBlobs(file,acc){
+  acc=acc||SC;
   if(!window.pdfjsLib){
     const base='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
     await loadScript(base+'pdf.min.js');
@@ -1037,6 +1459,7 @@ async function pdfToBlobs(file){
     const scale=Math.min(2.2,1600/Math.max(vp.width,vp.height));
     const v=pg.getViewport({scale});const cv=document.createElement('canvas');cv.width=v.width;cv.height=v.height;
     await pg.render({canvasContext:cv.getContext('2d'),viewport:v}).promise;
+    try{const tc=await pg.getTextContent();acc.pdfText+=tc.items.map(t=>t.str+(t.hasEOL?'\n':' ')).join('')+'\n'}catch(e){}
     out.push(await new Promise(r=>cv.toBlob(r,'image/jpeg',.88)));
   }
   return out;
@@ -1052,15 +1475,16 @@ async function shrink(file){
   }catch(e){return file}
 }
 function scanStatus(html){const el=$('#scanStatus');el.hidden=!html;el.innerHTML=html||''}
+window.__policyStatus=scanStatus;
 async function addScanFiles(list){
   const files=[...list];if(!files.length)return;
   scanStatus('<span class="spin"></span>準備圖片中…');
   for(const f of files){
     try{
       if(f.type==='application/pdf'||/\.pdf$/i.test(f.name)){
-        const pages=await pdfToBlobs(f);pages.forEach((b,i)=>SC.blobs.push({blob:b,label:'PDF 第'+(i+1)+'頁'}));
+        const pages=await pdfToBlobs(f);pages.forEach((b,i)=>SC.blobs.push({blob:b,label:'PDF 第'+(i+1)+'頁',src:'pdf'}));
       } else if(/^image\//.test(f.type)||/\.(jpe?g|png|heic|webp)$/i.test(f.name)){
-        SC.blobs.push({blob:await shrink(f),label:'照片'});
+        SC.blobs.push({blob:await shrink(f),label:'照片',src:'photo'});
       }
     }catch(e){scanStatus('「'+esc(f.name)+'」讀不出來。PDF 需要網路載入閱讀器；也可以改拍照或截圖上傳。');renderThumbs();return}
   }
@@ -1082,11 +1506,11 @@ function parseJsonLoose(t){
   const a=t.indexOf('['),z=t.lastIndexOf(']');if(a>=0&&z>a){try{return JSON.parse(t.slice(a,z+1))}catch(e){}}
   return null;
 }
-async function scanWithApi(blobs,signal){
+async function scanWithApi(blobs,signal,prompt){
   const key=(S.scanKey||'').trim();
   const content=[];
   for(const b of blobs)content.push({type:'image',source:{type:'base64',media_type:'image/jpeg',data:await blobToB64(b)}});
-  content.push({type:'text',text:SCAN_PROMPT});
+  content.push({type:'text',text:prompt||SCAN_PROMPT});
   const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal,headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
     body:JSON.stringify({model:'claude-sonnet-5-5',max_tokens:2000,messages:[{role:'user',content}]})});
   const j=await r.json().catch(()=>({}));
@@ -1101,7 +1525,7 @@ const SCAN_ERR={not_granted:'你沒有允許這個頁面使用 Claude，無法�
 async function runScan(){
   if(!SC.blobs.length)return;
   const key=(S.scanKey||'').trim();
-  if(!SC.imgOk&&!key){$('#scanKeyBox').hidden=false;$('#scanKeyBox').open=true;scanStatus('請先貼上 API 金鑰（下方），或在 Claude App 內開啟這頁。');return}
+  if(!SC.imgOk&&!key){return runLocalScan()}
   SC.ctl=new AbortController();
   $('#scanGo').disabled=true;$('#scanGo').textContent='讀取中…';
   scanStatus('<span class="spin"></span>正在讀取保單內容，通常 10–40 秒…');
@@ -1123,6 +1547,103 @@ async function runScan(){
     scanStatus(SCAN_ERR[code]||SCAN_ERR.upstream_error);
   }finally{$('#scanGo').disabled=false;$('#scanGo').textContent='開始讀取'}
 }
+/* ---------- 本機辨識（不需金鑰） ---------- */
+const TESS='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+async function ocrBlobs(blobs,statusFn){
+  const scanStatus=statusFn||window.__policyStatus;
+  if(!window.Tesseract){scanStatus('<span class="spin"></span>第一次使用要下載中文辨識模型（約 20 MB），請保持網路連線…');await loadScript(TESS)}
+  let pct=0,stage='準備中';
+  const show=()=>scanStatus('<span class="spin"></span>'+stage+' '+Math.round(pct*100)+'%');
+  const worker=await Tesseract.createWorker(['chi_tra','eng'],1,{logger:m=>{
+    if(m.status==='recognizing text'){stage='辨識文字中';}else if(/load|download|init/i.test(m.status||'')){stage='載入辨識模型';}
+    if(typeof m.progress==='number')pct=m.progress;show();}});
+  let text='';
+  try{
+    for(let i=0;i<blobs.length;i++){
+      stage='辨識第 '+(i+1)+' / '+blobs.length+' 頁';pct=0;show();
+      const r=await worker.recognize(blobs[i]);text+=r.data.text+'\n';
+    }
+  }finally{try{await worker.terminate()}catch(e){}}
+  return text;
+}
+async function runLocalScan(){
+  $('#scanGo').disabled=true;$('#scanGo').textContent='讀取中…';
+  try{
+    let text='';
+    const cjk=t=>(t.match(/[\u4e00-\u9fff]/g)||[]).length;
+    // 電子檔 PDF 本身就有文字，直接讀，不用辨識
+    if(cjk(SC.pdfText)>=30)text+=SC.pdfText+'\n';
+    const need=SC.blobs.filter(b=>b.src!=='pdf'||cjk(SC.pdfText)<30).map(b=>b.blob);
+    if(need.length)text+=await ocrBlobs(need);
+    finishText(text,'photo');
+  }catch(e){
+    scanStatus(e&&e.message==='load'?'無法下載辨識模型，請確認網路後再試；也可以用「貼上文字」。':'本機辨識失敗，請改用「貼上文字」，或拍得更清楚一點再試。');
+  }finally{$('#scanGo').disabled=false;$('#scanGo').textContent='開始讀取'}
+}
+function finishText(text,from){
+  const arr=parsePolicyText(text);
+  if(!arr.length){scanStatus(from==='paste'?'這段文字裡找不到保單資料，請確認貼上的是保單內容。':'沒辨識出保單資料。請在光線充足處正面拍攝、文字對焦清楚；或改用「貼上文字」。');return}
+  SC.results=arr;scanStatus('');renderReview();
+  $('#scanReview').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function cleanText(t){
+  return String(t||'')
+    .replace(/[\uFF01-\uFF5E]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0))  // 全形轉半形
+    .replace(/\u3000/g,' ')
+    .replace(/([\u4e00-\u9fff])[ \t]+(?=[\u4e00-\u9fff])/g,'$1')          // 中文字之間的空白
+    .replace(/(\d)[ \t]+(?=[\/\-.年月日])/g,'$1').replace(/([\/\-.年月])[ \t]+(?=\d)/g,'$1')
+    .replace(/[ \t]{2,}/g,' ');
+}
+function findDates(t){
+  const out=[];const re=/(\d{2,4})\s*[年\/\-.]\s*(\d{1,2})\s*[月\/\-.]\s*(\d{1,2})\s*日?/g;let m;
+  while((m=re.exec(t))){let y=+m[1];if(y<200)y+=1911;if(y<1990||y>2100)continue;
+    const mo=+m[2],d=+m[3];if(mo<1||mo>12||d<1||d>31)continue;
+    out.push({iso:y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0'),i:m.index});}
+  return out;
+}
+function pickPeriod(t){
+  // 先找「保險期間 … 至 …」，找不到就挑相隔約一年的兩個日期
+  const m=t.match(/(保險期間|保險期限|有效期間|承保期間|期間)[\s\S]{0,80}/);
+  if(m){const ds=findDates(m[0]);if(ds.length>=2)return [ds[0].iso,ds[1].iso]}
+  const ds=findDates(t);
+  for(let i=0;i<ds.length;i++)for(let j=i+1;j<Math.min(ds.length,i+5);j++){
+    const g=daysBetween(ds[i].iso,ds[j].iso);if(g>=330&&g<=740)return [ds[i].iso,ds[j].iso];}
+  return ['',''];
+}
+function parsePolicyText(raw){
+  const t=cleanText(raw);
+  if((t.match(/[\u4e00-\u9fff]/g)||[]).length<8)return [];
+  if(!/保險|保單|產險|險/.test(t))return [];
+  const lines=t.split(/\n+/).map(l=>l.trim()).filter(Boolean);
+  const comp=(t.match(/[\u4e00-\u9fff]{2,10}(?:產物保險|產險)/)||t.match(/[\u4e00-\u9fff]{2,8}保險(?=股份有限公司)/)||[])[0]||'';
+  const company=comp.replace(/^(?:本公司|承保公司|保險公司|保險人|承保)/,'');
+  const pol=((t.match(/(?:保險?單號碼?|保單編號|保險證號|證號|保單號)\s*[:：]?\s*([A-Z0-9][A-Z0-9\- ]{5,26})/i)||[])[1]||'').replace(/\s+/g,'').toUpperCase();
+  let phone=(t.match(/(?:理賠|服務|客服|救援|專線)[^\n\d]{0,12}((?:0800|0809)[-\s]?\d{3}[-\s]?\d{3,4}|\(?0\d{1,2}\)?[-\s]?\d{3,4}[-\s]?\d{4})/)||[])[1]
+    ||(t.match(/(?:0800|0809)[-\s]?\d{3}[-\s]?\d{3,4}/)||[])[0]||'';
+  phone=phone.replace(/\s+/g,'-');
+  const plate=(t.match(/(?:車牌|牌照)(?:號碼)?\s*[:：]?\s*([A-Z0-9]{2,4}-[A-Z0-9]{2,4})/i)||t.match(/\b([A-Z]{2,3}-\d{3,4}|\d{3,4}-[A-Z]{2,3})\b/)||[])[1]||'';
+  const [start,end]=pickPeriod(t);
+  const hasForce=/強制(?:汽車)?(?:責任)?(?:保險|險)|強制證/.test(t);
+  const optKw=/車體|第三人|超額|竊盜|乘客|駕駛人|附加|任意|颱風|洪水|代步|道路救援/;
+  const hasOpt=optKw.test(t);
+  const cover=[];
+  for(const l of lines){
+    if(cover.length>=10)break;
+    if(/(險|保額|自負額|每一?人|每一?事故|救援)/.test(l)&&/\d/.test(l)&&l.length<=70&&!/保單號|保險證號|證號|電話|專線|地址|身分|生日|出生|統一編號|被保險人|要保人|車牌|牌照|期間|期限|起至|中午12時/.test(l)){
+      const c=l.replace(/\s+/g,' ');if(!cover.includes(c))cover.push(c);}
+  }
+  const note=[!company&&'保險公司',!pol&&'保單號碼',!end&&'期間',!phone&&'理賠電話'].filter(Boolean);
+  const base={company,policy:pol,start,end,phone,plate,note:(note.length?'沒讀到'+note.join('、')+'，請補上；':'')+'本機辨識可能有錯字，請逐欄確認'};
+  if(hasForce&&hasOpt){
+    const fc=cover.filter(c=>/強制|體傷|失能|死亡/.test(c)&&!optKw.test(c));
+    return [{...base,type:'強制險',cover:fc.join('\n')||'強制汽車責任保險'},{...base,type:'任意險',policy:'',cover:cover.filter(c=>!fc.includes(c)).join('\n')}];
+  }
+  return [{...base,type:hasForce?'強制險':hasOpt?'任意險':'其他',cover:cover.join('\n')}];
+}
+$('#pasteOpen').addEventListener('click',()=>{const b=$('#pasteBox');b.hidden=!b.hidden;if(!b.hidden)$('#scanText').focus()});
+$('#pasteClose').addEventListener('click',()=>{$('#pasteBox').hidden=true});
+$('#pasteGo').addEventListener('click',()=>{const v=$('#scanText').value;if(!v.trim()){scanStatus('請先貼上保單文字。');return}finishText(v,'paste')});
+
 function normDate(v){
   v=String(v||'').trim();if(!v)return '';
   let m=v.match(/^(\d{2,4})[\/\-.年](\d{1,2})[\/\-.月](\d{1,2})/);
@@ -1154,7 +1675,7 @@ function renderReview(){
 }
 const _renderReview=renderReview;renderReview=function(){_renderReview();_rr()};
 function _rr(){fmtDates($('#scanReview'))}
-function resetScan(){SC.blobs=[];SC.results=null;renderThumbs();$('#scanReview').hidden=true;$('#scanReview').innerHTML='';scanStatus('');$('#scanCam').value='';$('#scanFile').value=''}
+function resetScan(){SC.blobs=[];SC.results=null;SC.pdfText='';renderThumbs();$('#scanReview').hidden=true;$('#scanReview').innerHTML='';scanStatus('');$('#scanCam').value='';$('#scanFile').value=''}
 $('#scanCam').addEventListener('change',e=>addScanFiles(e.target.files));
 $('#scanFile').addEventListener('change',e=>addScanFiles(e.target.files));
 $('#scanGo').addEventListener('click',runScan);
@@ -1183,6 +1704,7 @@ function ensure(){
   S.guard=Object.assign({speed:60,stop:3,count:30,radius:40,phones:'',tgToken:'',tgChats:[]},S.guard||{});
   S.drvLog=S.drvLog||[];
   S.first=Object.assign({km:1000,mon:1,done:false,doneAt:''},S.first||{});
+  S.warranty=Array.isArray(S.warranty)?S.warranty:[];
   if(!S.sosTo){S.sosTo=(S.guard.phones||'').split(/[,，\s]+/).filter(Boolean).map((n,i)=>({name:'親友'+(i+1),phone:n,on:true}));S.guard.phones=''}
 }
 function renderTo(){
@@ -1351,7 +1873,7 @@ function cancelAlarm(why){
   if(G.on&&!test){setState('監控中','var(--ok)');drvMsg('已取消。繼續監控中。')}
   toast(why||'已取消');logEv(why||'駕駛按「我沒事」取消');
 }
-function guardMessage(test,ctx){
+function guardMessage(test,ctx,place){
   const d=new Date();
   const t=d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
   ctx=ctx||G.stop;
@@ -1359,6 +1881,7 @@ function guardMessage(test,ctx){
   let m=(test?'【測試訊息，請忽略】\n':'')+'【行車警報】'+(S.car.plate||'')+' 在行駛中急停，原地超過 '+S.guard.stop+' 分鐘未移動，駕駛沒有回應。請盡快聯絡確認，必要時撥打 110/119。';
   m+='\n時間：'+t;
   if(ctx&&ctx.why)m+='\n狀況：'+ctx.why;
+  if(place&&place.full)m+='\n所在地：'+place.full;
   if(p&&p.lat!=null)m+='\nGoogle 地圖：'+mapUrl(p.lat.toFixed(6)+','+p.lng.toFixed(6));
   else m+='\n位置：無法取得 GPS';
   return {m,p};
@@ -1388,7 +1911,8 @@ async function fireNotify(){
   const test=G.alarm.test,ctx=G.alarm.ctx;clearInterval(G.alarm.timer);G.alarm.firing=true;
   $('#alOk').hidden=true;$('#alNow').hidden=true;$('#alSub').hidden=true;$('#alCount').textContent='';
   $('#alTitle').textContent=test?'模擬：正在通知親友':'正在通知親友';
-  const {m,p}=guardMessage(test,ctx);
+  let {m,p}=guardMessage(test,ctx);
+  if(p&&p.lat!=null){const pl=await placeName(p.lat,p.lng,3000).catch(()=>null);if(pl)({m,p}=guardMessage(test,ctx,pl))}
   $('#alSms').href=smsHref(m);
   const tg=await sendTelegram(m,p);
   let res=tg?tg.join('\n'):'未設定 Telegram，無法自動送出。';
@@ -1433,7 +1957,9 @@ $('#tgTest').addEventListener('click',async()=>{
 /* ---------- boot ---------- */
 $('#l-date').value=iso(TODAY());
 S=lsGet()||sample();
+const SCANS=[];
 render();
+SCANS.push(mountScan('wt','#wtyScanWrap',WTY_CFG),mountScan('rc','#rcptScanWrap',RCPT_CFG));
 scanInit();
 setSpeed(null);
 $('#syncLine').textContent='資料存在這台裝置的瀏覽器';
