@@ -1,0 +1,1257 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="愛車管家"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="theme-color" content="#1f2a36"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}img{max-width:100%}</style></head><body><title>愛車管家</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap">
+<style>
+/* Layout: one-column phone app on a slate-blue haze; frosted squircle cards, dot-matrix LED numerals, sky→cream gradient tiles, white pill actions, floating glass tab bar */
+:root{
+  --bg:#5c7084; --haze:#9fb3c7; --glass:rgba(255,255,255,.11); --glass-hi:rgba(255,255,255,.2);
+  --panel:rgba(255,255,255,.11); --ink:#f5f8fb; --muted:rgba(236,243,249,.66); --line:rgba(255,255,255,.16);
+  --accent:#d6f25e; --accent-ink:#20290a; --road:rgba(255,255,255,.11); --road-ink:#f5f8fb;
+  --ok:#86e3b0; --warn:#ffd27a; --bad:#ff6f61; --bad-ink:#ffffff; --chip:rgba(255,255,255,.14);
+  --slate:#2b3947; --tile:linear-gradient(170deg,#86b8ea 0%,#b9d0e6 48%,#ece3cc 100%);
+  --r-card:30px; --r-ctl:999px;
+  --f-num:"Manrope","Noto Sans TC",system-ui,sans-serif;
+  --f-body:"Manrope","Noto Sans TC","PingFang TC",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg) linear-gradient(180deg,var(--haze) 0%,#7489a0 22%,var(--bg) 48%,#4f6175 100%) fixed;color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;min-height:100%;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 calc(84px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px;padding-top:14px}
+h1,h2,h3{text-wrap:balance;margin:0}
+h2{font-size:17px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.ex{display:inline-block;font-size:11px;letter-spacing:.06em;padding:1px 7px;border-radius:4px;background:var(--accent);color:var(--accent-ink);font-weight:700}
+
+/* hero */
+.hero{background:var(--road);color:var(--road-ink);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.hero-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.plate{font-family:var(--f-num);font-weight:700;font-size:15px;background:var(--road-ink);color:var(--road);padding:2px 10px;border-radius:5px;letter-spacing:.08em}
+.odo-label{font-size:12px;letter-spacing:.12em;opacity:.7}
+.odo{display:flex;gap:3px;align-items:flex-end}
+.odo span{font-family:var(--f-num);font-weight:600;font-size:34px;line-height:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:5px;padding:6px 5px;min-width:30px;text-align:center}
+.odo em{font-style:normal;font-size:14px;opacity:.7;margin-left:6px;padding-bottom:4px}
+.odo-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.odo-row input{flex:1;min-width:0;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:var(--road-ink);border-radius:8px;padding:9px 10px;font:600 16px var(--f-num)}
+.odo-row input::placeholder{color:var(--road-ink);opacity:.5}
+
+/* due card */
+.due{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.due-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.pill{font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;color:#fff;white-space:nowrap}
+.pill.ok{background:var(--ok)} .pill.warn{background:var(--warn)} .pill.bad{background:var(--bad)}
+.gauges{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g{display:flex;flex-direction:column;gap:4px;min-width:0}
+.g b{font-family:var(--f-num);font-size:26px;line-height:1.1}
+.bar{height:8px;border-radius:99px;background:var(--chip);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px}
+
+/* sections */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding-block:8px;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row>div{min-width:0}
+.k{color:var(--muted);font-size:13px;white-space:nowrap}
+.v{text-align:right;overflow-wrap:anywhere}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);min-width:0}
+input,textarea,select{font:inherit;font-size:15px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;min-width:0}
+textarea{min-height:64px;resize:vertical}
+.btn{font:inherit;font-weight:700;font-size:14px;border:0;border-radius:10px;padding:10px 14px;cursor:pointer;background:var(--chip);color:var(--ink);display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.red{background:var(--bad);color:var(--bad-ink)}
+.btn.ghost{background:transparent;border:1px solid var(--line)}
+.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.tab:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btns .btn{flex:1}
+
+/* list items */
+.item{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.item-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.item-head h3{font-size:15px}
+.tag{font-size:12px;background:var(--chip);padding:2px 8px;border-radius:6px;white-space:nowrap}
+.phone{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-block:10px;border-bottom:1px solid var(--line)}
+.phone:last-child{border-bottom:0}
+.phone .who{min-width:0}
+.phone .who b{display:block}
+.phone .tel{font-family:var(--f-num);font-size:17px;user-select:all}
+.phone .acts{display:flex;gap:6px;flex-shrink:0}
+.phone .acts .btn{padding:8px 10px}
+.logtbl{width:100%;border-collapse:collapse;font-size:14px}
+.logtbl th,.logtbl td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.logtbl th{font-size:12px;color:var(--muted);font-weight:500}
+.logtbl td.n{font-family:var(--f-num);font-variant-numeric:tabular-nums;white-space:nowrap}
+.scroll{overflow-x:auto}
+
+/* SOS */
+.sos{background:var(--bad);color:var(--bad-ink);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.sos .big{font:700 22px var(--f-body)}
+.sos .btn{background:#fff;color:var(--bad)}
+.sos .btn.dark{background:rgba(0,0,0,.25);color:#fff}
+.locbox{background:rgba(0,0,0,.18);border-radius:10px;padding:10px 12px;font-size:14px;overflow-wrap:anywhere}
+.locbox a{color:#fff}
+.sos textarea,.sos input{background:rgba(255,255,255,.95);color:#18212b;border:0}
+.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.dialnums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.dialnums a{display:flex;flex-direction:column;align-items:center;padding:10px 4px;border-radius:12px;background:var(--panel);border:1px solid var(--line);color:var(--ink);text-decoration:none}
+.dialnums a b{font:700 24px var(--f-num);color:var(--bad)}
+.dialnums a span{font-size:12px;color:var(--muted)}
+
+/* tab bar */
+.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--line);display:flex;
+  padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));z-index:5}
+.tab{flex:1;background:none;border:0;font:inherit;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;cursor:pointer;border-radius:8px}
+.tab svg{width:22px;height:22px}
+.tab[aria-selected="true"]{color:var(--ink);font-weight:700}
+.tab[aria-selected="true"] svg{color:var(--accent)}
+.tab.sosTab{color:var(--bad)}
+.tab.sosTab[aria-selected="true"]{color:var(--bad)}
+.tab.sosTab[aria-selected="true"] svg{color:var(--bad)}
+.toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:999px;font-size:13px;z-index:9;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+.note{font-size:12px;color:var(--muted)}
+.syncline{font-size:12px;color:var(--muted);text-align:center}
+/* policy scan */
+.scan{background:var(--panel);border:2px dashed var(--accent);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.scan-pick{cursor:pointer}
+.thumbs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.thumbs figure{margin:0;flex:0 0 auto;position:relative}
+.thumbs img{width:72px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block}
+.thumbs figcaption{font-size:11px;color:var(--muted);text-align:center}
+.thumbs button{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:0;background:var(--ink);color:var(--bg);font-size:12px;cursor:pointer}
+.review{border:1px solid var(--accent);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.review .warn-line{font-size:12px;color:var(--warn)}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+/* sms recipients */
+.to{background:rgba(0,0,0,.16);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.to-head{display:flex;justify-content:space-between;align-items:center}
+.to-row{display:flex;align-items:center;gap:6px;padding-block:4px;border-bottom:1px solid rgba(255,255,255,.18)}
+.to-chk{flex:1;flex-direction:row;align-items:center;gap:8px;color:#fff;font-size:14px;min-width:0}
+.to-chk input{width:20px;height:20px;flex-shrink:0}
+.to-chk span{overflow-wrap:anywhere}
+.to-add{display:grid;grid-template-columns:1fr 1.3fr auto;gap:6px}
+.to-add .btn{padding:8px 12px}
+@media (max-width:380px){.to-add{grid-template-columns:1fr 1fr}.to-add .btn{grid-column:1/-1}}
+/* drive guard */
+.drive{background:var(--road);color:var(--road-ink);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.drive .btn.ghost{color:var(--road-ink);border-color:rgba(255,255,255,.25)}
+.speedo{display:flex;align-items:baseline;gap:8px}
+.speedo b{font-size:64px;font-weight:700;line-height:1}
+.speedo span{opacity:.7}
+.drv-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.drv-stats>div{display:flex;flex-direction:column;background:rgba(255,255,255,.07);border-radius:10px;padding:8px 10px;min-width:0}
+.drv-stats .k{color:var(--road-ink);opacity:.65;font-size:12px}
+.drv-stats b{font-size:18px}
+.tg summary{cursor:pointer;padding-block:4px}
+.tg[open]{display:flex;flex-direction:column;gap:10px}
+.chat{display:flex;gap:8px;align-items:center;padding:6px 0;color:var(--ink);font-size:14px}
+.chat input{width:auto}
+.alarm{position:fixed;inset:0;z-index:20;background:var(--bad);color:#fff;display:flex;align-items:center;justify-content:center;
+  padding:calc(20px + env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));overflow-y:auto}
+.alarm.flash{animation:fl 1s steps(2) infinite}
+@keyframes fl{50%{background:#8f1d14}}
+.alarm-in{max-width:420px;width:100%;display:flex;flex-direction:column;gap:14px;text-align:center}
+.alarm-t{font-size:22px;font-weight:700;text-wrap:balance}
+.alarm-n{font-size:96px;font-weight:700;line-height:1}
+.alarm .btn{background:#fff;color:var(--bad);padding:14px;font-size:16px}
+.alarm .ok-btn{background:#fff;color:#14532d;font-size:22px;padding:22px}
+.alarm .ghost-w{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.6)}
+.alarm-res{font-size:14px;text-align:left;background:rgba(0,0,0,.2);border-radius:10px;padding:0 12px;white-space:pre-line}
+.alarm-res:not(:empty){padding:10px 12px}
+/* ===== glass look ===== */
+h1{font-weight:300;font-size:30px;letter-spacing:.01em;line-height:1.15}
+h2{font-weight:500;font-size:17px;letter-spacing:.01em}
+.apphead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding:6px 4px 14px}
+.apphead>div{min-width:0}
+.hero,.due,.panel,.drive,.scan,.item,.review,.dialnums a{background:var(--glass);border:1px solid var(--line);border-radius:var(--r-card);
+  -webkit-backdrop-filter:blur(22px) saturate(1.2);backdrop-filter:blur(22px) saturate(1.2);box-shadow:0 18px 40px -24px rgba(20,32,48,.55)}
+.hero{color:var(--ink);padding:20px}
+.panel,.due{padding:18px}
+.item{border-radius:22px}
+.plate{background:var(--glass-hi);color:var(--ink);font:600 14px var(--f-num);letter-spacing:.1em;border-radius:999px;padding:5px 12px;border:1px solid var(--line);white-space:nowrap}
+.odo-label{font-size:13px;letter-spacing:.06em;opacity:1;color:var(--muted)}
+.odo{display:flex;align-items:flex-end;gap:10px;color:var(--ink);margin-top:6px}
+.odo svg{height:46px;width:auto;display:block}
+.odo em{font-style:normal;font-size:14px;color:var(--muted);padding-bottom:2px}
+.odo-row input{background:var(--chip);border:1px solid var(--line);color:var(--ink);border-radius:var(--r-ctl);padding:11px 16px;font:400 16px var(--f-num)}
+.odo-row input::placeholder{color:var(--muted);opacity:1}
+input,textarea,select{background:var(--chip);border:1px solid var(--line);color:var(--ink);border-radius:14px}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+select option{color:#1d2733}
+.btn{background:var(--chip);color:var(--ink);border-radius:var(--r-ctl);font-weight:600;padding:11px 18px;border:1px solid transparent}
+.btn.primary{background:#ffffff;color:var(--slate)}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+.btn.red{background:var(--bad);color:#fff}
+.pill{color:#1d2733;font-weight:600}
+.pill.ok{background:var(--ok)} .pill.warn{background:var(--warn)} .pill.bad{background:var(--bad);color:#fff}
+.ex{background:var(--accent);color:var(--accent-ink)}
+.k{color:var(--muted)}
+.bar{background:rgba(255,255,255,.14)}
+.row{border-bottom-color:var(--line)}
+.logtbl th,.logtbl td{border-bottom-color:var(--line)}
+/* dotted ring gauge */
+.ring-wrap{display:grid;place-items:center;position:relative;margin:4px auto 0;width:min(100%,270px);aspect-ratio:1;max-width:100%}
+.ring-wrap>svg{position:absolute;inset:0;width:100%;height:100%}
+.ring-center{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.ring-center svg{height:40px;width:auto}
+.ring-center .u{font-size:13px;color:var(--muted)}
+.due-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.due-stats>div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.due-stats b{font:300 26px var(--f-num);letter-spacing:-.01em}
+.due-stats b small{font-size:13px;color:var(--muted);font-weight:400}
+/* sky→cream tiles */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tile{background:var(--tile);color:var(--slate);border-radius:34px;padding:16px 16px 18px;min-height:168px;display:flex;flex-direction:column;justify-content:space-between;gap:10px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 20px 40px -22px rgba(20,32,48,.6);text-decoration:none;cursor:pointer;border:0;font:inherit;text-align:left}
+.tile .tt{font-size:13px;font-weight:600;opacity:.75}
+.tile .dn svg{height:34px;width:auto;color:var(--slate)}
+.tile .sub{font-size:12px;opacity:.72}
+.tile-top{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
+.tile .chip{flex-shrink:0;white-space:nowrap;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;background:rgba(43,57,71,.12)}
+.tile .chip.warn{background:#ffd27a;color:#3b2a00} .tile .chip.bad{background:#ff6f61;color:#fff}
+.tiles-head{display:flex;justify-content:space-between;align-items:center;margin:0 4px 10px}
+.tiles-head a,.tiles-head button{color:var(--muted);background:none;border:0;font:inherit;font-size:13px;cursor:pointer}
+/* white pill action */
+.pillbar{width:100%;display:flex;align-items:center;gap:12px;background:#fff;color:var(--slate);border:0;border-radius:999px;padding:8px;cursor:pointer;font:600 16px var(--f-body);
+  box-shadow:0 24px 40px -20px rgba(20,32,48,.65)}
+.pillbar .pb-tx{flex:1;text-align:center}
+.pb-ic{width:48px;height:48px;border-radius:50%;background:#eef1f4;display:grid;place-items:center;flex-shrink:0}
+.pb-ic svg{width:20px;height:20px}
+.pb-sos{background:#ffe7e4;color:#e2493b}
+.pillbar:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+/* tab bar: floating glass */
+.tabs{left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:calc(10px + env(safe-area-inset-bottom,0px));
+  padding:6px;border-radius:28px;background:rgba(60,76,94,.55);border:1px solid var(--line);-webkit-backdrop-filter:blur(26px) saturate(1.3);backdrop-filter:blur(26px) saturate(1.3);box-shadow:0 18px 40px -18px rgba(10,20,32,.6)}
+.tab{color:var(--muted);border-radius:22px}
+.tab[aria-selected="true"]{color:var(--ink);background:rgba(255,255,255,.14);font-weight:600}
+.tab[aria-selected="true"] svg{color:var(--accent)}
+.tab.sosTab{color:#ffb0a8}.tab.sosTab[aria-selected="true"] svg{color:var(--bad)}
+.toast{bottom:calc(96px + env(safe-area-inset-bottom,0px));background:#fff;color:var(--slate)}
+body{padding-block:0 calc(104px + env(safe-area-inset-bottom,0px))}
+/* SOS: coral glass */
+.sos{background:linear-gradient(165deg,rgba(255,128,112,.78),rgba(236,84,72,.72));border:1px solid rgba(255,255,255,.28);border-radius:var(--r-card);padding:20px;
+  -webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px);box-shadow:0 20px 40px -22px rgba(90,20,10,.6)}
+.sos .big{font-weight:300;font-size:28px}
+.sos .btn{background:#fff;color:#d6392b;border-radius:999px}
+.sos .btn.dark{background:rgba(120,20,12,.35);color:#fff;border:1px solid rgba(255,255,255,.25)}
+.sos textarea,.sos input:not([type=checkbox]){background:rgba(255,255,255,.92);color:#2b1a18;border:0;border-radius:16px}
+.sos textarea::placeholder,.sos input::placeholder{color:#9a7470}
+.locbox,.to{background:rgba(90,16,10,.22);border-radius:18px}
+.dialnums a{color:var(--ink)}
+.dialnums a b{color:#ffb0a8;font-weight:500}
+/* drive */
+.drive{color:var(--ink)}
+.drive .btn.ghost{color:var(--ink)}
+.speedo svg{height:60px;width:auto}
+.drv-stats>div{background:var(--chip);border-radius:18px}
+.drv-stats .k{color:var(--muted);opacity:1}
+.scan{border:1px dashed rgba(255,255,255,.4)}
+.review{background:rgba(255,255,255,.08)}
+.thumbs img{border-radius:14px}
+.alarm{background:#e2493b}
+details summary{color:var(--ink)}
+.tg .steps{color:var(--ink)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (max-width:360px){.odo span{font-size:28px;min-width:24px}.gauges,.grid2{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+  <section id="v-home">
+    <header class="apphead">
+      <div><h1>愛車管家</h1><div class="small muted" id="h-model"></div></div>
+      <span class="plate" id="h-plate"></span>
+    </header>
+    <div class="hero">
+      <div>
+        <div class="odo-label">目前里程</div>
+        <div class="odo" id="h-odo" role="img"></div>
+        <div class="small muted" style="margin-top:6px" id="h-odoDate"></div>
+      </div>
+      <form class="odo-row" id="f-odo">
+        <input id="in-odo" type="number" inputmode="numeric" min="0" placeholder="輸入新的里程數">
+        <button class="btn primary" type="submit">更新里程</button>
+      </form>
+    </div>
+    <div style="height:14px"></div>
+    <div class="due" id="dueCard"></div>
+    <div style="height:14px"></div>
+    <div id="insSummary"></div>
+    <div style="height:18px"></div>
+    <button class="pillbar" data-go="sos" type="button">
+      <span class="pb-ic pb-sos" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3L2 20h20z"/><path d="M12 10v4M12 17v.5"/></svg></span>
+      <span class="pb-tx">發生事故・一鍵求救</span>
+      <span class="pb-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </button>
+  </section>
+
+  <section id="v-svc" hidden>
+    <div class="panel">
+      <div class="item-head"><h2>保養週期設定</h2><span id="svcEx"></span></div>
+      <div class="grid2">
+        <label for="s-lastDate">上次保養日期<input id="s-lastDate" type="date"></label>
+        <label for="s-lastKm">上次保養里程 (km)<input id="s-lastKm" type="number" inputmode="numeric"></label>
+        <label for="s-intKm">每隔幾公里<input id="s-intKm" type="number" inputmode="numeric"></label>
+        <label for="s-intMonths">每隔幾個月<input id="s-intMonths" type="number" inputmode="numeric"></label>
+      </div>
+      <p class="note" style="margin:0">里程或時間，哪個先到就以哪個為準。一般汽油車常見 5,000–10,000 km / 6–12 個月，請依車主手冊。</p>
+    </div>
+    <div style="height:14px"></div>
+    <div class="panel">
+      <h2>新增保養紀錄</h2>
+      <form id="f-log" class="grid2">
+        <label for="l-date">日期<input id="l-date" type="date" required></label>
+        <label for="l-km">里程 (km)<input id="l-km" type="number" inputmode="numeric" required></label>
+        <label for="l-item" style="grid-column:1/-1">項目<input id="l-item" placeholder="例：機油、機油芯、空氣濾網" required></label>
+        <label for="l-cost">費用 (元)<input id="l-cost" type="number" inputmode="numeric"></label>
+        <label for="l-shop">保養廠<input id="l-shop" placeholder="選填"></label>
+        <label style="grid-column:1/-1;flex-direction:row;align-items:center;gap:8px;color:var(--ink);font-size:14px" for="l-setlast"><input id="l-setlast" type="checkbox" checked style="width:auto"> 設為「上次保養」，重新計算下次回廠</label>
+        <button class="btn primary" type="submit" style="grid-column:1/-1">加入紀錄</button>
+      </form>
+    </div>
+    <div style="height:14px"></div>
+    <div class="panel">
+      <h2>保養紀錄</h2>
+      <div class="scroll" id="logList"></div>
+    </div>
+  </section>
+
+  <section id="v-ins" hidden>
+    <div class="scan" id="scanCard">
+      <div class="item-head"><h2>掃描保單，自動填入</h2><span class="small" id="scanEngine"></span></div>
+      <p class="small" style="margin:0">拍下保單或上傳照片、PDF（可一次選多頁），會讀出保險公司、保單號碼、期間、保障內容和電話，確認後才存入。</p>
+      <div class="btns">
+        <label class="btn primary scan-pick" for="scanCam">📷 拍照掃描<input id="scanCam" type="file" accept="image/*" capture="environment" hidden></label>
+        <label class="btn scan-pick" for="scanFile">上傳照片或 PDF<input id="scanFile" type="file" accept="image/*,application/pdf" multiple hidden></label>
+      </div>
+      <div id="scanThumbs" class="thumbs" hidden></div>
+      <div id="scanStatus" class="small" hidden></div>
+      <div class="btns" id="scanRun" hidden>
+        <button class="btn primary" id="scanGo">開始讀取</button>
+        <button class="btn ghost" id="scanClear" type="button">清除</button>
+      </div>
+      <div id="scanReview" hidden></div>
+      <details id="scanKeyBox" hidden>
+        <summary class="small"><b>在獨立網頁使用掃描</b>：需要 Anthropic API 金鑰</summary>
+        <div class="small" style="display:flex;flex-direction:column;gap:8px;padding-top:8px">
+          <span>到 console.anthropic.com 建立 API 金鑰貼在下面。金鑰只存在這支手機，每次掃描約花費新台幣 1 元以內。</span>
+          <label for="scanKey">API 金鑰<input id="scanKey" type="password" autocomplete="off" placeholder="sk-ant-..."></label>
+        </div>
+      </details>
+    </div>
+    <div style="height:14px"></div>
+    <div id="insList" style="display:flex;flex-direction:column;gap:14px"></div>
+    <div style="height:14px"></div>
+    <button class="btn ghost" style="width:100%" id="addIns">手動新增一張保單</button>
+  </section>
+
+  <section id="v-tel" hidden>
+    <div class="panel">
+      <h2>緊急電話</h2>
+      <div class="dialnums">
+        <a href="tel:110"><b>110</b><span>警察・車禍報案</span></a>
+        <a href="tel:119"><b>119</b><span>救護・消防</span></a>
+        <a href="tel:112"><b>112</b><span>手機無訊號求救</span></a>
+      </div>
+      <p class="note" style="margin:0">112 在沒有 SIM 卡或電信訊號弱時仍可撥出。</p>
+    </div>
+    <div style="height:14px"></div>
+    <div class="panel">
+      <div class="item-head"><h2>我的聯絡電話</h2><span id="telEx"></span></div>
+      <div id="telList"></div>
+      <form id="f-tel" class="grid2" style="border-top:1px solid var(--line);padding-top:12px">
+        <label for="t-name">名稱<input id="t-name" placeholder="例：原廠服務廠" required></label>
+        <label for="t-phone">電話<input id="t-phone" type="tel" required></label>
+        <label for="t-note" style="grid-column:1/-1">備註<input id="t-note" placeholder="例：24h 道路救援、服務專員小陳"></label>
+        <button class="btn primary" type="submit" style="grid-column:1/-1">新增電話</button>
+      </form>
+    </div>
+    <div style="height:14px"></div>
+    <div class="panel">
+      <h2>車輛資料</h2>
+      <div class="grid2">
+        <label for="c-plate">車牌<input id="c-plate"></label>
+        <label for="c-model">廠牌車型<input id="c-model"></label>
+        <label for="c-year">出廠年月<input id="c-year" type="month"></label>
+        <label for="c-vin">引擎/車身號碼<input id="c-vin" placeholder="選填"></label>
+      </div>
+      <button class="btn ghost" id="clearEx">清除範例資料，從頭填寫</button>
+    </div>
+  </section>
+
+  <section id="v-sos" hidden>
+    <div class="sos">
+      <div class="big">事故求救</div>
+      <div class="btns">
+        <button class="btn" id="getLoc" style="flex-basis:100%">📍 取得我現在的位置</button>
+      </div>
+      <div class="locbox" id="locBox">尚未定位。按上方按鈕取得 GPS 座標。</div>
+      <label for="sos-desc" style="color:#fff">補充現場位置（路名、地標、國道里程樁）
+        <input id="sos-desc" placeholder="例：國道1號北上 45.5K 內側車道">
+      </label>
+      <label for="sos-msg" style="color:#fff">求救訊息（可修改）
+        <textarea id="sos-msg" rows="8"></textarea>
+      </label>
+      <div class="to">
+        <div class="to-head"><b>傳給誰</b><span class="small" id="toCount"></span></div>
+        <div id="toList"></div>
+        <form id="f-to" class="to-add">
+          <input id="to-name" placeholder="稱呼" aria-label="稱呼" required>
+          <input id="to-phone" type="tel" inputmode="tel" placeholder="手機號碼" aria-label="手機號碼" required>
+          <button class="btn" type="submit">新增</button>
+        </form>
+      </div>
+      <div class="btns">
+        <button class="btn" id="copyMsg">複製訊息</button>
+        <a class="btn" id="smsMsg" href="sms:">傳簡訊給勾選的人</a>
+      </div>
+      <div class="btns">
+        <a class="btn dark" href="tel:110" style="font-size:18px;padding:14px">撥打 110</a>
+        <a class="btn dark" href="tel:119" style="font-size:18px;padding:14px">撥打 119</a>
+      </div>
+      <div class="small" style="opacity:.85">按鈕若沒有反應，請直接用手機撥號：<b class="num" style="user-select:all">110</b>（警察）、<b class="num" style="user-select:all">119</b>（救護）。</div>
+    </div>
+    <div style="height:14px"></div>
+    <div class="panel" id="sosIns"></div>
+    <div style="height:14px"></div>
+    <div class="panel">
+      <h2>事故處理順序</h2>
+      <ol class="steps">
+        <li>開啟危險警告燈，人員移到護欄外或安全處。</li>
+        <li>放置三角警示牌：一般道路車後約 30–100 公尺，高速公路 100 公尺以上。</li>
+        <li>有人受傷先撥 119；車禍報案撥 110，說清楚位置與傷亡。</li>
+        <li>移車前拍照：車損、車牌、四周全景、煞車痕、路標或里程樁。</li>
+        <li>交換對方姓名、電話、車牌、保險公司。</li>
+        <li>通知保險公司報案，記下報案編號；需要拖吊找道路救援。</li>
+        <li>事後向警方申請「道路交通事故現場圖」與「初步分析研判表」。</li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="v-drv" hidden>
+    <div class="drive" id="drvCard">
+      <div class="item-head"><h2>行車守護</h2><span class="pill" id="drvState" style="background:var(--muted)">未啟動</span></div>
+      <div class="speedo"><b class="num" id="drvSpeed">--</b><span>km/h</span></div>
+      <div class="drv-stats">
+        <div><span class="k">本段最高</span><b class="num" id="drvMax">--</b></div>
+        <div><span class="k">原地停留</span><b class="num" id="drvStop">--</b></div>
+        <div><span class="k">GPS 精度</span><b class="num" id="drvAcc">--</b></div>
+      </div>
+      <div class="small" id="drvMsg">上車後按「開始行車守護」，手機放在支架上、螢幕保持開啟。</div>
+      <div class="btns">
+        <button class="btn primary" id="drvStart" style="padding:14px;font-size:16px">開始行車守護</button>
+        <button class="btn ghost" id="drvTest">模擬一次急停</button>
+      </div>
+    </div>
+    <div style="height:14px"></div>
+    <div class="panel">
+      <h2>觸發條件</h2>
+      <div class="grid2">
+        <label for="g-speed">急停前時速至少 (km/h)<input id="g-speed" type="number" inputmode="numeric" data-g="speed"></label>
+        <label for="g-stop">原地不動超過 (分鐘)<input id="g-stop" type="number" inputmode="decimal" step="0.5" data-g="stop"></label>
+        <label for="g-count">響鈴倒數 (秒)<input id="g-count" type="number" inputmode="numeric" data-g="count"></label>
+        <label for="g-radius">視為原地的範圍 (公尺)<input id="g-radius" type="number" inputmode="numeric" data-g="radius"></label>
+      </div>
+      <p class="note" style="margin:0">「急停」= 12 秒內從上面的時速降到接近 0，或手機感測到強烈撞擊。塞車也可能急停，所以會先響鈴倒數，你按「我沒事」就取消；車子再開動也會自動取消。</p>
+    </div>
+    <div style="height:14px"></div>
+    <div class="panel">
+      <h2>要通知的親友</h2>
+      <div class="small">簡訊對象：<span id="g-phonesTxt"></span> <button class="btn ghost" style="padding:4px 10px" data-go="sos" type="button">到求救頁設定</button></div>
+      <details class="tg">
+        <summary><b>自動發送：Telegram</b>（建議設定，不用手動按送出）</summary>
+        <ol class="steps small">
+          <li>在 Telegram 找 <b>@BotFather</b>，輸入 /newbot 建立機器人，複製它給你的 Token。</li>
+          <li>請每位親友打開這個機器人並按「開始」(/start)。</li>
+          <li>把 Token 貼到下面，按「找出親友的聊天 ID」，勾選要通知的人。</li>
+        </ol>
+        <label for="g-tgToken">Bot Token<input id="g-tgToken" data-g="tgToken" autocomplete="off" placeholder="123456:ABC-..."></label>
+        <div class="btns"><button class="btn" id="tgFind">找出親友的聊天 ID</button><button class="btn" id="tgTest">傳一則測試訊息</button></div>
+        <div id="tgChats" class="small"></div>
+        <p class="note" style="margin:0">Token 只存在你的帳號/這支手機。在 Claude 預覽頁中無法連線 Telegram，請用檔案版。</p>
+      </details>
+    </div>
+    <div style="height:14px"></div>
+    <div class="panel">
+      <h2>使用限制</h2>
+      <ul class="steps small">
+        <li>網頁 App 必須<b>停留在前景、螢幕開著</b>才能持續偵測；切到導航 App 或鎖螢幕後 GPS 會暫停。建議用分割畫面，或把這頁開著當儀表。</li>
+        <li>簡訊無法由網頁自動送出，只會跳出已填好內容的簡訊畫面；要全自動請設定 Telegram。</li>
+        <li>手機內建的「車禍偵測」（iPhone 14 以後、部分 Android）可在背景運作並自動撥打緊急電話，建議一起開啟。</li>
+      </ul>
+    </div>
+    <div style="height:14px"></div>
+    <div class="panel"><h2>觸發紀錄</h2><div id="drvLog" class="small muted">尚無紀錄</div></div>
+  </section>
+
+  <div class="syncline" id="syncLine"></div>
+</div>
+
+<div class="alarm" id="alarm" hidden>
+  <div class="alarm-in">
+    <div class="alarm-t" id="alTitle">偵測到急停，原地未移動</div>
+    <div class="alarm-n num" id="alCount">30</div>
+    <div id="alSub">秒後自動通知親友</div>
+    <button class="btn ok-btn" id="alOk">我沒事，取消</button>
+    <button class="btn" id="alNow">立即通知親友</button>
+    <div id="alResult" class="alarm-res"></div>
+    <div class="btns" id="alActs" hidden>
+      <a class="btn" id="alSms" href="sms:">傳簡訊給親友</a>
+      <a class="btn" href="tel:110">撥打 110</a>
+      <a class="btn" href="tel:119">撥打 119</a>
+    </div>
+    <button class="btn ghost-w" id="alClose" hidden>關閉</button>
+  </div>
+</div>
+
+<nav class="tabs" role="tablist">
+  <button class="tab" role="tab" data-go="home" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16a8 8 0 1 1 16 0"/><path d="M12 16l4-5"/></svg>總覽</button>
+  <button class="tab" role="tab" data-go="svc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-2.5z"/></svg>保養</button>
+  <button class="tab" role="tab" data-go="ins"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>保險</button>
+  <button class="tab" role="tab" data-go="tel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>電話</button>
+  <button class="tab" role="tab" data-go="drv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/><path d="M12 9.5V3M9.8 13.3L4 17M14.2 13.3L20 17"/></svg>行車</button>
+  <button class="tab sosTab" role="tab" data-go="sos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3L2 20h20z"/><path d="M12 10v4M12 17v.5"/></svg>求救</button>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const TODAY=()=>new Date(new Date().toDateString());
+const fmtN=n=>(n==null||isNaN(n))?'—':Math.round(n).toLocaleString('zh-TW');
+const iso=d=>{const z=new Date(d);return z.getFullYear()+'-'+String(z.getMonth()+1).padStart(2,'0')+'-'+String(z.getDate()).padStart(2,'0')};
+const addMonths=(s,m)=>{const d=new Date(s);const day=d.getDate();d.setMonth(d.getMonth()+Number(m));if(d.getDate()<day)d.setDate(0);return d};
+const daysBetween=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
+const DOTS={'0':['01110','10001','10001','10001','10001','10001','01110'],'1':['00100','01100','00100','00100','00100','00100','01110'],
+ '2':['01110','10001','00001','00010','00100','01000','11111'],'3':['11110','00001','00001','01110','00001','00001','11110'],
+ '4':['00010','00110','01010','10010','11111','00010','00010'],'5':['11111','10000','11110','00001','00001','10001','01110'],
+ '6':['00110','01000','10000','11110','10001','10001','01110'],'7':['11111','00001','00010','00100','01000','01000','01000'],
+ '8':['01110','10001','10001','01110','10001','10001','01110'],'9':['01110','10001','10001','01111','00001','00010','01100'],
+ '-':['00000','00000','00000','11111','00000','00000','00000'],',':['00','00','00','00','00','01','10']};
+// 點陣 LED 數字：每個點一個圓，顏色跟著 currentColor
+function dotNum(str,label){
+  let x=0,c='';
+  for(const ch of String(str)){const g=DOTS[ch];if(!g){x+=3;continue}
+    g.forEach((row,y)=>[...row].forEach((b,i)=>{if(b==='1')c+=`<circle cx="${x+i+.5}" cy="${y+.5}" r=".4"/>`}));
+    x+=g[0].length+1}
+  const w=Math.max(1,x-1);
+  return `<svg viewBox="0 0 ${w} 7" fill="currentColor" role="img" aria-label="${label||str}">${c}</svg>`;
+}
+function ringSvg(frac){
+  // 300° 點陣圓環：亮點 = 剩餘比例，萊姆綠刻線標出目前位置
+  const N=54,a0=120,span=300,cx=100,cy=100;frac=Math.max(0,Math.min(1,frac));
+  const lit=Math.round(N*frac);let d='',t='';
+  for(let i=0;i<N;i++){
+    const a=(a0+span*i/(N-1))*Math.PI/180,x=cx+86*Math.cos(a),y=cy+86*Math.sin(a);
+    const on=i<lit;d+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${on?3:2.1}" fill="${on?'#ffffff':'rgba(255,255,255,.22)'}"/>`;
+  }
+  for(let i=0;i<=60;i++){const a=(a0+span*i/60)*Math.PI/180;
+    t+=`<line x1="${(cx+95*Math.cos(a)).toFixed(1)}" y1="${(cy+95*Math.sin(a)).toFixed(1)}" x2="${(cx+(i%5?98:100)*Math.cos(a)).toFixed(1)}" y2="${(cy+(i%5?98:100)*Math.sin(a)).toFixed(1)}" stroke="rgba(255,255,255,${i%5?.18:.4})" stroke-width="1"/>`}
+  const am=(a0+span*Math.max(0,lit-1)/(N-1))*Math.PI/180;
+  const mk=`<line x1="${(cx+74*Math.cos(am)).toFixed(1)}" y1="${(cy+74*Math.sin(am)).toFixed(1)}" x2="${(cx+101*Math.cos(am)).toFixed(1)}" y2="${(cy+101*Math.sin(am)).toFixed(1)}" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>`;
+  return `<svg viewBox="-4 -4 208 208" aria-hidden="true">${t}${d}${lit?mk:''}</svg>`;
+}
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function sample(){
+  const t=TODAY();
+  const last=new Date(t);last.setMonth(last.getMonth()-4);
+  const end1=new Date(t);end1.setDate(end1.getDate()+48);
+  const end2=new Date(t);end2.setMonth(end2.getMonth()+7);
+  return {example:true,
+    car:{plate:'ABC-1234',model:'Toyota Corolla Cross 1.8',year:'2022-05',vin:'',odo:41200,odoDate:iso(t)},
+    svc:{lastDate:iso(last),lastKm:36800,intKm:10000,intMonths:6},
+    logs:[{date:iso(last),km:36800,item:'機油、機油芯、輪胎對調',cost:2850,shop:'原廠服務廠'}],
+    ins:[
+      {type:'強制險',company:'（範例）某產險',policy:'',start:'',end:iso(end1),cover:'體傷每人最高 20 萬、失能最高 200 萬、死亡 200 萬',phone:''},
+      {type:'任意險',company:'（範例）某產險',policy:'',start:'',end:iso(end2),cover:'甲式車體險（自負額 5,000）\n第三人責任險 體傷 200/400 萬、財損 50 萬\n超額責任險 1,000 萬\n含 24 小時道路救援',phone:''}],
+    contacts:[
+      {name:'（範例）保險理賠專線',phone:'0800-000-000',note:'請改成你保險公司的電話'},
+      {name:'（範例）原廠服務廠',phone:'02-0000-0000',note:'請改成你常去的保養廠'}]
+  };
+}
+
+let S=null, store=null, saveT=null;
+const LS='carkeeper.v1';
+function lsGet(){try{const r=localStorage.getItem(LS);return r?JSON.parse(r):null}catch(e){return null}}
+function lsSet(v){try{localStorage.setItem(LS,JSON.stringify(v))}catch(e){}}
+function save(){
+  lsSet(S);
+  clearTimeout(saveT);
+  saveT=setTimeout(async()=>{
+    if(!store){$('#syncLine').textContent='資料存在這台裝置的瀏覽器';return}
+    try{const {scanKey,...rest}=S;await store.set({json:JSON.stringify(rest),updated:Date.now()});$('#syncLine').textContent='已同步到你的帳號（只有你看得到）'}
+    catch(e){$('#syncLine').textContent='同步失敗，資料暫存在這台裝置'}
+  },600);
+}
+
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),1800)}
+async function copy(text){
+  try{await navigator.clipboard.writeText(text);toast('已複製')}
+  catch(e){const ta=$('#sos-msg');ta.focus();ta.select();toast('請長按選取後複製')}
+}
+
+/* ---------- compute ---------- */
+function due(){
+  const {svc,car}=S;
+  const intKm=Math.max(1,Number(svc.intKm)||10000), intM=Math.max(1,Number(svc.intMonths)||6);
+  const nextKm=Number(svc.lastKm)+intKm;
+  const nextDate=svc.lastDate?addMonths(svc.lastDate,intM):null;
+  const remKm=nextKm-Number(car.odo);
+  const remDays=nextDate?daysBetween(TODAY(),nextDate):null;
+  const usedKm=Number(car.odo)-Number(svc.lastKm);
+  const sinceDays=svc.lastDate?Math.max(1,daysBetween(svc.lastDate,car.odoDate||TODAY())):null;
+  const perDay=sinceDays&&usedKm>0?usedKm/sinceDays:null;
+  let projDate=null; if(perDay&&remKm>0){projDate=new Date(TODAY());projDate.setDate(projDate.getDate()+Math.ceil(remKm/perDay))}
+  let level='ok';
+  if(remKm<=0||(remDays!=null&&remDays<=0))level='bad';
+  else if(remKm<=1000||(remDays!=null&&remDays<=30))level='warn';
+  let first=null;
+  if(projDate&&nextDate)first=projDate<nextDate?'km':'date';
+  else first=nextDate?'date':'km';
+  return {nextKm,nextDate,remKm,remDays,perDay,projDate,level,first,
+    pctKm:Math.min(100,Math.max(0,usedKm/intKm*100)),
+    pctDay:nextDate?Math.min(100,Math.max(0,(daysBetween(svc.lastDate,TODAY()))/Math.max(1,daysBetween(svc.lastDate,nextDate))*100)):0};
+}
+const barColor=p=>p>=100?'var(--bad)':p>=85?'var(--warn)':'var(--ok)';
+
+/* ---------- render ---------- */
+function render(){
+  ensure();
+  const {car}=S;
+  $('#h-plate').textContent=car.plate||'未填車牌';
+  $('#h-model').innerHTML=esc(car.model||'未填車型')+(S.example?' <span class="ex">範例</span>':'');
+  const digits=String(Math.max(0,Math.round(car.odo||0))).padStart(6,'0');
+  $('#h-odo').innerHTML=dotNum(digits,fmtN(car.odo)+' 公里')+'<em>km</em>';$('#h-odo').setAttribute('aria-label','目前里程 '+fmtN(car.odo)+' 公里');
+  $('#h-odoDate').textContent=car.odoDate?('記錄於 '+car.odoDate):'';
+
+  const d=due();
+  const label={ok:'狀況良好',warn:'即將到期',bad:'已超過，請回廠'}[d.level];
+  const kmTxt=d.remKm>0?'還有 '+fmtN(d.remKm):'已超過 '+fmtN(-d.remKm);
+  const dayTxt=d.remDays==null?'—':(d.remDays>0?'還有 '+d.remDays:'已超過 '+(-d.remDays));
+  let advice='';
+  if(d.level==='bad')advice='保養已過期，建議盡快預約回廠。';
+  else if(d.projDate){
+    const when=d.first==='km'?iso(d.projDate):iso(d.nextDate);
+    advice='依你平均每天約 '+fmtN(d.perDay)+' km，預計 <b class="num">'+when+'</b> 前要回廠（'+(d.first==='km'?'里程':'時間')+'會先到）。';
+  } else if(d.nextDate) advice='最晚 <b class="num">'+iso(d.nextDate)+'</b> 或 <b class="num">'+fmtN(d.nextKm)+' km</b> 要回廠，先到者為準。';
+  const leftFrac=1-Math.max(d.pctKm,d.pctDay)/100;
+  const bigKm=d.remKm>0?d.remKm:0;
+  $('#dueCard').innerHTML=`
+    <div class="due-head"><h2>下次回廠保養</h2><span class="pill ${d.level}">${label}</span></div>
+    <div class="ring-wrap">${ringSvg(leftFrac)}
+      <div class="ring-center">${dotNum(String(Math.round(Math.abs(d.remKm))),kmTxt+' 公里')}
+        <span class="u">${d.remKm>0?'公里後保養':'公里，已超過'}</span></div>
+    </div>
+    <div class="due-stats">
+      <div><span class="k">剩餘里程</span><b>${fmtN(Math.abs(d.remKm))}<small> km</small></b><span class="small muted">${kmTxt} km・目標 <span class="num">${fmtN(d.nextKm)}</span></span></div>
+      <div><span class="k">剩餘天數</span><b>${d.remDays==null?'—':Math.abs(d.remDays)}<small> 天</small></b><span class="small muted">${dayTxt} 天・<span class="num">${d.nextDate?iso(d.nextDate):'—'}</span></span></div>
+    </div>
+    <div class="small">${advice}</div>`;
+
+  // insurance summary
+  const tiles=S.ins.slice(0,4).map(p=>{
+    const left=p.end?daysBetween(TODAY(),p.end):null;
+    const cls=left==null?'':left<0?'bad':left<=60?'warn':'';
+    const big=left==null?'--':String(Math.abs(left));
+    return `<button class="tile" data-go="ins" type="button"><div class="tile-top"><div style="min-width:0"><div class="tt">${esc(p.type)}</div><div class="sub">${esc(p.company||'未填保險公司')}</div></div>${cls?`<span class="chip ${cls}">${cls==='bad'?'過期':'快到期'}</span>`:''}</div>
+      <div><div class="dn">${dotNum(big,(left==null?'未填到期日':left<0?'已過期 '+(-left)+' 天':'剩 '+left+' 天'))}</div>
+      <div class="sub">${left==null?'未填到期日':left<0?'天前已過期':'天後到期'}${p.end?' · '+esc(p.end):''}</div></div>
+      </button>`}).join('');
+  $('#insSummary').innerHTML='<div class="tiles-head"><h2>保險</h2><button data-go="ins" type="button">全部 ›</button></div>'+
+    (tiles?'<div class="tiles">'+tiles+'</div>':'<div class="panel"><p class="muted small" style="margin:0">尚未新增保單。到「保險」分頁拍照掃描保單就能自動填入。</p></div>');
+
+  // svc form
+  ['lastDate','lastKm','intKm','intMonths'].forEach(k=>{const el=$('#s-'+k);if(document.activeElement!==el)el.value=S.svc[k]??''});
+  $('#svcEx').innerHTML=S.example?'<span class="ex">範例</span>':'';
+  const logs=[...S.logs].sort((a,b)=>b.km-a.km);
+  $('#logList').innerHTML=logs.length?`<table class="logtbl"><thead><tr><th>日期</th><th>里程</th><th>項目</th><th>費用</th><th></th></tr></thead><tbody>${
+    logs.map(l=>`<tr><td class="n">${esc(l.date)}</td><td class="n">${fmtN(l.km)}</td><td>${esc(l.item)}${l.shop?'<div class="small muted">'+esc(l.shop)+'</div>':''}</td><td class="n">${l.cost?'$'+fmtN(l.cost):''}</td><td><button class="btn ghost" style="padding:4px 8px" data-dellog="${S.logs.indexOf(l)}" aria-label="刪除">✕</button></td></tr>`).join('')
+  }</tbody></table>`:'<p class="muted small" style="margin:0">還沒有紀錄。</p>';
+
+  // insurance list (editable)
+  $('#insList').innerHTML=S.ins.map((p,i)=>`
+    <div class="panel">
+      <div class="item-head"><h2>${esc(p.type||'保單')}</h2>${S.example?'<span class="ex">範例</span>':''}</div>
+      <div class="grid2">
+        <label for="i${i}-type">險種<select id="i${i}-type" data-ins="${i}" data-f="type">${['強制險','任意險','道路救援','其他'].map(o=>`<option ${o===p.type?'selected':''}>${o}</option>`).join('')}</select></label>
+        <label for="i${i}-company">保險公司<input id="i${i}-company" data-ins="${i}" data-f="company" value="${esc(p.company)}"></label>
+        <label for="i${i}-policy">保單號碼<input id="i${i}-policy" data-ins="${i}" data-f="policy" value="${esc(p.policy)}"></label>
+        <label for="i${i}-phone">理賠/救援電話<input id="i${i}-phone" type="tel" data-ins="${i}" data-f="phone" value="${esc(p.phone)}"></label>
+        <label for="i${i}-start">生效日<input id="i${i}-start" type="date" data-ins="${i}" data-f="start" value="${esc(p.start)}"></label>
+        <label for="i${i}-end">到期日<input id="i${i}-end" type="date" data-ins="${i}" data-f="end" value="${esc(p.end)}"></label>
+        <label for="i${i}-cover" style="grid-column:1/-1">保障內容<textarea id="i${i}-cover" data-ins="${i}" data-f="cover" rows="4">${esc(p.cover)}</textarea></label>
+      </div>
+      <div class="btns">${p.phone?`<a class="btn primary" href="tel:${esc(p.phone.replace(/[^0-9+]/g,''))}">撥打 ${esc(p.phone)}</a>`:''}<button class="btn ghost" data-delins="${i}">刪除這張保單</button></div>
+    </div>`).join('')||'<div class="panel"><p class="muted" style="margin:0">尚未新增保單。</p></div>';
+
+  // contacts
+  const allTel=[...S.ins.filter(p=>p.phone).map(p=>({name:p.company+' '+p.type,phone:p.phone,note:'來自保單',fromIns:true})),...S.contacts];
+  $('#telEx').innerHTML=S.example?'<span class="ex">範例</span>':'';
+  $('#telList').innerHTML=allTel.map((c,i)=>`<div class="phone"><div class="who"><b>${esc(c.name)}</b><span class="tel">${esc(c.phone)}</span>${c.note?'<div class="small muted">'+esc(c.note)+'</div>':''}</div>
+    <div class="acts"><a class="btn primary" href="tel:${esc(c.phone.replace(/[^0-9+]/g,''))}" aria-label="撥打">撥打</a>${c.fromIns?'':`<button class="btn ghost" data-deltel="${S.contacts.indexOf(c)}" aria-label="刪除">✕</button>`}</div></div>`).join('')||'<p class="muted small" style="margin:0">還沒有電話。</p>';
+
+  // car form
+  [['plate','c-plate'],['model','c-model'],['year','c-year'],['vin','c-vin']].forEach(([k,id])=>{const el=$('#'+id);if(document.activeElement!==el)el.value=S.car[k]||''});
+  $('#clearEx').hidden=!S.example;
+
+  // sos insurance quick view
+  const ip=S.ins.filter(p=>p.type!=='強制險'||p.phone);
+  $('#sosIns').innerHTML='<h2>我的保險（報案用）</h2>'+(S.ins.length?S.ins.map(p=>`<div class="row"><div><b>${esc(p.type)}</b><div class="small muted">${esc(p.company)}${p.policy?'・保單 '+esc(p.policy):''}</div></div><div class="v">${p.phone?`<a class="btn primary" style="padding:6px 10px" href="tel:${esc(p.phone.replace(/[^0-9+]/g,''))}">${esc(p.phone)}</a>`:'<span class="small muted">未填電話</span>'}</div></div>`).join(''):'<p class="muted small" style="margin:0">尚未新增保單。</p>');
+  if(document.activeElement!==$('#scanKey'))$('#scanKey').value=S.scanKey||'';
+  buildMsg(false);
+  renderGuard();
+  renderTo();
+}
+
+/* ---------- SOS ---------- */
+let LOC=null,LOC_PENDING=false;
+const mapUrl=q=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);
+function buildMsg(force){
+  const ta=$('#sos-msg'); if(!force&&ta.dataset.edited==='1')return;
+  const now=new Date();
+  const t=now.getFullYear()+'/'+(now.getMonth()+1)+'/'+now.getDate()+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  const desc=$('#sos-desc').value.trim();
+  let m='【緊急】我發生交通事故，需要協助。\n時間：'+t+'\n車牌：'+(S.car.plate||'')+'（'+(S.car.model||'')+'）';
+  if(desc)m+='\n地點：'+desc;
+  if(LOC)m+='\n座標：'+LOC.lat.toFixed(6)+', '+LOC.lng.toFixed(6)+'（誤差約 '+Math.round(LOC.acc)+' 公尺）\nGoogle 地圖：'+mapUrl(LOC.lat.toFixed(6)+','+LOC.lng.toFixed(6));
+  else if(desc)m+='\nGoogle 地圖：'+mapUrl(desc);
+  else m+='\nGoogle 地圖：'+(LOC_PENDING?'定位中…':'尚未取得位置');
+  ta.value=m; fitMsg(); updSms();
+}
+function fitMsg(){const ta=$('#sos-msg');ta.style.height='auto';ta.style.height=(ta.scrollHeight+4)+'px'}
+function updSms(){$('#smsMsg').href=smsHref($('#sos-msg').value);document.querySelectorAll('[data-only]').forEach(a=>a.href=smsHref($('#sos-msg').value,[S.sosTo[+a.dataset.only].phone]))}
+$('#sos-msg').addEventListener('input',e=>{e.target.dataset.edited='1';fitMsg();updSms()});
+$('#sos-desc').addEventListener('input',()=>buildMsg(true));
+function locate(){
+  const box=$('#locBox');
+  if(!navigator.geolocation){box.textContent='這個瀏覽器不支援定位。請在下方填路名、地標或國道里程樁。';return}
+  box.textContent='定位中…（第一次會詢問是否允許位置）';LOC_PENDING=true;buildMsg(true);
+  navigator.geolocation.getCurrentPosition(p=>{LOC_PENDING=false;
+    LOC={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy};
+    const u=mapUrl(LOC.lat.toFixed(6)+','+LOC.lng.toFixed(6));
+    box.innerHTML='<b class="num" style="user-select:all">'+LOC.lat.toFixed(6)+', '+LOC.lng.toFixed(6)+'</b><br>誤差約 '+Math.round(LOC.acc)+' 公尺・<a href="'+u+'" target="_blank" rel="noopener">在地圖上打開</a>';
+    $('#sos-msg').dataset.edited='0';buildMsg(true);toast('已取得位置');
+  },err=>{LOC_PENDING=false;buildMsg(true);
+    box.innerHTML='無法取得定位（'+(err.code===1?'位置權限被拒絕':'訊號不足或逾時')+'）。<br>請在下方填路名、地標或國道里程樁；在 Claude 內預覽時無法定位，請用下載的檔案版在手機瀏覽器開啟。';
+  },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+}
+$('#getLoc').addEventListener('click',locate);
+$('#copyMsg').addEventListener('click',()=>copy($('#sos-msg').value));
+$('#f-to').addEventListener('submit',e=>{e.preventDefault();
+  const phone=$('#to-phone').value.trim();if(!/[0-9]{6,}/.test(phone.replace(/[^0-9]/g,''))){toast('請輸入正確的電話');return}
+  S.sosTo.push({name:$('#to-name').value.trim(),phone,on:true});e.target.reset();save();renderTo();renderGuard();toast('已新增');});
+document.addEventListener('change',e=>{const el=e.target;if(el.dataset.to!=null){S.sosTo[+el.dataset.to].on=el.checked;save();renderTo();renderGuard()}});
+document.addEventListener('click',e=>{const d=e.target.closest('[data-delto]');if(!d)return;
+  if(d.dataset.armed!=='1'){d.dataset.armed='1';d.textContent='確認';setTimeout(()=>{d.dataset.armed='0';d.textContent='✕'},3000);return}
+  S.sosTo.splice(+d.dataset.delto,1);save();renderTo();renderGuard();});
+
+/* ---------- events ---------- */
+function go(v){
+  ['home','svc','ins','tel','drv','sos'].forEach(k=>$('#v-'+k).hidden=k!==v);
+  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.go===v?'true':'false'));
+  window.scrollTo(0,0);
+  if(v==='sos'){fitMsg();if(!LOC&&!LOC_PENDING)locate()}
+}
+document.addEventListener('click',e=>{
+  const g=e.target.closest('[data-go]'); if(g){go(g.dataset.go);return}
+  const dl=e.target.closest('[data-dellog]'); if(dl){S.logs.splice(+dl.dataset.dellog,1);save();render();return}
+  const di=e.target.closest('[data-delins]'); if(di){
+    if(di.dataset.armed!=='1'){di.dataset.armed='1';di.textContent='再按一次確認刪除';setTimeout(()=>{di.dataset.armed='0';di.textContent='刪除這張保單'},3000);return}
+    S.ins.splice(+di.dataset.delins,1);save();render();return}
+  const dt=e.target.closest('[data-deltel]'); if(dt){S.contacts.splice(+dt.dataset.deltel,1);save();render();return}
+});
+document.addEventListener('change',e=>{
+  const el=e.target;
+  if(el.dataset.ins!=null){S.ins[+el.dataset.ins][el.dataset.f]=el.value;save();render()}
+});
+document.addEventListener('input',e=>{
+  const el=e.target;
+  if(el.dataset.ins!=null&&el.tagName==='TEXTAREA'){S.ins[+el.dataset.ins][el.dataset.f]=el.value;save()}
+});
+['lastDate','lastKm','intKm','intMonths'].forEach(k=>$('#s-'+k).addEventListener('change',e=>{
+  S.svc[k]=k==='lastDate'?e.target.value:Number(e.target.value);save();render()}));
+[['plate','c-plate'],['model','c-model'],['year','c-year'],['vin','c-vin']].forEach(([k,id])=>$('#'+id).addEventListener('change',e=>{S.car[k]=e.target.value;save();render()}));
+$('#f-odo').addEventListener('submit',e=>{
+  e.preventDefault();const v=Number($('#in-odo').value);
+  if(!v||v<0){toast('請輸入里程數');return}
+  if(v<S.car.odo){toast('新里程比目前小，請確認');return}
+  S.car.odo=v;S.car.odoDate=iso(TODAY());$('#in-odo').value='';save();render();toast('里程已更新');
+});
+$('#f-log').addEventListener('submit',e=>{
+  e.preventDefault();
+  const l={date:$('#l-date').value,km:Number($('#l-km').value),item:$('#l-item').value.trim(),cost:Number($('#l-cost').value)||0,shop:$('#l-shop').value.trim()};
+  S.logs.push(l);
+  if($('#l-setlast').checked){S.svc.lastDate=l.date;S.svc.lastKm=l.km}
+  if(l.km>S.car.odo){S.car.odo=l.km;S.car.odoDate=l.date}
+  e.target.reset();$('#l-setlast').checked=true;$('#l-date').value=iso(TODAY());
+  save();render();toast('已加入紀錄');
+});
+$('#f-tel').addEventListener('submit',e=>{
+  e.preventDefault();
+  S.contacts.push({name:$('#t-name').value.trim(),phone:$('#t-phone').value.trim(),note:$('#t-note').value.trim()});
+  e.target.reset();save();render();toast('已新增');
+});
+$('#addIns').addEventListener('click',()=>{S.ins.push({type:'任意險',company:'',policy:'',start:'',end:'',cover:'',phone:''});save();render();
+  const last=document.querySelectorAll('#insList .panel');last[last.length-1]?.scrollIntoView({behavior:'smooth'})});
+$('#clearEx').addEventListener('click',e=>{
+  const b=e.currentTarget;
+  if(b.dataset.armed!=='1'){b.dataset.armed='1';b.textContent='再按一次：清空所有範例';setTimeout(()=>{b.dataset.armed='0';b.textContent='清除範例資料，從頭填寫'},3000);return}
+  S={example:false,car:{plate:'',model:'',year:'',vin:'',odo:0,odoDate:iso(TODAY())},svc:{lastDate:iso(TODAY()),lastKm:0,intKm:10000,intMonths:6},logs:[],ins:[],contacts:[],guard:S.guard,drvLog:S.drvLog,sosTo:S.sosTo,scanKey:S.scanKey};
+  save();render();toast('已清空，請填入你的資料');
+});
+// first real edit clears the example flag
+document.addEventListener('change',e=>{if(S&&S.example&&e.target.closest('section')&&!e.target.closest('#v-drv')&&!e.target.closest('#v-sos')&&!e.target.closest('#scanCard')&&e.target.id!=='sos-desc'){S.example=false;save();render()}},true);
+
+/* ---------- policy scan ---------- */
+const SC={files:[],blobs:[],sample:null,imgOk:false,ctl:null,results:null};
+const SCAN_PROMPT=`你會看到台灣汽車保險文件的照片（保單、保險證、要保書、續保通知或保險卡），可能是同一份文件的多頁。
+請讀出每一張不同的保單，只回傳一個 JSON 陣列，不要其他文字。每個元素格式：
+{"type":"強制險|任意險|道路救援|其他","company":"保險公司全名","policy":"保單號碼","start":"YYYY-MM-DD","end":"YYYY-MM-DD","phone":"理賠或道路救援專線","cover":"保障內容，每項一行，含保額與自負額","plate":"車牌","note":"看不清楚或不確定的地方"}
+規則：
+- 只寫文件上看得到的內容，看不到就填空字串，不要猜，也不要用你記得的電話。
+- 民國年換成西元（民國年＋1911），例如 115/03/01 → 2026-03-01。
+- 強制汽車責任保險 = 強制險；車體損失險、竊盜險、第三人責任險、超額責任險、乘客險等 = 任意險（同一張保單的多個任意險險種合併成一筆，逐項寫在 cover）。
+- cover 範例：「甲式車體險 保額 85 萬，自負額 5,000\n第三人責任險 體傷每人 200 萬／每事故 400 萬、財損 50 萬」。
+- 不要輸出身分證字號、出生日期、地址、銀行或信用卡資料。
+- 如果圖片不是保險文件，回傳 []。`;
+
+async function scanInit(){
+  try{
+    if(window.claude&&claude.use){
+      const sm=await claude.use('sample');
+      if(sm){const lim=await sm.limits().catch(()=>null);if(lim&&lim.images){SC.sample=sm;SC.imgOk=true;SC.maxCount=lim.images.maxCount||5}}
+    }
+  }catch(e){}
+  scanEngineLabel();
+}
+function scanEngineLabel(){
+  const key=(S.scanKey||'').trim();
+  $('#scanEngine').textContent=SC.imgOk?'由 Claude 讀取':key?'使用你的 API 金鑰':'';
+  $('#scanKeyBox').hidden=SC.imgOk;
+  if(!SC.imgOk&&!key)$('#scanKeyBox').open=false;
+}
+function loadScript(src){return new Promise((ok,no)=>{const sc=document.createElement('script');sc.src=src;sc.onload=ok;sc.onerror=()=>no(new Error('load'));document.head.appendChild(sc)})}
+async function pdfToBlobs(file){
+  if(!window.pdfjsLib){
+    const base='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+    await loadScript(base+'pdf.min.js');
+    await loadScript(base+'pdf.worker.min.js'); // 在主執行緒執行，不需另開 worker
+  }
+  const doc=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+  const out=[];
+  for(let i=1;i<=Math.min(doc.numPages,6);i++){
+    const pg=await doc.getPage(i);const vp=pg.getViewport({scale:1});
+    const scale=Math.min(2.2,1600/Math.max(vp.width,vp.height));
+    const v=pg.getViewport({scale});const cv=document.createElement('canvas');cv.width=v.width;cv.height=v.height;
+    await pg.render({canvasContext:cv.getContext('2d'),viewport:v}).promise;
+    out.push(await new Promise(r=>cv.toBlob(r,'image/jpeg',.88)));
+  }
+  return out;
+}
+async function shrink(file){
+  // 縮到長邊 1600px 的 JPEG：讀得清楚又不會太大
+  try{
+    const bmp=await createImageBitmap(file,{imageOrientation:'from-image'});
+    const k=Math.min(1,1600/Math.max(bmp.width,bmp.height));
+    const cv=document.createElement('canvas');cv.width=Math.round(bmp.width*k);cv.height=Math.round(bmp.height*k);
+    cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);
+    return await new Promise(r=>cv.toBlob(r,'image/jpeg',.88));
+  }catch(e){return file}
+}
+function scanStatus(html){const el=$('#scanStatus');el.hidden=!html;el.innerHTML=html||''}
+async function addScanFiles(list){
+  const files=[...list];if(!files.length)return;
+  scanStatus('<span class="spin"></span>準備圖片中…');
+  for(const f of files){
+    try{
+      if(f.type==='application/pdf'||/\.pdf$/i.test(f.name)){
+        const pages=await pdfToBlobs(f);pages.forEach((b,i)=>SC.blobs.push({blob:b,label:'PDF 第'+(i+1)+'頁'}));
+      } else if(/^image\//.test(f.type)||/\.(jpe?g|png|heic|webp)$/i.test(f.name)){
+        SC.blobs.push({blob:await shrink(f),label:'照片'});
+      }
+    }catch(e){scanStatus('「'+esc(f.name)+'」讀不出來。PDF 需要網路載入閱讀器；也可以改拍照或截圖上傳。');renderThumbs();return}
+  }
+  const max=SC.imgOk?SC.maxCount:8;
+  if(SC.blobs.length>max){SC.blobs=SC.blobs.slice(0,max);scanStatus('一次最多 '+max+' 頁，已保留前 '+max+' 頁。')}
+  else scanStatus('');
+  renderThumbs();
+}
+function renderThumbs(){
+  const box=$('#scanThumbs');
+  box.querySelectorAll('img').forEach(i=>URL.revokeObjectURL(i.src));
+  box.hidden=!SC.blobs.length;$('#scanRun').hidden=!SC.blobs.length;
+  box.innerHTML=SC.blobs.map((b,i)=>`<figure><img src="${URL.createObjectURL(b.blob)}" alt="${esc(b.label)}"><figcaption>${esc(b.label)}</figcaption><button type="button" data-rmscan="${i}" aria-label="移除">✕</button></figure>`).join('');
+}
+function blobToB64(b){return new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]);r.onerror=no;r.readAsDataURL(b)})}
+function parseJsonLoose(t){
+  try{return JSON.parse(t)}catch(e){}
+  const m=t.match(/```(?:json)?\s*([\s\S]*?)```/);if(m){try{return JSON.parse(m[1])}catch(e){}}
+  const a=t.indexOf('['),z=t.lastIndexOf(']');if(a>=0&&z>a){try{return JSON.parse(t.slice(a,z+1))}catch(e){}}
+  return null;
+}
+async function scanWithApi(blobs,signal){
+  const key=(S.scanKey||'').trim();
+  const content=[];
+  for(const b of blobs)content.push({type:'image',source:{type:'base64',media_type:'image/jpeg',data:await blobToB64(b)}});
+  content.push({type:'text',text:SCAN_PROMPT});
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',signal,headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-5-5',max_tokens:2000,messages:[{role:'user',content}]})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok){const t=j.error&&j.error.type;throw {code:r.status===401?'bad_key':t==='rate_limit_error'?'rate_limited':'api',message:(j.error&&j.error.message)||('HTTP '+r.status)}}
+  const text=(j.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('');
+  const v=parseJsonLoose(text);if(!Array.isArray(v))throw {code:'invalid_json'};
+  return v;
+}
+const SCAN_ERR={not_granted:'你沒有允許這個頁面使用 Claude，無法掃描。可以手動新增保單。',sampling_disabled:'這個帳號目前不能使用 Claude 掃描。',rate_limited:'使用量暫時到上限，請稍後再試。',
+  image_rejected:'圖片無法讀取，請換一張（JPG、PNG）。',refused:'這些圖片無法處理，請改拍保單正面。',invalid_json:'讀取結果格式不完整，請按「開始讀取」再試一次。',
+  bad_key:'API 金鑰不正確，請重新貼上。',api:'讀取服務暫時無法使用，請稍後再試。',network:'沒有網路連線，請確認後再試。',upstream_error:'連線中斷，請再試一次。',images_unavailable:'這個畫面不能傳送圖片。'};
+async function runScan(){
+  if(!SC.blobs.length)return;
+  const key=(S.scanKey||'').trim();
+  if(!SC.imgOk&&!key){$('#scanKeyBox').hidden=false;$('#scanKeyBox').open=true;scanStatus('請先貼上 API 金鑰（下方），或在 Claude App 內開啟這頁。');return}
+  SC.ctl=new AbortController();
+  $('#scanGo').disabled=true;$('#scanGo').textContent='讀取中…';
+  scanStatus('<span class="spin"></span>正在讀取保單內容，通常 10–40 秒…');
+  try{
+    let arr;
+    if(SC.imgOk)arr=await SC.sample.json(SCAN_PROMPT,{images:SC.blobs.map(b=>b.blob),signal:SC.ctl.signal});
+    else arr=await scanWithApi(SC.blobs.map(b=>b.blob),SC.ctl.signal);
+    if(!Array.isArray(arr))arr=arr&&typeof arr==='object'?[arr]:[];
+    const clean=arr.filter(o=>o&&typeof o==='object').map(o=>({
+      type:['強制險','任意險','道路救援','其他'].includes(o.type)?o.type:'其他',
+      company:String(o.company||'').trim(),policy:String(o.policy||'').trim(),
+      start:normDate(o.start),end:normDate(o.end),phone:String(o.phone||'').trim(),
+      cover:String(o.cover||'').trim(),plate:String(o.plate||'').trim(),note:String(o.note||'').trim()}));
+    if(!clean.length){scanStatus('沒有在圖片中找到保單內容。請拍保單正面、光線充足、文字清楚。');return}
+    SC.results=clean;scanStatus('');renderReview();
+  }catch(e){
+    if(e&&e.code==='cancelled')return;
+    const code=e&&e.code?e.code:(e&&e.name==='TypeError'?'network':'upstream_error');
+    scanStatus(SCAN_ERR[code]||SCAN_ERR.upstream_error);
+  }finally{$('#scanGo').disabled=false;$('#scanGo').textContent='開始讀取'}
+}
+function normDate(v){
+  v=String(v||'').trim();if(!v)return '';
+  let m=v.match(/^(\d{2,4})[\/\-.年](\d{1,2})[\/\-.月](\d{1,2})/);
+  if(!m)return '';
+  let y=Number(m[1]);if(y<1911)y+=1911;
+  const d=y+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[3]).padStart(2,'0');
+  return isNaN(new Date(d))?'':d;
+}
+function renderReview(){
+  const box=$('#scanReview');const r=SC.results||[];
+  box.hidden=!r.length;
+  const plateWarn=S.car.plate&&!S.example;
+  box.innerHTML='<h3 style="font-size:15px">讀到 '+r.length+' 張保單，請確認</h3>'+r.map((p,i)=>`
+    <div class="review">
+      <div class="grid2">
+        <label for="rv${i}-type">險種<select id="rv${i}-type" data-rv="${i}" data-f="type">${['強制險','任意險','道路救援','其他'].map(o=>`<option ${o===p.type?'selected':''}>${o}</option>`).join('')}</select></label>
+        <label for="rv${i}-company">保險公司<input id="rv${i}-company" data-rv="${i}" data-f="company" value="${esc(p.company)}"></label>
+        <label for="rv${i}-policy">保單號碼<input id="rv${i}-policy" data-rv="${i}" data-f="policy" value="${esc(p.policy)}"></label>
+        <label for="rv${i}-phone">理賠/救援電話<input id="rv${i}-phone" type="tel" data-rv="${i}" data-f="phone" value="${esc(p.phone)}"></label>
+        <label for="rv${i}-start">生效日<input id="rv${i}-start" type="date" data-rv="${i}" data-f="start" value="${esc(p.start)}"></label>
+        <label for="rv${i}-end">到期日<input id="rv${i}-end" type="date" data-rv="${i}" data-f="end" value="${esc(p.end)}"></label>
+        <label for="rv${i}-cover" style="grid-column:1/-1">保障內容<textarea id="rv${i}-cover" data-rv="${i}" data-f="cover" rows="4">${esc(p.cover)}</textarea></label>
+      </div>
+      ${p.plate&&plateWarn&&p.plate.replace(/[^A-Z0-9]/gi,'').toUpperCase()!==S.car.plate.replace(/[^A-Z0-9]/gi,'').toUpperCase()?`<div class="warn-line">保單上的車牌是 ${esc(p.plate)}，和你填的 ${esc(S.car.plate)} 不同，請確認。</div>`:''}
+      ${p.note?`<div class="warn-line">請確認：${esc(p.note)}</div>`:''}
+      ${!p.end?'<div class="warn-line">沒有讀到到期日，請手動填入。</div>':''}
+      <label class="small" for="rv${i}-on" style="flex-direction:row;align-items:center;gap:8px;color:var(--ink)"><input type="checkbox" id="rv${i}-on" data-rvon="${i}" checked style="width:auto"> 存入這張</label>
+    </div>`).join('')+`<div class="btns"><button class="btn primary" id="scanSave">存入勾選的保單</button><button class="btn ghost" id="scanDiscard" type="button">放棄</button></div>`;
+}
+function resetScan(){SC.blobs=[];SC.results=null;renderThumbs();$('#scanReview').hidden=true;$('#scanReview').innerHTML='';scanStatus('');$('#scanCam').value='';$('#scanFile').value=''}
+$('#scanCam').addEventListener('change',e=>addScanFiles(e.target.files));
+$('#scanFile').addEventListener('change',e=>addScanFiles(e.target.files));
+$('#scanGo').addEventListener('click',runScan);
+$('#scanClear').addEventListener('click',()=>{SC.ctl&&SC.ctl.abort();resetScan()});
+$('#scanKey').addEventListener('change',e=>{S.scanKey=e.target.value.trim();lsSet(S);scanEngineLabel()});
+document.addEventListener('click',e=>{
+  const rm=e.target.closest('[data-rmscan]');if(rm){SC.blobs.splice(+rm.dataset.rmscan,1);renderThumbs();return}
+  if(e.target.id==='scanDiscard'){resetScan();return}
+  if(e.target.id==='scanSave'){
+    const keep=(SC.results||[]).filter((p,i)=>$('#rv'+i+'-on')?.checked);
+    if(!keep.length){toast('沒有勾選任何保單');return}
+    if(S.example){S.ins=[];S.example=false} // 第一次存入真實保單時，移除範例保單
+    keep.forEach(p=>{
+      const same=S.ins.findIndex(x=>p.policy&&x.policy===p.policy);
+      const rec={type:p.type,company:p.company,policy:p.policy,start:p.start,end:p.end,cover:p.cover,phone:p.phone};
+      if(same>=0)S.ins[same]=rec;else S.ins.push(rec);
+    });
+    resetScan();save();render();toast('已存入 '+keep.length+' 張保單');
+  }
+});
+document.addEventListener('input',e=>{const el=e.target;if(el.dataset.rv!=null&&SC.results){SC.results[+el.dataset.rv][el.dataset.f]=el.value}});
+document.addEventListener('change',e=>{const el=e.target;if(el.dataset.rv!=null&&SC.results){SC.results[+el.dataset.rv][el.dataset.f]=el.value}});
+
+/* ---------- drive guard ---------- */
+function ensure(){
+  S.guard=Object.assign({speed:60,stop:3,count:30,radius:40,phones:'',tgToken:'',tgChats:[]},S.guard||{});
+  S.drvLog=S.drvLog||[];
+  if(!S.sosTo){S.sosTo=(S.guard.phones||'').split(/[,，\s]+/).filter(Boolean).map((n,i)=>({name:'親友'+(i+1),phone:n,on:true}));S.guard.phones=''}
+}
+function renderTo(){
+  const on=S.sosTo.filter(c=>c.on).length;
+  $('#toCount').textContent=S.sosTo.length?'已勾選 '+on+' / '+S.sosTo.length+' 人':'';
+  $('#toList').innerHTML=S.sosTo.length?S.sosTo.map((c,i)=>`<div class="to-row">
+    <label class="to-chk" for="to${i}"><input type="checkbox" id="to${i}" data-to="${i}" ${c.on?'checked':''}><span><b>${esc(c.name)}</b> <span class="num">${esc(c.phone)}</span></span></label>
+    <a class="btn" style="padding:6px 10px" data-only="${i}" href="#">只傳他</a>
+    <button class="btn dark" style="padding:6px 10px" data-delto="${i}" type="button" aria-label="刪除">✕</button></div>`).join(''):'<div class="small" style="opacity:.85">還沒有預設對象。在下面輸入稱呼和手機號碼，之後求救時勾選就能一次傳給多人。</div>';
+  document.querySelectorAll('[data-only]').forEach(a=>a.href=smsHref($('#sos-msg').value,[S.sosTo[+a.dataset.only].phone]));
+  updSms();
+}
+const G={on:false,watch:null,tick:null,wake:null,samples:[],last:null,max:0,
+  stop:null,   // {t,lat,lng,from}  急停後開始計時
+  alarm:null,  // {end,timer}
+  audio:null,beep:null};
+const R=6371000,rad=x=>x*Math.PI/180;
+function dist(a,b){const dLa=rad(b.lat-a.lat),dLo=rad(b.lng-a.lng);const h=Math.sin(dLa/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(h))}
+function setSpeed(v){$('#drvSpeed').innerHTML=v==null?dotNum('--','未啟動'):dotNum(String(Math.round(v)),Math.round(v)+' 公里每小時')}
+function setState(txt,color){const p=$('#drvState');p.textContent=txt;p.style.background=color}
+function drvMsg(t){$('#drvMsg').textContent=t}
+function mmss(s){s=Math.max(0,Math.floor(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+
+function renderGuard(){
+  $('#g-phonesTxt').textContent=S.sosTo.filter(c=>c.on).map(c=>c.name).join('、')||'尚未設定';
+  ['speed','stop','count','radius','tgToken'].forEach(k=>{const el=$('#g-'+k);if(document.activeElement!==el)el.value=S.guard[k]??''});
+  $('#tgChats').innerHTML=S.guard.tgChats.length?S.guard.tgChats.map((c,i)=>`<label class="chat" for="tc${i}"><input type="checkbox" id="tc${i}" data-tc="${i}" ${c.on?'checked':''}> ${esc(c.name)} <span class="muted num">${esc(c.id)}</span></label>`).join(''):'';
+  $('#drvLog').innerHTML=S.drvLog.length?S.drvLog.slice(-8).reverse().map(l=>`<div class="row"><div>${esc(l.what)}</div><div class="v num">${esc(l.t)}</div></div>`).join(''):'尚無紀錄';
+}
+function logEv(what){const d=new Date();S.drvLog.push({what,t:iso(d)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')});S.drvLog=S.drvLog.slice(-30);save();renderGuard()}
+
+async function startGuard(){
+  if(G.on){stopGuard();return}
+  if(!navigator.geolocation){drvMsg('這個瀏覽器不支援定位，無法啟動。');return}
+  // 音效與震動要在按鈕當下解鎖
+  // iOS 規定：權限請求必須在點擊當下同步發出，前面不能有 await
+  let motionP=null;
+  try{if(window.DeviceMotionEvent&&typeof DeviceMotionEvent.requestPermission==='function')motionP=DeviceMotionEvent.requestPermission()}catch(e){}
+  unlockAudio();
+  let wakeP=null;try{wakeP=navigator.wakeLock&&navigator.wakeLock.request('screen')}catch(e){}
+  try{const r=motionP?await motionP:'granted';G.motionOk=r==='granted';if(G.motionOk)window.addEventListener('devicemotion',onMotion)}catch(e){G.motionOk=false}
+  try{G.wake=wakeP?await wakeP:null}catch(e){G.wake=null}
+  G.on=true;G.samples=[];G.max=0;G.stop=null;
+  $('#drvStart').textContent='停止行車守護';$('#drvStart').classList.remove('primary');
+  setState('等待 GPS','var(--warn)');drvMsg('正在取得 GPS 訊號…');
+  G.watch=navigator.geolocation.watchPosition(onPos,err=>{
+    setState('GPS 異常','var(--bad)');
+    drvMsg(err.code===1?'位置權限被拒絕。請到手機設定允許瀏覽器使用位置。在 Claude 預覽頁中無法定位，請用檔案版。':'GPS 訊號不足，持續嘗試中…');
+  },{enableHighAccuracy:true,maximumAge:0,timeout:20000});
+  G.tick=setInterval(tick,1000);
+  logEv('開始行車守護');
+}
+function stopGuard(){
+  G.on=false;
+  if(G.watch!=null)navigator.geolocation.clearWatch(G.watch);
+  clearInterval(G.tick);window.removeEventListener('devicemotion',onMotion);
+  try{G.wake&&G.wake.release()}catch(e){}
+  G.watch=null;G.stop=null;
+  $('#drvStart').textContent='開始行車守護';$('#drvStart').classList.add('primary');
+  setState('未啟動','var(--muted)');drvMsg('已停止。');
+  setSpeed(null);$('#drvStop').textContent='--';
+  logEv('停止行車守護');
+}
+document.addEventListener('visibilitychange',async()=>{
+  if(document.visibilityState==='visible'&&G.on){
+    try{G.wake=await navigator.wakeLock.request('screen')}catch(e){}
+    drvMsg('剛才頁面在背景，期間可能沒有偵測。請讓這頁保持在畫面上。');
+  }
+});
+
+function onPos(p){
+  const now=Date.now(),c=p.coords;
+  const pt={t:now,lat:c.latitude,lng:c.longitude,acc:c.accuracy};
+  let kmh=(c.speed!=null&&!isNaN(c.speed)&&c.speed>=0)?c.speed*3.6:null;
+  if(kmh==null&&G.last&&c.accuracy<=50&&G.last.acc<=50){const dt=(now-G.last.t)/1000;if(dt>0.5)kmh=dist(G.last,pt)/dt*3.6}
+  pt.good=c.accuracy<=100;
+  pt.kmh=kmh??0;
+  G.last=pt;G.samples.push(pt);
+  G.samples=G.samples.filter(s=>now-s.t<20000);
+  G.max=Math.max(G.max,pt.kmh);
+  setSpeed(pt.kmh);
+  $('#drvMax').textContent=Math.round(G.max);
+  $('#drvAcc').textContent='±'+Math.round(c.accuracy)+'m';
+  if(!G.stop){
+    const fast=G.samples.some(s=>s.good&&now-s.t<=12000&&s.kmh>=S.guard.speed);
+    if(pt.kmh<8&&fast){
+      const from=Math.round(Math.max(...G.samples.filter(s=>s.good).map(s=>s.kmh)));
+      beginStop(pt,'時速 '+from+' km/h 急停');
+    } else if(pt.kmh>=S.guard.speed){setState('高速監控中','var(--ok)');drvMsg('時速超過 '+S.guard.speed+'，急停偵測已啟動。')}
+    else{setState('監控中','var(--ok)');drvMsg('時速未達 '+S.guard.speed+' km/h，持續監看。')}
+  } else {
+    // 已在停車計時：恢復行駛或離開範圍就取消
+    const moved=dist(G.stop,pt)>Math.max(Number(S.guard.radius)||40,c.accuracy+(G.stop.acc||0));
+    if((pt.kmh>15&&pt.good)||moved){
+      if(G.alarm&&!G.alarm.test)cancelAlarm('車輛已恢復行駛，自動取消');
+      G.stop=null;setState('監控中','var(--ok)');drvMsg('已恢復行駛，取消計時。');logEv('急停後恢復行駛（已取消）');
+    }
+  }
+}
+let lastJolt=0;
+function onMotion(e){
+  const a=e.acceleration; if(!a||a.x==null)return;
+  const g=Math.sqrt(a.x*a.x+a.y*a.y+a.z*a.z);
+  if(g>25&&G.on&&!G.stop&&Date.now()-lastJolt>10000&&G.last&&Date.now()-G.last.t<10000&&G.samples.some(s=>Date.now()-s.t<10000&&s.kmh>=30)){ // 約 2.5G 撞擊
+    lastJolt=Date.now();
+    const p=G.last;
+    beginStop({...p,t:Date.now()},'偵測到強烈撞擊（約 '+(g/9.8).toFixed(1)+'G）');
+  }
+}
+function beginStop(pt,why){
+  G.stop={t:Date.now(),lat:pt.lat,lng:pt.lng,acc:pt.acc||0,why};
+  setState('急停計時','var(--warn)');
+  drvMsg(why+'。原地超過 '+S.guard.stop+' 分鐘未移動會響鈴並通知親友。');
+  logEv(why);
+  try{navigator.vibrate&&navigator.vibrate(200)}catch(e){}
+}
+function tick(){
+  if(!G.on||!G.stop){if(!G.stop)$('#drvStop').textContent='--';return}
+  const el=(Date.now()-G.stop.t)/1000;
+  $('#drvStop').textContent=mmss(el);
+  if(!G.alarm&&$('#alarm').hidden&&el>=S.guard.stop*60)startAlarm();
+}
+
+/* alarm */
+function unlockAudio(){
+  try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){} // iOS 17+：靜音開關打開也會響
+  try{if(!G.audio)G.audio=new (window.AudioContext||window.webkitAudioContext)();G.audio.resume()}catch(e){G.audio=null}
+}
+function beepOnce(){
+  try{if(!G.audio)return;if(G.audio.state!=='running')G.audio.resume();const o=G.audio.createOscillator(),g=G.audio.createGain();
+    o.type='square';o.frequency.value=880;g.gain.value=.25;o.connect(g);g.connect(G.audio.destination);
+    o.start();o.stop(G.audio.currentTime+.35)}catch(e){}
+}
+function startAlarm(manual){
+  const n=Number(S.guard.count)||30;
+  $('#alarm').hidden=false;$('#alarm').classList.add('flash');
+  $('#alTitle').textContent=manual?'模擬：偵測到急停':'偵測到急停，原地已超過 '+S.guard.stop+' 分鐘';
+  $('#alResult').textContent='';$('#alActs').hidden=true;$('#alClose').hidden=true;
+  $('#alOk').hidden=false;$('#alNow').hidden=false;$('#alSub').hidden=false;
+  G.alarm={end:Date.now()+n*1000,test:!!manual,ctx:manual?{why:'模擬急停',lat:G.last?.lat,lng:G.last?.lng}:G.stop};
+  const upd=()=>{
+    if(!G.alarm||G.alarm.firing)return;
+    const left=Math.ceil((G.alarm.end-Date.now())/1000);
+    $('#alCount').textContent=Math.max(0,left);
+    beepOnce();try{navigator.vibrate&&navigator.vibrate([300,200,300])}catch(e){}
+    if(left<=0&&!G.alarm.firing){clearInterval(G.alarm.timer);fireNotify()}
+  };
+  G.alarm.timer=setInterval(upd,1000);upd();
+  logEv(manual?'模擬急停響鈴':'原地未移動，開始響鈴倒數');
+}
+function cancelAlarm(why){
+  if(!G.alarm)return;const test=G.alarm.test;clearInterval(G.alarm.timer);G.alarm=null;
+  $('#alarm').hidden=true;$('#alarm').classList.remove('flash');
+  // 駕駛有回應：結束這次急停事件，要再次高速行駛後急停才會重新觸發
+  if(!test)G.stop=null;
+  if(G.on&&!test){setState('監控中','var(--ok)');drvMsg('已取消。繼續監控中。')}
+  toast(why||'已取消');logEv(why||'駕駛按「我沒事」取消');
+}
+function guardMessage(test,ctx){
+  const d=new Date();
+  const t=d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  ctx=ctx||G.stop;
+  const p=(ctx&&ctx.lat!=null)?ctx:G.last;
+  let m=(test?'【測試訊息，請忽略】\n':'')+'【行車警報】'+(S.car.plate||'')+' 在行駛中急停，原地超過 '+S.guard.stop+' 分鐘未移動，駕駛沒有回應。請盡快聯絡確認，必要時撥打 110/119。';
+  m+='\n時間：'+t;
+  if(ctx&&ctx.why)m+='\n狀況：'+ctx.why;
+  if(p&&p.lat!=null)m+='\nGoogle 地圖：'+mapUrl(p.lat.toFixed(6)+','+p.lng.toFixed(6));
+  else m+='\n位置：無法取得 GPS';
+  return {m,p};
+}
+async function sendTelegram(text,p){
+  const tok=(S.guard.tgToken||'').trim();const chats=S.guard.tgChats.filter(c=>c.on);
+  if(!tok||!chats.length)return null;
+  const out=[];
+  for(const c of chats){
+    try{
+      const r=await fetch('https://api.telegram.org/bot'+tok+'/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:c.id,text})});
+      const j=await r.json();
+      if(j.ok&&p&&p.lat!=null){fetch('https://api.telegram.org/bot'+tok+'/sendLocation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:c.id,latitude:p.lat,longitude:p.lng})}).catch(()=>{})}
+      out.push((j.ok?'✓ 已送達 ':'✗ 失敗 ')+c.name+(j.ok?'':'（'+(j.description||'')+'）'));
+    }catch(e){out.push('✗ 無法連線 Telegram：'+c.name)}
+  }
+  return out;
+}
+function smsHref(body,list){
+  const nums=(list||S.sosTo.filter(c=>c.on).map(c=>c.phone)).map(n=>String(n).replace(/[^0-9+]/g,'')).filter(Boolean);
+  const b=encodeURIComponent(body);
+  if(/iPhone|iPad|iPod/.test(navigator.userAgent))return nums.length>1?'sms:/open?addresses='+nums.join(',')+'&body='+b:'sms:'+(nums[0]||'')+'&body='+b;
+  return 'sms:'+nums.join(',')+'?body='+b;
+}
+async function fireNotify(){
+  if(!G.alarm)return;
+  const test=G.alarm.test,ctx=G.alarm.ctx;clearInterval(G.alarm.timer);G.alarm.firing=true;
+  $('#alOk').hidden=true;$('#alNow').hidden=true;$('#alSub').hidden=true;$('#alCount').textContent='';
+  $('#alTitle').textContent=test?'模擬：正在通知親友':'正在通知親友';
+  const {m,p}=guardMessage(test,ctx);
+  $('#alSms').href=smsHref(m);
+  const tg=await sendTelegram(m,p);
+  let res=tg?tg.join('\n'):'未設定 Telegram，無法自動送出。';
+  if(S.sosTo.some(c=>c.on))res+='\n請按下方「傳簡訊給親友」送出簡訊。';
+  $('#alResult').textContent=res;
+  $('#alActs').hidden=false;$('#alClose').hidden=false;$('#alarm').classList.remove('flash');
+  $('#alTitle').textContent=test?'模擬完成':'已發出警報';
+  logEv((test?'模擬：':'')+'已通知親友'+(tg?'（Telegram）':''));
+  G.alarm=null;
+  if(!test){G.stop=null;if(G.on){setState('已通知親友','var(--bad)');drvMsg('已發出警報。車輛再次高速行駛後會重新監控急停。')}}
+  // 沒有 Telegram 時，直接打開簡訊畫面（部分手機會擋）
+  if(!tg&&S.sosTo.some(c=>c.on)&&!test){try{location.href=$('#alSms').href}catch(e){}}
+}
+$('#drvStart').addEventListener('click',startGuard);
+$('#drvTest').addEventListener('click',()=>{unlockAudio();if(G.alarm)return;startAlarm(true)});
+$('#alOk').addEventListener('click',()=>{const t=G.alarm&&G.alarm.test;cancelAlarm(t?'模擬已取消':'駕駛按「我沒事」取消')});
+$('#alNow').addEventListener('click',()=>{if(G.alarm&&!G.alarm.firing)fireNotify()});
+$('#alClose').addEventListener('click',()=>{$('#alarm').hidden=true});
+document.addEventListener('change',e=>{
+  const el=e.target;
+  if(el.dataset.g){const k=el.dataset.g;S.guard[k]=['phones','tgToken'].includes(k)?el.value.trim():Number(el.value);save();return}
+  if(el.dataset.tc!=null){S.guard.tgChats[+el.dataset.tc].on=el.checked;save()}
+});
+$('#tgFind').addEventListener('click',async()=>{
+  const tok=(S.guard.tgToken||'').trim();
+  if(!tok){toast('請先貼上 Bot Token');return}
+  $('#tgChats').textContent='查詢中…';
+  try{
+    const j=await (await fetch('https://api.telegram.org/bot'+tok+'/getUpdates')).json();
+    if(!j.ok){$('#tgChats').textContent='Token 不正確：'+(j.description||'');return}
+    const seen={};S.guard.tgChats.forEach(c=>seen[c.id]=c);
+    j.result.forEach(u=>{const ch=(u.message||u.my_chat_member||{}).chat;if(ch&&!seen[ch.id])seen[ch.id]={id:String(ch.id),name:[ch.first_name,ch.last_name].filter(Boolean).join(' ')||ch.title||ch.username||'聊天',on:true}});
+    S.guard.tgChats=Object.values(seen);save();renderGuard();
+    if(!S.guard.tgChats.length)$('#tgChats').textContent='還找不到人。請親友先打開機器人按「開始」，再按一次。';
+  }catch(e){$('#tgChats').textContent='無法連線 Telegram。在 Claude 預覽頁中會被擋，請用檔案版在手機瀏覽器開啟。'}
+});
+$('#tgTest').addEventListener('click',async()=>{
+  const {m,p}=guardMessage(true);const r=await sendTelegram(m,p);
+  toast(r?r.join('、'):'請先設定 Token 並勾選親友');
+});
+
+/* ---------- boot ---------- */
+$('#l-date').value=iso(TODAY());
+S=lsGet()||sample();
+render();
+scanInit();
+setSpeed(null);
+$('#syncLine').textContent='資料存在這台裝置的瀏覽器';
+(async()=>{
+  try{
+    if(!window.claude||!claude.use)return;
+    const [db,user]=await Promise.all([claude.use('db'),claude.use('user')]);
+    if(!db||!user)return;
+    const id=await user.id(); if(!id)return;
+    store=db.collection('data/users/'+id).doc('car');
+    const snap=await store.get();
+    const data=snap&&snap.exists?snap.data():null;
+    if(data&&data.json){const k=S.scanKey;S=JSON.parse(data.json);if(k)S.scanKey=k;lsSet(S);render();$('#syncLine').textContent='已同步到你的帳號（只有你看得到）'}
+    else if(!S.example){save()}
+    else $('#syncLine').textContent='目前是範例資料，修改後會存到你的帳號';
+  }catch(e){}
+})();
+})();
+</script>
+</body></html>
