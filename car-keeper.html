@@ -338,6 +338,7 @@ input,select,textarea{font-size:16px!important}
 .cov-tx em{font-style:normal;display:block;font-size:12px;opacity:.85}
 .cov li.no .cov-tx b{color:var(--muted);font-weight:500}
 .cov-st{font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.cov-add{border:1px dashed var(--line);background:transparent;color:var(--ink);font:600 12px var(--f-body);padding:5px 10px;cursor:pointer}
 .cov li.yes .cov-st{background:rgba(169,227,180,.2);color:var(--ok)}
 .cov li.no .cov-st{background:var(--chip);color:var(--muted)}
 b.money{color:var(--accent);font-weight:700}
@@ -796,7 +797,14 @@ function due(){
 const barColor=p=>p>=100?'var(--bad)':p>=85?'var(--warn)':'var(--ok)';
 
 /* ---------- render ---------- */
+// 重畫保護：重畫進行中又被觸發時（例如欄位失去焦點），排到下一輪，避免互相衝突
+let _rendering=false,_again=false;
 function render(){
+  if(_rendering){_again=true;return}
+  _rendering=true;
+  try{_renderNow()}finally{_rendering=false;if(_again){_again=false;queueMicrotask(render)}}
+}
+function _renderNow(){
   ensure();
   const {car}=S;
   $('#h-plate').textContent=car.plate||'未填車牌';
@@ -1406,7 +1414,7 @@ document.addEventListener('toggle',e=>{const d=e.target;if(d.dataset&&d.dataset.
 // 金額加粗：「200 萬」「5,000 元」「1,000 萬」
 const hiMoney=t=>esc(t).replace(/(\d[\d,]*(?:\.\d+)?\s*(?:萬|元|千萬|億)?(?:\/\d[\d,]*\s*萬)?)/g,'<b class="money">$1</b>');
 function coverItems(cover){
-  return String(cover||'').split(/\n+/).map(l=>l.trim()).filter(Boolean).map(l=>{
+  return String(cover||'').split(/\n+/).map(l=>cleanCoverLine(l)).filter(Boolean).map(l=>{
     // 「甲式車體險（自負額 5,000）」→ 名稱「甲式車體險」＋說明
     const m=l.match(/^([^\d（(:：,，]{2,16}(?:險|救援|服務|給付|費用))\s*[（(:：,，]?\s*(.*?)[）)]?$/);
     if(m&&m[2])return {name:m[1].trim(),detail:hiMoney(m[2])};
@@ -1416,32 +1424,65 @@ function coverItems(cover){
   });
 }
 const COVERS=[
-  {name:'強制險',sub:'強制汽車責任保險，法律規定一定要保',kw:/強制/,type:'強制險'},
-  {name:'車體損失險',sub:'自己的車撞壞時的修理費',kw:/車體/},
-  {name:'第三人責任・體傷',sub:'撞傷別人的醫療與賠償',kw:/第三人[^\n]*體傷|體傷[^\n]*第三人|第三人責任險?(?![^\n]*財)/,part:/體傷/},
-  {name:'第三人責任・財損',sub:'撞壞別人的車或財物',kw:/第三人[^\n]*財|財損/,part:/財/},
-  {name:'超額責任險',sub:'第三人賠償超過上限時補足',kw:/超額/},
-  {name:'竊盜險',sub:'車子被偷',kw:/竊盜|失竊/},
-  {name:'駕駛人傷害險',sub:'自己受傷的保障',kw:/駕駛人/},
-  {name:'乘客責任險',sub:'車上乘客受傷',kw:/乘客/},
-  {name:'颱風洪水險',sub:'天災泡水、被吹落物砸到',kw:/颱風|洪水|地震|天災|泡水/},
-  {name:'道路救援',sub:'拖吊、搭電、送油',kw:/救援|拖吊/,type:'道路救援'},
+  {key:'force',name:'強制險',sub:'強制汽車責任保險，法律規定一定要保',type:'強制險'},
+  {key:'body',name:'車體損失險',sub:'自己的車撞壞時的修理費'},
+  {key:'tpi',name:'第三人責任・體傷',sub:'撞傷別人的醫療與賠償'},
+  {key:'tpp',name:'第三人責任・財損',sub:'撞壞別人的車或財物'},
+  {key:'excess',name:'超額責任險',sub:'第三人賠償超過上限時補足'},
+  {key:'theft',name:'竊盜險',sub:'車子或零件被偷'},
+  {key:'driver',name:'駕駛人傷害險',sub:'自己受傷的保障'},
+  {key:'pass',name:'乘客責任險',sub:'車上乘客受傷'},
+  {key:'flood',name:'颱風洪水險',sub:'天災泡水、被吹落物砸到'},
+  {key:'rescue',name:'道路救援',sub:'拖吊、搭電、送油',type:'道路救援'},
 ];
+// 每一行只歸到一個項目：先比對特定的險種，例如「第三人責任附加駕駛人傷害險」算駕駛人傷害
+const COVER_RULES=[
+  ['driver',/駕駛人|駕駛傷害/],
+  ['pass',/乘客/],
+  ['excess',/超額/],
+  ['theft',/竊|盜|盗|窃|失竊|被偷/],
+  ['flood',/颱風|洪水|地震|天災|泡水|颶風|淹水/],
+  ['body',/車體|車損|車輛損失/],
+  ['rescue',/救援|拖吊/],
+  ['force',/強制/],
+];
+function classifyCover(l){
+  for(const [k,re] of COVER_RULES)if(re.test(l))return [k];
+  if(/第三人|財損|財物損失|體傷/.test(l)){
+    const out=[];
+    if(/體傷|死亡|失能|傷害|每一個?人/.test(l)||!/財/.test(l))out.push('tpi');
+    if(/財損|財物|財/.test(l))out.push('tpp');
+    return out;
+  }
+  return [];
+}
+// 去掉險別代號（491、49C）、保費或折扣百分比（491%）、結尾的「無」
+function cleanCoverLine(l){
+  return String(l).replace(/^\s*[0-9]{2,3}[A-Z]?\s+/,'').replace(/(無|萬|元|\d)\s+\d[\d,]*(?:\.\d+)?\s*%\s*$/,'$1').replace(/(萬|元|\d)\s*無(?:\s*\d[\d,]*)?\s*$/,'$1').replace(/\s+/g,' ').trim();
+}
+function coverDetail(l,key){
+  const c=cleanCoverLine(l);
+  if(key==='tpi'||key==='tpp'){
+    const want=key==='tpp'?/財/:/體傷|死亡|失能|每一個?人/;
+    const segs=c.split(/[、，,；;]/);
+    if(segs.length>1){const seg=segs.find(x=>want.test(x));if(seg)return hiMoney(seg.replace(/^.*?(體傷|財損|財物損失|每一)/,'$1').trim())}
+  }
+  // 名稱後面的說明：「竊盜損失險 保險金額 80 萬」→「保險金額 80 萬」
+  const m=c.match(/^[^\d：:]*?(?:險|救援|服務)[】\]）)]?\s*[:：]?\s*(.+)$/);
+  return hiMoney(m&&/\d|無/.test(m[1])?m[1]:c);
+}
 function renderCover(){
   const live=S.ins.filter(p=>!p.end||daysBetween(TODAY(),p.end)>=0);
   const lines=live.flatMap(p=>String(p.cover||'').split(/\n+/).map(l=>({l:l.trim(),p})).filter(x=>x.l));
+  // 強制險保單裡的「體傷、失能」都是強制險本身的給付，不算第三人責任
+  const byKey={};lines.forEach(x=>(x.p.type==='強制險'?['force']:classifyCover(x.l)).forEach(k=>(byKey[k]=byKey[k]||[]).push(x)));
   const rows=COVERS.map(c=>{
-    const hit=lines.filter(x=>c.kw.test(x.l));
-    const byType=c.type&&live.some(p=>p.type===c.type);
-    const has=hit.length>0||byType;
-    const detOf=l=>{
-      if(c.part){const seg=l.split(/[、，,；;]/).find(x=>c.part.test(x));if(seg)return hiMoney(seg.replace(/^.*?(體傷|財損|財物損失)/,'$1').trim())}
-      const it=coverItems(l)[0];return it?(it.detail||hiMoney(l)):'';
-    };
-    let det=hit.map(x=>detOf(x.l)).filter(Boolean).slice(0,2).join('；');
-    // 依險種判定（例如強制險）但內容沒寫險種名稱時，用該保單的第一行保障
-    if(!det&&byType){const pol=live.find(p=>p.type===c.type);const first=String(pol.cover||'').split(/\n+/)[0]||'';if(first)det=hiMoney(first)}
-    const from=[...new Set([...hit.map(x=>x.p.company),...(byType?live.filter(p=>p.type===c.type).map(p=>p.company):[])].filter(Boolean))].join('、');
+    const hit=byKey[c.key]||[];
+    const typed=c.type?live.filter(p=>p.type===c.type):[];
+    const has=hit.length>0||typed.length>0;
+    let det=hit.map(x=>coverDetail(x.l,c.key)).filter(Boolean).slice(0,2).join('；');
+    if(!det&&typed.length){const first=String(typed[0].cover||'').split(/\n+/)[0]||'';det=first?hiMoney(cleanCoverLine(first)):''}
+    const from=[...new Set([...hit.map(x=>x.p.company),...typed.map(p=>p.company)].filter(Boolean))].join('、');
     return {c,has,det,from};
   });
   const n=rows.filter(r=>r.has).length;
@@ -1452,8 +1493,26 @@ function renderCover(){
     <ul class="cov">${rows.map(r=>`<li class="${r.has?'yes':'no'}">
       <span class="cov-ic" aria-hidden="true">${r.has?'✓':'—'}</span>
       <div class="cov-tx"><b>${r.c.name}</b><span>${r.has?(r.det||'有投保')+(r.from?'<em>'+esc(r.from)+'</em>':''):r.c.sub}</span></div>
-      <span class="cov-st">${r.has?'有保':'未投保'}</span></li>`).join('')}</ul>`;
+      ${r.has?'<span class="cov-st">有保</span>':`<button class="cov-st cov-add" type="button" data-covadd="${r.c.key}">我有保這項</button>`}</li>`).join('')}</ul>
+    <p class="note" style="margin:0">掃描沒抓到的項目，點「我有保這項」補上，再到下方保單的「修改」填保額。</p>`;
 }
+// 手動補上漏掉的保障：加到最新一張任意險（沒有就新增一張）
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-covadd]');if(!b)return;
+  const c=COVERS.find(x=>x.key===b.dataset.covadd);if(!c)return;
+  if(S.example){S.ins=[];S.example=false}
+  let i=-1;
+  if(c.type==='強制險'){S.ins.push({type:'強制險',company:'',policy:'',start:'',end:'',cover:'強制汽車責任保險',phone:''});i=S.ins.length-1}
+  else{
+    const live=S.ins.map((p,k)=>({p,k})).filter(x=>x.p.type==='任意險'&&(!x.p.end||daysBetween(TODAY(),x.p.end)>=0));
+    if(live.length){i=live.sort((x,y)=>(y.p.end||'').localeCompare(x.p.end||''))[0].k}
+    else{S.ins.push({type:'任意險',company:'',policy:'',start:'',end:'',cover:'',phone:''});i=S.ins.length-1}
+    const label=c.key==='tpi'?'第三人責任險 體傷':c.key==='tpp'?'第三人責任險 財損':c.name;
+    S.ins[i].cover=(S.ins[i].cover?S.ins[i].cover.replace(/\s+$/,'')+'\n':'')+label;
+  }
+  INS_OPEN.add(i);save();render();toast('已加上「'+c.name+'」，請在保單的修改區填上保額');
+  setTimeout(()=>{const d=document.querySelector('#insList details[data-edit="'+i+'"]');if(d)d.scrollIntoView({behavior:'smooth',block:'center'})},50);
+});
 
 /* ---------- 事故處理原則 ---------- */
 const PHOTO_ITEMS=['兩車撞擊點','雙方車牌','車輛相對位置','煞車痕','車道線','週邊標誌標線','車頭','車尾','碰撞細節特寫','現場全景'];
@@ -1530,6 +1589,7 @@ const SCAN_PROMPT=`你會看到台灣汽車保險文件的照片（保單、保�
 - 只寫文件上看得到的內容，看不到就填空字串，不要猜，也不要用你記得的電話。
 - 民國年換成西元（民國年＋1911），例如 115/03/01 → 2026-03-01。
 - 強制汽車責任保險 = 強制險；車體損失險、竊盜險、第三人責任險、超額責任險、乘客險等 = 任意險（同一張保單的多個任意險險種合併成一筆，逐項寫在 cover）。
+- 保單上的每一個險別都要列進 cover，一個險別一行，不可省略附加險（竊盜損失險、乘客險、駕駛人傷害險、颱風洪水險、代步車費用等）；只寫險別名稱、保險金額和自負額，不要抄保費欄的金額，也不要自己加百分比。
 - cover 範例：「甲式車體險 保額 85 萬，自負額 5,000\n第三人責任險 體傷每人 200 萬／每事故 400 萬、財損 50 萬」。
 - 不要輸出身分證字號、出生日期、地址、銀行或信用卡資料。
 - 如果圖片不是保險文件，回傳 []。`;
@@ -1644,7 +1704,7 @@ async function runScan(){
       type:['強制險','任意險','道路救援','其他'].includes(o.type)?o.type:'其他',
       company:String(o.company||'').trim(),policy:String(o.policy||'').trim(),
       start:normDate(o.start),end:normDate(o.end),phone:String(o.phone||'').trim(),
-      cover:String(o.cover||'').trim(),plate:String(o.plate||'').trim(),note:String(o.note||'').trim()}));
+      cover:String(o.cover||'').split(/\n+/).map(cleanCoverLine).filter(Boolean).join('\n'),plate:String(o.plate||'').trim(),note:String(o.note||'').trim()}));
     if(!clean.length){scanStatus('沒有在圖片中找到保單內容。請拍保單正面、光線充足、文字清楚。');return}
     SC.results=clean;scanStatus('');renderReview();
   }catch(e){
@@ -1735,8 +1795,8 @@ function parsePolicyText(raw){
   const cover=[];
   for(const l of lines){
     if(cover.length>=10)break;
-    if(/(險|保額|自負額|每一?人|每一?事故|救援)/.test(l)&&/\d/.test(l)&&l.length<=70&&!/保單號|保險證號|證號|電話|專線|地址|身分|生日|出生|統一編號|被保險人|要保人|車牌|牌照|期間|期限|起至|中午12時/.test(l)){
-      const c=l.replace(/\s+/g,' ');if(!cover.includes(c))cover.push(c);}
+    if(/(險|保額|自負額|每一?人|每一?事故|救援)/.test(l)&&/\d/.test(l)&&l.length<=120&&!/保單號|保險證號|證號|電話|專線|地址|身分|生日|出生|統一編號|被保險人|要保人|車牌|牌照|期間|期限|起至|中午12時/.test(l)){
+      const c=cleanCoverLine(l);if(c&&!cover.includes(c))cover.push(c);}
   }
   const note=[!company&&'保險公司',!pol&&'保單號碼',!end&&'期間',!phone&&'理賠電話'].filter(Boolean);
   const base={company,policy:pol,start,end,phone,plate,note:(note.length?'沒讀到'+note.join('、')+'，請補上；':'')+'本機辨識可能有錯字，請逐欄確認'};
