@@ -227,6 +227,7 @@ select option{color:#1d2733}
 .due-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
 .due-stats>div{display:flex;flex-direction:column;gap:2px;min-width:0}
 .due-stats b{font:300 26px var(--f-num);letter-spacing:-.01em}
+.due-stats b.due-date{font-size:clamp(16px,5vw,20px);white-space:nowrap;line-height:1.5}
 .due-stats b small{font-size:13px;color:var(--muted);font-weight:400}
 /* sky→cream tiles */
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -411,14 +412,14 @@ b.money{color:var(--accent);font-weight:700}
     </div>
     <div style="height:14px"></div>
     <div class="panel">
-      <div class="item-head"><h2>保養週期設定</h2><span id="svcEx"></span></div>
+      <div class="item-head"><h2>下次保養</h2><span id="svcEx"></span></div>
       <div class="grid2">
+        <label for="s-nextDate">下次保養日期<input id="s-nextDate" type="date"></label>
+        <label for="s-nextKm">下次保養里程（選填）<input id="s-nextKm" type="number" inputmode="numeric" placeholder="例：20000"></label>
         <label for="s-lastDate">上次保養日期<input id="s-lastDate" type="date"></label>
         <label for="s-lastKm">上次保養里程（公里）<input id="s-lastKm" type="number" inputmode="numeric"></label>
-        <label for="s-intKm">每隔幾公里<input id="s-intKm" type="number" inputmode="numeric"></label>
-        <label for="s-intMonths">每隔幾個月<input id="s-intMonths" type="number" inputmode="numeric"></label>
       </div>
-      <p class="note" style="margin:0">里程或時間，哪個先到就以哪個為準。一般汽油車常見 5,000–10,000 公里或 6–12 個月，請依車主手冊。</p>
+      <p class="note" style="margin:0">填保養廠或保養單據上寫的下次保養日期；有寫里程也可以一起填，哪個先到就以哪個為準。上次保養的資料會從保養紀錄自動帶入。</p>
     </div>
     <div style="height:14px"></div>
     <div class="panel" id="wtyPanel">
@@ -747,7 +748,7 @@ function sample(){
   const end2=new Date(t);end2.setMonth(end2.getMonth()+7);
   return {example:true,
     car:{plate:'ABC-1234',model:'Toyota Corolla Cross 1.8',year:'2022-05',vin:'',odo:41200,odoDate:iso(t)},
-    svc:{lastDate:iso(last),lastKm:36800,intKm:10000,intMonths:6},
+    svc:{lastDate:iso(last),lastKm:36800,nextDate:iso(addMonths(last,6)),nextKm:46800},
     logs:[{date:iso(last),km:36800,item:'機油、機油芯、輪胎對調',cost:2850,shop:'原廠服務廠'}],
     ins:[
       {type:'強制險',company:'（範例）某產險',policy:'',start:'',end:iso(end1),cover:'體傷每人最高 20 萬、失能最高 200 萬、死亡 200 萬',phone:''},
@@ -780,25 +781,32 @@ async function copy(text){
 
 /* ---------- compute ---------- */
 function due(){
-  const {svc,car}=S;
-  const intKm=Math.max(1,Number(svc.intKm)||10000), intM=Math.max(1,Number(svc.intMonths)||6);
-  const nextKm=Number(svc.lastKm)+intKm;
-  const nextDate=svc.lastDate?addMonths(svc.lastDate,intM):null;
-  const remKm=nextKm-Number(car.odo);
+  const {svc,car}=S,odo=Number(car.odo||0);
+  const nextKm=Number(svc.nextKm)>0?Number(svc.nextKm):null;
+  const nextDate=svc.nextDate?new Date(svc.nextDate+'T00:00:00'):null;
+  const remKm=nextKm!=null?nextKm-odo:null;
   const remDays=nextDate?daysBetween(TODAY(),nextDate):null;
-  const usedKm=Number(car.odo)-Number(svc.lastKm);
+  const lastKm=Number(svc.lastKm||0),usedKm=odo-lastKm;
   const sinceDays=svc.lastDate?Math.max(1,daysBetween(svc.lastDate,car.odoDate||TODAY())):null;
   const perDay=sinceDays&&usedKm>0?usedKm/sinceDays:null;
-  let projDate=null; if(perDay&&remKm>0){projDate=new Date(TODAY());projDate.setDate(projDate.getDate()+Math.ceil(remKm/perDay))}
+  let projDate=null;if(perDay&&remKm!=null&&remKm>0){projDate=new Date(TODAY());projDate.setDate(projDate.getDate()+Math.ceil(remKm/perDay))}
+  const none=nextKm==null&&!nextDate;
   let level='ok';
-  if(remKm<=0||(remDays!=null&&remDays<=0))level='bad';
-  else if(remKm<=1000||(remDays!=null&&remDays<=30))level='warn';
-  let first=null;
-  if(projDate&&nextDate)first=projDate<nextDate?'km':'date';
-  else first=nextDate?'date':'km';
-  return {nextKm,nextDate,remKm,remDays,perDay,projDate,level,first,
-    pctKm:Math.min(100,Math.max(0,usedKm/intKm*100)),
-    pctDay:nextDate?Math.min(100,Math.max(0,(daysBetween(svc.lastDate,TODAY()))/Math.max(1,daysBetween(svc.lastDate,nextDate))*100)):0};
+  if(none)level='none';
+  else if((remKm!=null&&remKm<=0)||(remDays!=null&&remDays<=0))level='bad';
+  else if((remKm!=null&&remKm<=1000)||(remDays!=null&&remDays<=30))level='warn';
+  let first='date';
+  if(projDate&&nextDate)first=projDate<nextDate?'km':'date';else if(!nextDate)first='km';
+  const pctKm=nextKm!=null&&nextKm>lastKm?Math.min(100,Math.max(0,usedKm/(nextKm-lastKm)*100)):0;
+  const pctDay=nextDate&&svc.lastDate?Math.min(100,Math.max(0,daysBetween(svc.lastDate,TODAY())/Math.max(1,daysBetween(svc.lastDate,nextDate))*100)):0;
+  return {none,nextKm,nextDate,remKm,remDays,perDay,projDate,level,first,pctKm,pctDay};
+}
+// 新的一次保養記下來後，比它早的「下次保養」已經過時，清掉讓使用者重填
+function clearStaleNext(date,km){
+  // 日期和里程是同一次保養的目標：任一項已經到了，就兩項一起清掉
+  const dOld=S.svc.nextDate&&date&&S.svc.nextDate<=date, kOld=Number(S.svc.nextKm)>0&&km&&Number(S.svc.nextKm)<=km;
+  if(dOld||kOld){S.svc.nextDate='';S.svc.nextKm=0;return true}
+  return false;
 }
 const barColor=p=>p>=100?'var(--bad)':p>=85?'var(--warn)':'var(--ok)';
 
@@ -820,28 +828,33 @@ function _renderNow(){
   $('#h-odoDate').textContent=car.odoDate?('記錄於 '+zhDate(car.odoDate,'date')):'';
 
   const d=due();
-  const label={ok:'狀況良好',warn:'即將到期',bad:'已超過，請回廠'}[d.level];
-  const kmTxt=d.remKm>0?'還有 '+fmtN(d.remKm):'已超過 '+fmtN(-d.remKm);
-  const dayTxt=d.remDays==null?'—':(d.remDays>0?'還有 '+d.remDays:'已超過 '+(-d.remDays));
-  let advice='';
-  if(d.level==='bad')advice='保養已過期，建議盡快預約回廠。';
-  else if(d.projDate){
-    const when=d.first==='km'?iso(d.projDate):iso(d.nextDate);
-    advice='依你平均每天約 '+fmtN(d.perDay)+' 公里，預計 <b class="num">'+when+'</b> 前要回廠（'+(d.first==='km'?'里程':'時間')+'會先到）。';
-  } else if(d.nextDate) advice='最晚 <b class="num">'+iso(d.nextDate)+'</b> 或 <b class="num">'+fmtN(d.nextKm)+' 公里</b> 要回廠，先到者為準。';
-  const leftFrac=1-Math.max(d.pctKm,d.pctDay)/100;
-  const bigKm=d.remKm>0?d.remKm:0;
-  $('#dueCard').innerHTML=`
-    <div class="due-head"><h2>下次回廠保養</h2><span class="pill ${d.level}">${label}</span></div>
-    <div class="ring-wrap">${ringSvg(leftFrac)}
-      <div class="ring-center">${dotNum(String(Math.round(Math.abs(d.remKm))),kmTxt+' 公里')}
-        <span class="u">${d.remKm>0?'公里後保養':'公里，已超過'}</span></div>
-    </div>
-    <div class="due-stats">
-      <div><span class="k">剩餘里程</span><b>${fmtN(Math.abs(d.remKm))}<small> 公里</small></b><span class="small muted">${kmTxt} 公里・目標 <span class="num">${fmtN(d.nextKm)}</span></span></div>
-      <div><span class="k">剩餘天數</span><b>${d.remDays==null?'—':Math.abs(d.remDays)}<small> 天</small></b><span class="small muted">${dayTxt} 天・<span class="num">${d.nextDate?iso(d.nextDate):'—'}</span></span></div>
-    </div>
-    <div class="small">${advice}</div>`;
+  if(d.none){
+    $('#dueCard').innerHTML=`<div class="due-head"><h2>下次回廠保養</h2><span class="pill" style="background:var(--chip);color:var(--ink)">未設定</span></div>
+      <p style="margin:0">還沒填下次保養日期。到保養頁填上保養廠或單據寫的日期，這裡就會開始倒數。</p>
+      <button class="btn primary" type="button" data-go="svc" data-focus="s-nextDate">填下次保養日期</button>`;
+  }else{
+    const label={ok:'狀況良好',warn:'即將到期',bad:'已超過，請回廠'}[d.level];
+    const kmTxt=d.remKm==null?'':d.remKm>0?'還有 '+fmtN(d.remKm)+' 公里':'已超過 '+fmtN(-d.remKm)+' 公里';
+    const dayTxt=d.remDays==null?'':d.remDays>0?'還有 '+d.remDays+' 天':d.remDays===0?'就是今天':'已超過 '+(-d.remDays)+' 天';
+    let advice='';
+    if(d.level==='bad')advice='已經到了保養時間，建議盡快預約回廠。';
+    else if(d.projDate&&d.nextDate&&d.first==='km')advice='依你平均每天約 '+fmtN(d.perDay)+' 公里，大約 <b>'+zhDate(iso(d.projDate),'date')+'</b> 就會先達到保養里程。';
+    else if(d.nextDate&&d.nextKm!=null)advice=zhDate(iso(d.nextDate),'date')+' 或 '+fmtN(d.nextKm)+' 公里，哪個先到就以哪個為準。';
+    const leftFrac=1-Math.max(d.pctKm,d.pctDay)/100;
+    const useKm=d.remKm!=null&&(d.first==='km'||d.remDays==null);
+    const big=useKm?Math.abs(d.remKm):Math.abs(d.remDays);
+    const unit=useKm?(d.remKm>0?'公里後保養':'公里，已超過'):(d.remDays>0?'天後保養':d.remDays===0?'今天保養':'天，已超過');
+    $('#dueCard').innerHTML=`
+      <div class="due-head"><h2>下次回廠保養</h2><span class="pill ${d.level}">${label}</span></div>
+      <div class="ring-wrap">${ringSvg(leftFrac)}
+        <div class="ring-center">${dotNum(String(Math.round(big)),(useKm?kmTxt:dayTxt))}<span class="u">${unit}</span></div>
+      </div>
+      <div class="due-stats">
+        <div><span class="k">保養日期</span><b class="due-date">${d.nextDate?zhDate(iso(d.nextDate),'date'):'未填'}</b><span class="small muted">${dayTxt||'到保養頁填日期'}</span></div>
+        <div><span class="k">保養里程</span><b>${d.nextKm!=null?fmtN(d.nextKm)+'<small> 公里</small>':'未填'}</b><span class="small muted">${kmTxt||'選填'}</span></div>
+      </div>
+      ${advice?`<div class="small">${advice}</div>`:''}`;
+  }
 
   // insurance summary
   const tiles=S.ins.slice(0,4).map(p=>{
@@ -856,7 +869,7 @@ function _renderNow(){
     (tiles?'<div class="tiles">'+tiles+'</div>':'<div class="panel"><p class="muted small" style="margin:0">尚未新增保單。到「保險」分頁拍照掃描保單就能自動填入。</p></div>');
 
   // svc form
-  ['lastDate','lastKm','intKm','intMonths'].forEach(k=>{const el=$('#s-'+k);if(document.activeElement!==el)el.value=S.svc[k]??''});
+  ['nextDate','nextKm','lastDate','lastKm'].forEach(k=>{const el=$('#s-'+k);if(document.activeElement!==el)el.value=k==='nextKm'?(Number(S.svc[k])>0?S.svc[k]:''):(S.svc[k]??'')});
   $('#svcEx').innerHTML=S.example?'<span class="ex">範例</span>':'';
   const logs=[...S.logs].sort((a,b)=>b.km-a.km);
   $('#logList').innerHTML=logs.length?`<table class="logtbl"><thead><tr><th>日期</th><th>里程</th><th>項目</th><th>費用</th><th></th></tr></thead><tbody>${
@@ -1032,14 +1045,15 @@ document.addEventListener('click',e=>{const d=e.target.closest('[data-delto]');i
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('touchend',e=>{
   if(e.cancelable){e.preventDefault();go(t.dataset.go)}
 },{passive:false}));
-function go(v){
+function go(v,focusId){
   ['home','svc','ins','tel','drv','sos'].forEach(k=>$('#v-'+k).hidden=k!==v);
   document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.go===v?'true':'false'));
   window.scrollTo(0,0);
+  if(focusId)setTimeout(()=>{const el=document.getElementById(focusId);if(el){el.scrollIntoView({block:'center'});el.focus()}},60);
   if(v==='sos')requestAnimationFrame(()=>setTimeout(()=>{fitMsg();if(!LOC&&!LOC_PENDING)locate()},0));
 }
 document.addEventListener('click',e=>{
-  const g=e.target.closest('[data-go]'); if(g){go(g.dataset.go);return}
+  const g=e.target.closest('[data-go]'); if(g){go(g.dataset.go,g.dataset.focus);return}
   const dl=e.target.closest('[data-dellog]'); if(dl){S.logs.splice(+dl.dataset.dellog,1);save();render();return}
   const di=e.target.closest('[data-delins]'); if(di){
     if(di.dataset.armed!=='1'){di.dataset.armed='1';di.textContent='再按一次確認刪除';setTimeout(()=>{di.dataset.armed='0';di.textContent='刪除這張保單'},3000);return}
@@ -1054,8 +1068,8 @@ document.addEventListener('input',e=>{
   const el=e.target;
   if(el.dataset.ins!=null&&el.tagName==='TEXTAREA'){S.ins[+el.dataset.ins][el.dataset.f]=el.value;save()}
 });
-['lastDate','lastKm','intKm','intMonths'].forEach(k=>$('#s-'+k).addEventListener('change',e=>{
-  S.svc[k]=k==='lastDate'?e.target.value:Number(e.target.value);save();render()}));
+['nextDate','nextKm','lastDate','lastKm'].forEach(k=>$('#s-'+k).addEventListener('change',e=>{
+  S.svc[k]=/Date$/.test(k)?e.target.value:Math.max(0,Math.round(Number(e.target.value)||0));save();render()}));
 [['plate','c-plate'],['model','c-model'],['buy','c-buy'],['year','c-year'],['vin','c-vin']].forEach(([k,id])=>$('#'+id).addEventListener('change',e=>{S.car[k]=k==='plate'?normPlate(e.target.value):e.target.value;save();render()}));
 let odoPending=null;
 function odoNote(html){const n=$('#odoNote');n.hidden=!html;n.innerHTML=html||''}
@@ -1066,10 +1080,11 @@ function applyOdo(v){
     // 第一次輸入自己的里程：換掉範例的里程與保養基準，避免拿範例數字去算
     S.example=false;
     if(Number(S.svc.lastKm)>v){S.svc.lastKm=v;S.svc.lastDate=iso(TODAY());S.logs=[]}
+    S.svc.nextDate='';S.svc.nextKm=0;
   }
   S.car.odo=v;S.car.odoDate=iso(TODAY());$('#in-odo').value='';odoReset();save();render();
   if(Number(S.svc.lastKm)>v)odoNote('里程已更新為 '+fmtN(v)+' 公里。上次保養里程（'+fmtN(S.svc.lastKm)+'）比現在還大，請到<button type="button" class="linkbtn" data-go="svc">保養頁</button>修正。');
-  else if(wasEx)odoNote('已改成你的里程 '+fmtN(v)+' 公里。記得到<button type="button" class="linkbtn" data-go="svc">保養頁</button>填上次保養的日期與里程。');
+  else if(wasEx)odoNote('已改成你的里程 '+fmtN(v)+' 公里。記得到<button type="button" class="linkbtn" data-go="svc">保養頁</button>填下次保養日期。');
   toast('里程已更新');
 }
 $('#in-odo').addEventListener('input',()=>{if(odoPending!=null)odoReset()});
@@ -1091,11 +1106,14 @@ $('#f-log').addEventListener('submit',e=>{
   e.preventDefault();
   const l={date:$('#l-date').value,km:Number($('#l-km').value),item:$('#l-item').value.trim(),cost:Number($('#l-cost').value)||0,shop:$('#l-shop').value.trim()};
   S.logs.push(l);
-  if($('#l-setlast').checked){S.svc.lastDate=l.date;S.svc.lastKm=l.km}
+  let stale=false;
+  if($('#l-setlast').checked){if(S.example){S.example=false;S.svc.nextDate='';S.svc.nextKm=0}S.svc.lastDate=l.date;S.svc.lastKm=l.km;stale=clearStaleNext(l.date,l.km)}
   if(S.car.buy&&!S.first.done&&l.date>=S.car.buy){S.first.done=true;S.first.doneAt=l.date}
   if(l.km>S.car.odo){S.car.odo=l.km;S.car.odoDate=l.date}
   e.target.reset();$('#l-setlast').checked=true;$('#l-date').value=iso(TODAY());
-  save();render();toast('已加入紀錄');
+  save();render();
+  if(stale||!S.svc.nextDate){toast('已加入紀錄，請填下次保養日期');setTimeout(()=>{const el=$('#s-nextDate');el.scrollIntoView({behavior:'smooth',block:'center'})},200)}
+  else toast('已加入紀錄');
 });
 $('#f-tel').addEventListener('submit',e=>{
   e.preventDefault();
@@ -1107,7 +1125,7 @@ $('#addIns').addEventListener('click',()=>{S.ins.push({type:'任意險',company:
 $('#clearEx').addEventListener('click',e=>{
   const b=e.currentTarget;
   if(b.dataset.armed!=='1'){b.dataset.armed='1';b.textContent='再按一次：清空所有範例';setTimeout(()=>{b.dataset.armed='0';b.textContent='清除範例資料，從頭填寫'},3000);return}
-  S={example:false,car:{plate:'',model:'',year:'',vin:'',odo:0,odoDate:iso(TODAY())},svc:{lastDate:iso(TODAY()),lastKm:0,intKm:10000,intMonths:6},logs:[],ins:[],contacts:[],guard:S.guard,drvLog:S.drvLog,sosTo:S.sosTo,scanKey:S.scanKey,first:S.first,warranty:S.warranty};
+  S={example:false,car:{plate:'',model:'',year:'',vin:'',odo:0,odoDate:iso(TODAY())},svc:{lastDate:'',lastKm:0,nextDate:'',nextKm:0},logs:[],ins:[],contacts:[],guard:S.guard,drvLog:S.drvLog,sosTo:S.sosTo,scanKey:S.scanKey,first:S.first,warranty:S.warranty};
   save();render();toast('已清空，請填入你的資料');
 });
 // first real edit clears the example flag
@@ -1137,7 +1155,7 @@ function renderFirst(){
   if(!fd){pill.textContent='';return}
   pill.className='pill '+(done?'ok':fd.level);
   pill.textContent=done?'已完成':fd.level==='bad'?'已到期':fd.level==='warn'?'快到了':'未到期';
-  $('#firstNote').textContent=done?('首次保養已完成'+(S.first.doneAt?'（'+zhDate(S.first.doneAt,'date')+'）':'')+'，之後依下方一般保養週期提醒。')
+  $('#firstNote').textContent=done?('首次保養已完成'+(S.first.doneAt?'（'+zhDate(S.first.doneAt,'date')+'）':'')+'，之後依下方填的下次保養日期提醒。')
     :'從簽約日 '+zhDate(S.car.buy,'date')+' 起算，'+fmtN(fd.km)+' 公里或 '+zhDate(iso(fd.date),'date')+'，哪個先到就以哪個為準。新車常見 1,000 公里或 1 個月，請依車廠規定調整。';
   if(!show)return;
   const label={ok:'未到期',warn:'快到了',bad:'已到期，請回廠'}[fd.level];
@@ -1154,8 +1172,8 @@ function renderFirst(){
 document.addEventListener('click',e=>{
   if(e.target.id==='firstDoneBtn'){
     S.first.done=true;S.first.doneAt=iso(TODAY());
-    if(!S.example&&Number(S.car.odo)>0){S.svc.lastDate=iso(TODAY());S.svc.lastKm=Number(S.car.odo)}
-    save();render();toast('首次保養已完成，改用一般保養週期提醒');
+    if(!S.example&&Number(S.car.odo)>0){S.svc.lastDate=iso(TODAY());S.svc.lastKm=Number(S.car.odo);clearStaleNext(iso(TODAY()),Number(S.car.odo))}
+    save();render();toast('首次保養已完成，記得在保養頁填下次保養日期');
   }
 });
 ['f-km','f-mon'].forEach(id=>$('#'+id).addEventListener('change',e=>{const v=Math.round(Number(e.target.value));if(v>0){S.first[id==='f-km'?'km':'mon']=v;save();render()}}));
@@ -1254,7 +1272,7 @@ function mountScan(p,wrap,cfg){
     }
   });
   label();
-  return {label,reset,root};
+  return {label,reset,root,addFiles:add,run};
 }
 function mmFromText(t){
   // 「10萬公里」「100,000 km」「10 萬 km」→ 公里數
@@ -1391,29 +1409,29 @@ const RCPT_CFG={title:'掃描保養單據',desc:'拍下或截圖保養工單、�
       <label for="rc${i}-shop">保養廠<input id="rc${i}-shop" data-i="${i}" data-f="shop" value="${esc(r.shop)}"></label>
       <label for="rc${i}-items" style="grid-column:1/-1">項目（用頓號分隔）<textarea id="rc${i}-items" data-i="${i}" data-f="itemsText" rows="3">${esc(r.items.join('、'))}</textarea></label>
     </div>
-    ${r.nextKm||r.nextDate?`<label class="small" for="rc${i}-next" style="flex-direction:row;align-items:center;gap:8px;color:var(--ink)"><input type="checkbox" id="rc${i}-next" data-next="${i}" checked style="width:auto"> 用單據上的下次保養建議（${r.nextKm?fmtN(r.nextKm)+' 公里':''}${r.nextKm&&r.nextDate?' 或 ':''}${r.nextDate?zhDate(r.nextDate,'date'):''}）更新保養週期</label>`:''}
+    ${r.nextKm||r.nextDate?`<label class="small" for="rc${i}-next" style="flex-direction:row;align-items:center;gap:8px;color:var(--ink)"><input type="checkbox" id="rc${i}-next" data-next="${i}" checked style="width:auto"> 用單據上寫的下次保養（${r.nextKm?fmtN(r.nextKm)+' 公里':''}${r.nextKm&&r.nextDate?' 或 ':''}${r.nextDate?zhDate(r.nextDate,'date'):''}）設為下次保養</label>`:''}
     ${!r.km?'<div class="review warn-line" style="padding:0;border:0;background:none">沒有讀到里程，請補上，保養倒數才會準。</div>':''}
     <label class="small" for="rc${i}-on" style="flex-direction:row;align-items:center;gap:8px;color:var(--ink)"><input type="checkbox" id="rc${i}-on" data-on="${i}" checked style="width:auto"> 加入這筆</label></div>`).join(''),
   save:(list,root)=>{
     let n=0;
-    const wasEx=S.example;if(wasEx){S.logs=[]}
+    const wasEx=S.example;if(wasEx){S.logs=[];S.svc.nextDate='';S.svc.nextKm=0}
     list.forEach(r=>{
       const items=(r.itemsText!=null?r.itemsText:r.items.join('、')).split(/[、,，\n]/).map(x=>x.trim()).filter(Boolean);
       const km=Number(r.km)||0;
       S.logs.push({date:r.date,km,item:items.join('、')||'保養',cost:Number(r.total)||0,shop:r.shop||''});n++;
       // 最新的一筆設為「上次保養」
       // 以里程判斷哪筆最新；沒讀到里程才比日期
-      if(wasEx||(km?km>=Number(S.svc.lastKm||0):r.date>=(S.svc.lastDate||''))){S.svc.lastDate=r.date;if(km)S.svc.lastKm=km}
+      if(wasEx||(km?km>=Number(S.svc.lastKm||0):r.date>=(S.svc.lastDate||''))){S.svc.lastDate=r.date;if(km)S.svc.lastKm=km;clearStaleNext(r.date,km)}
       if(km>Number(S.car.odo||0)||(wasEx&&km)){S.car.odo=Math.max(km,wasEx?0:Number(S.car.odo||0));S.car.odoDate=r.date}
       if(S.car.buy&&!S.first.done&&r.date>=S.car.buy){S.first.done=true;S.first.doneAt=r.date}
       const nx=root.querySelector('[data-next="'+SCR.rcpt.indexOf(r)+'"]');
       if(nx&&nx.checked){
-        if(r.nextKm&&km&&r.nextKm>km){const d=r.nextKm-km;if(d>=1000&&d<=40000)S.svc.intKm=d}
-        if(r.nextDate){const mo=Math.round(daysBetween(r.date,r.nextDate)/30.4);if(mo>=1&&mo<=24)S.svc.intMonths=mo}
+        if(r.nextKm&&r.nextKm>km)S.svc.nextKm=Number(r.nextKm);
+        if(r.nextDate&&r.nextDate>r.date)S.svc.nextDate=r.nextDate;
       }
     });
     if(S.example)S.example=false;
-    return '已加入 '+n+' 筆保養紀錄';
+    return '已加入 '+n+' 筆保養紀錄'+(S.svc.nextDate||Number(S.svc.nextKm)>0?'':'，請填下次保養日期');
   }};
 const SCR={rcpt:[]};
 
@@ -1529,22 +1547,67 @@ function pasteStore(){try{return JSON.parse(localStorage.getItem(PASTE_KEY)||'{}
 function pasteSave(id,text){try{const d=pasteStore();if(text)d[id]=text;else delete d[id];localStorage.setItem(PASTE_KEY,JSON.stringify(d))}catch(e){}}
 function pasteAnalyze(id){const b=document.querySelector('[data-paste-go="'+id+'"]');if(b)b.click()}
 function clipMsg(id,t){const m=document.querySelector('[data-clipmsg="'+id+'"]');if(m){m.hidden=!t;m.textContent=t||''}}
+// 剪貼簿可能是文字、網頁格式或圖片：文字就填進框裡分析，圖片就直接拿去掃描
+function htmlToText(h){if(!h)return '';const d=document.createElement('div');d.innerHTML=h.replace(/<br\s*\/?>/gi,'\n').replace(/<\/(p|div|li|tr|h\d)>/gi,'\n');return (d.textContent||'').replace(/\n{3,}/g,'\n\n').trim()}
+async function scanImageFrom(id,blob){
+  const f=new File([blob],'clipboard.'+((blob.type||'image/png').split('/')[1]||'png'),{type:blob.type||'image/png'});
+  if(id==='scanText'){
+    SC.blobs.push({blob:await shrink(f),label:'剪貼簿圖片',src:'photo'});renderThumbs();runScan();
+  }else{
+    const sc=SCANS.find(x=>x.root.querySelector('#'+CSS.escape(id)));if(!sc)return;
+    await sc.addFiles([f]);sc.run();
+  }
+}
+function fillAndAnalyze(id,t){
+  const ta=document.getElementById(id);if(!ta)return;
+  ta.value=t;pasteSave(id,t);
+  clipMsg(id,'已貼上 '+t.replace(/\s/g,'').length+' 個字，分析中…');
+  setTimeout(()=>{pasteAnalyze(id);setTimeout(()=>clipMsg(id,''),1500)},30);
+}
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-clip]');if(!b)return;
   const id=b.dataset.clip,ta=document.getElementById(id);clipMsg(id,'');
+  // 先讀完整的剪貼簿內容（文字或圖片），不支援再只讀文字
+  try{
+    if(navigator.clipboard&&navigator.clipboard.read){
+      const items=await navigator.clipboard.read();
+      for(const it of items){
+        if(it.types.includes('text/plain')){const t=await (await it.getType('text/plain')).text();if(t.trim()){fillAndAnalyze(id,t);return}}
+        if(it.types.includes('text/html')){const t=htmlToText(await (await it.getType('text/html')).text());if(t){fillAndAnalyze(id,t);return}}
+        const img=it.types.find(x=>x.startsWith('image/'));
+        if(img){clipMsg(id,'剪貼簿裡是圖片，直接幫你掃描這張圖…');await scanImageFrom(id,await it.getType(img));return}
+      }
+      clipMsg(id,'剪貼簿是空的。請在照片 App 打開截圖，點右下角原況文字圖示，長按文字選「全選」再按「拷貝」。');return;
+    }
+  }catch(err){/* 改用只讀文字 */}
   try{
     if(!navigator.clipboard||!navigator.clipboard.readText)throw new Error('no');
     const t=await navigator.clipboard.readText();
-    if(!t||!t.trim()){clipMsg(id,'剪貼簿是空的。請先在照片 App 用「原況文字」全選並拷貝，再回來按一次。');return}
-    ta.value=t;pasteSave(id,t);pasteAnalyze(id);
+    if(t&&t.trim()){fillAndAnalyze(id,t);return}
+    clipMsg(id,'剪貼簿裡沒有文字（可能拷貝到的是圖片）。請改用上方的「上傳檔案」選那張截圖，或在原況文字裡長按文字選「全選」→「拷貝」。');
   }catch(err){
-    clipMsg(id,'沒辦法直接讀取剪貼簿。請長按下面的框，選「貼上」，貼上後會自動分析。');
+    clipMsg(id,'沒辦法直接讀取剪貼簿。請長按下面的框，選「貼上」。');
     ta.focus();
   }
 });
+// 長按貼上：自己讀剪貼簿內容，不靠文字框預設行為（圖片、網頁格式也能處理）
 document.addEventListener('paste',e=>{
   const ta=e.target.closest&&e.target.closest('.paste-ta');if(!ta)return;
-  setTimeout(()=>{pasteSave(ta.id,ta.value);if(ta.value.trim().length>=15){clipMsg(ta.id,'');pasteAnalyze(ta.id)}},60);
+  const cd=e.clipboardData;
+  if(cd){
+    const t=cd.getData('text/plain')||cd.getData('text')||htmlToText(cd.getData('text/html'));
+    if(t&&t.trim()){
+      e.preventDefault();
+      const s0=ta.selectionStart??ta.value.length,s1=ta.selectionEnd??ta.value.length;
+      fillAndAnalyze(ta.id,ta.value.slice(0,s0)+t+ta.value.slice(s1));return;
+    }
+    const f=[...(cd.files||[])].find(x=>/^image\//.test(x.type));
+    if(f){e.preventDefault();clipMsg(ta.id,'貼上的是圖片，直接幫你掃描這張圖…');scanImageFrom(ta.id,f);return}
+  }
+  // 讀不到內容時，等系統自己貼完再檢查
+  setTimeout(()=>{pasteSave(ta.id,ta.value);
+    if(ta.value.trim().length>=15)fillAndAnalyze(ta.id,ta.value);
+    else clipMsg(ta.id,'沒有貼到文字，剪貼簿裡可能是圖片。請改用上方的「上傳檔案」選那張截圖。')},80);
 });
 document.addEventListener('input',e=>{const ta=e.target.closest&&e.target.closest('.paste-ta');if(ta)pasteSave(ta.id,ta.value)});
 document.addEventListener('click',e=>{const c=e.target.closest('[data-paste-close]');if(c){pasteSave(c.dataset.pasteClose,'');const ta=document.getElementById(c.dataset.pasteClose);if(ta)ta.value=''}});
@@ -1912,6 +1975,12 @@ function ensure(){
   S.guard=Object.assign({speed:60,stop:3,count:30,radius:40,phones:'',tgToken:'',tgChats:[]},S.guard||{});
   S.drvLog=S.drvLog||[];
   S.first=Object.assign({km:1000,mon:1,done:false,doneAt:''},S.first||{});
+  if(S.svc&&('intKm' in S.svc||'intMonths' in S.svc)){
+    if(S.svc.nextDate===undefined)S.svc.nextDate=S.svc.lastDate&&S.svc.intMonths?iso(addMonths(S.svc.lastDate,Number(S.svc.intMonths))):'';
+    if(S.svc.nextKm===undefined)S.svc.nextKm=S.svc.intKm?Number(S.svc.lastKm||0)+Number(S.svc.intKm):0;
+    delete S.svc.intKm;delete S.svc.intMonths;
+  }
+  S.svc.nextDate=S.svc.nextDate||'';S.svc.nextKm=Number(S.svc.nextKm)||0;
   S.warranty=Array.isArray(S.warranty)?S.warranty:[];
   if(!S.sosTo){S.sosTo=(S.guard.phones||'').split(/[,，\s]+/).filter(Boolean).map((n,i)=>({name:'親友'+(i+1),phone:n,on:true}));S.guard.phones=''}
 }
