@@ -326,6 +326,34 @@ input,select,textarea{font-size:16px!important}
 .checks input{width:20px!important;height:20px;flex-shrink:0}
 .checks label:has(input:checked){background:rgba(169,227,180,.22)}
 .checks-done{grid-column:1/-1;font-size:13px;color:var(--ok)}
+.cov{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.cov li{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:10px;padding-block:10px;border-bottom:1px solid var(--line)}
+.cov li:last-child{border-bottom:0}
+.cov-ic{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px}
+.cov li.yes .cov-ic{background:var(--ok);color:#12301c}
+.cov li.no .cov-ic{background:var(--chip);color:var(--muted)}
+.cov-tx{display:flex;flex-direction:column;gap:1px;min-width:0}
+.cov-tx b{font-size:15px;font-weight:600}
+.cov-tx span{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.cov-tx em{font-style:normal;display:block;font-size:12px;opacity:.85}
+.cov li.no .cov-tx b{color:var(--muted);font-weight:500}
+.cov-st{font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.cov li.yes .cov-st{background:rgba(169,227,180,.2);color:var(--ok)}
+.cov li.no .cov-st{background:var(--chip);color:var(--muted)}
+b.money{color:var(--accent);font-weight:700}
+.pol{gap:14px}
+.pol-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.pol-type{font-size:20px;font-weight:600}
+.pol-co{font-size:14px;color:var(--muted)}
+.pol-meta{margin:0;display:grid;gap:8px}
+.pol-meta>div{display:flex;justify-content:space-between;gap:12px;font-size:14px;border-bottom:1px solid var(--line);padding-bottom:8px}
+.pol-meta dt{color:var(--muted);white-space:nowrap}
+.pol-meta dd{margin:0;text-align:right;overflow-wrap:anywhere}
+.pol-cov ul{margin:6px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.pol-cov li{background:var(--chip);border-radius:14px;padding:9px 12px;display:flex;flex-direction:column;gap:2px}
+.pol-cov li b{font-weight:600;font-size:15px}
+.pol-cov li span{font-size:14px;color:var(--muted)}
+.pol-edit summary{cursor:pointer;color:var(--muted);font-size:14px}
 .odo-note{font-size:14px;line-height:1.5;background:rgba(255,255,255,.12);border:1px solid var(--line);border-radius:16px;padding:10px 14px}
 .linkbtn{background:none;border:0;padding:0 2px;color:var(--accent);font:inherit;font-weight:600;text-decoration:underline;cursor:pointer}
 .due.first{border-color:rgba(246,201,167,.55)}
@@ -418,6 +446,8 @@ input,select,textarea{font-size:16px!important}
   </section>
 
   <section id="v-ins" hidden>
+    <div class="panel" id="insCover"></div>
+    <div style="height:14px"></div>
     <div class="scan" id="scanCard">
       <div class="item-head"><h2>掃描保單，自動填入</h2><span class="small" id="scanEngine"></span></div>
       <p class="small" style="margin:0">拍下保單或上傳照片、PDF（可一次選多頁），會讀出保險公司、保單號碼、期間、保障內容和電話，確認後才存入。</p>
@@ -819,21 +849,42 @@ function render(){
     logs.map(l=>`<tr><td class="n">${esc(l.date)}</td><td class="n">${fmtN(l.km)}</td><td>${esc(l.item)}${l.shop?'<div class="small muted">'+esc(l.shop)+'</div>':''}</td><td class="n">${l.cost?'$'+fmtN(l.cost):''}</td><td><button class="btn ghost" style="padding:4px 8px" data-dellog="${S.logs.indexOf(l)}" aria-label="刪除">✕</button></td></tr>`).join('')
   }</tbody></table>`:'<p class="muted small" style="margin:0">還沒有紀錄。</p>';
 
-  // insurance list (editable)
-  $('#insList').innerHTML=S.ins.map((p,i)=>`
-    <div class="panel">
-      <div class="item-head"><h2>${esc(p.type||'保單')}</h2>${S.example?'<span class="ex">範例</span>':''}</div>
-      <div class="grid2">
+  // 我的保障一覽
+  renderCover();
+  // 保單：閱讀模式＋修改
+  $('#insList').innerHTML=S.ins.map((p,i)=>{
+    const left=p.end?daysBetween(TODAY(),p.end):null;
+    const cls=left==null?'':left<0?'bad':left<=60?'warn':'ok';
+    const tel=(p.phone||'').replace(/[^0-9+]/g,'');
+    const items=coverItems(p.cover);
+    return `<div class="panel pol">
+      <div class="pol-head">
+        <div style="min-width:0"><div class="pol-type">${esc(p.type||'保單')}${S.example?' <span class="ex">範例</span>':''}</div><div class="pol-co">${esc(p.company||'未填保險公司')}</div></div>
+        ${cls?`<span class="pill ${cls}">${left<0?'已過期 '+(-left)+' 天':'剩 '+left+' 天'}</span>`:'<span class="pill" style="background:var(--chip);color:var(--ink)">未填到期日</span>'}
+      </div>
+      <dl class="pol-meta">
+        <div><dt>保險期間</dt><dd>${p.start||p.end?(p.start?zhDate(p.start,'date'):'—')+' 至 '+(p.end?zhDate(p.end,'date'):'—'):'未填'}</dd></div>
+        <div><dt>保單號碼</dt><dd class="num" style="user-select:all">${esc(p.policy)||'未填'}</dd></div>
+        <div><dt>理賠／救援電話</dt><dd>${tel?`<span class="num" style="user-select:all">${esc(p.phone)}</span>`:'未填'}</dd></div>
+      </dl>
+      <div class="pol-cov">
+        <div class="k">保障內容</div>
+        ${items.length?`<ul>${items.map(x=>`<li><b>${esc(x.name)}</b>${x.detail?`<span>${x.detail}</span>`:''}</li>`).join('')}</ul>`:'<p class="small muted" style="margin:0">還沒有保障內容，可以掃描保單或在下方修改填入。</p>'}
+      </div>
+      ${tel?`<a class="btn primary" href="tel:${esc(tel)}">撥打理賠專線 ${esc(p.phone)}</a>`:''}
+      <details class="pol-edit" data-edit="${i}" ${INS_OPEN.has(i)?'open':''}><summary>修改這張保單</summary>
+      <div class="grid2" style="margin-top:10px">
         <label for="i${i}-type">險種<select id="i${i}-type" data-ins="${i}" data-f="type">${['強制險','任意險','道路救援','其他'].map(o=>`<option ${o===p.type?'selected':''}>${o}</option>`).join('')}</select></label>
         <label for="i${i}-company">保險公司<input id="i${i}-company" data-ins="${i}" data-f="company" value="${esc(p.company)}"></label>
         <label for="i${i}-policy">保單號碼<input id="i${i}-policy" data-ins="${i}" data-f="policy" value="${esc(p.policy)}"></label>
         <label for="i${i}-phone">理賠/救援電話<input id="i${i}-phone" type="tel" data-ins="${i}" data-f="phone" value="${esc(p.phone)}"></label>
         <label for="i${i}-start">生效日<input id="i${i}-start" type="date" data-ins="${i}" data-f="start" value="${esc(p.start)}"></label>
         <label for="i${i}-end">到期日<input id="i${i}-end" type="date" data-ins="${i}" data-f="end" value="${esc(p.end)}"></label>
-        <label for="i${i}-cover" style="grid-column:1/-1">保障內容<textarea id="i${i}-cover" data-ins="${i}" data-f="cover" rows="4">${esc(p.cover)}</textarea></label>
+        <label for="i${i}-cover" style="grid-column:1/-1">保障內容（每項一行）<textarea id="i${i}-cover" data-ins="${i}" data-f="cover" rows="5">${esc(p.cover)}</textarea></label>
       </div>
-      <div class="btns">${p.phone?`<a class="btn primary" href="tel:${esc(p.phone.replace(/[^0-9+]/g,''))}">撥打 ${esc(p.phone)}</a>`:''}<button class="btn ghost" data-delins="${i}">刪除這張保單</button></div>
-    </div>`).join('')||'<div class="panel"><p class="muted" style="margin:0">尚未新增保單。</p></div>';
+      <div class="btns" style="margin-top:10px"><button class="btn ghost" data-delins="${i}">刪除這張保單</button></div>
+      </details>
+    </div>`}).join('')||'<div class="panel"><p class="muted" style="margin:0">尚未新增保單。</p></div>';
 
   // contacts
   const allTel=[...S.ins.filter(p=>p.phone).map(p=>({name:p.company+' '+p.type,phone:p.phone,note:'來自保單',fromIns:true})),...S.contacts];
@@ -1037,7 +1088,7 @@ $('#f-tel').addEventListener('submit',e=>{
   S.contacts.push({name:$('#t-name').value.trim(),phone:$('#t-phone').value.trim(),note:$('#t-note').value.trim()});
   e.target.reset();save();render();toast('已新增');
 });
-$('#addIns').addEventListener('click',()=>{S.ins.push({type:'任意險',company:'',policy:'',start:'',end:'',cover:'',phone:''});save();render();
+$('#addIns').addEventListener('click',()=>{S.ins.push({type:'任意險',company:'',policy:'',start:'',end:'',cover:'',phone:''});INS_OPEN.add(S.ins.length-1);save();render();
   const last=document.querySelectorAll('#insList .panel');last[last.length-1]?.scrollIntoView({behavior:'smooth'})});
 $('#clearEx').addEventListener('click',e=>{
   const b=e.currentTarget;
@@ -1348,6 +1399,61 @@ const RCPT_CFG={title:'掃描保養單據',desc:'拍下或截圖保養工單、�
     return '已加入 '+n+' 筆保養紀錄';
   }};
 const SCR={rcpt:[]};
+
+/* ---------- 保險：我的保障一覽 ---------- */
+const INS_OPEN=new Set();
+document.addEventListener('toggle',e=>{const d=e.target;if(d.dataset&&d.dataset.edit!=null){const i=+d.dataset.edit;d.open?INS_OPEN.add(i):INS_OPEN.delete(i)}},true);
+// 金額加粗：「200 萬」「5,000 元」「1,000 萬」
+const hiMoney=t=>esc(t).replace(/(\d[\d,]*(?:\.\d+)?\s*(?:萬|元|千萬|億)?(?:\/\d[\d,]*\s*萬)?)/g,'<b class="money">$1</b>');
+function coverItems(cover){
+  return String(cover||'').split(/\n+/).map(l=>l.trim()).filter(Boolean).map(l=>{
+    // 「甲式車體險（自負額 5,000）」→ 名稱「甲式車體險」＋說明
+    const m=l.match(/^([^\d（(:：,，]{2,16}(?:險|救援|服務|給付|費用))\s*[（(:：,，]?\s*(.*?)[）)]?$/);
+    if(m&&m[2])return {name:m[1].trim(),detail:hiMoney(m[2])};
+    const k=l.search(/\s|\d/);
+    if(k>1)return {name:l.slice(0,k).trim(),detail:hiMoney(l.slice(k).trim())};
+    return {name:l,detail:''};
+  });
+}
+const COVERS=[
+  {name:'強制險',sub:'強制汽車責任保險，法律規定一定要保',kw:/強制/,type:'強制險'},
+  {name:'車體損失險',sub:'自己的車撞壞時的修理費',kw:/車體/},
+  {name:'第三人責任・體傷',sub:'撞傷別人的醫療與賠償',kw:/第三人[^\n]*體傷|體傷[^\n]*第三人|第三人責任險?(?![^\n]*財)/,part:/體傷/},
+  {name:'第三人責任・財損',sub:'撞壞別人的車或財物',kw:/第三人[^\n]*財|財損/,part:/財/},
+  {name:'超額責任險',sub:'第三人賠償超過上限時補足',kw:/超額/},
+  {name:'竊盜險',sub:'車子被偷',kw:/竊盜|失竊/},
+  {name:'駕駛人傷害險',sub:'自己受傷的保障',kw:/駕駛人/},
+  {name:'乘客責任險',sub:'車上乘客受傷',kw:/乘客/},
+  {name:'颱風洪水險',sub:'天災泡水、被吹落物砸到',kw:/颱風|洪水|地震|天災|泡水/},
+  {name:'道路救援',sub:'拖吊、搭電、送油',kw:/救援|拖吊/,type:'道路救援'},
+];
+function renderCover(){
+  const live=S.ins.filter(p=>!p.end||daysBetween(TODAY(),p.end)>=0);
+  const lines=live.flatMap(p=>String(p.cover||'').split(/\n+/).map(l=>({l:l.trim(),p})).filter(x=>x.l));
+  const rows=COVERS.map(c=>{
+    const hit=lines.filter(x=>c.kw.test(x.l));
+    const byType=c.type&&live.some(p=>p.type===c.type);
+    const has=hit.length>0||byType;
+    const detOf=l=>{
+      if(c.part){const seg=l.split(/[、，,；;]/).find(x=>c.part.test(x));if(seg)return hiMoney(seg.replace(/^.*?(體傷|財損|財物損失)/,'$1').trim())}
+      const it=coverItems(l)[0];return it?(it.detail||hiMoney(l)):'';
+    };
+    let det=hit.map(x=>detOf(x.l)).filter(Boolean).slice(0,2).join('；');
+    // 依險種判定（例如強制險）但內容沒寫險種名稱時，用該保單的第一行保障
+    if(!det&&byType){const pol=live.find(p=>p.type===c.type);const first=String(pol.cover||'').split(/\n+/)[0]||'';if(first)det=hiMoney(first)}
+    const from=[...new Set([...hit.map(x=>x.p.company),...(byType?live.filter(p=>p.type===c.type).map(p=>p.company):[])].filter(Boolean))].join('、');
+    return {c,has,det,from};
+  });
+  const n=rows.filter(r=>r.has).length;
+  const expired=S.ins.filter(p=>p.end&&daysBetween(TODAY(),p.end)<0).length;
+  $('#insCover').innerHTML=`<div class="item-head"><h2>我的保障</h2><span class="small muted">${n} / ${COVERS.length} 項有保</span></div>
+    ${expired?`<div class="gwarn">有 ${expired} 張保單已過期，下面的保障不含過期保單。</div>`:''}
+    ${S.example?'<div class="small muted">目前是範例保單，掃描或新增你的保單後就會換成你的保障。</div>':''}
+    <ul class="cov">${rows.map(r=>`<li class="${r.has?'yes':'no'}">
+      <span class="cov-ic" aria-hidden="true">${r.has?'✓':'—'}</span>
+      <div class="cov-tx"><b>${r.c.name}</b><span>${r.has?(r.det||'有投保')+(r.from?'<em>'+esc(r.from)+'</em>':''):r.c.sub}</span></div>
+      <span class="cov-st">${r.has?'有保':'未投保'}</span></li>`).join('')}</ul>`;
+}
 
 /* ---------- 事故處理原則 ---------- */
 const PHOTO_ITEMS=['兩車撞擊點','雙方車牌','車輛相對位置','煞車痕','車道線','週邊標誌標線','車頭','車尾','碰撞細節特寫','現場全景'];
