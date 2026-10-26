@@ -359,6 +359,11 @@ b.money{color:var(--accent);font-weight:700}
 .pol-cov li b{font-weight:600;font-size:15px}
 .pol-cov li span{font-size:14px;color:var(--muted)}
 .pol-edit summary{cursor:pointer;color:var(--muted);font-size:14px}
+.sos-dial{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.sos-dial .btn{flex-direction:column;gap:0;padding:12px 4px;border-radius:20px}
+.sos-dial b{font:700 24px var(--f-num);line-height:1.2}
+.sos-dial span{font-size:12px;font-weight:500;opacity:.9}
+.add-tel summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px}
 .odo-note{font-size:14px;line-height:1.5;background:rgba(255,255,255,.12);border:1px solid var(--line);border-radius:16px;padding:10px 14px}
 .linkbtn{background:none;border:0;padding:0 2px;color:var(--accent);font:inherit;font-weight:600;text-decoration:underline;cursor:pointer}
 .due.first{border-color:rgba(246,201,167,.55)}
@@ -494,40 +499,6 @@ b.money{color:var(--accent);font-weight:700}
     <button class="btn ghost" style="width:100%" id="addIns">手動新增一張保單</button>
   </section>
 
-  <section id="v-tel" hidden>
-    <div class="panel">
-      <h2>緊急電話</h2>
-      <div class="dialnums">
-        <a href="tel:110"><b>110</b><span>警察・車禍報案</span></a>
-        <a href="tel:119"><b>119</b><span>救護・消防</span></a>
-        <a href="tel:112"><b>112</b><span>手機無訊號求救</span></a>
-      </div>
-      <p class="note" style="margin:0">112 在沒有 SIM 卡或電信訊號弱時仍可撥出。</p>
-    </div>
-    <div style="height:14px"></div>
-    <div class="panel">
-      <div class="item-head"><h2>我的聯絡電話</h2><span id="telEx"></span></div>
-      <div id="telList"></div>
-      <form id="f-tel" class="grid2" style="border-top:1px solid var(--line);padding-top:12px">
-        <label for="t-name">名稱<input id="t-name" placeholder="例：原廠服務廠" required></label>
-        <label for="t-phone">電話<input id="t-phone" type="tel" required></label>
-        <label for="t-note" style="grid-column:1/-1">備註<input id="t-note" placeholder="例：24h 道路救援、服務專員小陳"></label>
-        <button class="btn primary" type="submit" style="grid-column:1/-1">新增電話</button>
-      </form>
-    </div>
-    <div style="height:14px"></div>
-    <div class="panel">
-      <h2>車輛資料</h2>
-      <div class="grid2">
-        <label for="c-plate">車牌<input id="c-plate"></label>
-        <label for="c-model">廠牌車型<input id="c-model"></label>
-        <label for="c-buy">簽約買車日期<input id="c-buy" type="date"></label>
-        <label for="c-year">出廠年月<input id="c-year" type="month"></label>
-        <label for="c-vin" style="grid-column:1/-1">引擎/車身號碼<input id="c-vin" placeholder="選填"></label>
-      </div>
-      <button class="btn ghost" id="clearEx">清除範例資料，從頭填寫</button>
-    </div>
-  </section>
 
   <section id="v-sos" hidden>
     <div class="sos">
@@ -555,11 +526,26 @@ b.money{color:var(--accent);font-weight:700}
         <button class="btn" id="copyMsg">複製訊息</button>
         <a class="btn" id="smsMsg" href="sms:">傳簡訊給勾選的人</a>
       </div>
-      <div class="btns">
-        <a class="btn dark" href="tel:110" style="font-size:18px;padding:14px">撥打 110</a>
-        <a class="btn dark" href="tel:119" style="font-size:18px;padding:14px">撥打 119</a>
+      <div class="sos-dial">
+        <a class="btn dark" href="tel:110"><b>110</b><span>警察・報案</span></a>
+        <a class="btn dark" href="tel:119"><b>119</b><span>救護・消防</span></a>
+        <a class="btn dark" href="tel:112"><b>112</b><span>沒訊號時</span></a>
       </div>
-      <div class="small" style="opacity:.85">按鈕若沒有反應，請直接用手機撥號：<b class="num" style="user-select:all">110</b>（警察）、<b class="num" style="user-select:all">119</b>（救護）。</div>
+      <div class="small" style="opacity:.85">112 在沒有 SIM 卡或訊號很弱時也能撥出。按鈕沒反應時，請直接用手機撥號。</div>
+    </div>
+    <div style="height:14px"></div>
+    <div class="panel" id="phoneBook">
+      <div class="item-head"><h2>保險與聯絡電話</h2><span id="telEx"></span></div>
+      <div id="telList"></div>
+      <details class="add-tel"><summary>新增電話</summary>
+      <form id="f-tel" class="grid2" style="margin-top:10px">
+        <label for="t-name">名稱<input id="t-name" placeholder="例：原廠服務廠" required></label>
+        <label for="t-phone">電話<input id="t-phone" type="tel" required></label>
+        <label for="t-note" style="grid-column:1/-1">備註<input id="t-note" placeholder="例：24h 道路救援、服務專員小陳"></label>
+        <button class="btn primary" type="submit" style="grid-column:1/-1">新增電話</button>
+      </form>
+      </details>
+      <p class="note" style="margin:0">保險公司的電話會從保單自動帶入；要修改請到「保險」分頁。</p>
     </div>
     <div style="height:14px"></div>
     <div class="panel guide" id="guide">
@@ -602,8 +588,6 @@ b.money{color:var(--accent);font-weight:700}
       </details>
       <p class="note" style="margin:0">依據《道路交通管理處罰條例》與《道路交通事故處理辦法》整理，實際以現場警方指示為準。</p>
     </div>
-    <div style="height:14px"></div>
-    <div class="panel" id="sosIns"></div>
 
   </section>
 
@@ -687,7 +671,6 @@ b.money{color:var(--accent);font-weight:700}
   <button class="tab" role="tab" data-go="home" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16a8 8 0 1 1 16 0"/><path d="M12 16l4-5"/></svg>總覽</button>
   <button class="tab" role="tab" data-go="svc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-2.5z"/></svg>保養</button>
   <button class="tab" role="tab" data-go="ins"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>保險</button>
-  <button class="tab" role="tab" data-go="tel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>電話</button>
   <button class="tab" role="tab" data-go="drv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/><path d="M12 9.5V3M9.8 13.3L4 17M14.2 13.3L20 17"/></svg>行車</button>
   <button class="tab sosTab" role="tab" data-go="sos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3L2 20h20z"/><path d="M12 10v4M12 17v.5"/></svg>求救</button>
 </nav>
@@ -697,8 +680,13 @@ b.money{color:var(--accent);font-weight:700}
     <h2 id="carSheetT">編輯車輛資料</h2>
     <label for="cs-plate">車牌號碼<input id="cs-plate" class="plate-in" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" placeholder="ABC-1234"></label>
     <label for="cs-model">廠牌車型<input id="cs-model" autocomplete="off" placeholder="例：Toyota Corolla Cross"></label>
-    <label for="cs-buy">簽約買車日期<input id="cs-buy" type="date"></label>
+    <div class="grid2">
+      <label for="cs-buy">簽約買車日期<input id="cs-buy" type="date"></label>
+      <label for="cs-year">出廠年月<input id="cs-year" type="month"></label>
+    </div>
+    <label for="cs-vin">引擎／車身號碼（選填）<input id="cs-vin" autocomplete="off" spellcheck="false"></label>
     <div class="btns"><button class="btn ghost" type="button" id="cs-cancel">取消</button><button class="btn primary" type="submit">儲存</button></div>
+    <button class="btn ghost" type="button" id="clearEx">清除範例資料，從頭填寫</button>
   </form>
 </div>
 
@@ -914,18 +902,15 @@ function _renderNow(){
     </div>`}).join('')||'<div class="panel"><p class="muted" style="margin:0">尚未新增保單。</p></div>';
 
   // contacts
-  const allTel=[...S.ins.filter(p=>p.phone).map(p=>({name:p.company+' '+p.type,phone:p.phone,note:'來自保單',fromIns:true})),...S.contacts];
+  const allTel=[...S.ins.filter(p=>p.phone).map(p=>({name:(p.company||'保險公司')+' '+p.type,phone:p.phone,note:p.policy?'保單號碼 '+p.policy:'來自保單',fromIns:true})),...S.contacts];
+  const noPhone=S.ins.filter(p=>!p.phone);
   $('#telEx').innerHTML=S.example?'<span class="ex">範例</span>':'';
   $('#telList').innerHTML=allTel.map((c,i)=>`<div class="phone"><div class="who"><b>${esc(c.name)}</b><span class="tel">${esc(c.phone)}</span>${c.note?'<div class="small muted">'+esc(c.note)+'</div>':''}</div>
     <div class="acts"><a class="btn primary" href="tel:${esc(c.phone.replace(/[^0-9+]/g,''))}" aria-label="撥打">撥打</a>${c.fromIns?'':`<button class="btn ghost" data-deltel="${S.contacts.indexOf(c)}" aria-label="刪除">✕</button>`}</div></div>`).join('')||'<p class="muted small" style="margin:0">還沒有電話。</p>';
+  if(noPhone.length)$('#telList').insertAdjacentHTML('beforeend',noPhone.map(p=>`<div class="phone"><div class="who"><b>${esc((p.company||'保險公司')+' '+p.type)}</b><span class="small muted">還沒填理賠電話${p.policy?'・保單號碼 '+esc(p.policy):''}</span></div><div class="acts"><button class="btn ghost" type="button" data-go="ins">去填</button></div></div>`).join(''));
 
-  // car form
-  [['plate','c-plate'],['model','c-model'],['buy','c-buy'],['year','c-year'],['vin','c-vin']].forEach(([k,id])=>{const el=$('#'+id);if(document.activeElement!==el)el.value=S.car[k]||''});
   $('#clearEx').hidden=!S.example;
 
-  // sos insurance quick view
-  const ip=S.ins.filter(p=>p.type!=='強制險'||p.phone);
-  $('#sosIns').innerHTML='<h2>我的保險（報案用）</h2>'+(S.ins.length?S.ins.map(p=>`<div class="row"><div><b>${esc(p.type)}</b><div class="small muted">${esc(p.company)}${p.policy?'・保單 '+esc(p.policy):''}</div></div><div class="v">${p.phone?`<a class="btn primary" style="padding:6px 10px" href="tel:${esc(p.phone.replace(/[^0-9+]/g,''))}">${esc(p.phone)}</a>`:'<span class="small muted">未填電話</span>'}</div></div>`).join(''):'<p class="muted small" style="margin:0">尚未新增保單。</p>');
   if(document.activeElement!==$('#scanKey'))$('#scanKey').value=S.scanKey||'';
   buildMsg(false);
   renderGuard();
@@ -1046,7 +1031,7 @@ document.querySelectorAll('.tab').forEach(t=>t.addEventListener('touchend',e=>{
   if(e.cancelable){e.preventDefault();go(t.dataset.go)}
 },{passive:false}));
 function go(v,focusId){
-  ['home','svc','ins','tel','drv','sos'].forEach(k=>$('#v-'+k).hidden=k!==v);
+  ['home','svc','ins','drv','sos'].forEach(k=>$('#v-'+k).hidden=k!==v);
   document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.go===v?'true':'false'));
   window.scrollTo(0,0);
   if(focusId)setTimeout(()=>{const el=document.getElementById(focusId);if(el){el.scrollIntoView({block:'center'});el.focus()}},60);
@@ -1070,7 +1055,6 @@ document.addEventListener('input',e=>{
 });
 ['nextDate','nextKm','lastDate','lastKm'].forEach(k=>$('#s-'+k).addEventListener('change',e=>{
   S.svc[k]=/Date$/.test(k)?e.target.value:Math.max(0,Math.round(Number(e.target.value)||0));save();render()}));
-[['plate','c-plate'],['model','c-model'],['buy','c-buy'],['year','c-year'],['vin','c-vin']].forEach(([k,id])=>$('#'+id).addEventListener('change',e=>{S.car[k]=k==='plate'?normPlate(e.target.value):e.target.value;save();render()}));
 let odoPending=null;
 function odoNote(html){const n=$('#odoNote');n.hidden=!html;n.innerHTML=html||''}
 function odoReset(){odoPending=null;$('#odoBtn').textContent='更新里程';odoNote('')}
@@ -1126,7 +1110,7 @@ $('#clearEx').addEventListener('click',e=>{
   const b=e.currentTarget;
   if(b.dataset.armed!=='1'){b.dataset.armed='1';b.textContent='再按一次：清空所有範例';setTimeout(()=>{b.dataset.armed='0';b.textContent='清除範例資料，從頭填寫'},3000);return}
   S={example:false,car:{plate:'',model:'',year:'',vin:'',odo:0,odoDate:iso(TODAY())},svc:{lastDate:'',lastKm:0,nextDate:'',nextKm:0},logs:[],ins:[],contacts:[],guard:S.guard,drvLog:S.drvLog,sosTo:S.sosTo,scanKey:S.scanKey,first:S.first,warranty:S.warranty};
-  save();render();toast('已清空，請填入你的資料');
+  save();render();$('#carSheet').hidden=true;toast('已清空，請填入你的資料');
 });
 // first real edit clears the example flag
 document.addEventListener('change',e=>{if(S&&S.example&&e.target.closest('section')&&!e.target.closest('#v-drv')&&!e.target.closest('#v-sos')&&!e.target.closest('.scan')&&!e.target.closest('#wtyPanel')&&!e.target.closest('#f-odo')&&e.target.id!=='sos-desc'){S.example=false;save();render()}},true);
@@ -1668,7 +1652,7 @@ function normPlate(v){
     .toUpperCase().replace(/\s+/g,'').replace(/[‐‑–—_]/g,'-');
 }
 function openCar(){
-  $('#cs-plate').value=S.car.plate||'';$('#cs-model').value=S.car.model||'';$('#cs-buy').value=S.car.buy||'';fmtDates($('#carSheet'));
+  $('#cs-plate').value=S.car.plate||'';$('#cs-model').value=S.car.model||'';$('#cs-buy').value=S.car.buy||'';$('#cs-year').value=S.car.year||'';$('#cs-vin').value=S.car.vin||'';fmtDates($('#carSheet'));
   $('#carSheet').hidden=false;setTimeout(()=>$('#cs-plate').focus(),50);
 }
 function closeCar(){$('#carSheet').hidden=true;$('#h-plate-btn').focus()}
@@ -1681,7 +1665,7 @@ $('#f-car').addEventListener('submit',e=>{
   e.preventDefault();
   const plate=normPlate($('#cs-plate').value);
   if(plate&&!/^[A-Z0-9]{1,4}-?[A-Z0-9]{1,4}$/.test(plate)){toast('車牌格式看起來不對，例如 ABC-1234');return}
-  S.car.plate=plate;S.car.model=$('#cs-model').value.trim();S.car.buy=$('#cs-buy').value;
+  S.car.plate=plate;S.car.model=$('#cs-model').value.trim();S.car.buy=$('#cs-buy').value;S.car.year=$('#cs-year').value;S.car.vin=$('#cs-vin').value.trim();
   save();render();closeCar();toast('車輛資料已更新');
 });
 
