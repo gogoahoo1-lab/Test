@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="停車快繳">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#2a2f36">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%23f2b705'/%3E%3Ctext x='90' y='128' font-family='Arial,Helvetica' font-weight='700' font-size='120' text-anchor='middle' fill='%231b1f24'%3EP%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='36' fill='%23f2b705'/%3E%3Ctext x='90' y='128' font-family='Arial,Helvetica' font-weight='700' font-size='120' text-anchor='middle' fill='%231b1f24'%3EP%3C/text%3E%3C/svg%3E">
+<title>停車快繳</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+html,body{overflow-x:hidden;overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body,button,a,input,select,textarea,label{touch-action:manipulation}
+body.locked{overflow:hidden}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+/* 版面：單欄手機 App。上方「目前停車」票卡，下方常用停車場清單，每張卡一顆大大的繳費鈕 */
+:root{
+  --bg:#eef0f2; --surface:#ffffff; --ink:#1b1f24; --muted:#5f6772; --line:#d6dae0;
+  --signal:#f2b705; --signal-ink:#1b1f24; --asphalt:#2a2f36; --asphalt-ink:#f4f5f7;
+  --danger:#c2410c; --ok:#1f7a4d;
+  --f-display:"Noto Sans TC","PingFang TC","Heiti TC",system-ui,sans-serif;
+  --f-body:"Noto Sans TC","PingFang TC","Heiti TC",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121417; --surface:#1c2025; --ink:#eceef1; --muted:#9aa3ae; --line:#2e343c;
+  --signal:#f5c518; --signal-ink:#16181b; --asphalt:#0b0d10; --asphalt-ink:#eceef1;
+  --danger:#fb923c; --ok:#4ade80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121417; --surface:#1c2025; --ink:#eceef1; --muted:#9aa3ae; --line:#2e343c;
+  --signal:#f5c518; --signal-ink:#16181b; --asphalt:#0b0d10; --asphalt-ink:#eceef1;
+  --danger:#fb923c; --ok:#4ade80; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 40px}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header{display:flex;align-items:center;gap:12px}
+.mark{width:42px;height:42px;border-radius:9px;background:var(--signal);color:var(--signal-ink);display:grid;place-items:center;
+  font-family:var(--f-mono);font-weight:700;font-size:24px;flex:none}
+header h1{margin:0;font-family:var(--f-display);font-weight:900;font-size:22px;letter-spacing:.02em}
+header p{margin:0;color:var(--muted);font-size:12.5px}
+.sync{margin-left:auto;font-size:11.5px;color:var(--muted);white-space:nowrap}
+h2{margin:0;font-size:12px;letter-spacing:.14em;color:var(--muted);font-weight:700}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--signal);outline-offset:2px}
+
+
+/* 車牌 */
+.plate-row{display:flex;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.plate-row label{font-size:12px;color:var(--muted);flex:none}
+.plate{flex:1;min-width:0;border:2px solid var(--ink);border-radius:6px;padding:4px 8px;font-family:var(--f-mono);font-weight:700;font-size:20px;
+  letter-spacing:.12em;text-transform:uppercase;text-align:center;background:var(--surface)}
+.copy{flex:none}
+
+/* 清單 */
+.list-head{display:flex;align-items:center;gap:10px}
+.list-head .btn{margin-left:auto;padding:8px 12px;min-height:40px}
+.list{display:flex;flex-direction:column;gap:10px}
+.lotcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center}
+.lotcard .name{font-weight:700;font-size:16.5px;min-width:0;overflow-wrap:anywhere}
+.lotcard .meta{grid-column:1;color:var(--muted);font-size:12.5px;min-width:0;overflow-wrap:anywhere}
+.lotcard .host{font-family:var(--f-mono);font-size:11.5px}
+.lotcard .pay{grid-column:2;grid-row:1 / span 2;background:var(--signal);color:var(--signal-ink);min-width:84px}
+.lotcard .tools{grid-column:1 / -1;display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;padding-top:8px;border-top:1px dashed var(--line)}
+.chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:5px 11px;font-size:12.5px;color:var(--muted);min-height:34px}
+.chip.on{border-color:var(--ink);color:var(--ink);font-weight:700}
+.chip.del{margin-left:auto}
+.example{opacity:.75;border-style:dashed}
+.tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;border:1px solid var(--muted);color:var(--muted);border-radius:4px;padding:0 5px;margin-left:6px;vertical-align:2px}
+.empty{color:var(--muted);font-size:13.5px;text-align:center;padding:6px 0}
+
+/* 表單面板 */
+.sheet{position:fixed;inset:0;overscroll-behavior:contain;background:rgba(10,12,15,.55);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.panel{background:var(--surface);width:100%;max-width:560px;border-radius:16px 16px 0 0;
+  padding:18px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  display:flex;flex-direction:column;gap:12px;max-height:92vh;overflow:auto;overscroll-behavior:contain;touch-action:pan-y}
+.panel h3{margin:0;font-size:18px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field span{font-size:12.5px;color:var(--muted);font-weight:500}
+.field input,.field textarea,.field select{border:1.5px solid var(--line);border-radius:9px;padding:10px 11px;background:var(--bg);font-size:16px;width:100%}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--ink);outline:none}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.err{font-size:12.5px;color:var(--danger);margin:0}
+.panel .actions{display:flex;gap:8px}
+.panel .actions .btn{flex:1}
+.confirm{background:color-mix(in srgb,var(--danger) 10%,var(--surface));border:1px solid var(--danger);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);
+  padding:9px 16px;border-radius:999px;font-size:13.5px;z-index:30;font-weight:500}
+.tips{font-size:12.5px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.tips b{color:var(--ink)}
+.tips ol{margin:6px 0 0;padding-left:20px}
+@media (prefers-reduced-motion:no-preference){.panel{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mark" aria-hidden="true">P</div>
+    <div>
+      <h1>停車快繳</h1>
+      <p>常去的停車場，一鍵開繳費頁</p>
+    </div>
+    <div class="sync">存在本機</div>
+  </header>
+
+  <div class="plate-row">
+    <label for="plate">我的車牌</label>
+    <input id="plate" class="plate" placeholder="ABC-1234" autocomplete="off" autocapitalize="characters" maxlength="10">
+    <button class="btn btn-plain copy" id="copyPlate" type="button">複製</button>
+  </div>
+
+  <section style="display:flex;flex-direction:column;gap:10px">
+    <div class="list-head">
+      <h2>常用停車場</h2>
+      <button class="btn btn-plain" id="addBtn" type="button">＋ 新增</button>
+    </div>
+    <div class="list" id="list"></div>
+  </section>
+
+  <details class="tips">
+    <summary><b>怎麼把繳費連結存進來？</b></summary>
+    <ol>
+      <li>用 iPhone 相機對準停車場的繳費 QR Code，上方會跳出網址。</li>
+      <li>長按那個網址 → 選「拷貝連結」。</li>
+      <li>回到這裡按「＋ 新增」，把網址貼進「繳費網址」，取個名字就好。</li>
+    </ol>
+    <p class="hint" style="margin-top:8px">有些停車場的 QR Code 只對應單一車格或單次票卡，這種連結存了下次可能不能用；改存停車場的「車牌查詢繳費」頁面最穩。</p>
+  </details>
+</div>
+
+<div class="sheet" id="sheet" hidden>
+  <form class="panel" id="form" novalidate>
+    <h3 id="formTitle">新增停車場</h3>
+    <label class="field"><span>名稱</span><input id="fName" placeholder="例：公司旁 B2 停車場" maxlength="40"></label>
+    <label class="field"><span>繳費網址</span><input id="fUrl" type="url" inputmode="url" placeholder="https://…" autocomplete="off"></label>
+    <label class="field"><span>備註（費率、常停樓層、優惠…選填）</span><input id="fNote" placeholder="例：每小時 40 元，常停 B2" maxlength="60"></label>
+    <p class="err" id="fErr" hidden></p>
+    <div class="confirm" id="delBox" hidden>
+      <span>確定刪除「<b id="delName"></b>」？刪了就要重新貼網址。</span>
+      <div class="actions"><button type="button" class="btn btn-plain" id="delNo">保留</button><button type="button" class="btn btn-danger" id="delYes">刪除</button></div>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn btn-plain" id="cancel">取消</button>
+      <button type="submit" class="btn btn-pay">儲存</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+  const KEY = "parking-pay-v1";
+  let state = { lots: [], plate: "", updated: 0 };
+  let editingId = null;
+  const $ = s => document.querySelector(s);
+
+  function loadLocal(){ try{ const r = localStorage.getItem(KEY); if(r){ const d = JSON.parse(r); if(d && Array.isArray(d.lots)) state = Object.assign(state, d); } }catch(e){} }
+  function saveLocal(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+  function persist(){
+    state.updated = Date.now(); saveLocal();
+  }
+  function toast(t){ const el = $("#toast"); el.textContent = t; el.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(()=> el.hidden = true, 1800); }
+  const uid = () => Math.random().toString(36).slice(2,9);
+  function host(u){ try{ return new URL(u).hostname.replace(/^www\./,""); }catch(e){ return ""; } }
+  function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+  function safeUrl(u){ return /^https?:\/\//i.test(u||"") ? u : ""; }
+
+  function sortedLots(){
+    return [...state.lots].sort((a,b) => (b.pinned?1:0)-(a.pinned?1:0) || (b.lastUsed||0)-(a.lastUsed||0) || (b.uses||0)-(a.uses||0));
+  }
+
+  function fmtTime(ts){ const d = new Date(ts); return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; }
+
+  function renderList(){
+    const box = $("#list");
+    if(!state.lots.length){
+      box.innerHTML = `<div class="lotcard example" aria-label="範例">
+          <div class="name">公司旁地下停車場<span class="tag">範例</span></div>
+          <div class="meta">每小時 40 元，常停 B2 · <span class="host">pay.example-parking.tw</span></div>
+          <span class="btn pay" aria-disabled="true">繳費</span>
+        </div>
+        <p class="empty">按「＋ 新增」把你第一間停車場的繳費網址存進來。</p>`;
+      return;
+    }
+    box.innerHTML = sortedLots().map(l => {
+      const url = safeUrl(l.url);
+      return `<div class="lotcard">
+        <div class="name">${esc(l.name)}</div>
+        <div class="meta">${l.note?esc(l.note)+" · ":""}<span class="host">${esc(host(url)||"網址待補")}</span>${l.lastUsed?` · 上次 ${fmtTime(l.lastUsed)}`:""}</div>
+        <a class="btn pay" href="${esc(url)}" target="_blank" rel="noopener" data-pay="${l.id}" ${url?"":"aria-disabled=\"true\""}>繳費</a>
+        <div class="tools">
+          <button class="chip ${l.pinned?"on":""}" data-pin="${l.id}" type="button">${l.pinned?"★ 已置頂":"☆ 置頂"}</button>
+          <button class="chip" data-copy="${l.id}" type="button">複製網址</button>
+          <button class="chip" data-edit="${l.id}" type="button">編輯</button>
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  function render(){
+    renderList();
+    const p = $("#plate"); if(document.activeElement !== p) p.value = state.plate || "";
+  }
+
+  // 繳費點擊：記錄使用
+  document.addEventListener("click", ev => {
+    const pay = ev.target.closest("[data-pay]");
+    if(pay){ const l = state.lots.find(x => x.id === pay.dataset.pay); if(l){ l.uses = (l.uses||0)+1; l.lastUsed = Date.now(); persist(); setTimeout(renderList, 300); } return; }
+    const pin = ev.target.closest("[data-pin]");
+    if(pin){ const l = state.lots.find(x => x.id === pin.dataset.pin); if(l){ l.pinned = !l.pinned; persist(); render(); } return; }
+    const cp = ev.target.closest("[data-copy]");
+    if(cp){ const l = state.lots.find(x => x.id === cp.dataset.copy); if(l) copyText(l.url, "網址已複製"); return; }
+    const ed = ev.target.closest("[data-edit]");
+    if(ed){ openForm(ed.dataset.edit); return; }
+  });
+
+  async function copyText(t, msg){
+    try{ await navigator.clipboard.writeText(t); toast(msg); return; }catch(e){}
+    try{
+      const ta = document.createElement("textarea"); ta.value = t; ta.setAttribute("readonly","");
+      ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;font-size:16px";
+      document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, t.length);
+      const ok = document.execCommand("copy"); ta.remove();
+      toast(ok ? msg : "無法自動複製");
+    }catch(e){ toast("無法自動複製"); }
+  }
+
+  // 車牌
+  $("#plate").addEventListener("input", e => { state.plate = e.target.value.toUpperCase(); persist(); });
+  $("#copyPlate").addEventListener("click", () => {
+    if(!state.plate){ $("#plate").focus(); toast("先輸入車牌"); return; }
+    copyText(state.plate, "車牌已複製，可貼到繳費頁");
+  });
+
+  // 新增／編輯
+  function openForm(id){
+    editingId = id || null;
+    const l = id ? state.lots.find(x => x.id === id) : null;
+    $("#formTitle").textContent = l ? "編輯停車場" : "新增停車場";
+    $("#fName").value = l?.name || ""; $("#fUrl").value = l?.url || ""; $("#fNote").value = l?.note || "";
+    $("#fErr").hidden = true; $("#delBox").hidden = true;
+    let delBtn = $("#delOpen");
+    if(l && !delBtn){
+      delBtn = document.createElement("button"); delBtn.type = "button"; delBtn.id = "delOpen"; delBtn.className = "chip del"; delBtn.textContent = "刪除這間";
+      delBtn.addEventListener("click", () => { $("#delName").textContent = state.lots.find(x=>x.id===editingId)?.name || ""; $("#delBox").hidden = false; });
+      $("#form h3").after(delBtn);
+    }
+    if(delBtn) delBtn.hidden = !l;
+    $("#sheet").hidden = false;
+    setTimeout(()=> $("#fName").focus(), 50);
+  }
+  function closeForm(){ $("#sheet").hidden = true; editingId = null; }
+  $("#addBtn").addEventListener("click", () => openForm());
+  $("#cancel").addEventListener("click", closeForm);
+  $("#sheet").addEventListener("click", e => { if(e.target.id === "sheet") closeForm(); });
+  $("#delNo").addEventListener("click", () => $("#delBox").hidden = true);
+  $("#delYes").addEventListener("click", () => {
+    state.lots = state.lots.filter(x => x.id !== editingId);
+    persist(); closeForm(); render(); toast("已刪除");
+  });
+  $("#form").addEventListener("submit", e => {
+    e.preventDefault();
+    const name = $("#fName").value.trim();
+    let url = $("#fUrl").value.trim();
+    const note = $("#fNote").value.trim();
+    const err = $("#fErr");
+    if(!name){ err.textContent = "請填停車場名稱。"; err.hidden = false; return; }
+    if(url && !/^https?:\/\//i.test(url)) url = "https://" + url;
+    if(!url || !host(url)){ err.textContent = "請貼上完整的繳費網址，例如 https://開頭的連結。"; err.hidden = false; return; }
+    if(editingId){ Object.assign(state.lots.find(x => x.id === editingId), { name, url, note }); toast("已更新"); }
+    else { state.lots.push({ id: uid(), name, url, note, uses: 0, lastUsed: 0, pinned: false, created: Date.now() }); toast("已新增"); }
+    persist(); closeForm(); render();
+  });
+
+
+  // 禁止雙指縮放、雙擊放大；彈出視窗時鎖住背景
+  ["gesturestart","gesturechange","gestureend"].forEach(t => document.addEventListener(t, e => e.preventDefault(), {passive:false}));
+  document.addEventListener("touchmove", e => { if(e.touches.length > 1) e.preventDefault(); }, {passive:false});
+  const syncLock = () => document.body.classList.toggle("locked", !$("#sheet").hidden);
+  new MutationObserver(syncLock).observe($("#sheet"), {attributes:true, attributeFilter:["hidden"]});
+
+  loadLocal(); render();
+})();
+</script>
+
+</body>
+</html>
