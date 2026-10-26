@@ -79,6 +79,7 @@ button{cursor:pointer}
 .chip.on{border-color:var(--ink);color:var(--ink);font-weight:700}
 .chip.del{margin-left:auto}
 .example{opacity:.75;border-style:dashed}
+.auto{color:var(--ok);font-weight:700}
 .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;border:1px solid var(--muted);color:var(--muted);border-radius:4px;padding:0 5px;margin-left:6px;vertical-align:2px}
 .empty{color:var(--muted);font-size:13.5px;text-align:center;padding:6px 0}
 
@@ -139,6 +140,7 @@ button{cursor:pointer}
       <li>長按那個網址 → 選「拷貝連結」。</li>
       <li>回到這裡按「＋ 新增」，把網址貼進「繳費網址」，取個名字就好。</li>
     </ol>
+    <p class="hint" style="margin-top:8px">按「繳費」時會順便把車牌複製起來，到繳費頁的車號欄長按「貼上」就好。</p>
     <p class="hint" style="margin-top:8px">有些停車場的 QR Code 只對應單一車格或單次票卡，這種連結存了下次可能不能用；改存停車場的「車牌查詢繳費」頁面最穩。</p>
   </details>
 </div>
@@ -149,6 +151,7 @@ button{cursor:pointer}
     <label class="field"><span>名稱</span><input id="fName" placeholder="例：公司旁 B2 停車場" maxlength="40"></label>
     <label class="field"><span>繳費網址</span><input id="fUrl" type="url" inputmode="url" placeholder="https://…" autocomplete="off"></label>
     <label class="field"><span>備註（費率、常停樓層、優惠…選填）</span><input id="fNote" placeholder="例：每小時 40 元，常停 B2" maxlength="60"></label>
+    <p class="hint">網址裡如果本來就含有車號，儲存時會自動換成 {車號}，之後依上方車牌帶入；也可以自己在網址中打上 {車號}（照車牌原樣）或 {車號無槓}（去掉「-」）。</p>
     <p class="err" id="fErr" hidden></p>
     <div class="confirm" id="delBox" hidden>
       <span>確定刪除「<b id="delName"></b>」？刪了就要重新貼網址。</span>
@@ -180,6 +183,18 @@ button{cursor:pointer}
   function host(u){ try{ return new URL(u).hostname.replace(/^www\./,""); }catch(e){ return ""; } }
   function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
   function safeUrl(u){ return /^https?:\/\//i.test(u||"") ? u : ""; }
+  const TOKEN = "{車號}";
+  const hasToken = u => /\{(車號無槓|車號|plate)\}/i.test(u||"");
+  function buildUrl(u){ const pl = state.plate || "";
+    return (u||"").replace(/\{車號無槓\}/g, encodeURIComponent(pl.replace(/-/g,""))).replace(/\{(車號|plate)\}/gi, encodeURIComponent(pl)); }
+  function plateVariants(pl){ const a = (pl||"").toUpperCase().trim(); if(a.length < 4) return []; const b = a.replace(/-/g,""); return [...new Set([a,b])].sort((x,y)=>y.length-x.length); }
+  function tokenize(u){
+    for(const v of plateVariants(state.plate)){
+      const re = new RegExp(v.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"), "i");
+      if(re.test(u)) return { url: u.replace(re, (v.includes("-") || !state.plate.includes("-")) ? TOKEN : "{車號無槓}"), hit: true };
+    }
+    return { url: u, hit: false };
+  }
 
   function sortedLots(){
     return [...state.lots].sort((a,b) => (b.pinned?1:0)-(a.pinned?1:0) || (b.lastUsed||0)-(a.lastUsed||0) || (b.uses||0)-(a.uses||0));
@@ -199,10 +214,11 @@ button{cursor:pointer}
       return;
     }
     box.innerHTML = sortedLots().map(l => {
-      const url = safeUrl(l.url);
+      const url = safeUrl(buildUrl(l.url));
+      const auto = hasToken(l.url);
       return `<div class="lotcard">
         <div class="name">${esc(l.name)}</div>
-        <div class="meta">${l.note?esc(l.note)+" · ":""}<span class="host">${esc(host(url)||"網址待補")}</span>${l.lastUsed?` · 上次 ${fmtTime(l.lastUsed)}`:""}</div>
+        <div class="meta">${l.note?esc(l.note)+" · ":""}<span class="host">${esc(host(url)||"網址待補")}</span>${auto?` · <b class="auto">自動帶車號</b>`:""}${l.lastUsed?` · 上次 ${fmtTime(l.lastUsed)}`:""}</div>
         <a class="btn pay" href="${esc(url)}" target="_blank" rel="noopener" data-pay="${l.id}" ${url?"":"aria-disabled=\"true\""}>繳費</a>
         <div class="tools">
           <button class="chip ${l.pinned?"on":""}" data-pin="${l.id}" type="button">${l.pinned?"★ 已置頂":"☆ 置頂"}</button>
@@ -221,7 +237,10 @@ button{cursor:pointer}
   // 繳費點擊：記錄使用
   document.addEventListener("click", ev => {
     const pay = ev.target.closest("[data-pay]");
-    if(pay){ const l = state.lots.find(x => x.id === pay.dataset.pay); if(l){ l.uses = (l.uses||0)+1; l.lastUsed = Date.now(); persist(); setTimeout(renderList, 300); } return; }
+    if(pay){ const l = state.lots.find(x => x.id === pay.dataset.pay);
+      if(l && hasToken(l.url) && !state.plate){ ev.preventDefault(); $("#plate").focus(); toast("先輸入車牌，才能帶入網址"); return; }
+      if(l && state.plate) quickCopy(state.plate);
+      if(l){ l.uses = (l.uses||0)+1; l.lastUsed = Date.now(); persist(); setTimeout(renderList, 300); } return; }
     const pin = ev.target.closest("[data-pin]");
     if(pin){ const l = state.lots.find(x => x.id === pin.dataset.pin); if(l){ l.pinned = !l.pinned; persist(); render(); } return; }
     const cp = ev.target.closest("[data-copy]");
@@ -230,6 +249,12 @@ button{cursor:pointer}
     if(ed){ openForm(ed.dataset.edit); return; }
   });
 
+  function quickCopy(t){
+    try{ if(navigator.clipboard?.writeText){ navigator.clipboard.writeText(t).catch(()=>{}); return; } }catch(e){}
+    try{ const ta = document.createElement("textarea"); ta.value = t; ta.setAttribute("readonly","");
+      ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;font-size:16px"; document.body.appendChild(ta);
+      ta.select(); ta.setSelectionRange(0, t.length); document.execCommand("copy"); ta.remove(); }catch(e){}
+  }
   async function copyText(t, msg){
     try{ await navigator.clipboard.writeText(t); toast(msg); return; }catch(e){}
     try{
@@ -242,7 +267,7 @@ button{cursor:pointer}
   }
 
   // 車牌
-  $("#plate").addEventListener("input", e => { state.plate = e.target.value.toUpperCase(); persist(); });
+  $("#plate").addEventListener("input", e => { state.plate = e.target.value.toUpperCase().trim(); persist(); renderList(); });
   $("#copyPlate").addEventListener("click", () => {
     if(!state.plate){ $("#plate").focus(); toast("先輸入車牌"); return; }
     copyText(state.plate, "車牌已複製，可貼到繳費頁");
@@ -283,9 +308,11 @@ button{cursor:pointer}
     if(!name){ err.textContent = "請填停車場名稱。"; err.hidden = false; return; }
     if(url && !/^https?:\/\//i.test(url)) url = "https://" + url;
     if(!url || !host(url)){ err.textContent = "請貼上完整的繳費網址，例如 https://開頭的連結。"; err.hidden = false; return; }
+    const tk = tokenize(url); url = tk.url;
     if(editingId){ Object.assign(state.lots.find(x => x.id === editingId), { name, url, note }); toast("已更新"); }
     else { state.lots.push({ id: uid(), name, url, note, uses: 0, lastUsed: 0, pinned: false, created: Date.now() }); toast("已新增"); }
     persist(); closeForm(); render();
+    if(tk.hit) setTimeout(() => toast("網址裡的車號已改成自動帶入"), 1900);
   });
 
 
