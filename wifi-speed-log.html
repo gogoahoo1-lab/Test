@@ -154,10 +154,11 @@ svg{display:block}
 .s5 .of b{font-weight:500}
 .s5 .lab{font-size:10.5px;font-weight:500;letter-spacing:.06em;display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--k);padding:6px 0 8px}
 .s5 .lab span:last-child{text-align:right}
-.s5 .tri{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--k);margin-top:16px}
+.s5 .tri{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--k);margin-top:16px}
 .s5 .tri div{padding:8px 0 12px;min-width:0}
 .s5 .tri small{font-size:10.5px;font-weight:500}
-.s5 .tri b{display:block;font-size:28px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.15}
+.s5 .tri b{display:block;font-size:clamp(20px,6.2vw,27px);font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.15;white-space:nowrap}
+.s5 .tri div+div{padding-left:8px}
 .s5 .ctl{display:grid;grid-template-columns:2fr 1fr;border-top:1px solid var(--k);border-bottom:1px solid var(--k)}
 .s5 .ctl button{height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-family:Archivo,var(--sans);font-size:14px;font-weight:800;letter-spacing:-.01em}
 .s5 .ctl .go{background:var(--k);color:#fff}
@@ -952,6 +953,7 @@ function build5(){
     <div class="lab"><span>達成率</span><span id="e5scale"></span></div>
     <svg id="e5bar"></svg>
     <div class="tri">
+      <div><small>下載 Mbps</small><b id="e5dn"></b></div>
       <div><small>上傳 Mbps</small><b id="e5up"></b></div>
       <div><small>延遲 ms</small><b id="e5ping"></b></div>
       <div><small>抖動 ms</small><b id="e5jit"></b></div>
@@ -992,6 +994,7 @@ function draw5(D){
   // 小量尺上的方案 40% 警戒
   S(bar,'line',{x1:16*w,y1:-1,x2:16*w,y2:19,stroke:R,'stroke-width':1.2});
 
+  $('e5dn').textContent = f1(dv); $('e5dn').style.color = low ? R : K;
   $('e5up').textContent = f1(c && c.up);
   $('e5ping').textContent = f0(c && c.ping);
   $('e5jit').textContent = f1(c && c.jitter);
