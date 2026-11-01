@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light only">
 <meta name="supported-color-schemes" content="light">
-<meta name="theme-color" content="#ededed">
+<meta name="theme-color" content="#fbfaf6">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
 <title>即時航班看板（分享版）</title>
 <style>
 :root{
@@ -274,6 +274,30 @@ textarea{
 .seat-dir button[aria-pressed="true"]{background:var(--cyan,#3a8fa7);border-color:var(--cyan,#3a8fa7);color:#fff;font-weight:600;box-shadow:0 2px 14px rgba(58,143,167,.25)}
 .seat-frow{display:grid;grid-template-columns:78px 1fr;gap:10px;align-items:start}
 .seat-frow[hidden]{display:none}
+#nav .nav-gear{margin-left:auto;border-radius:12px}
+.subseg{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:0 0 14px;background:rgba(255,255,255,.6)}
+.subseg button{appearance:none;border:0;border-right:1px solid var(--line);background:transparent;padding:8px 18px;font:inherit;font-size:14px;color:var(--dim);cursor:pointer}
+.subseg button:last-child{border-right:0}
+.subseg button[aria-pressed="true"]{background:var(--cyan,#3a8fa7);color:#fff;font-weight:600}
+.cam-modal{position:fixed;inset:0;z-index:2100;background:rgba(10,20,30,.55);display:flex;align-items:flex-start;justify-content:center;padding:4vh 12px;overflow:auto}
+.cam-modal[hidden]{display:none}
+.cam-box{position:relative;width:min(1100px,100%)}
+.cam-x{position:absolute;right:10px;top:10px;z-index:2}
+.hs-group{font-size:12.5px;font-weight:700;color:var(--dim);margin:14px 2px 6px;letter-spacing:.04em}
+.hs-wrap > summary{cursor:pointer;list-style:none}
+.hs-wrap > summary h4{display:inline}
+.hs-wrap > summary::before{content:"▸ ";color:var(--dim)}
+.hs-wrap[open] > summary::before{content:"▾ "}
+.gss-reg{margin:18px 0 6px;font-size:15px}
+.gss-card{border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.6);padding:10px 14px;margin-bottom:10px}
+.gss-h{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;font-size:15px;margin-bottom:6px}
+.gss-cols{display:grid;grid-template-columns:1fr 1fr;gap:4px 22px}
+.gss-t{font-size:12.5px;color:var(--dim);margin:2px 0 4px}
+.gss-leg{display:grid;grid-template-columns:52px 64px 1fr auto;gap:8px;align-items:baseline;padding:4px 0;border-top:1px dashed var(--line);font-size:13.5px}
+.gss-leg b{font-size:15px}
+.gss-no{color:var(--amber);font-weight:600}
+.gss-days{text-align:right;white-space:nowrap}
+@media (max-width:760px){ .gss-cols{grid-template-columns:1fr} .gss-leg{grid-template-columns:48px 60px 1fr} .gss-days{grid-column:2/4;text-align:left} }
 .ctl-box{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-top:10px;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.55);font-size:13.5px}
 .ctl-box label{display:flex;gap:6px;align-items:center;cursor:pointer}
 .ctl-box #ctlStop{color:#b03a3a;border-color:rgba(176,58,58,.35)}
@@ -452,8 +476,9 @@ ul.doc li{margin:6px 0}
 .hold-dot{width:9px;height:9px;border-radius:50%;background:var(--bad);flex:none;animation:holdPulse 1.4s ease-in-out infinite}
 @keyframes holdPulse{50%{opacity:.35}}
 .hold-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;margin-top:14px;align-items:start}
-@media (max-width:980px){.hold-grid{grid-template-columns:1fr}}
-.hold-grid.solo{grid-template-columns:1fr}
+@media (max-width:980px){.hold-grid{grid-template-columns:minmax(0,1fr)}}
+.hold-grid.solo{grid-template-columns:minmax(0,1fr)}
+.hold-grid > *{min-width:0}
 .hold-map{margin-top:14px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:rgba(255,255,255,.65)}
 .hold-map[hidden]{display:none!important}
 #holdMap{height:clamp(620px,82vh,1000px);width:100%;background:#aad3df}
@@ -662,6 +687,151 @@ tr.hrow{cursor:pointer}
 tr.hrow:hover td{background:rgba(58,143,167,.06)}
 tr.hrow.sel td{background:rgba(58,143,167,.12)}
 .navbadge{display:inline-block;min-width:18px;margin-left:6px;padding:0 6px;border-radius:999px;background:var(--bad);color:#fff;font-size:11px;line-height:18px;text-align:center;font-weight:600}
+/* ════════ 第 5 版：瑞士編輯（柔和版）主題 ════════ */
+:root{
+  --bg:#fbfaf6;--bg2:#f4f2ec;--panel:#fbfaf6;--panel2:#f4f2ec;--line:#dedad0;--line2:#c9c5ba;
+  --txt:#2a2a2a;--dim:#5e5e5e;--amber:#2a2a2a;--cyan:#b8433a;--green:#5f9a74;--good:#2f6646;--warn:#9a5d00;--bad:#a33a2c;
+  --ink:#3a3a3a;--acc:#b8433a;--acc-bg:#f8ebe8;
+  --radius:2px;--glass:#fbfaf6;--glass-border:#dedad0;--glass-blur:none;--shadow:none;
+  --emb:3px 3px 8px #e3e0d6,-3px -3px 8px #ffffff;--emb-in:inset 3px 3px 6px #e3e0d6,inset -3px -3px 6px #ffffff;
+}
+html,body{background:var(--bg)}
+body{background:var(--bg);font-family:"Inter Tight","Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,-apple-system,sans-serif;color:var(--txt)}
+.mono{font-family:"Inter Tight",ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums;letter-spacing:0}
+/* 標題：粗體大字＋大時鐘＋粗分隔線 */
+header{border-bottom:2px solid var(--ink)}
+.hbar{padding-top:22px;padding-bottom:12px;align-items:flex-end}
+h1{font-weight:900;font-size:40px;letter-spacing:-.5px}
+h1 span{color:var(--txt)}
+.sub{color:var(--dim)}
+.stamp{gap:22px}
+.stamp b{font-family:"Inter Tight",sans-serif;font-weight:700;font-variant-numeric:tabular-nums;color:var(--txt)}
+.sw-clock b{font-size:46px!important;letter-spacing:-1.5px;line-height:.95}
+.stamp i{color:var(--dim)}
+/* 導覽：浮雕按鈕，選中填主色 */
+nav{padding-top:14px;padding-bottom:14px;gap:10px}
+nav button{display:inline-flex;align-items:center;gap:7px;background:var(--bg);border:0;border-radius:2px;color:var(--txt);font-weight:500;box-shadow:var(--emb);backdrop-filter:none;-webkit-backdrop-filter:none}
+nav button:hover{background:var(--bg);color:var(--acc);box-shadow:var(--emb)}
+nav button[aria-selected="true"]{background:var(--acc);color:#fff;font-weight:700;border:0;box-shadow:var(--emb)}
+nav button .nv-ic{width:18px;height:18px;flex:none}
+nav button .nl-s{display:none}
+#nav .nav-gear{border-radius:2px}
+/* 卡片：方角、上緣粗線、無陰影 */
+.card{background:var(--bg);border:1px solid var(--line);border-top:2px solid var(--ink);border-radius:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+.card > h2{font-weight:800;font-size:20px}
+.tbox{background:var(--bg);border:1px solid var(--line);border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none}
+thead th{background:#f4f2ec;backdrop-filter:none;-webkit-backdrop-filter:none;color:var(--dim)}
+th,td{border-bottom:1px solid #ebe8df}
+tbody tr:hover{background:rgba(184,67,58,.035)}
+th.sorted{color:var(--acc)}
+/* 輸入框與按鈕：浮雕 */
+select,input[type=text],input[type=search],input[type=password],textarea{background:var(--bg);border:1px solid var(--line);border-radius:2px;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:var(--emb-in)}
+select:focus,input[type=text]:focus,input[type=search]:focus,input[type=password]:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(184,67,58,.12)}
+.btn{background:var(--bg);border:0;border-radius:2px;box-shadow:var(--emb);backdrop-filter:none;-webkit-backdrop-filter:none;color:var(--txt)}
+.btn:hover{background:var(--bg);color:var(--acc);box-shadow:var(--emb)}
+.btn:active{box-shadow:var(--emb-in);transform:none}
+.btn.primary{background:var(--acc);color:#fff}
+.btn.primary:hover{background:#a93b33;color:#fff}
+.btn.ghost{box-shadow:none}
+.btn.danger{color:var(--bad)}
+.chip{background:var(--bg);border:0;border-radius:2px;color:var(--txt);box-shadow:var(--emb);backdrop-filter:none;-webkit-backdrop-filter:none}
+.chip:hover{color:var(--acc);box-shadow:var(--emb)}
+.chip[aria-pressed="true"]{background:var(--bg);color:var(--acc);font-weight:700;box-shadow:var(--emb-in)}
+.chip[aria-pressed="true"]::before{content:"";display:inline-block;width:6px;height:6px;border-radius:3px;background:var(--acc);margin-right:6px;vertical-align:2px}
+.subseg{border:0;border-radius:0;background:transparent;overflow:visible;gap:10px}
+.subseg button{border:0!important;border-radius:2px;background:var(--bg);color:var(--txt);box-shadow:var(--emb)}
+.subseg button[aria-pressed="true"]{background:var(--bg);color:var(--acc);font-weight:700;box-shadow:var(--emb-in)}
+.seat-dir button{border:0;border-radius:2px;background:var(--bg);color:var(--txt);box-shadow:var(--emb)}
+.seat-dir button[aria-pressed="true"]{background:var(--bg);color:var(--acc);font-weight:700;box-shadow:var(--emb-in)}
+.seat-filter,.alpick,.seat-cap,.ctl-box,.hs-row,.gss-card,.hold-map,.hold-radar,.hold-wx,.hlbars{background:var(--bg);border:1px solid var(--line);border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none}
+.alpick>summary .pill{background:var(--bg);border:1px solid var(--line);border-radius:2px}
+/* KPI：浮雕方塊、大數字 */
+.kpi{background:var(--bg);border:0;border-radius:2px;box-shadow:var(--emb);backdrop-filter:none;-webkit-backdrop-filter:none}
+.kpi b{font-family:"Inter Tight",sans-serif;font-weight:700;font-variant-numeric:tabular-nums}
+.kpi u::before{border-radius:0}
+.kpi.c u::before{background:var(--acc)}
+.msg{border-radius:2px;backdrop-filter:none;-webkit-backdrop-filter:none}
+.msg.info{background:#f4f2ec}
+.callout{background:var(--bg);border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none;border-left:3px solid var(--acc)}
+.tag{border-radius:2px}
+.tag.A{background:#e8f3ec;color:#2f6646}
+.tag.D{background:#f1f0eb;color:#5c5845;border-color:transparent}
+.leg{border-radius:2px;background:#f4f2ec}
+.leg i.A{background:var(--acc)}
+.gss-no{color:var(--txt);font-weight:700}
+.gss-reg{color:var(--acc);font-weight:800;letter-spacing:.08em}
+.hold-alert{border-radius:0;background:var(--acc-bg);border:0;border-left:4px solid var(--acc);color:#7a2a20}
+.hold-dot{background:var(--acc)}
+.navbadge{background:var(--bad);border-radius:2px}
+nav button[aria-selected="true"] .navbadge{background:#fff;color:var(--acc)}
+.seat-us-tag{background:var(--txt);border-radius:2px}
+.seat-tbl th{background:#f4f2ec}
+.seat-tbl tr.us td{background:rgba(42,42,42,.035)}
+.seat-tbl tr.us td:first-child{box-shadow:inset 3px 0 0 var(--ink)}
+.seat-c.low{background:#fbefe8}.seat-c.low .seat-n{color:#a8481f}
+.seat-c.over{background:#f8e6e3}.seat-c.over .seat-n{color:var(--bad)}
+.seat-c.tight .seat-n{color:#9a5d00}
+.seat-k{color:#2f6646}
+.seat-k2{border-radius:2px}
+.seat-k2.act{background:#e8f3ec;color:#2f6646}.seat-k2.est{background:#fbefe8;color:#a8481f}.seat-k2.sch{background:#f1f0eb;color:#5c5845}
+.seat-sum span{background:#f4f2ec;border-radius:2px}
+.seat-n,.seat-tot{font-family:"Inter Tight",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+/* 總訂位／總空位 */
+.seat-totc{min-width:150px}
+.stt{display:flex;align-items:baseline;justify-content:center;gap:5px;line-height:1.25}
+.stt-k{font-size:11px;color:var(--dim)}
+.stt-v{font:700 17px "Inter Tight",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.stt-v.lowv{color:var(--acc)}
+.stt small{font-size:11px;color:var(--dim)}
+.stt-bar{height:4px;background:#ebe8df;margin:6px 4px 2px;overflow:hidden}
+.stt-bar i{display:block;height:100%;background:var(--acc)}
+.stt-pct{display:block;font-size:10.5px;color:var(--dim)}
+/* 回台後接飛：主色色條，最醒目 */
+.seat-leg.ret{display:flex;align-items:center;gap:6px;margin-top:6px;background:var(--acc);border:0;color:#fff;border-radius:2px;padding:6px 10px;font-weight:700;font-size:12.5px;white-space:normal;box-shadow:var(--emb)}
+.seat-leg.ret::before{content:"";flex:none;width:16px;height:16px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Cpath d='M2 16l20-6-2-3-7 2-5-6H6l3 7-5 1.5L2 10H1l1 6z'/%3E%3Cpath d='M3 21h18'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Cpath d='M2 16l20-6-2-3-7 2-5-6H6l3 7-5 1.5L2 10H1l1 6z'/%3E%3Cpath d='M3 21h18'/%3E%3C/svg%3E") center/contain no-repeat}
+.seat-leg.ret.bad{background:#7a2a20;color:#fff}
+.hmap-next.ret{background:var(--acc);color:#fff;border:0;border-radius:2px}
+.hmap-next.ret.bad{background:#7a2a20;color:#fff}
+.hmap-next.ret small{color:#fff;opacity:.85}
+/* 抽屜、彈窗 */
+.hs-drawer{background:var(--bg)}
+.hs-head{border-bottom:2px solid var(--ink)}
+.hs-head h3{font-weight:800}
+.hlv{border-radius:2px}
+.hlv.l1{background:#f1f0eb;color:#3a3a3a}
+.dg{border-radius:2px}
+#relayBanner{background:#f4f2ec!important;border:0!important;border-left:3px solid var(--acc)!important;border-radius:0!important;margin:12px 20px 0!important}
+/* 手機：底部分頁列（圖示＋文字），內容留出空間 */
+@media (max-width:760px){
+  h1{font-size:30px}
+  .sw-clock b{font-size:38px!important}
+  .stamp{gap:14px;width:100%;justify-content:space-between}
+  .stamp > div:not(.sw-clock) b{font-size:18px}
+  .wrap{padding-bottom:110px}
+  nav#nav{position:fixed;left:10px;right:10px;bottom:10px;z-index:1500;margin:0;padding:6px;display:flex;gap:4px;flex-wrap:nowrap;
+    background:var(--bg);border-top:2px solid var(--ink);box-shadow:0 -2px 14px rgba(0,0,0,.06),var(--emb);padding-bottom:calc(6px + env(safe-area-inset-bottom,0px))}
+  nav#nav button{flex:1 1 0;min-width:0;flex-direction:column;justify-content:center;gap:3px;height:58px;padding:4px 2px;font-size:12px;box-shadow:none;position:relative}
+  nav#nav button[aria-selected="true"]{box-shadow:var(--emb)}
+  nav#nav button .nv-ic{width:22px;height:22px}
+  nav#nav button .nl-l{display:none}
+  nav#nav button .nl-s{display:block}
+  nav#nav .nav-gear{margin-left:0}
+  nav#nav .navbadge{position:absolute;top:3px;right:calc(50% - 22px);margin:0;min-width:16px;line-height:16px;font-size:10px;padding:0 4px}
+  .seat-tbl td:nth-child(9)::before{content:none}
+  .seat-tbl td:nth-child(9){text-align:left}
+  .seat-totc{display:grid!important;grid-template-columns:1fr 1fr;gap:6px;min-width:0}
+  .seat-totc .stt{justify-content:flex-start;flex-wrap:wrap;background:var(--bg);box-shadow:var(--emb-in);padding:7px 10px}
+  .seat-totc .stt-k{flex-basis:100%}
+  .seat-totc .stt-v{font-size:22px}
+  .seat-totc .stt-bar{grid-column:1/2;margin:6px 0 0;align-self:center}
+  .seat-totc .stt-pct{grid-column:2/3;text-align:right}
+  .seat-totc .seat-b{grid-column:1/-1}
+  .seat-tbl td:nth-child(5),.seat-tbl td:nth-child(6),.seat-tbl td:nth-child(7),.seat-tbl td:nth-child(8){background:#f4f2ec;border-radius:2px}
+  .seat-tbl tr.us{background:rgba(42,42,42,.03);box-shadow:inset 3px 0 0 var(--ink)}
+  .seat-tbl tr.us td:nth-child(5),.seat-tbl tr.us td:nth-child(6),.seat-tbl tr.us td:nth-child(7),.seat-tbl tr.us td:nth-child(8){background:#efede6}
+  .seat-tbl tr.us td,.seat-tbl tr.us td:first-child{background:transparent;box-shadow:none}
+  .hs-drawer{bottom:0;z-index:2000}
+}
 </style>
 </head>
 <body>
@@ -670,24 +840,21 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-22a</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-11-01g</span></p>
     </div>
     <div class="stamp">
+      <div class="sw-clock"><b id="swClock">--:--</b><i>TPE 當地時間</i></div>
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
       <div><b id="stAirlines">0</b><i>航空公司</i></div>
       <div><b id="stDays">0</b><i>資料涵蓋天數</i></div>
     </div>
   </div>
   <nav id="nav">
-    <button data-tab="tdx" aria-selected="true">資料匯入</button>
-    <button data-tab="board" aria-selected="false">到離看板</button>
-    <button data-tab="airline" aria-selected="false">航空公司</button>
-    <button data-tab="sched" aria-selected="false">班表分析</button>
-    <button data-tab="otd" aria-selected="false">準點分析</button>
-    <button data-tab="map" aria-selected="false">航班地圖</button>
-    <button data-tab="seat" aria-selected="false">空位查詢</button>
-    <button data-tab="cam" aria-selected="false">即時影像</button>
-    <button data-tab="help" aria-selected="false">格式說明</button>
+    <button data-tab="board" aria-selected="true" aria-label="即時到離"><svg class="nv-ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="nl-l">即時到離</span><span class="nl-s">到離</span></button>
+    <button data-tab="map" aria-selected="false" aria-label="航班地圖"><svg class="nv-ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg><span class="nl-l">航班地圖</span><span class="nl-s">地圖</span></button>
+    <button data-tab="seat" aria-selected="false" aria-label="空位查詢"><svg class="nv-ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 3v10h10"/><path d="M7 13l-1 8M17 13l1 8M5 17h14"/></svg><span class="nl-l">空位查詢</span><span class="nl-s">空位</span></button>
+    <button data-tab="sched" aria-selected="false" aria-label="班表與分析"><svg class="nv-ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="nl-l">班表與分析</span><span class="nl-s">班表</span></button>
+    <button type="button" class="nav-gear" id="btnNavGear" title="TDX 連線、資料匯入、格式說明、地圖與推播設定" aria-label="設定・匯入・說明"><svg class="nv-ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9L7 7M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span class="nl-l">設定・匯入・說明</span><span class="nl-s">設定</span></button>
   </nav>
 </header>
 
@@ -1044,6 +1211,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
         <select id="gsGroup">
           <option value="flight">依航班號</option>
           <option value="peer">依航點</option>
+          <option value="station">依外站（到離時刻）</option>
         </select>
       </label>
       <button class="btn primary" id="btnGsLoad">重新載入班表</button>
@@ -1076,33 +1244,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   </div>
 </section>
 
-<!-- ============ ON-TIME ============ -->
-<section id="tab-otd" hidden>
-  <div class="card">
-    <h2>月度準點分析</h2>
-    <p>用排定時間與實際時間的差距計算。TDX 即時航班只給前日／當日／次日，整月要靠每天抓取累積下來的紀錄，累積愈久愈完整。</p>
-    <div id="oApts"></div>
-    <div id="oAirlines" style="margin-top:8px"></div>
-    <div class="row" style="margin-top:12px">
-      <label class="f">月份
-        <select id="oMonth"></select>
-      </label>
-      <label class="f">方向
-        <select id="oDir"><option value="all">到場＋離場</option><option value="A">只看到場</option><option value="D">只看離場</option></select>
-      </label>
-      <label class="f">準點門檻
-        <select id="oThr"><option value="15" selected>15 分內</option><option value="0">不得晚於表定</option><option value="30">30 分內</option><option value="60">60 分內</option></select>
-      </label>
-      <label class="f">計算基準
-        <select id="oBase"><option value="act" selected>只用實際時間</option><option value="any">實際優先，缺則用預估</option></select>
-      </label>
-      <label class="f">航班最少班次
-        <select id="oMin"><option value="1">1 班以上</option><option value="3" selected>3 班以上</option><option value="5">5 班以上</option><option value="10">10 班以上</option></select>
-      </label>
-    </div>
-    <div id="oBody"></div>
-  </div>
-</section>
+
 
 <!-- ============ SEAT ============ -->
 <section id="tab-seat" hidden>
@@ -1208,17 +1350,16 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
       <label class="f" style="flex-direction:row;align-items:center;gap:6px;padding-bottom:9px">
         <input type="checkbox" id="holdNotify"> 發現盤旋時通知＋提示音
       </label>
+      <label class="f" id="holdExclBox">排除偵測（班號／呼號，逗號分隔，可用 * ，例：JX2500, JX25*）
+        <input type="text" id="holdExcl" value="JX2500" size="22" placeholder="例：JX2500, JX25*">
+        <span style="display:flex;gap:6px;align-items:center;font-size:12.5px;margin-top:4px"><input type="checkbox" id="holdExclSame" checked> 起飛與降落同一機場的訓練／測試飛行也排除</span>
+      </label>
       <button class="btn primary" id="btnHoldToggle">開始監看</button>
+      <button class="btn ghost" id="btnCamOpen" type="button" title="桃園、高雄機場 24 小時直播">📹 機場即時影像</button>
       <button class="btn ghost hs-open" id="btnHoldSettings" type="button" title="資料來源、Telegram、航班資料 API、背景監看、資料來源狀態">⚙ 設定<span class="hs-dots" id="hsDots"></span></button>
       <span class="note" id="holdStatus" style="align-self:flex-end;padding-bottom:9px">尚未開始</span>
     </div>
-    <details class="alpick" style="margin-top:4px">
-      <summary>進階：自訂資料代理<span class="pill" id="holdProxyPill">未使用</span></summary>
-      <div style="padding:10px 16px 14px;border-top:1px solid var(--line)">
-        <p class="note" style="margin:0 0 8px">ADS-B 資料站不允許網頁直接跨站讀取。最推薦安裝「ADS-B 橋接」Chrome 擴充功能（裝好後這裡不用填，狀態列會顯示「擴充功能」）。沒有擴充功能時，可在下面填代理網址：Google Apps Script（https://script.google.com/macros/s/…/exec）或 Cloudflare Worker，不用加任何參數。</p>
-        <input type="text" id="holdProxy" placeholder="https://script.google.com/macros/s/…/exec" style="width:100%">
-      </div>
-    </details>
+    <input type="hidden" id="holdProxy" value=""><span id="holdProxyPill" hidden></span>
     <details class="alpick" style="margin-top:8px">
       <summary>Telegram 推播<span class="pill" id="tgPill">未設定</span></summary>
       <div style="padding:10px 16px 14px;border-top:1px solid var(--line)">
@@ -1428,9 +1569,8 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
         ・<b>盤旋與轉降紀錄</b>：自動記錄每次事件（航班、時間、圈數、高度、結果、目的地天氣），提供時段與目的地統計，可匯出 CSV 用 Excel 開啟。<br>
         ・<b>航班資料 API</b>（選用）：填入 AirLabs（最多 4 組金鑰自動輪替）或 FlightAware AeroAPI 的 API Key，每隔設定的間隔用一次整批查詢，更新監看範圍內所有航機的航線、機型、註冊號與位置。ADS-B 收不到的航班只顯示 API 實際回報、15 分鐘內的位置（標「API」），不做任何推估；超過 15 分鐘沒有新位置就不顯示。資料優先順序為 TDX 官方班表 ＞ API ＞ 社群資料庫。<br>
         ・<b>平滑移動</b>：兩次更新之間依地速與航向推算，飛機在地圖上連續移動。</li>
-      <li><b>盤旋偵測的資料來源</b>：adsb.lol、adsb.fi、OpenSky 都不允許網頁直接跨站讀取，而且會擋 Cloudflare 等雲端主機，所以要透過下列其中一種方式：<br>
+      <li><b>盤旋偵測的資料來源</b>：adsb.lol、adsb.fi、OpenSky 都不允許網頁直接跨站讀取，而且會擋 Cloudflare 等雲端主機，所以要透過下列方式：<br>
         ① <b>ADS-B 橋接 Chrome 擴充功能（推薦）</b>：用你自己電腦的網路抓資料，裝好後不用任何設定，狀態列會顯示「擴充功能・adsb.lol」。只在安裝的那台電腦的 Chrome 有效；若是直接雙擊打開本機 html 檔，要在擴充功能詳細資料開啟「允許存取檔案網址」。擴充功能的設定頁可選填 OpenSky 帳號當備援。<br>
-        ② <b>Google Apps Script 代理</b>：把 adsb-proxy Apps Script 部署成網頁應用程式，網址填到「進階：自訂資料代理」。手機也能用，但 Google 的伺服器是否會被資料站擋下要實測。<br>
         機場周邊每 15 秒更新（改用 OpenSky 時 30 秒）；指定航空公司依機型逐一查 adsb.lol，機型越多更新越慢，改用 OpenSky 全球資料時 90 秒一次。</li>
       <li>「航班地圖」頁上方的<b>盤旋偵測</b>每 15 秒從 airplanes.live（備援 adsb.fi）抓機場周邊航機位置，追蹤每架航機近 12 分鐘的航向。同一方向累積轉 240° 以上列為「注意」，滿一圈且高度 1,500 呎以上、未落地列為「盤旋中」，盤旋超過 15 分鐘或滿 3 圈列為「長時間盤旋」；squawk 7700／7600／7500 直接列最高級。呼號會換算成航班號（例如 SJX762 → JX762）並對照看板上的 TDX 資料。「監看方式」改成<b>指定航空公司（全球）</b>時，輸入 IATA 或 ICAO 代碼（例如 JX 或 SJX，最多 3 家），就會列出該公司全球所有空中航機並判斷盤旋。公開 ADS-B API 沒有依航空公司查詢的功能，所以是依機型抓全球航機、再用呼號前綴篩選：「查詢機型」會自動帶入該公司機隊（不在內建表的公司用 21 種常見客機），機隊有新機型時可以自己補上。每種機型查詢間隔 1.1 秒，機型越多更新越慢。勾「只列出盤旋／注意」可以只看有狀況的航機。飛往台灣的航班會顯示距目的地機場的距離，其他顯示經緯度；遠洋航段沒有收訊站時會暫時消失。只要監看開著，切到其他頁籤也會繼續偵測，「航班地圖」頁籤上會出現紅色數字。這是依航跡推算，偶爾會把繞飛天氣或雷達引導的大轉彎判成注意，請以塔台／簽派資訊為準。</li>
       <li><b>空位查詢</b>：把訂位系統的 Flight Info 清單（含 Pax 已訂位 F/C/W/Y 欄）整段貼上，會自動換算台北時間（系統時間為 UTC 時勾選 +8）、依機型座位配置算出各艙空位，依台北出發日分組，美國線置頂並加總商務／豪經／經濟空位；超賣顯示紅色、經濟艙低於門檻顯示橘色。調機（P）與取消班次不列入。座位配置可在頁面內修改，遇到未知機型會提示填寫。貼上內容只存在這台電腦。</li>
@@ -1443,6 +1583,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
 
 </div>
 
+<div class="cam-modal" id="camModal" hidden><div class="cam-box" id="camBox"><button class="btn ghost cam-x" id="btnCamClose" type="button" aria-label="關閉">✕</button></div></div>
 <div class="hs-back" id="hsBack" hidden></div>
 <aside class="hs-drawer" id="hsDrawer" hidden aria-label="盤旋偵測設定">
   <div class="hs-head">
@@ -1506,8 +1647,6 @@ var alSort = { key: "total", dir: -1 };
 var boardAirlines = {}, boardApts = {};
 var alAirlines = {}, alApts = {};
 var schedAirlines = { JX:true }, schedApts = {};
-var otdAirlines = {}, otdApts = {};
-var otdSort = { key: "rate", dir: 1 };
 
 /* =========================================================
    字典
@@ -2529,7 +2668,7 @@ function renderSched(){
   var sel = selectedCodes(schedAirlines);
   var selApt = selectedCodes(schedApts);
   var box = $("schedBody");
-  if(!DB.flights.length){ box.innerHTML = '<div class="empty">尚未匯入資料。先到「TDX 桃園機場」抓取，或到「資料匯入」貼一份航班回傳內容。</div>'; return; }
+  if(!DB.flights.length){ box.innerHTML = '<div class="empty">尚未匯入資料。先到右上「⚙ 設定・匯入・說明」設定 TDX 抓取，或在那裡貼一份航班回傳內容。</div>'; return; }
 
   var dir = $("sDir").value, groupBy = $("sGroup").value, sortBy = $("sSort").value;
   var rows = DB.flights.filter(function(f){
@@ -3017,8 +3156,8 @@ function keepNote(){
 
 /* 資料量大時，全部分頁一起重繪會明顯卡頓；只畫目前看得到的那一頁，
    其他頁標記為待重繪，切過去時才畫。 */
-var tabDirty = { board:true, airline:true, sched:true, otd:true, cam:true, map:true };
-var activeTab = "tdx";
+var tabDirty = { board:true, airline:true, sched:true, cam:true, map:true };
+var activeTab = "board";
 
 function renderActiveTab(){
   if(activeTab === "board" && tabDirty.board){
@@ -3027,8 +3166,6 @@ function renderActiveTab(){
     tabDirty.airline = false; renderAlChips(); renderAirlines();
   }else if(activeTab === "sched" && tabDirty.sched){
     tabDirty.sched = false; renderSchedChips(); renderSched();
-  }else if(activeTab === "otd" && tabDirty.otd){
-    tabDirty.otd = false; renderOtdChips(); renderOtd();
   }else if(activeTab === "cam" && tabDirty.cam){
     tabDirty.cam = false; renderCams();
   }else if(activeTab === "map" && tabDirty.map){
@@ -3047,7 +3184,7 @@ function refreshAll(){
   $("stDays").textContent = Object.keys(dates).length;
   renderDateFilter();
   renderBatches();
-  tabDirty.board = tabDirty.airline = tabDirty.sched = tabDirty.otd = true;
+  tabDirty.board = tabDirty.airline = tabDirty.sched = true;
   renderActiveTab();
 }
 
@@ -3078,395 +3215,6 @@ function ymLabel(ym){ return ym.slice(0,4) + " 年 " + parseInt(ym.slice(5,7),10
 function kpiRaw(cls, label, html){ return '<div class="kpi ' + cls + '"><u>' + esc(label) + "</u><b>" + html + "</b></div>"; }
 function fmtPct(v){ return v == null ? "—" : (Math.round(v*10)/10) + "%"; }
 function fmtMin(v){ return v == null ? "—" : (v > 0 ? "+" : "") + (Math.round(v*10)/10) + " 分"; }
-
-function otdRows(ym){
-  var selA = selectedCodes(otdAirlines), selS = selectedCodes(otdApts), dir = $("oDir").value;
-  return DB.flights.filter(function(f){
-    if(!f.date || f.date.slice(0,7) !== ym) return false;
-    if(selA.length && selA.indexOf(f.airline) < 0) return false;
-    if(selS.length && selS.indexOf(f.station || "") < 0) return false;
-    if(dir !== "all" && f.dir !== dir) return false;
-    return true;
-  });
-}
-function otdStats(rows, thr, base){
-  var s = { n:rows.length, meas:0, ontime:0, l15:0, l30:0, l60:0, early:0, cx:0, sum:0, max:null };
-  rows.forEach(function(f){
-    if(f.cancelled){ s.cx++; return; }
-    var d = odDelay(f, base);
-    if(d == null) return;
-    s.meas++; s.sum += d;
-    if(d <= thr) s.ontime++;
-    if(d > 15) s.l15++;
-    if(d > 30) s.l30++;
-    if(d > 60) s.l60++;
-    if(d < -15) s.early++;
-    if(s.max == null || d > s.max) s.max = d;
-  });
-  s.rate = s.meas ? s.ontime / s.meas * 100 : null;
-  s.avg = s.meas ? s.sum / s.meas : null;
-  return s;
-}
-function deltaHtml(cur, prev, kind){
-  if(cur == null || prev == null) return "";
-  var d = cur - prev;
-  if(Math.abs(d) < 0.05) return '<span class="delta flat">持平</span>';
-  var good = kind === "rate" ? (d > 0) : (d < 0);
-  var txt = (d > 0 ? "▲" : "▼") + (Math.round(Math.abs(d)*10)/10) + (kind === "rate" ? " pp" : " 分");
-  return '<span class="delta ' + (good ? "up" : "down") + '">' + txt + "</span>";
-}
-
-/* 班次柱 ＋ 準點率折線（左軸 %）＋ 平均延誤折線（右軸 分） */
-function comboChart(labels, bars, rate, delay){
-  var W = 760, H = 250, L = 44, R = 52, T = 14, B = 34;
-  var iw = W - L - R, ih = H - T - B;
-  var n = labels.length;
-  if(!n) return "";
-  var step = iw / n, bw = Math.max(2, step * 0.6);
-  var bmax = Math.max.apply(null, bars.concat([1]));
-  var dvals = delay.filter(function(v){ return v != null; });
-  var dmax = dvals.length ? Math.max.apply(null, dvals.concat([10])) : 10;
-  var dmin = dvals.length ? Math.min.apply(null, dvals.concat([0])) : 0;
-  dmax = Math.ceil(dmax/10)*10; dmin = Math.floor(Math.min(dmin,0)/10)*10;
-  var dspan = (dmax - dmin) || 10;
-  var o = '<svg class="chart" viewBox="0 0 ' + W + " " + H + '" xmlns="http://www.w3.org/2000/svg">';
-  [0,25,50,75,100].forEach(function(p){
-    var y = T + ih - ih*p/100;
-    o += '<line x1="' + L + '" y1="' + y.toFixed(1) + '" x2="' + (W-R) + '" y2="' + y.toFixed(1) + '" stroke="#d0dce5" stroke-width="1"/>';
-    o += '<text x="' + (L-8) + '" y="' + (y+4).toFixed(1) + '" fill="#7a919e" font-size="11" text-anchor="end">' + p + '%</text>';
-    var dv = dmin + dspan*p/100;
-    o += '<text x="' + (W-R+8) + '" y="' + (y+4).toFixed(1) + '" fill="#5bc4a0" font-size="11">' + Math.round(dv) + "</text>";
-  });
-  o += '<text x="' + (W-R+8) + '" y="' + (T-2) + '" fill="#5bc4a0" font-size="10">分</text>';
-  bars.forEach(function(v,i){
-    var h = ih * 0.55 * (v/bmax);
-    var x = L + step*i + (step-bw)/2;
-    o += '<rect x="' + x.toFixed(1) + '" y="' + (T+ih-h).toFixed(1) + '" width="' + bw.toFixed(1) +
-         '" height="' + Math.max(0,h).toFixed(1) + '" fill="#c3d4e0" opacity=".7"><title>' +
-         esc(labels[i]) + "：" + v + " 班</title></rect>";
-  });
-  function series(vals, toY, color){
-    var pts = [], out = "";
-    vals.forEach(function(v,i){
-      if(v == null) return;
-      pts.push([L + step*i + step/2, toY(v), i, v]);
-    });
-    for(var k=1;k<pts.length;k++){
-      if(pts[k][2] - pts[k-1][2] > 1) continue;
-      out += '<line x1="' + pts[k-1][0].toFixed(1) + '" y1="' + pts[k-1][1].toFixed(1) + '" x2="' + pts[k][0].toFixed(1) +
-             '" y2="' + pts[k][1].toFixed(1) + '" stroke="' + color + '" stroke-width="2"/>';
-    }
-    pts.forEach(function(p){
-      out += '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="2.6" fill="' + color + '"><title>' +
-        esc(labels[p[2]]) + "：" + (Math.round(p[3]*10)/10) + "</title></circle>";
-    });
-    return out;
-  }
-  o += series(delay, function(v){ return T + ih - ih*(v-dmin)/dspan; }, "#5bc4a0");
-  o += series(rate, function(v){ return T + ih - ih*v/100; }, "#3a8fa7");
-  var every = Math.max(1, Math.ceil(n/16));
-  labels.forEach(function(lb,i){
-    if(i % every) return;
-    o += '<text x="' + (L+step*i+step/2).toFixed(1) + '" y="' + (H-12) + '" fill="#7a919e" font-size="10.5" text-anchor="middle">' + esc(lb) + "</text>";
-  });
-  o += '<line x1="' + L + '" y1="' + (T+ih) + '" x2="' + (W-R) + '" y2="' + (T+ih) + '" stroke="#b8c8d4" stroke-width="1"/>';
-  o += "</svg>";
-  return o;
-}
-var OTD_LEGEND = '<div class="legend"><span><i style="background:#c3d4e0"></i>班次（相對高度）</span>' +
-  '<span><i style="background:#2fb35f"></i>準點率（左軸）</span>' +
-  '<span><i style="background:#5bc4a0"></i>平均延誤分鐘（右軸）</span></div>';
-
-/* 月份下拉一定看得到「本月」與「上月」，即使那個月還沒有任何紀錄 —— 
-   沒資料本身也是資訊，選下去會告訴你要怎麼累積。 */
-function renderOtdMonths(){
-  var counts = {};
-  DB.flights.forEach(function(f){ if(f.date) counts[f.date.slice(0,7)] = (counts[f.date.slice(0,7)] || 0) + 1; });
-  var thisYm = twDate().slice(0,7);
-  var lastYm = prevYm(thisYm);
-  var set = {};
-  Object.keys(counts).forEach(function(m){ set[m] = 1; });
-  set[thisYm] = 1; set[lastYm] = 1;
-  var list = Object.keys(set).sort();
-
-  var sel = $("oMonth"), cur = sel.value;
-  sel.innerHTML = list.map(function(m){
-    var tag = m === thisYm ? "本月" : (m === lastYm ? "上月" : "");
-    var n = counts[m] || 0;
-    return '<option value="' + m + '">' + ymLabel(m) + (tag ? "（" + tag + "）" : "") +
-           " ・ " + (n ? n + " 筆" : "無資料") + "</option>";
-  }).join("");
-  if(list.indexOf(cur) >= 0) sel.value = cur;
-  else sel.value = counts[thisYm] ? thisYm : (list.indexOf(thisYm) >= 0 ? thisYm : list[list.length-1]);
-  return list;
-}
-function renderOtdChips(){
-  renderPicker($("oApts"), otdApts, "apt", "場站篩選", renderOtd);
-  renderPicker($("oAirlines"), otdAirlines, "al", "航空公司篩選", renderOtd);
-}
-
-function renderOtd(){
-  var box = $("oBody");
-  if(!DB.flights.length){ box.innerHTML = '<div class="empty">尚未有資料。先到「TDX 桃園機場」抓取，或到「資料匯入」貼一份航班資料。</div>'; return; }
-  var months = renderOtdMonths();
-  if(!months.length){ box.innerHTML = '<div class="empty">資料裡沒有日期，無法做月度分析。</div>'; return; }
-
-  var ym = $("oMonth").value || months[months.length-1];
-  var thr = parseInt($("oThr").value,10);
-  var base = $("oBase").value;
-  var minN = parseInt($("oMin").value,10);
-
-  var rows = otdRows(ym);
-  var st = otdStats(rows, thr, base);
-  var pym = prevYm(ym);
-  var hasPrev = months.indexOf(pym) >= 0;
-  var pst = hasPrev ? otdStats(otdRows(pym), thr, base) : null;
-
-  var selStns = selectedCodes(otdApts);
-  var missStns = selStns.filter(function(stn){
-    return !DB.flights.some(function(f){ return (f.station || "") === stn; });
-  });
-
-  if(!rows.length){
-    if(missStns.length && missStns.length === selStns.length){
-      box.innerHTML = '<div class="msg info">' + esc(missStns.join("、")) +
-        " 還沒有抓過任何資料，所以分析不出東西。<br>" +
-        "TDX 的 FIDS 是一個場站一組端點，要有這些站的到離紀錄，得先把它們加進抓取清單。" +
-        '<br><br><button class="btn primary" id="otdFetchStns">把 ' + esc(missStns.join("、")) +
-        ' 加入 TDX 抓取並立即抓一輪</button></div>';
-      bindOtdFetch(missStns);
-      return;
-    }
-    var anyThatMonth = DB.flights.some(function(f){ return f.date && f.date.slice(0,7) === ym; });
-    box.innerHTML = anyThatMonth
-      ? '<div class="empty">' + ymLabel(ym) + " 有紀錄，但目前的場站／航空公司／方向條件篩不出任何航班。把上面的篩選清掉試試。</div>"
-      : '<div class="msg info">' + ymLabel(ym) + "：資料庫裡還沒有這個月的紀錄。<br>" +
-        "TDX 即時航班只回傳前日、當日、次日，過去的月份沒辦法回頭補抓——要有整月資料，就得讓「TDX 桃園機場」頁的自動更新每天開著跑，" +
-        "並定期用「資料匯入」的匯出資料檔備份。已經有備份的話，用讀入資料檔接回來就會出現在這裡。</div>";
-    return;
-  }
-
-  var html = "";
-  html += '<div class="kpis">' +
-    kpi("", "航班筆數", rows.length) +
-    kpi("", "可計算筆數", st.meas) +
-    kpiRaw("g", "準點率", fmtPct(st.rate) + (pst ? deltaHtml(st.rate, pst.rate, "rate") : "")) +
-    kpiRaw("c", "平均誤差", fmtMin(st.avg) + (pst ? deltaHtml(st.avg, pst.avg, "min") : "")) +
-    kpi("r", "延誤 >15／>30／>60", st.l15 + " ／ " + st.l30 + " ／ " + st.l60) +
-    kpi("r", "取消", st.cx) + "</div>";
-
-  if(pst){
-    html += '<div class="callout">對比 ' + ymLabel(pym) + "：準點率 " + fmtPct(pst.rate) + " → <b>" + fmtPct(st.rate) +
-      "</b>，平均誤差 " + fmtMin(pst.avg) + " → <b>" + fmtMin(st.avg) + "</b>，可計算筆數 " + pst.meas + " → " + st.meas + "。</div>";
-  } else {
-    html += '<div class="msg info">資料庫裡沒有 ' + ymLabel(pym) + " 的紀錄，無法做上月對比。每天抓取累積後，下個月就能比。</div>";
-  }
-  if(missStns.length){
-    html += '<div class="msg info">' + esc(missStns.join("、")) +
-      " 目前沒有任何紀錄，下面的數字只包含有資料的場站。" +
-      '<br><button class="btn" id="otdFetchStns" style="margin-top:8px">把這些場站加入 TDX 抓取並立即抓一輪</button></div>';
-  }
-  if(st.meas < rows.length * 0.5){
-    html += '<div class="msg info">' + rows.length + " 筆裡只有 " + st.meas +
-      " 筆有實際時間可比對。剛抓進來、還沒起降的航班本來就沒有實際時間；若想把預估時間也納入，把「計算基準」改成實際優先。</div>";
-  }
-
-  // ---- 每日趨勢 ----
-  var byDay = {};
-  rows.forEach(function(f){
-    var d = f.date;
-    if(!byDay[d]) byDay[d] = [];
-    byDay[d].push(f);
-  });
-  var days = Object.keys(byDay).sort();
-  var dLabels = days.map(function(d){ return String(parseInt(d.slice(8,10),10)); });
-  var dBars = [], dRate = [], dAvg = [], dStats = [];
-  days.forEach(function(d){
-    var s = otdStats(byDay[d], thr, base);
-    dStats.push({ date:d, s:s });
-    dBars.push(byDay[d].length);
-    dRate.push(s.rate);
-    dAvg.push(s.avg);
-  });
-  html += "<h3>每日準點率與延誤趨勢</h3>" + comboChart(dLabels, dBars, dRate, dAvg) + OTD_LEGEND;
-
-  var rated = dStats.filter(function(x){ return x.s.rate != null && x.s.meas >= 3; });
-  if(rated.length >= 2){
-    var best = rated.slice().sort(function(a,b){ return b.s.rate - a.s.rate; })[0];
-    var worst = rated.slice().sort(function(a,b){ return a.s.rate - b.s.rate; })[0];
-    var half = Math.floor(rated.length/2);
-    var f1 = rated.slice(0,half), f2 = rated.slice(half);
-    function avgRate(a){ return a.reduce(function(x,y){ return x + y.s.rate; },0) / (a.length||1); }
-    var trend = avgRate(f2) - avgRate(f1);
-    html += '<div class="callout">最好的一天是 <b>' + best.date + "</b>（" + fmtPct(best.s.rate) + "、" + best.s.meas +
-      " 班），最差是 <b>" + worst.date + "</b>（" + fmtPct(worst.s.rate) + "、平均 " + fmtMin(worst.s.avg) + "）。" +
-      "月中之後" + (trend > 1 ? "準點率回升約 " + Math.round(trend) + " pp" : (trend < -1 ? "準點率下滑約 " + Math.round(Math.abs(trend)) + " pp" : "大致持平")) + "。</div>";
-  }
-  html += "<details><summary>展開每日明細</summary>" +
-    '<div class="tbox" style="max-height:340px"><table><thead><tr><th>日期</th><th>星期</th><th>班次</th><th>可計算</th><th>準點率</th><th>平均誤差</th><th>延誤 &gt;15</th><th>最大延誤</th><th>取消</th></tr></thead><tbody>' +
-    dStats.map(function(x){
-      var w = dowOf(x.date);
-      return '<tr><td class="mono">' + x.date + "</td><td>" + (w == null ? "—" : DOW[w]) +
-        '</td><td class="num mono">' + x.s.n + '</td><td class="num mono">' + x.s.meas +
-        '</td><td class="num mono">' + fmtPct(x.s.rate) + '</td><td class="num mono">' + fmtMin(x.s.avg) +
-        '</td><td class="num mono">' + x.s.l15 + '</td><td class="num mono">' + (x.s.max == null ? "—" : x.s.max + " 分") +
-        '</td><td class="num mono">' + x.s.cx + "</td></tr>";
-    }).join("") + "</tbody></table></div></details>";
-
-  // ---- 時段 ----
-  var byHour = [];
-  for(var h=0; h<24; h++) byHour.push([]);
-  rows.forEach(function(f){
-    if(!f.sched) return;
-    var hh = parseInt(f.sched.slice(0,2),10);
-    if(isNaN(hh) || hh < 0 || hh > 23) return;
-    byHour[hh].push(f);
-  });
-  var hLabels = [], hBars = [], hRate = [], hAvg = [], hStats = [];
-  byHour.forEach(function(list, i){
-    var s = otdStats(list, thr, base);
-    hStats.push({ h:i, s:s });
-    hLabels.push(String(i));
-    hBars.push(list.length);
-    hRate.push(s.rate);
-    hAvg.push(s.avg);
-  });
-  html += "<h3>各時段準點表現（依排定時間分時）</h3>" + comboChart(hLabels, hBars, hRate, hAvg) + OTD_LEGEND;
-
-  var hRanked = hStats.filter(function(x){ return x.s.meas >= 3; });
-  if(hRanked.length){
-    var worstH = hRanked.slice().sort(function(a,b){ return (a.s.rate - b.s.rate) || (b.s.avg - a.s.avg); }).slice(0,3);
-    var bestH = hRanked.slice().sort(function(a,b){ return (b.s.rate - a.s.rate) || (a.s.avg - b.s.avg); })[0];
-    html += '<div class="callout">最容易延誤的時段：' + worstH.map(function(x){
-        return "<b>" + pad2(x.h) + ":00–" + pad2(x.h) + ":59</b>（準點 " + fmtPct(x.s.rate) + "、平均 " + fmtMin(x.s.avg) + "、" + x.s.meas + " 班）";
-      }).join("；") + "。表現最好的是 <b>" + pad2(bestH.h) + ":00</b> 時段（" + fmtPct(bestH.s.rate) + "）。" +
-      "只計入該時段至少 3 班可比對的資料。</div>";
-    var worstSet = {}; worstH.forEach(function(x){ worstSet[x.h] = 1; });
-    html += '<div class="tbox" style="max-height:340px"><table><thead><tr><th>時段</th><th>班次</th><th>可計算</th><th>準點率</th><th>平均誤差</th><th>延誤 &gt;15</th><th>延誤 &gt;30</th><th>最大延誤</th></tr></thead><tbody>' +
-      hStats.filter(function(x){ return x.s.n > 0; }).map(function(x){
-        return '<tr class="' + (worstSet[x.h] ? "hot" : "") + '"><td class="mono">' + pad2(x.h) + ":00–" + pad2(x.h) + ':59</td><td class="num mono">' + x.s.n +
-          '</td><td class="num mono">' + x.s.meas + '</td><td class="num mono">' + fmtPct(x.s.rate) +
-          '</td><td class="num mono">' + fmtMin(x.s.avg) + '</td><td class="num mono">' + x.s.l15 +
-          '</td><td class="num mono">' + x.s.l30 + '</td><td class="num mono">' + (x.s.max == null ? "—" : x.s.max + " 分") + "</td></tr>";
-      }).join("") + "</tbody></table></div>";
-  }
-
-  // ---- 各場站 ----
-  var byStn = {};
-  rows.forEach(function(f){ var k = f.station || "—"; (byStn[k] = byStn[k] || []).push(f); });
-  var stnKeys = Object.keys(byStn);
-  if(stnKeys.length > 1){
-    var stnRows = stnKeys.map(function(k){ return { code:k, s:otdStats(byStn[k], thr, base) }; })
-      .sort(function(a,b){ return (b.s.rate == null ? -1 : b.s.rate) - (a.s.rate == null ? -1 : a.s.rate); });
-    html += "<h3>各場站（" + ymLabel(ym) + "）</h3>" +
-      '<div class="tbox" style="max-height:340px"><table><thead><tr><th>場站</th><th>班次</th><th>到場</th><th>離場</th><th>可計算</th><th>準點率</th><th>平均誤差</th><th>延誤 &gt;15</th><th>取消</th></tr></thead><tbody>' +
-      stnRows.map(function(x){
-        var list = byStn[x.code];
-        var na = list.filter(function(f){ return f.dir === "A"; }).length;
-        return '<tr><td class="mono" style="color:var(--amber);font-weight:600">' + esc(x.code) +
-          (aptName(x.code) ? ' <span class="note">' + esc(aptName(x.code)) + "</span>" : "") +
-          '</td><td class="num mono">' + x.s.n + '</td><td class="num mono">' + na +
-          '</td><td class="num mono">' + (x.s.n - na) + '</td><td class="num mono">' + x.s.meas +
-          '</td><td class="num mono" style="font-weight:700">' + fmtPct(x.s.rate) +
-          '</td><td class="num mono">' + fmtMin(x.s.avg) + '</td><td class="num mono">' + x.s.l15 +
-          '</td><td class="num mono">' + x.s.cx + "</td></tr>";
-      }).join("") + "</tbody></table></div>";
-  }
-
-  // ---- 航空公司 ----
-  var byAl = {};
-  rows.forEach(function(f){ (byAl[f.airline] = byAl[f.airline] || []).push(f); });
-  var alKeys = Object.keys(byAl);
-  if(alKeys.length > 1){
-    var alRows = alKeys.map(function(k){ return { code:k, s:otdStats(byAl[k], thr, base) }; })
-      .sort(function(a,b){ return (b.s.rate == null ? -1 : b.s.rate) - (a.s.rate == null ? -1 : a.s.rate); });
-    html += "<h3>各航空公司（" + ymLabel(ym) + "）</h3>" +
-      '<div class="tbox" style="max-height:340px"><table><thead><tr><th>航空公司</th><th>班次</th><th>可計算</th><th>準點率</th><th>平均誤差</th><th>延誤 &gt;15</th><th>取消</th></tr></thead><tbody>' +
-      alRows.map(function(x){
-        return '<tr><td class="al">' + esc(x.code) + ' <span class="note">' + esc(alName(x.code)) + '</span></td><td class="num mono">' + x.s.n +
-          '</td><td class="num mono">' + x.s.meas + '</td><td class="num mono">' + fmtPct(x.s.rate) +
-          '</td><td class="num mono">' + fmtMin(x.s.avg) + '</td><td class="num mono">' + x.s.l15 +
-          '</td><td class="num mono">' + x.s.cx + "</td></tr>";
-      }).join("") + "</tbody></table></div>";
-  }
-
-  // ---- 各航班 ----
-  var byFl = {};
-  rows.forEach(function(f){
-    var k = f.dir + "|" + f.flightNo;
-    if(!byFl[k]) byFl[k] = { flightNo:f.flightNo, airline:f.airline, dir:f.dir, station:f.station || "—", peers:{}, times:{}, list:[] };
-    byFl[k].list.push(f);
-    if(f.peer) byFl[k].peers[f.peer] = 1;
-    if(f.sched) byFl[k].times[f.sched] = (byFl[k].times[f.sched] || 0) + 1;
-  });
-  var flRows = Object.keys(byFl).map(function(k){
-    var g = byFl[k], s = otdStats(g.list, thr, base);
-    return { flight:g.flightNo, airline:g.airline, dir:g.dir, station:g.station,
-             peer:Object.keys(g.peers).sort().join(" ") || "—", sched:topKey(g.times) || "—",
-             n:s.n, meas:s.meas, rate:s.rate, avg:s.avg, l15:s.l15, max:s.max, cx:s.cx };
-  }).filter(function(r){ return r.meas >= minN; });
-
-  html += "<h3>各航班準點表現</h3>";
-  if(!flRows.length){
-    html += '<div class="empty">沒有航班達到「至少 ' + minN + " 班可比對」的門檻。把門檻調低，或再多累積幾天資料。</div>";
-  } else {
-    var k2 = otdSort.key, dr2 = otdSort.dir;
-    flRows.sort(function(a,b){
-      var va = a[k2], vb = b[k2];
-      if(va == null) va = -99999; if(vb == null) vb = -99999;
-      if(va < vb) return -1*dr2;
-      if(va > vb) return 1*dr2;
-      return 0;
-    });
-    var head = [["flight","航班"],["airline","航空"],["dir","方向"],["station","場站"],["peer","航點"],
-                ["sched","排定"],["n","班次"],["meas","可計算"],["rate","準點率"],["avg","平均誤差"],
-                ["l15","延誤 >15"],["max","最大延誤"],["cx","取消"]];
-    html += '<div class="tbox"><table id="otdFlightTable"><thead><tr>' + head.map(function(h){
-      return '<th data-otd="' + h[0] + '" tabindex="0" class="' + (otdSort.key === h[0] ? "sorted" : "") + '">' + h[1] +
-        (otdSort.key === h[0] ? (otdSort.dir > 0 ? " ↑" : " ↓") : "") + "</th>";
-    }).join("") + "</tr></thead><tbody>" +
-    flRows.map(function(r){
-      var cls = r.rate == null ? "" : (r.rate < 60 ? "hot" : "");
-      return '<tr class="' + cls + '"><td class="mono" style="color:var(--amber);font-weight:600">' + esc(r.flight) +
-        '</td><td class="al">' + esc(r.airline) + '</td><td><span class="tag ' + r.dir + '">' + (r.dir === "A" ? "到場" : "離場") +
-        "</span></td><td>" + esc(r.station) + "</td><td>" + esc(r.peer) +
-        (aptName(r.peer) ? ' <span class="note">' + esc(aptName(r.peer)) + "</span>" : "") +
-        '</td><td class="mono">' + esc(r.sched) + '</td><td class="num mono">' + r.n +
-        '</td><td class="num mono">' + r.meas + '</td><td class="num mono" style="font-weight:700">' + fmtPct(r.rate) +
-        '</td><td class="num mono">' + fmtMin(r.avg) + '</td><td class="num mono">' + r.l15 +
-        '</td><td class="num mono">' + (r.max == null ? "—" : r.max + " 分") + '</td><td class="num mono">' + r.cx + "</td></tr>";
-    }).join("") + "</tbody></table></div>";
-    html += '<p class="note" style="margin-top:8px">共 ' + flRows.length + " 支航班達門檻；準點率低於 60% 的列以紅底標示。</p>";
-  }
-
-  box.innerHTML = html;
-
-  bindOtdFetch(missStns);
-
-  var ths = box.querySelectorAll("th[data-otd]");
-  for(var i=0;i<ths.length;i++){
-    ths[i].addEventListener("click", onOtdSort);
-    ths[i].addEventListener("keydown", function(e){ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); onOtdSort.call(this); } });
-  }
-}
-/* 準點分析裡選到還沒抓過的場站時，直接把它們加進 TDX 抓取清單並跑一輪，
-   免得使用者還要自己切分頁去勾。 */
-function bindOtdFetch(stns){
-  var btn = $("oBody").querySelector("#otdFetchStns");
-  if(!btn || !stns || !stns.length) return;
-  btn.addEventListener("click", function(){
-    stns.forEach(function(stn){ tdxApts[stn] = true; });
-    renderTdxApts();
-    switchTab("tdx");
-    updateTDX();
-  });
-}
-function onOtdSort(){
-  var k = this.getAttribute("data-otd");
-  if(otdSort.key === k) otdSort.dir *= -1;
-  else { otdSort.key = k; otdSort.dir = (k === "rate" || k === "flight" || k === "peer" || k === "sched") ? 1 : -1; }
-  renderOtd();
-}
 
 /* =========================================================
    即時影像
@@ -3685,6 +3433,25 @@ function defaultTypes(icaos){
   icaos.forEach(function(c){ (FLEET_TYPES[c] || FLEET_GENERIC).forEach(function(x){ if(t.indexOf(x) < 0) t.push(x); }); });
   return t;
 }
+/* 排除偵測：訓練機、測試飛行等不需要通知的班號／呼號（可用 * 萬用字元） */
+function holdExclList(){
+  var v = $("holdExcl") ? $("holdExcl").value : "JX2500";
+  return v.toUpperCase().split(/[\s,，、;；]+/).filter(function(x){ return /^[A-Z0-9*]{2,10}$/.test(x); }).slice(0, 30);
+}
+function holdExcluded(tr, cfg){
+  cfg = cfg || holdCfg();
+  var names = [tr.fno, tr.cs, holdFlightNo(tr.cs), tr.reg].filter(Boolean).map(function(x){ return String(x).toUpperCase().replace(/\s/g, ""); });
+  names = names.concat(names.map(function(x){ return x.replace(/^([A-Z0-9]{2,3}?)0+(\d)/, "$1$2"); }));   // JX02500 → JX2500
+  var hit = (cfg.excl || []).some(function(p){
+    var re = new RegExp("^" + p.replace(/\*/g, ".*") + "$");
+    return names.some(function(n){ return re.test(n); });
+  });
+  if(hit) return "名單";
+  if(cfg.exclSame){
+    try{ var rt = holdRoute(tr); if(rt && rt.from && rt.to && rt.from === rt.to) return "起降同一機場"; }catch(e){}
+  }
+  return "";
+}
 function holdCfg(){
   var apt = HOLD_APT[$("holdApt").value] || HOLD_APT.RCTP;
   var ga = holdGAirlines();
@@ -3694,7 +3461,8 @@ function holdCfg(){
     mode: $("holdMode").value, gAl: ga.ok, bad: ga.bad, types: types.slice(0, 25), onlyHold: $("holdOnlyHold").checked,
     code: $("holdApt").value, apt: apt, r: parseInt($("holdRadius").value, 10) || 100,
     airlines: $("holdAirline").value.toUpperCase().split(/[\s,，、]+/).filter(Boolean),
-    proxy: $("holdProxy").value.trim(), notify: $("holdNotify").checked
+    proxy: "", notify: $("holdNotify").checked,
+    excl: holdExclList(), exclSame: !$("holdExclSame") || $("holdExclSame").checked
   };
 }
 function holdSave(){
@@ -3702,7 +3470,8 @@ function holdSave(){
     localStorage.setItem("holdCfg", JSON.stringify({
       mode:$("holdMode").value, gal:$("holdGAl").value, gtypes:$("holdGTypes").value, only:$("holdOnlyHold").checked,
       apt:$("holdApt").value, r:$("holdRadius").value, al:$("holdAirline").value,
-      proxy:$("holdProxy").value, notify:$("holdNotify").checked }));
+      proxy:$("holdProxy").value, notify:$("holdNotify").checked,
+      excl:$("holdExcl").value, exclSame:$("holdExclSame").checked }));
   }catch(e){}
 }
 function holdLoadCfg(){
@@ -3716,8 +3485,10 @@ function holdLoadCfg(){
     $("holdOnlyHold").checked = !!c.only;
     if(c.r) $("holdRadius").value = c.r;
     if(c.al != null) $("holdAirline").value = c.al;
-    if(c.proxy != null) $("holdProxy").value = c.proxy;
+    
     $("holdNotify").checked = !!c.notify;
+    if(c.excl != null) $("holdExcl").value = c.excl;
+    if(c.exclSame != null) $("holdExclSame").checked = !!c.exclSame;
   }catch(e){}
 }
 
@@ -3884,7 +3655,7 @@ function holdProxyUrl(cfg, q){
   var qs = Object.keys(q).map(function(k){ return k + "=" + encodeURIComponent(q[k]); }).join("&");
   return base + (base.indexOf("?") >= 0 ? "&" : "?") + qs;
 }
-var HOLD_CORS_HINT = "瀏覽器的跨站限制（CORS）擋掉了直接連線。請安裝「ADS-B 橋接」Chrome 擴充功能，或在「進階：自訂資料代理」填入代理網址（做法見「格式說明」）。";
+var HOLD_CORS_HINT = "瀏覽器的跨站限制（CORS）擋掉了直接連線。請安裝「ADS-B 橋接」Chrome 擴充功能。";
 function holdChannel(cfg){ return holdBridge() ? "bridge" : (cfg.proxy ? "proxy" : "direct"); }
 
 /* 依序嘗試多個來源，第一個成功就回傳 */
@@ -4208,7 +3979,7 @@ function holdAnalyze(tr, now){
 
 function holdLevel(tr){
   if(tr.emerg || tr.divert) return 3;
-  if(!tr.holding) return tr.turn >= 240 && !tr.climbTurn ? 1 : 0;   // 爬升中的轉向（離場）不列注意
+  if(!tr.holding) return tr.turn >= 240 && !tr.climbTurn && !tr.excluded ? 1 : 0;   // 爬升中的轉向（離場）、排除名單（訓練機）不列注意
   var holdMin = (Date.now() - tr.holdSince) / 60000;
   if(holdMin >= 15 || tr.turn >= 1080) return 3;
   return 2;
@@ -4327,7 +4098,9 @@ function holdIngest(list, cfg){
     }
     // 取樣夠密時，還要求最近 4 分鐘確實在轉（避免把前一次盤旋的圈數算進來而太早判定）
     var turningNow = r.recentN < 5 || r.recentTurn >= 180;
-    if(eligible && r.turn >= 360 && !orbitDescent && !climbing && levelOk && !stopped && (tr.holding || turningNow)){
+    tr.excluded = holdExcluded(tr, cfg);   // 訓練機／測試飛行：不判定盤旋、不推播
+    if(tr.excluded && tr.holding){ tr.holding = false; if(tr.logId){ HLOG.list = HLOG.list.filter(function(x){ return x.id !== tr.logId; }); HLOG.dirty = true; tr.logId = null; } }
+    if(!tr.excluded && eligible && r.turn >= 360 && !orbitDescent && !climbing && levelOk && !stopped && (tr.holding || turningNow)){
       if(!tr.holding){ tr.holding = true; tr.holdSince = Math.max(now - r.dur, tr.exitAt || 0); }
       tr.lastHold = now;
     }else if(tr.holding && (r.turn < 180 || !eligible || stopped || orbitDescent || climbing || !levelOk)){
@@ -4388,6 +4161,7 @@ function holdBeep(){
 function holdNotifyNew(list, cfg){
   if(!cfg.notify) return;
   list.forEach(function(tr){
+    if(tr.excluded) return;
     var key = tr.hex + ":" + tr.level + (tr.divert ? ":div" : "");
     if(HOLD.notified[key]) return;
     HOLD.notified[key] = Date.now();
@@ -4488,7 +4262,9 @@ function tgCheck(scope){
   Object.keys(HOLD.notified).forEach(function(k){ var v = HOLD.notified[k]; if(v === 1) HOLD.notified[k] = nowT; else if(nowT - v > 24*3600000) delete HOLD.notified[k]; });
   scope.forEach(function(tr){
     if(tr.lost) return;
+    if(tr.excluded && !tr.emerg) return;   // 排除名單（訓練機等）：只保留緊急代碼通知
     if(tr.emerg && !TG.sent[tr.hex + ":emerg"]){ TG.sent[tr.hex + ":emerg"] = Date.now(); tgEnqueue(tgText(tr, "emerg")); }
+    if(tr.excluded) return;
     if(tr.gaRecent && !TG.sent[tr.hex + ":ga:" + tr.goAround.t]){ TG.sent[tr.hex + ":ga:" + tr.goAround.t] = Date.now(); tgEnqueue(tgText(tr, "ga")); }
     if(tr.divert && !TG.sent[tr.hex + ":div:" + tr.divert.since]){ TG.sent[tr.hex + ":div:" + tr.divert.since] = Date.now(); tgEnqueue(tgText(tr, "divert")); }
     if(tr.holding && tr.level >= 2){
@@ -4576,7 +4352,7 @@ function holdRender(){
   var alertBox = $("holdAlert");
   var divs = active.filter(function(t){ return t.divert; });
   if(nHold){
-    var names = active.filter(function(t){ return t.level >= 2; }).slice(0, 5).map(function(t){ return (t.fno || t.cs || t.hex.toUpperCase()) + (t.divert ? "（疑似轉降" + (t.divert.to ? "→" + t.divert.to : "") + "）" : ""); });
+    var names = active.filter(function(t){ return t.level >= 2; }).slice(0, 5).map(function(t){ return (t.fno || t.cs || t.hex.toUpperCase()) + (t.emerg ? "（緊急代碼 " + t.squawk + "）" : "") + (t.divert ? "（疑似轉降" + (t.divert.to ? "→" + t.divert.to : "") + "）" : ""); });
     $("holdAlertTxt").innerHTML = "<b>" + nHold + " 架航機正在" + (global ? "" : esc(cfg.apt.name) + "周邊") + "盤旋</b>：" + esc(names.join("、")) + (nHold > 5 ? " 等" : "");
     alertBox.classList.add("on");
   }else alertBox.classList.remove("on");
@@ -4592,7 +4368,7 @@ function holdRender(){
 
   holdNotifyNew(active.filter(function(t){ return t.level >= 2 || t.divert; }), cfg);
   if(cfg.notify) active.forEach(function(t){
-    if(!t.gaRecent) return;
+    if(!t.gaRecent || t.excluded) return;
     var gk = t.hex + ":ga:" + t.goAround.t;
     if(HOLD.notified[gk]) return;
     HOLD.notified[gk] = Date.now(); holdBeep();
@@ -4623,7 +4399,7 @@ function holdRender(){
       '<td><span class="hlv ' + (exited ? "l0" : "l" + tr.level) + '">' + (exited ? "已脫離" : lvText(tr)) + "</span>" +
         (tr.emerg ? '<br><b style="color:var(--bad)">SQK ' + esc(tr.squawk) + "</b>" : "") + "</td>" +
       '<td class="mono" style="color:var(--amber);font-weight:600">' + esc(tr.fno || tr.cs || "—") +
-        (tr.fno && tr.cs ? '<br><span class="note">' + esc(tr.cs) + "</span>" : "") + "</td>" +
+        (tr.fno && tr.cs ? '<br><span class="note">' + esc(tr.cs) + "</span>" : "") + (tr.excluded ? '<br><span class="note" title="在排除偵測名單內：不判定盤旋、不推播">已排除（' + esc(tr.excluded) + "）</span>" : "") + "</td>" +
       "<td>" + esc(tr.type || "—") + '<br><span class="note">' + esc(tr.reg || tr.hex.toUpperCase()) + "</span></td>" +
       '<td class="mono">' + fmtAlt(tr.alt) + vs + '<br><span class="note">' + (tr.gs != null ? tr.gs + " kt" : "—") + "</span></td>" +
       (tr.dist != null
@@ -5651,7 +5427,8 @@ function bgBuildConfig(){
   return {
     enabled: true, mode: cfg.mode,
     apt: { icao: cfg.code, iata: cfg.apt.iata, name: cfg.apt.name, lat: cfg.apt.lat, lon: cfg.apt.lon },
-    r: cfg.r, airlines: cfg.airlines, gAl: cfg.gAl, types: cfg.types, tg: tgCfg()
+    r: cfg.r, airlines: cfg.airlines, gAl: cfg.gAl, types: cfg.types, tg: tgCfg(),
+    excl: cfg.excl, exclSame: cfg.exclSame
   };
 }
 function bgPaint(){
@@ -5681,7 +5458,8 @@ function hsInit(){
   var nl = $("holdNotify") && $("holdNotify").closest("label");
   if(tl) gen.appendChild(tl);
   if(nl) gen.appendChild(nl);
-  [$("holdProxy") && $("holdProxy").closest("details"), $("tgToken") && $("tgToken").closest("details"), $("fixBox"), $("bgBox"), $("diagBox")]
+  if($("holdExclBox")) gen.appendChild($("holdExclBox"));
+  [$("tgToken") && $("tgToken").closest("details"), $("fixBox"), $("bgBox"), $("diagBox")]
     .forEach(function(d){ if(d) body.appendChild(d); });
   function open(){ $("hsDrawer").hidden = false; $("hsBack").hidden = false; diagRender(); }
   function close(){ $("hsDrawer").hidden = true; $("hsBack").hidden = true; }
@@ -6619,7 +6397,7 @@ function holdTick(){
       (holdIsGlobal(cfg) ? (/adsb\.lol/.test(HOLD.lastSrc) ? "本輪查 " + HOLD.rrType + "（" + cfg.types.length + " 種機型輪流），" : "") + "追蹤中 " + Object.keys(HOLD.tracks).length + " 架" : list.length + " 架") + "）";
   }).catch(function(e){
     HOLD.err = e.message || String(e);
-    if(!cfg.proxy && !holdBridge()){ var dp = $("holdProxy").closest("details"); if(dp) dp.open = true; if(window.hsOpen && !HOLD.hsShown){ HOLD.hsShown = true; window.hsOpen(); } }
+    if(!holdBridge()){ if(window.hsOpen && !HOLD.hsShown){ HOLD.hsShown = true; window.hsOpen(); } }
     var cool = [];
     ["api.adsb.lol","opendata.adsb.fi","opensky-network.org"].forEach(function(h){ var u = gateUntil(h); if(u) cool.push(h.replace(/^api\.|^opendata\./, "").replace("-network.org", "") + " " + fixHm(u)); });
     $("holdStatus").textContent = cool.length ? "資料源冷卻中（" + cool.join("、") + " 恢復），期間不打以免延長限流；地圖沿用最後位置" :
@@ -6706,6 +6484,10 @@ function holdInit(){
     this.value = this.value.trim().replace(/\/+$/, "");
     holdSave(); pill(); syncMode();
     HOLD.err = ""; if(HOLD.on && !HOLD.busy){ clearTimeout(HOLD.timer); holdTick(); } });
+  ["holdExcl","holdExclSame"].forEach(function(id){ $(id).addEventListener("change", function(){ holdSave(); holdRender();
+    // 背景監看開著時，排除名單一改就同步給擴充功能（不用再按一次「開啟背景監看」）
+    if(typeof BG !== "undefined" && BG.active && holdBridge()){ var conf = bgBuildConfig(); if(conf.mode === "area" || conf.gAl.length) bgCmd("setConfig", conf).then(function(st){ BG.status = st; bgPaint(); }, function(){}); }
+  }); });
   $("holdNotify").addEventListener("change", function(){
     holdSave();
     if(this.checked && window.Notification && Notification.permission === "default"){ try{ Notification.requestPermission(); }catch(e){} }
@@ -6836,8 +6618,8 @@ function seatLinks(r){
     out += '<span class="seat-leg none" title="外站折返段（台北時間）">↩ 折返 ' + legFlt(nx) + " " + esc(nx.from) + "→" + esc(nx.to) + (ra ? " " + twDayHm(ra) + "到" : "") + "</span>";
     if(n2 && !n2.gap){
       var d2 = legDep(n2), m2 = ra ? Math.round((d2 - ra)/60000) : null;
-      out += '<span class="seat-leg ret' + (cls(m2) === "bad" ? " bad" : "") + '" title="回台後接飛（台北時間）">➡ 回台後' + (m2 != null && m2 > 720 ? "下一段 " : "接飛 ") + legFlt(n2) + " " + esc(n2.from) + "→" + esc(n2.to) + " " + twDayHm(d2) + "飛" + turnTxt(m2) + "</span>";
-    } else out += '<span class="seat-leg ret">➡ ' + (n2 && n2.gap ? "回台後的下一段航點接不上" : "回台後清單內沒有接飛") + "</span>";
+      out += '<span class="seat-leg ret' + (cls(m2) === "bad" ? " bad" : "") + '" title="回台後接飛（台北時間）">回台後' + (m2 != null && m2 > 720 ? "下一段 " : "接飛 ") + legFlt(n2) + " " + esc(n2.from) + "→" + esc(n2.to) + " " + twDayHm(d2) + "飛" + turnTxt(m2) + "</span>";
+    } else out += '<span class="seat-leg ret">' + (n2 && n2.gap ? "回台後的下一段航點接不上" : "回台後清單內沒有接飛") + "</span>";
   } else if(nx){
     var nd = legDep(nx), nm = arr ? Math.round((nd - arr)/60000) : null;
     out += '<span class="seat-leg ' + cls(nm) + '" title="這架飛機的下一段（時間為台北時間）">➡ ' + (nm != null && nm > 12*60 ? "下一段 " : "接飛 ") + legFlt(nx) + " " + esc(nx.from) + "→" + esc(nx.to) + " " + twDayHm(nd) + "飛" + turnTxt(nm) + "</span>";
@@ -6878,6 +6660,8 @@ function seatDepInfo(r, idx){
   if(ar && (ar.a || ar.e)) return { ms: ar.a || ar.e, kind: ar.a ? "act" : "est", src:"AIRS" };
   if(idx && twIsBase(r.from) && r.std){
     var f = idx[r.from + "|" + twFnoNorm(r.flt) + "|" + twKey(r.std)];
+    // 表定時間要對得上（差 3 小時以內）才採用，避免同日同班號但不同班次、或時區勾錯時配錯
+    if(f && f.sched){ var sm = Date.parse(f.date + "T" + f.sched + ":00+08:00"); if(isFinite(sm) && Math.abs(sm - r.std) > 3*3600000) f = null; }
     var t = f && (f.act || f.est);
     if(t){
       var ms = Date.parse(f.date + "T" + t + ":00+08:00");
@@ -6897,6 +6681,17 @@ function seatDepHtml(r, idx){
   return "<b>" + twParts(d.ms).hm + '</b><span class="seat-k2 ' + d.kind + '" title="資料來源：' + d.src + '">' + lab + (d.src === "機場即時" ? "・機場" : "") + "</span>" +
     (d.kind !== "sch" ? '<span class="seat-std">表定 ' + twParts(r.std).hm + (dl ? '<span class="seat-dly' + (dl < 0 ? " early" : "") + '">' + (dl > 0 ? "晚 " : "早 ") + fmtDur(Math.abs(dl)*60000) + "</span>" : "") + "</span>" : "") +
     (at ? '<span class="seat-std">抵台 ' + twDayHm(at) + '<span class="seat-k2 ' + (aa.a ? "act" : "est") + '">' + (aa.a ? "實際" : "預估") + "</span></span>" : "");
+}
+/* 總訂位／總空位：各艙已訂加總、座位數加總，附載客率長條 */
+function seatTotCell(r, tot, ov){
+  var bk = 0, cap = 0, known = true;
+  [0,1,2,3].forEach(function(i){ if(r.pax[i] != null) bk += r.pax[i]; if(r.cap[i]) cap += +r.cap[i]; if(r.pax[i] > 0 && !r.cap[i]) known = false; });
+  if(r.noCap) return '<td class="c seat-totc"><div class="stt"><span class="stt-k">總訂位</span><b class="stt-v">' + bk + '</b></div><div class="stt"><span class="stt-k">總空位</span><b class="stt-v">—</b><small>未設座位配置</small></div></td>';
+  var pct = cap && known ? Math.max(0, Math.min(100, Math.round(bk * 100 / cap))) : null;
+  return '<td class="c seat-totc"><div class="stt"><span class="stt-k">總訂位</span><b class="stt-v">' + bk + '</b>' + (cap && known ? '<small>／' + cap + ' 席</small>' : '') + '</div>' +
+    '<div class="stt"><span class="stt-k">總空位</span><b class="stt-v seat-tot' + (tot < 20 ? ' lowv' : '') + '">' + tot + '</b><small>席</small></div>' +
+    (pct != null ? '<div class="stt-bar" title="載客率 ' + pct + '%"><i style="width:' + pct + '%"></i></div><span class="stt-pct">載客 ' + pct + '%</span>' : '') +
+    (ov ? '<span class="seat-b" style="color:var(--bad)">含超賣艙等</span>' : '') + '</td>';
 }
 function seatRender(){
   var box = $("seatResult");
@@ -6986,7 +6781,7 @@ function seatRender(){
   // 依台北日期分組，每天內美國線置頂
   var groups = {}; list.forEach(function(r){ var k = twKey(r.dep); (groups[k] = groups[k] || []).push(r); });
   var inb = SEAT.dir === "in", tdxIdx = seatTdxIndex();
-  var head = '<thead><tr><th>' + (inb ? "出發（台北時間）" : "台北出發") + '</th><th>航班</th><th>' + (inb ? "航線" : "目的地") + '</th><th>機型／機號／串飛</th><th class="c">頭等</th><th class="c">商務</th><th class="c">豪經</th><th class="c">經濟</th><th class="c">合計空位</th></tr></thead>';
+  var head = '<thead><tr><th>' + (inb ? "出發（台北時間）" : "台北出發") + '</th><th>航班</th><th>' + (inb ? "航線" : "目的地") + '</th><th>機型／機號／串飛</th><th class="c">頭等</th><th class="c">商務</th><th class="c">豪經</th><th class="c">經濟</th><th class="c">總訂位／總空位</th></tr></thead>';
   $("seatBody").innerHTML = Object.keys(groups).sort().map(function(k){
     var g = groups[k].slice().sort(function(a,b){ return (seatIsUS(b) - seatIsUS(a)) || (a.dep - b.dep); });
     var gu = g.filter(seatIsUS);
@@ -7002,7 +6797,7 @@ function seatRender(){
                  "<td><b>" + esc(r.to) + "</b> " + esc(aptName(r.to))) + (u ? '<span class="seat-us-tag">美國</span>' : "") + "</td>" +
           "<td>" + esc(SEAT_TYPE_NAME[r.type] || r.type) + (r.noCap ? ' <span style="color:var(--bad)">未設配置</span>' : "") + '<br><span class="note">' + esc(r.reg) + "</span>" + seatLinks(r) + "</td>" +
           [0,1,2,3].map(function(i){ return seatCell(r, i, tight); }).join("") +
-          '<td class="c"><span class="seat-tot">' + tot + "</span>" + (ov ? '<br><span class="seat-b" style="color:#c0392b">含超賣艙等</span>' : "") + "</td></tr>";
+          seatTotCell(r, tot, ov) + "</tr>";
       }).join("") + "</tbody></table></div></div>";
   }).join("") || '<div class="empty">沒有符合條件的航班。</div>';
 }
@@ -7397,7 +7192,10 @@ function relayViewInit(){
   function db(){
     v = cfgNow();
     relayGet(v, "db", RELAY.dbT).then(function(s){
-      if(s){ RELAY.dbT = s.__t || Date.now(); var d = unpackDB(s); if(d){ DB = d; refreshAll(); } if(s.airs) airsSet(s.airs.rows, s.airs.t); relayApplySeat(s.seat); }
+      if(s){ RELAY.dbT = s.__t || Date.now(); var d = unpackDB(s); if(d){ DB = d; refreshAll();
+          // 第一次載入：跟完整版一樣先看今天（台北日期），不要三天混在一起
+          if(!RELAY.dateSet){ RELAY.dateSet = true; var fd = $("fDate"), td = twDate(); if(fd && fd.value === "all" && [].some.call(fd.options, function(o){ return o.value === td; })){ fd.value = td; renderBoard(); } } }
+        if(s.airs) airsSet(s.airs.rows, s.airs.t); relayApplySeat(s.seat); }
       relayViewPaint();
     }, onErr);
   }
@@ -7410,18 +7208,78 @@ function relayViewInit(){
   return true;
 }
 
+/* 頁內切換：即時到離（到離看板／航空公司）、班表與分析（定期班表／依外站時刻／觀測統計） */
+function segSync(name){
+  var sl = $("segLive");
+  if(sl){
+    var sec = $("tab-" + (name === "airline" ? "airline" : "board"));
+    if((name === "board" || name === "airline") && sec && sl.parentNode !== sec) sec.insertBefore(sl, sec.firstChild);
+    [].forEach.call(sl.querySelectorAll("button"), function(b){ b.setAttribute("aria-pressed", b.getAttribute("data-sub") === name ? "true" : "false"); });
+  }
+}
+function schedSeg(v){
+  var cards = $("tab-sched") ? $("tab-sched").querySelectorAll(":scope > .card") : [];
+  if(cards.length < 2) return;
+  cards[0].hidden = v === "obs"; cards[1].hidden = v !== "obs";
+  if(v !== "obs" && $("gsGroup")){ var want = v === "station" ? "station" : ($("gsGroup").value === "station" ? "flight" : $("gsGroup").value); if($("gsGroup").value !== want){ $("gsGroup").value = want; try{ gsRender(); }catch(e){} } }
+  [].forEach.call($("segSched").querySelectorAll("button"), function(b){ b.setAttribute("aria-pressed", b.getAttribute("data-v") === v ? "true" : "false"); });
+  try{ localStorage.setItem("schedSeg", v); }catch(e){}
+}
+function navInit(){
+  // 即時到離：到離看板｜航空公司
+  var sl = document.createElement("div");
+  sl.className = "subseg"; sl.id = "segLive";
+  sl.innerHTML = '<button type="button" data-sub="board">到離看板</button>' + (LITE ? "" : '<button type="button" data-sub="airline">航空公司</button>');
+  sl.addEventListener("click", function(e){ var b = e.target.closest("button"); if(b) switchTab(b.getAttribute("data-sub")); });
+  if(!LITE && $("tab-board")) $("tab-board").insertBefore(sl, $("tab-board").firstChild);
+  // 班表與分析：定期班表｜依外站時刻｜觀測統計
+  var ss = document.createElement("div");
+  ss.className = "subseg"; ss.id = "segSched";
+  ss.innerHTML = '<button type="button" data-v="flight">定期班表</button><button type="button" data-v="station">依外站時刻</button><button type="button" data-v="obs">觀測統計</button>';
+  ss.addEventListener("click", function(e){ var b = e.target.closest("button"); if(b) schedSeg(b.getAttribute("data-v")); });
+  if($("tab-sched")){ $("tab-sched").insertBefore(ss, $("tab-sched").firstChild); var v0 = "flight"; try{ v0 = localStorage.getItem("schedSeg") || "flight"; }catch(e){} schedSeg(v0); }
+  if($("gsGroup")) $("gsGroup").addEventListener("change", function(){ var b = $("segSched"); if(b) [].forEach.call(b.querySelectorAll("button"), function(x){ x.setAttribute("aria-pressed", x.getAttribute("data-v") === (this.value === "station" ? "station" : "flight") ? "true" : "false"); }, this); });
+  // 機場即時影像：從航班地圖的按鈕開啟（關掉就停止直播，不吃頻寬）
+  var cm = $("camModal"), camSec = $("tab-cam");
+  if(cm && camSec){ var card = camSec.querySelector(".card"); if(card) $("camBox").appendChild(card); camSec.remove(); }
+  function camClose(){ if(cm){ cm.hidden = true; if($("camGrid")) $("camGrid").innerHTML = ""; } }
+  if($("btnCamOpen")) $("btnCamOpen").addEventListener("click", function(){ cm.hidden = false; try{ renderCams(); }catch(e){} });
+  if($("btnCamClose")) $("btnCamClose").addEventListener("click", camClose);
+  if(cm) cm.addEventListener("click", function(e){ if(e.target === cm) camClose(); });
+  document.addEventListener("keydown", function(e){ if(e.key === "Escape" && cm && !cm.hidden) camClose(); });
+  // ⚙ 設定・匯入・說明：TDX 連線與匯入、格式說明收進設定抽屜（分享版沒有）
+  if(LITE){ if($("btnNavGear")) $("btnNavGear").remove(); }
+  else if($("hsBody")){
+    var body = $("hsBody");
+    function wrap(title, el, open){
+      var d = document.createElement("details"); d.className = "hs-sec hs-wrap"; if(open) d.open = true;
+      d.innerHTML = "<summary><h4>" + title + "</h4></summary>";
+      el.hidden = false; el.removeAttribute("id_"); d.appendChild(el); return d;
+    }
+    var tdx = $("tab-tdx"), help = $("tab-help");
+    var head = document.createElement("div"); head.className = "hs-group"; head.textContent = "資料來源與匯入";
+    body.insertBefore(head, body.firstChild);
+    if(tdx){ tdx.classList.remove("card"); tdx.style.margin = "0"; body.insertBefore(wrap("TDX 連線、自動更新與資料匯入", tdx, false), head.nextSibling); }
+    var g2 = document.createElement("div"); g2.className = "hs-group"; g2.textContent = "航班地圖・盤旋偵測・推播";
+    var anchor = body.querySelector("#hsGeneral"); if(anchor) body.insertBefore(g2, anchor);
+    if(help){ var g3 = document.createElement("div"); g3.className = "hs-group"; g3.textContent = "說明"; body.appendChild(g3); body.appendChild(wrap("格式說明", help, false)); }
+    if($("hsDrawer")){ var h3 = $("hsDrawer").querySelector(".hs-head h3"); if(h3) h3.textContent = "設定・匯入・說明"; }
+    $("btnNavGear").addEventListener("click", function(){ if(window.hsOpen) window.hsOpen(); });
+  }
+}
 function switchTab(name){
   if(LITE && LITE_TABS.indexOf(name) < 0) name = "board";
-  var btns = $("nav").querySelectorAll("button");
+  if(!$("tab-" + name)) name = "board";
+  var grp = name === "airline" ? "board" : name;   // 「航空公司」是「即時到離」裡的子分頁
+  var btns = $("nav").querySelectorAll("button[data-tab]");
   for(var i=0;i<btns.length;i++){
-    var on = btns[i].getAttribute("data-tab") === name;
+    var on = btns[i].getAttribute("data-tab") === grp;
     btns[i].setAttribute("aria-selected", on ? "true" : "false");
   }
-  ["tdx","board","airline","sched","otd","seat","cam","map","help"].forEach(function(t){
+  ["board","airline","sched","seat","map"].forEach(function(t){
     var el = $("tab-" + t); if(el) el.hidden = (t !== name);
   });
-  // 離開即時影像就移除直播，回來時重新自動播放（避免背景持續吃頻寬）
-  if(activeTab === "cam" && name !== "cam" && $("camGrid")){ $("camGrid").innerHTML = ""; tabDirty.cam = true; }
+  segSync(name);
   activeTab = name;
   renderActiveTab();
   window.scrollTo(0,0);
@@ -7717,7 +7575,7 @@ async function tdxGetPage(token, path, top, skip, what, extra){
     if(r.status === 401 || r.status === 403) tdxTokenCache = { token:null, exp:0, key:"" };
     throw new Error("TDX HTTP " + r.status + (r.statusText ? "：" + r.statusText : ""));
   }
-  return await r.json();
+  try{ return await r.json(); }catch(e){ throw new Error("TDX 回傳的不是資料（可能正在維護）"); }
 }
 
 /* TDX 的 $top 預設值只有 30 筆。不分頁抓，就只會拿到 30 筆航班。 */
@@ -7916,7 +7774,7 @@ async function updateTDX(){
       perApt.join("<br>") + "<br>" +
       "合計收錄 " + count + " 筆（新增 " + added + "、更新 " + updated + "）。<br>" +
       "日期分佈：" + (byDate || "（無）") +
-      (errs.length ? '<br><span style="color:var(--bad)">失敗：' + errs.join("；") + "</span>" : ""),
+      (errs.length ? '<br><span style="color:var(--bad)">失敗：' + esc(errs.join("；")) + "</span>" : ""),
       errs.length ? "err" : "ok"
     );
 
@@ -7932,8 +7790,11 @@ async function updateTDX(){
     }
   }catch(e){
     st.textContent = "TDX 更新失敗";
-    tdxShow("TDX 更新失敗：" + e.message +
-      "<br>若是瀏覽器 CORS 或認證問題，請改用後端 Proxy；不要把 Client Secret 部署到公開網站。",
+    var em = String(e && e.message || e);
+    tdxShow("TDX 更新失敗：" + esc(em) + "<br>" +
+      (/HTTP 40[13]|Token/.test(em) ? "請到 TDX 會員中心確認 Client ID／Client Secret 是否正確、是否過期。"
+        : /Failed to fetch|NetworkError|Load failed/i.test(em) ? "連不上 TDX：請確認網路，或 TDX 正在維護，稍後會自動再試。"
+        : "稍後會依自動更新間隔再試。"),
       "err");
   }finally{
     tdxRunning = false;
@@ -7994,7 +7855,7 @@ async function gsFetch(force){
 
   if(gsRunning) return;
   if(!$("tdxClientId").value.trim() || !$("tdxClientSecret").value.trim()){
-    gsShow("還沒填 TDX Client ID／Secret。到「TDX 桃園機場」頁籤填好之後，這裡就會自動載入。", "err");
+    gsShow("還沒填 TDX Client ID／Secret。到右上「⚙ 設定・匯入・說明」→ TDX 連線填好之後，這裡就會自動載入。", "err");
     gsRender();
     return;
   }
@@ -8029,7 +7890,7 @@ async function gsFetch(force){
     gsRender();
   }catch(e){
     if(st) st.textContent = "班表載入失敗";
-    gsShow("定期班表載入失敗：" + e.message, "err");
+    gsShow("定期班表載入失敗：" + esc(e.message), "err");
     gsRender();
   }finally{
     gsRunning = false;
@@ -8133,6 +7994,68 @@ function gsExpand(){
   return { dates: dates, rows: order };
 }
 
+/* 依外站排列：每個外站的抵達（自台灣來）與出發（回台灣），時間為該站當地時間，星期以當地日期計 */
+function gsStationHtml(rows, dates, span){
+  var DOWC = ["日","一","二","三","四","五","六"], st = {};
+  // 直接用原始定期班表展開（前後多算 2 天，跨日抵達挪動後邊界的班次才不會少算）
+  var stnSel = gsSelStns(), selPeer = selectedCodes(gsPeers), al = GS.airline;
+  var ext = []; for(var x = -2; x < dates.length + 2; x++){ var iso = gsAddDays(dates[0].iso, x); ext.push({ iso:iso, dow:dowOf(iso) }); }
+  GS.rows.forEach(function(r){
+    var dep = String(r.DepartureAirportID || "").toUpperCase(), arr = String(r.ArrivalAirportID || "").toUpperCase();
+    var depTw = !!TW_APTS[dep], arrTw = !!TW_APTS[arr];
+    if(depTw === arrTw) return;                       // 只看台灣 ↔ 外站
+    var tw = depTw ? dep : arr, peer = depTw ? arr : dep;
+    if(stnSel.length && stnSel.indexOf(tw) < 0) return;
+    if(selPeer.length && selPeer.indexOf(peer) < 0) return;
+    var sd = String(r.ScheduleStartDate || "").slice(0,10), ed = String(r.ScheduleEndDate || "").slice(0,10);
+    var base = ext.map(function(d){ return d.dow != null && (!sd || d.iso >= sd) && (!ed || d.iso <= ed) && !!r[GS_DOW[d.dow]]; });
+    var dt = gsTime(r.DepartureTime), at = gsTime(r.ArrivalTime), fn = gsFlightNo(r.FlightNumber, al);
+    var e = st[peer] || (st[peer] = { code:peer, arr:{}, dep:{} });
+    var kind = depTw ? "A" : "D", shift = depTw ? (at.plus || 0) : 0;   // 外站抵達：日期挪到抵達當地日（可能 +1 或 -1）
+    var on = []; for(var q = 0; q < dates.length; q++) on.push(!!base[q + 2 - shift]);
+    if(on.indexOf(true) < 0) return;
+    var map = kind === "A" ? e.arr : e.dep, time = kind === "A" ? at.hhmm : dt.hhmm;
+    var k = fn + "|" + time, o = map[k];
+    if(o){ for(var z = 0; z < on.length; z++) if(on[z]) o.on[z] = true; }
+    else map[k] = { no:fn, time:time || "—", other:tw, otherTime: kind === "A" ? dt.hhmm : at.hhmm, plus: kind === "D" ? (at.plus || 0) : 0, on:on };
+  });
+  function daysTxt(on){
+    var w = {}; on.forEach(function(v, i){ if(v) w[dates[i].dow] = 1; });
+    var ks = Object.keys(w).map(Number);
+    if(!ks.length) return "";
+    if(ks.length === 7) return "每日";
+    return [1,2,3,4,5,6,0].filter(function(d){ return w[d]; }).map(function(d){ return DOWC[d]; }).join("");
+  }
+  function legs(map, kind){
+    var L = Object.keys(map).map(function(k){ return map[k]; }).filter(function(l){ return l.on.indexOf(true) >= 0; });
+    L.sort(function(a, b){ return a.time < b.time ? -1 : a.time > b.time ? 1 : (a.no < b.no ? -1 : 1); });
+    if(!L.length) return '<div class="note" style="padding:6px 0">這段期間沒有班次</div>';
+    return L.map(function(l){
+      var n = l.on.filter(Boolean).length;
+      return '<div class="gss-leg"><b class="mono">' + esc(l.time) + '</b><span class="mono gss-no">' + esc(l.no) + "</span>" +
+        '<span class="gss-ot">' + (kind === "A" ? "自 " : "往 ") + esc(l.other) +
+        (l.otherTime ? ' <span class="note">' + (kind === "A" ? "起飛 " : "抵達 ") + esc(l.otherTime) + (l.plus && kind === "D" ? (l.plus > 0 ? " +" : " ") + l.plus : "") + "</span>" : "") + "</span>" +
+        '<span class="gss-days">' + esc(daysTxt(l.on)) + '<span class="note">（' + n + " 班）</span></span></div>";
+    }).join("");
+  }
+  var order = ["北美"].concat(REGIONS.filter(function(g){ return g !== "北美"; }));
+  var list = Object.keys(st).map(function(k){ return st[k]; });
+  list.sort(function(a, b){
+    var ra = order.indexOf(airportRegion(a.code)), rb = order.indexOf(airportRegion(b.code));
+    return ra - rb || (a.code < b.code ? -1 : 1);
+  });
+  var lastReg = "";
+  var html = list.map(function(e){
+    var reg = airportRegion(e.code), head = "";
+    if(reg !== lastReg){ lastReg = reg; head = '<h3 class="gss-reg">' + esc(reg) + "</h3>"; }
+    var na = Object.keys(e.arr).length, nd = Object.keys(e.dep).length;
+    return head + '<div class="gss-card"><div class="gss-h"><b class="mono">' + esc(e.code) + "</b> " + esc(aptName(e.code) || "") +
+      '<span class="note">抵達 ' + na + " 班號・出發 " + nd + " 班號</span></div>" +
+      '<div class="gss-cols"><div><div class="gss-t">🛬 抵達（自台灣）</div>' + legs(e.arr, "A") + '</div><div><div class="gss-t">🛫 出發（回台灣）</div>' + legs(e.dep, "D") + "</div></div></div>";
+  }).join("");
+  return '<p class="note" style="margin:10px 0 0">時間一律為<b>該外站的當地時間</b>，星期也以當地日期計（跨日抵達已往後算一天）。「起飛／抵達」小字是台灣端的當地時間。' +
+    "統計區間：" + esc(dates[0].iso) + " 起 " + dates.length + " 天。資料為航空公司公告的定期班表，臨時加班、包機或取消不會反映在這裡。" + (span ? "<br>班表有效期間：" + esc(span) : "") + "</p>" + html;
+}
 function gsRender(){
   var body = $("gsBody");
   if(!body) return;
@@ -8219,6 +8142,7 @@ function gsRender(){
   var groupBy = ($("gsGroup") && $("gsGroup").value) || "flight";
   var head, tb;
 
+  if(groupBy === "station"){ body.innerHTML = gsStationHtml(rows, dates, span); return; }
   if(groupBy === "peer"){
     head = "<thead><tr><th>場站</th><th>航點</th><th>航班號數</th><th>航班號與時間</th><th>出發班次</th><th>抵達班次</th>" +
       dayHead + "<th>" + dates.length + " 天班次</th></tr></thead>";
@@ -8421,7 +8345,7 @@ async function updateApi(){
     }
   }catch(e){
     status.textContent = "更新失敗";
-    apiShow("API 更新失敗：" + e.message, "err");
+    apiShow("API 更新失敗：" + esc(e.message), "err");
   }
 }
 
@@ -8532,7 +8456,8 @@ function shift(hhmm, mins){
     document.title = "即時航班看板（分享版）";
     var bt = $("buildTag"); if(bt) bt.textContent += "・分享版";
   }
-  var navBtns = $("nav").querySelectorAll("button");
+  (function swClockTick(){ var c = $("swClock"); if(c){ c.textContent = twParts(Date.now()).hm; } setTimeout(swClockTick, 15000 - Date.now() % 15000 + 50); })();
+  var navBtns = $("nav").querySelectorAll("button[data-tab]");
   for(var i=0;i<navBtns.length;i++){
     navBtns[i].addEventListener("click", function(){ switchTab(this.getAttribute("data-tab")); });
   }
@@ -8694,7 +8619,6 @@ function shift(hhmm, mins){
   }
   loadWatch();
   renderWatchChips();
-  ["oMonth","oDir","oThr","oBase","oMin"].forEach(function(id){ $(id).addEventListener("change", renderOtd); });
   loadFlightDB();
   var t = new Date();
   $("defDate").placeholder = t.getFullYear() + "-" + pad2(t.getMonth()+1) + "-" + pad2(t.getDate());
@@ -8752,6 +8676,7 @@ function shift(hhmm, mins){
   bgInit();
   fixInit();
   hsInit();
+  navInit();
   seatInit();
   ospInit();
   // 切回分頁時立即更新一次（背景時可能暫停了抓取）
@@ -8759,7 +8684,7 @@ function shift(hhmm, mins){
     if(!document.hidden && HOLD.on && !HOLD.busy && Date.now() - (HOLD.lastOk || 0) > 20000){ clearTimeout(HOLD.timer); holdTick(); }
   });
 
-  switchTab(LITE ? "board" : "tdx");
+  switchTab("board");
   refreshAll();
   relayInit();
   // 完整版：上次有開「TDX 自動更新」就自動繼續
