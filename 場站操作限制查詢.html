@@ -664,6 +664,10 @@ html[data-skin] .sky{ border-color:var(--line); }
 #sxFilt .sx-f:has(.sx-sel:disabled)::after{opacity:.4}
 @media (min-width:821px){ #sxFilt{grid-template-columns:repeat(4,minmax(0,1fr))} }
 #sxMain > .sx-f:has(#sxOnly){display:block}
+/* 場站限制：有宵禁的場站在按鈕右上角加紅點 */
+.code.has-cf{position:relative}
+.code.has-cf::after{content:"";position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:#c52233;box-shadow:0 0 0 2px var(--panel,#FFFCF6)}
+.code.has-cf[aria-pressed="true"]::after{box-shadow:0 0 0 2px rgba(255,255,255,.85)}
 #sxMain > .sx-f:has(#sxOnly) > span{display:none}
 </style>
 </head>
@@ -773,7 +777,7 @@ html[data-skin] .sky{ border-color:var(--line); }
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-10-24h（移除北美國旗）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-11-01b（宵禁場站紅點）</span></p>
 </div>
 
 <button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
@@ -3174,7 +3178,8 @@ function renderList(){
     const grid=document.createElement("div"); grid.className="codes";
     list.forEach(s=>{
       const b=document.createElement("button");
-      b.className="code"+(s.filled?"":" empty");
+      b.className="code"+(s.filled?"":" empty")+(s.items.curfew && s.items.curfew.status==="V" ? " has-cf" : "");
+      if(s.items.curfew && s.items.curfew.status==="V") b.title = "有宵禁" + (s.items.curfew.time ? "：" + s.items.curfew.time.replace(/\n/g," ") : "");
       b.setAttribute("aria-pressed", current && current.code===s.code);
       const bar = ITEMS.map(i=>{
         const c = read(i.key, s.items[i.key].status).k;
