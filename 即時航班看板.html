@@ -670,7 +670,7 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-10-22a</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-11-01b</span></p>
     </div>
     <div class="stamp">
       <div><b id="stFlights">0</b><i>航班筆數</i></div>
@@ -1207,6 +1207,10 @@ tr.hrow.sel td{background:rgba(58,143,167,.12)}
       </label>
       <label class="f" style="flex-direction:row;align-items:center;gap:6px;padding-bottom:9px">
         <input type="checkbox" id="holdNotify"> 發現盤旋時通知＋提示音
+      </label>
+      <label class="f" id="holdExclBox">排除偵測（班號／呼號，逗號分隔，可用 * ，例：JX2500, JX25*）
+        <input type="text" id="holdExcl" value="JX2500" size="22" placeholder="例：JX2500, JX25*">
+        <span style="display:flex;gap:6px;align-items:center;font-size:12.5px;margin-top:4px"><input type="checkbox" id="holdExclSame" checked> 起飛與降落同一機場的訓練／測試飛行也排除</span>
       </label>
       <button class="btn primary" id="btnHoldToggle">開始監看</button>
       <button class="btn ghost hs-open" id="btnHoldSettings" type="button" title="資料來源、Telegram、航班資料 API、背景監看、資料來源狀態">⚙ 設定<span class="hs-dots" id="hsDots"></span></button>
@@ -3685,6 +3689,25 @@ function defaultTypes(icaos){
   icaos.forEach(function(c){ (FLEET_TYPES[c] || FLEET_GENERIC).forEach(function(x){ if(t.indexOf(x) < 0) t.push(x); }); });
   return t;
 }
+/* 排除偵測：訓練機、測試飛行等不需要通知的班號／呼號（可用 * 萬用字元） */
+function holdExclList(){
+  var v = $("holdExcl") ? $("holdExcl").value : "JX2500";
+  return v.toUpperCase().split(/[\s,，、;；]+/).filter(function(x){ return /^[A-Z0-9*]{2,10}$/.test(x); }).slice(0, 30);
+}
+function holdExcluded(tr, cfg){
+  cfg = cfg || holdCfg();
+  var names = [tr.fno, tr.cs, holdFlightNo(tr.cs), tr.reg].filter(Boolean).map(function(x){ return String(x).toUpperCase().replace(/\s/g, ""); });
+  names = names.concat(names.map(function(x){ return x.replace(/^([A-Z0-9]{2,3}?)0+(\d)/, "$1$2"); }));   // JX02500 → JX2500
+  var hit = (cfg.excl || []).some(function(p){
+    var re = new RegExp("^" + p.replace(/\*/g, ".*") + "$");
+    return names.some(function(n){ return re.test(n); });
+  });
+  if(hit) return "名單";
+  if(cfg.exclSame){
+    try{ var rt = holdRoute(tr); if(rt && rt.from && rt.to && rt.from === rt.to) return "起降同一機場"; }catch(e){}
+  }
+  return "";
+}
 function holdCfg(){
   var apt = HOLD_APT[$("holdApt").value] || HOLD_APT.RCTP;
   var ga = holdGAirlines();
@@ -3694,7 +3717,8 @@ function holdCfg(){
     mode: $("holdMode").value, gAl: ga.ok, bad: ga.bad, types: types.slice(0, 25), onlyHold: $("holdOnlyHold").checked,
     code: $("holdApt").value, apt: apt, r: parseInt($("holdRadius").value, 10) || 100,
     airlines: $("holdAirline").value.toUpperCase().split(/[\s,，、]+/).filter(Boolean),
-    proxy: $("holdProxy").value.trim(), notify: $("holdNotify").checked
+    proxy: $("holdProxy").value.trim(), notify: $("holdNotify").checked,
+    excl: holdExclList(), exclSame: !$("holdExclSame") || $("holdExclSame").checked
   };
 }
 function holdSave(){
@@ -3702,7 +3726,8 @@ function holdSave(){
     localStorage.setItem("holdCfg", JSON.stringify({
       mode:$("holdMode").value, gal:$("holdGAl").value, gtypes:$("holdGTypes").value, only:$("holdOnlyHold").checked,
       apt:$("holdApt").value, r:$("holdRadius").value, al:$("holdAirline").value,
-      proxy:$("holdProxy").value, notify:$("holdNotify").checked }));
+      proxy:$("holdProxy").value, notify:$("holdNotify").checked,
+      excl:$("holdExcl").value, exclSame:$("holdExclSame").checked }));
   }catch(e){}
 }
 function holdLoadCfg(){
@@ -3718,6 +3743,8 @@ function holdLoadCfg(){
     if(c.al != null) $("holdAirline").value = c.al;
     if(c.proxy != null) $("holdProxy").value = c.proxy;
     $("holdNotify").checked = !!c.notify;
+    if(c.excl != null) $("holdExcl").value = c.excl;
+    if(c.exclSame != null) $("holdExclSame").checked = !!c.exclSame;
   }catch(e){}
 }
 
@@ -4327,7 +4354,9 @@ function holdIngest(list, cfg){
     }
     // 取樣夠密時，還要求最近 4 分鐘確實在轉（避免把前一次盤旋的圈數算進來而太早判定）
     var turningNow = r.recentN < 5 || r.recentTurn >= 180;
-    if(eligible && r.turn >= 360 && !orbitDescent && !climbing && levelOk && !stopped && (tr.holding || turningNow)){
+    tr.excluded = holdExcluded(tr, cfg);   // 訓練機／測試飛行：不判定盤旋、不推播
+    if(tr.excluded && tr.holding){ tr.holding = false; if(tr.logId){ HLOG.list = HLOG.list.filter(function(x){ return x.id !== tr.logId; }); HLOG.dirty = true; tr.logId = null; } }
+    if(!tr.excluded && eligible && r.turn >= 360 && !orbitDescent && !climbing && levelOk && !stopped && (tr.holding || turningNow)){
       if(!tr.holding){ tr.holding = true; tr.holdSince = Math.max(now - r.dur, tr.exitAt || 0); }
       tr.lastHold = now;
     }else if(tr.holding && (r.turn < 180 || !eligible || stopped || orbitDescent || climbing || !levelOk)){
@@ -4388,6 +4417,7 @@ function holdBeep(){
 function holdNotifyNew(list, cfg){
   if(!cfg.notify) return;
   list.forEach(function(tr){
+    if(tr.excluded) return;
     var key = tr.hex + ":" + tr.level + (tr.divert ? ":div" : "");
     if(HOLD.notified[key]) return;
     HOLD.notified[key] = Date.now();
@@ -4488,7 +4518,9 @@ function tgCheck(scope){
   Object.keys(HOLD.notified).forEach(function(k){ var v = HOLD.notified[k]; if(v === 1) HOLD.notified[k] = nowT; else if(nowT - v > 24*3600000) delete HOLD.notified[k]; });
   scope.forEach(function(tr){
     if(tr.lost) return;
+    if(tr.excluded && !tr.emerg) return;   // 排除名單（訓練機等）：只保留緊急代碼通知
     if(tr.emerg && !TG.sent[tr.hex + ":emerg"]){ TG.sent[tr.hex + ":emerg"] = Date.now(); tgEnqueue(tgText(tr, "emerg")); }
+    if(tr.excluded) return;
     if(tr.gaRecent && !TG.sent[tr.hex + ":ga:" + tr.goAround.t]){ TG.sent[tr.hex + ":ga:" + tr.goAround.t] = Date.now(); tgEnqueue(tgText(tr, "ga")); }
     if(tr.divert && !TG.sent[tr.hex + ":div:" + tr.divert.since]){ TG.sent[tr.hex + ":div:" + tr.divert.since] = Date.now(); tgEnqueue(tgText(tr, "divert")); }
     if(tr.holding && tr.level >= 2){
@@ -4592,7 +4624,7 @@ function holdRender(){
 
   holdNotifyNew(active.filter(function(t){ return t.level >= 2 || t.divert; }), cfg);
   if(cfg.notify) active.forEach(function(t){
-    if(!t.gaRecent) return;
+    if(!t.gaRecent || t.excluded) return;
     var gk = t.hex + ":ga:" + t.goAround.t;
     if(HOLD.notified[gk]) return;
     HOLD.notified[gk] = Date.now(); holdBeep();
@@ -4623,7 +4655,7 @@ function holdRender(){
       '<td><span class="hlv ' + (exited ? "l0" : "l" + tr.level) + '">' + (exited ? "已脫離" : lvText(tr)) + "</span>" +
         (tr.emerg ? '<br><b style="color:var(--bad)">SQK ' + esc(tr.squawk) + "</b>" : "") + "</td>" +
       '<td class="mono" style="color:var(--amber);font-weight:600">' + esc(tr.fno || tr.cs || "—") +
-        (tr.fno && tr.cs ? '<br><span class="note">' + esc(tr.cs) + "</span>" : "") + "</td>" +
+        (tr.fno && tr.cs ? '<br><span class="note">' + esc(tr.cs) + "</span>" : "") + (tr.excluded ? '<br><span class="note" title="在排除偵測名單內：不判定盤旋、不推播">已排除（' + esc(tr.excluded) + "）</span>" : "") + "</td>" +
       "<td>" + esc(tr.type || "—") + '<br><span class="note">' + esc(tr.reg || tr.hex.toUpperCase()) + "</span></td>" +
       '<td class="mono">' + fmtAlt(tr.alt) + vs + '<br><span class="note">' + (tr.gs != null ? tr.gs + " kt" : "—") + "</span></td>" +
       (tr.dist != null
@@ -5651,7 +5683,8 @@ function bgBuildConfig(){
   return {
     enabled: true, mode: cfg.mode,
     apt: { icao: cfg.code, iata: cfg.apt.iata, name: cfg.apt.name, lat: cfg.apt.lat, lon: cfg.apt.lon },
-    r: cfg.r, airlines: cfg.airlines, gAl: cfg.gAl, types: cfg.types, tg: tgCfg()
+    r: cfg.r, airlines: cfg.airlines, gAl: cfg.gAl, types: cfg.types, tg: tgCfg(),
+    excl: cfg.excl, exclSame: cfg.exclSame
   };
 }
 function bgPaint(){
@@ -5681,6 +5714,7 @@ function hsInit(){
   var nl = $("holdNotify") && $("holdNotify").closest("label");
   if(tl) gen.appendChild(tl);
   if(nl) gen.appendChild(nl);
+  if($("holdExclBox")) gen.appendChild($("holdExclBox"));
   [$("holdProxy") && $("holdProxy").closest("details"), $("tgToken") && $("tgToken").closest("details"), $("fixBox"), $("bgBox"), $("diagBox")]
     .forEach(function(d){ if(d) body.appendChild(d); });
   function open(){ $("hsDrawer").hidden = false; $("hsBack").hidden = false; diagRender(); }
@@ -6706,6 +6740,7 @@ function holdInit(){
     this.value = this.value.trim().replace(/\/+$/, "");
     holdSave(); pill(); syncMode();
     HOLD.err = ""; if(HOLD.on && !HOLD.busy){ clearTimeout(HOLD.timer); holdTick(); } });
+  ["holdExcl","holdExclSame"].forEach(function(id){ $(id).addEventListener("change", function(){ holdSave(); holdRender(); }); });
   $("holdNotify").addEventListener("change", function(){
     holdSave();
     if(this.checked && window.Notification && Notification.permission === "default"){ try{ Notification.requestPermission(); }catch(e){} }
