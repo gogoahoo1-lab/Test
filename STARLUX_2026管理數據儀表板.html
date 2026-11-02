@@ -357,6 +357,24 @@
 
   table{ width:100%; border-collapse:collapse; font-size:14px; }
   #saipZoneSummaryTable{ table-layout:fixed; }
+  #saipZoneSummaryTable tr.sz-row{ cursor:pointer; transition:background .15s; }
+  #saipZoneSummaryTable tr.sz-row:hover{ background:var(--cream-2); }
+  #saipZoneSummaryTable tr.sz-row.open{ background:var(--cream-2); }
+  #saipZoneSummaryTable tr.sz-row:focus-visible{ outline:2px solid var(--earth-gold); outline-offset:-2px; }
+  #saipZoneSummaryTable .sz-chev{ display:inline-block; width:14px; color:var(--muted); font-size:10px; transition:transform .2s; margin-right:4px; }
+  #saipZoneSummaryTable tr.sz-row.open .sz-chev{ transform:rotate(90deg); color:var(--earth-gold); }
+  #saipZoneSummaryTable tr.sz-detail > td{ padding:0 12px 14px 12px; background:var(--cream-2); border-top:none; }
+  .sz-cases{ display:flex; flex-direction:column; gap:8px; animation:fadeIn .2s ease; }
+  .sz-case{ display:grid; grid-template-columns:56px 1fr; gap:12px; align-items:start; background:var(--paper); border-radius:10px; padding:10px 12px; box-shadow:0 1px 0 rgba(0,0,0,.04); }
+  .sz-month{ display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:8px; background:var(--ink); color:#fff; padding:6px 0; line-height:1.15; }
+  .sz-month b{ font-size:15px; font-weight:800; }
+  .sz-month small{ font-size:10px; opacity:.75; letter-spacing:.04em; }
+  .sz-meta{ display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; font-size:12px; color:var(--muted); margin-bottom:4px; }
+  .sz-meta .badge-type{ font-size:11px; }
+  .sz-desc{ font-size:13px; color:var(--ink); line-height:1.55; white-space:pre-wrap; word-break:break-word; }
+  #saipZoneSummaryTable tr.sz-row:hover .kpi-chip, #saipZoneSummaryTable tr.sz-row.open .kpi-chip{ background:var(--paper); }
+  .sz-hint{ font-size:12px; color:var(--muted); font-weight:500; margin-left:6px; }
+  @media (max-width:640px){ .sz-case{ grid-template-columns:44px 1fr; gap:10px; } }
   thead th{
     text-align:left; font-size:12.5px; text-transform:uppercase; letter-spacing:.4px;
     color:var(--muted); font-weight:700; padding:9px 10px; border-bottom:2px solid var(--line);
@@ -838,8 +856,8 @@
           <div class="card">
             <h3><span data-i18n="h_saipzone_table">場站案件說明</span> <span class="tag" id="saipZoneTableCountTag">0 筆</span></h3>
             <div class="pill-row" id="saipZoneTableMonthPills" style="margin-bottom:10px;"></div>
-            <h4 style="font-size:14px; color:var(--muted); font-weight:700; margin:4px 0 8px;" data-i18n="h_saipzone_summary">各站點件數彙總</h4>
-            <div class="table-scroll" style="max-height:280px; margin-bottom:18px;"><table id="saipZoneSummaryTable"></table></div>
+            <h4 style="font-size:14px; color:var(--muted); font-weight:700; margin:4px 0 8px;" ><span data-i18n="h_saipzone_summary">各站點件數彙總</span><span class="sz-hint">・點選站點查看每件案件</span></h4>
+            <div class="table-scroll" id="saipZoneSummaryScroll" style="max-height:420px; margin-bottom:18px;"><table id="saipZoneSummaryTable"></table></div>
             <h4 style="font-size:14px; color:var(--muted); font-weight:700; margin:4px 0 8px;" data-i18n="h_saipzone_case_list">逐筆案件明細</h4>
             <div class="pill-row" id="saipZoneTableCategoryPills" style="margin-bottom:10px;"></div>
             <div class="table-scroll"><table id="saipZoneStationTable"></table></div>
@@ -2239,7 +2257,7 @@
       const flight = cell(rows,r,23);
       if (date === null || date === undefined) continue;
       if ((dep === null || dep === undefined) && (flight === null || flight === undefined)) continue;
-      log.push({date:String(date), dep:dep||'', flight:flight||'', type:cell(rows,r,24)||'', code:cell(rows,r,25)||'', reason:cell(rows,r,26)||''});
+      log.push({date:fmtDlyDate(date), dep:dep||'', flight:flight||'', type:cell(rows,r,24)||'', code:cell(rows,r,25)||'', reason:cell(rows,r,26)||''});
     }
     return log;
   }
@@ -2281,6 +2299,37 @@
     if (typeof v !== 'string') return v || '';
     return v.replace(/^\d+\.\s*/, '');
   }
+  // Escape free text from Excel before inserting into innerHTML (e.g. "<Description>" in case notes)
+  function esc(v){
+    if (v === null || v === undefined) return '';
+    return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  // DLY log dates are shown as 'MM/DD'; accept Date objects, Excel serials and 'YYYY/M/D' too
+  function fmtDlyDate(v){
+    if (v === null || v === undefined || v === '') return '';
+    if (typeof v === 'string' && /^\d{1,2}\/\d{1,2}$/.test(v.trim())) return v.trim();
+    const full = fmtDateCell(v);
+    const m = String(full).match(/^\d{4}\/(\d{1,2})\/(\d{1,2})/);
+    if (m) return ('0'+m[1]).slice(-2)+'/'+('0'+m[2]).slice(-2);
+    return String(v);
+  }
+  // Normalise an Excel date cell (JS Date / serial number / string) to 'YYYY/M/D'
+  function fmtDateCell(v){
+    if (v === null || v === undefined || v === '') return '';
+    if (v instanceof Date && !isNaN(v)) return v.getFullYear()+'/'+(v.getMonth()+1)+'/'+v.getDate();
+    if (typeof v === 'number' && v > 20000 && v < 80000){
+      const d = new Date(Math.round((v - 25569) * 86400000));
+      return d.getUTCFullYear()+'/'+(d.getUTCMonth()+1)+'/'+d.getUTCDate();
+    }
+    const str = String(v).trim();
+    const m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (m) return m[1]+'/'+parseInt(m[2],10)+'/'+parseInt(m[3],10);
+    if (str.indexOf('/') < 0 && /[A-Za-z]{3} [A-Za-z]{3} \d/.test(str)){
+      const d = new Date(str);
+      if (!isNaN(d)) return d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate();
+    }
+    return str;
+  }
   function parseInadCases(rows){
     const cases = [];
     for (let r=3;r<=rows.length;r++){
@@ -2296,10 +2345,10 @@
       const flightDate = cell(rows,r,6);
       cases.push({
         no: no,
-        closedDate: cell(rows,r,3)!==null ? String(cell(rows,r,3)) : '',
+        closedDate: fmtDateCell(cell(rows,r,3)),
         caseNumber: caseNoEmpty ? '' : String(caseNo),
         flightNo: flightNo || '',
-        flightDate: flightDate!==null ? String(flightDate) : '',
+        flightDate: fmtDateCell(flightDate),
         objectStation: normStation(cell(rows,r,7)),
         reportStation: normStation(cell(rows,r,8)),
         subType: normalizeSubtype(cell(rows,r,9)),
@@ -2328,7 +2377,7 @@
       const flightDateRaw = cell(rows,r,4);
       let month = null;
       if (flightDateRaw !== null && flightDateRaw !== undefined){
-        const s = String(flightDateRaw);
+        const s = fmtDateCell(flightDateRaw);
         if (s.indexOf('/') >= 0){
           const parts = s.split('/');
           if (parts.length >= 2){ const mm = parseInt(parts[1],10); if (mm>=1 && mm<=12) month = mm-1; }
@@ -2339,7 +2388,7 @@
       }
       entries.push({
         caseNo: String(caseNo),
-        flightDate: flightDateRaw!==null && flightDateRaw!==undefined ? String(flightDateRaw) : '',
+        flightDate: fmtDateCell(flightDateRaw),
         month: month,
         station: normStation(cell(rows,r,6)),
         category: category,
@@ -2522,7 +2571,7 @@
   function caseMonthIndex(flightDate){
     // formats seen: '2026/1/2' (slash, Y/M/D) and '2026-04-08 00:00:00' (dash, Y-M-D from Excel datetime cells)
     if (!flightDate) return -1;
-    const s = String(flightDate).trim();
+    const s = fmtDateCell(flightDate);
     if (s.indexOf('/') >= 0){
       const parts = s.split('/');
       if (parts.length < 2) return -1;
@@ -2539,7 +2588,8 @@
   }
   function logMonthIndex(dateStr){
     if (!dateStr) return -1;
-    const mm = parseInt(String(dateStr).split('/')[0], 10);
+    const d = fmtDlyDate(dateStr);
+    const mm = parseInt(String(d).split('/')[0], 10);
     return (mm>=1 && mm<=12) ? mm-1 : -1;
   }
   function filteredDlyLog(){
@@ -2929,7 +2979,7 @@
       // 原因摘要（取前 3 件，每件截取前 20 字）
       const reasonSamples = entries.slice(0, 3).map(function(e){
         const r = (e.reason||'').replace(/\n/g,' ').trim();
-        return r.length > 22 ? r.slice(0,22)+'…' : r;
+        return esc(r.length > 22 ? r.slice(0,22)+'…' : r);
       }).filter(Boolean);
       return { count: entries.length, stations: stations, reasons: reasonSamples };
     }
@@ -3004,8 +3054,8 @@
           kEntries.forEach(function(e){
             const reason = (e.reason||'').replace(/\n/g,' ').trim();
             html += '<li style="font-size:12px;color:var(--ink-soft);margin-bottom:3px">'
-              +'<span style="color:var(--earth-gold);font-weight:600">'+e.date+' '+e.dep+' '+e.flight+'</span>　'
-              +reason
+              +'<span style="color:var(--earth-gold);font-weight:600">'+esc(e.date+' '+e.dep+' '+e.flight)+'</span>　'
+              +esc(reason)
               +'</li>';
           });
           html += '</ul>';
@@ -3447,27 +3497,74 @@
       });
     }
   }
+  let saipZoneExpanded = null; // station code currently expanded in the summary table
   function renderSaipZoneSummaryTable(log){
     // Aggregate the same (already month-filtered) case list by station: total count + category
-    // breakdown, so the user can see at a glance how many cases and which categories occurred
-    // at each station for the selected period.
+    // breakdown. Each row can be clicked to expand the individual cases (month, date, code, details).
     const counts = {};
     log.forEach(function(e){
-      if (!counts[e.station]) counts[e.station] = {total:0, byCategory:{}};
+      if (!counts[e.station]) counts[e.station] = {total:0, byCategory:{}, cases:[]};
       counts[e.station].total++;
       counts[e.station].byCategory[e.category] = (counts[e.station].byCategory[e.category]||0)+1;
+      counts[e.station].cases.push(e);
     });
-    const ranking = Object.keys(counts).map(function(s){ return {station:s, total:counts[s].total, byCategory:counts[s].byCategory}; })
+    const ranking = Object.keys(counts).map(function(s){ return {station:s, total:counts[s].total, byCategory:counts[s].byCategory, cases:counts[s].cases}; })
       .sort(function(a,b){return b.total-a.total;});
+    if (saipZoneExpanded && !counts[saipZoneExpanded]) saipZoneExpanded = null;
     const table = document.getElementById('saipZoneSummaryTable');
     const rowsHtml = ranking.map(function(r){
       const chips = Object.keys(r.byCategory).sort(function(a,b){return r.byCategory[b]-r.byCategory[a];})
-        .map(function(c){ return '<span class="kpi-chip">'+c+'<span class="n">'+r.byCategory[c]+'</span></span>'; }).join('');
-      return '<tr><td>'+r.station+'</td><td class="num">'+r.total+'</td><td><div class="kpi-breakdown" style="margin-top:0;">'+chips+'</div></td></tr>';
+        .map(function(c){ return '<span class="kpi-chip">'+esc(c)+'<span class="n">'+r.byCategory[c]+'</span></span>'; }).join('');
+      const open = saipZoneExpanded === r.station;
+      let html = '<tr class="sz-row'+(open?' open':'')+'" data-szst="'+esc(r.station)+'" tabindex="0" role="button" aria-expanded="'+open+'">'+
+        '<td><span class="sz-chev">▶</span>'+esc(r.station)+'</td><td class="num">'+r.total+'</td><td><div class="kpi-breakdown" style="margin-top:0;">'+chips+'</div></td></tr>';
+      if (open){
+        const cases = r.cases.slice().sort(function(a,b){
+          const ma = (a.month==null?99:a.month), mb = (b.month==null?99:b.month);
+          if (ma !== mb) return ma - mb;
+          return String(a.flightDate).localeCompare(String(b.flightDate), undefined, {numeric:true});
+        });
+        html += '<tr class="sz-detail"><td colspan="3"><div class="sz-cases">'+cases.map(function(e){
+          const hasM = e.month !== null && e.month !== undefined;
+          const meaning = tSaipDescription(e.code, null);
+          const desc = (e.description||'').trim();
+          return '<div class="sz-case">'+
+            '<div class="sz-month"><b>'+(hasM ? (e.month+1) : '—')+'</b><small>'+(hasM ? (currentLang==='en'?MONTHS_EN[e.month].toUpperCase():'月') : '')+'</small></div>'+
+            '<div>'+
+              '<div class="sz-meta">'+
+                '<span class="badge-type badge-other">'+esc(e.code)+'</span>'+
+                (meaning ? '<span>'+esc(meaning)+'</span>' : '')+
+                (e.flightDate ? '<span>'+esc(fmtDateCell(e.flightDate))+'</span>' : '')+
+                (e.caseNo ? '<span>#'+esc(e.caseNo)+'</span>' : '')+
+              '</div>'+
+              '<div class="sz-desc">'+(desc ? esc(desc) : '<span style="color:var(--muted)">'+t('label_not_provided')+'</span>')+'</div>'+
+            '</div></div>';
+        }).join('')+'</div></td></tr>';
+      }
+      return html;
     }).join('');
     table.innerHTML = '<colgroup><col style="width:100px;"><col style="width:64px;"><col></colgroup>'+
       '<thead><tr><th>'+t('th_station')+'</th><th>'+t('th_case_no')+'</th><th>'+t('h_saipzone_category')+'</th></tr></thead>'+
       '<tbody>'+(rowsHtml || '<tr><td colspan="3" class="empty-note">'+t('empty_no_records')+'</td></tr>')+'</tbody>';
+    if (!table._szBound){
+      table._szBound = true;
+      const toggle = function(row){
+        const st = row.getAttribute('data-szst');
+        saipZoneExpanded = (saipZoneExpanded === st) ? null : st;
+        renderSaipZoneStationTable();
+        if (saipZoneExpanded){
+          const r2 = document.querySelector('#saipZoneSummaryTable tr.sz-row.open');
+          const box = document.getElementById('saipZoneSummaryScroll');
+          if (r2 && box) box.scrollTop = Math.max(0, r2.offsetTop - 40);
+        }
+      };
+      table.addEventListener('click', function(e){ const row = e.target.closest('tr.sz-row'); if (row) toggle(row); });
+      table.addEventListener('keydown', function(e){
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const row = e.target.closest('tr.sz-row'); if (!row) return;
+        e.preventDefault(); toggle(row);
+      });
+    }
   }
   let saipZoneTableCategory = 'all';
   function renderSaipZoneStationTable(){
@@ -3497,7 +3594,7 @@
     const rowsHtml = sorted.map(function(e){
       const monthLabel = (e.month!==null && e.month!==undefined) ? MONTHS_ZH[e.month] : '—';
       const meaning = tSaipDescription(e.code, e.description);
-      return '<tr><td>'+e.station+'</td><td>'+monthLabel+'</td><td><span class="badge-type badge-other">'+e.code+'</span></td><td>'+meaning+'</td></tr>';
+      return '<tr><td>'+esc(e.station)+'</td><td>'+monthLabel+'</td><td><span class="badge-type badge-other">'+esc(e.code)+'</span></td><td>'+esc(meaning)+'</td></tr>';
     }).join('');
     table.innerHTML = '<thead><tr><th>'+t('th_station')+'</th><th>'+t('th_month')+'</th><th>'+t('th_code')+'</th><th>'+t('th_desc')+'</th></tr></thead>'+
       '<tbody>'+(rowsHtml || '<tr><td colspan="4" class="empty-note">'+t('empty_no_records')+'</td></tr>')+'</tbody>';
@@ -3520,7 +3617,7 @@
     const rowsHtml = filtered.map(function(e){
       const label = tSaipCategoryLabel(e.category, e.categoryLabel);
       const desc = tSaipDescription(e.code, e.description);
-      return '<tr><td>'+label+'</td><td><span class="badge-type badge-other">'+e.code+'</span></td><td>'+desc+'</td></tr>';
+      return '<tr><td>'+esc(label)+'</td><td><span class="badge-type badge-other">'+esc(e.code)+'</span></td><td>'+esc(desc)+'</td></tr>';
     }).join('');
     table.innerHTML = '<thead><tr><th>'+t('h_saipzone_category')+'</th><th>'+t('th_code')+'</th><th>'+t('th_desc')+'</th></tr></thead>'+
       '<tbody>'+(rowsHtml || '<tr><td colspan="3" class="empty-note">'+t('empty_no_records')+'</td></tr>')+'</tbody>';
@@ -3885,8 +3982,8 @@
     const rootCauseRaw = anonymizeCaseText(c.rootCause||'');
     const rootCause = (rootCauseRaw && rootCauseRaw.trim() && rootCauseRaw.trim() !== '-') ? rootCauseRaw : t('label_not_provided');
     return '<ul style="margin:0; padding-left:16px;">'+
-      '<li><b>'+t('label_what_happened')+'：</b>'+(truncated||'—')+'</li>'+
-      '<li><b>'+t('label_root_cause')+'：</b>'+rootCause+'</li>'+
+      '<li><b>'+t('label_what_happened')+'：</b>'+(esc(truncated)||'—')+'</li>'+
+      '<li><b>'+t('label_root_cause')+'：</b>'+esc(rootCause)+'</li>'+
       '</ul>';
   }
   function renderInadCaseTable(){
@@ -3895,7 +3992,7 @@
     document.getElementById('inadCaseCountTag').textContent = baseCases.length + ' '+t('unit_pcs') + (inadCaseMonthFilter==='all' ? '（'+t('ytd')+'）' : '（'+MONTHS_ZH[inadCaseMonthFilter]+'）');
     const subtypes = Array.from(new Set((STATE.inadCases||[]).map(function(c){return c.subType || '?';})));
     const pillsHtml = ['<button class="pill '+(inadActiveSubtype==='all'?'active':'')+'" data-sub="all">'+t('all')+'</button>']
-      .concat(subtypes.map(function(st){ return '<button class="pill '+(inadActiveSubtype===st?'active':'')+'" data-sub="'+st+'">'+displaySubtype(st)+'</button>'; }));
+      .concat(subtypes.map(function(st){ return '<button class="pill '+(inadActiveSubtype===st?'active':'')+'" data-sub="'+esc(st)+'">'+esc(displaySubtype(st))+'</button>'; }));
     document.getElementById('inadSubtypePills').innerHTML = pillsHtml.join('');
     const pillEls = document.querySelectorAll('#inadSubtypePills .pill');
     for (let k=0;k<pillEls.length;k++){
@@ -3904,8 +4001,9 @@
     const filtered = inadActiveSubtype==='all' ? baseCases : baseCases.filter(function(c){ return (c.subType||'?')===inadActiveSubtype; });
     const table = document.getElementById('inadCaseTable');
     const rowsHtml = filtered.map(function(c){
-      return '<tr><td>'+c.flightDate+'</td><td>'+c.flightNo+'</td><td>'+c.objectStation+' → '+c.reportStation+'</td>'+
-        '<td>'+displaySubtype(c.subType||'')+'</td><td>'+(c.fine&&c.fine!=='-'?c.fine:'—')+'</td>'+
+      const route = (c.objectStation || c.reportStation) ? esc(c.objectStation||'?')+' → '+esc(c.reportStation||'?') : '—';
+      return '<tr><td>'+esc(c.flightDate)+'</td><td>'+esc(c.flightNo)+'</td><td>'+route+'</td>'+
+        '<td>'+esc(displaySubtype(c.subType||''))+'</td><td>'+(c.fine&&c.fine!=='-'?esc(c.fine):'—')+'</td>'+
         '<td style="max-width:420px;">'+inadCaseSummaryHtml(c)+'</td></tr>';
     }).join('');
     table.innerHTML = '<thead><tr><th>'+t('th_flight_date')+'</th><th>'+t('th_flight')+'</th><th>'+t('th_route')+'</th><th>'+t('th_case_type')+'</th><th>'+t('th_fine')+'</th><th>'+t('th_case_desc')+'</th></tr></thead>'+
@@ -4212,10 +4310,10 @@
     });
     document.getElementById('dlyLogCountTag').textContent = filtered.length + ' '+t('unit_pcs') + (dlyLogMonthFilter==='all' ? '（'+t('ytd')+'）' : '（'+MONTHS_ZH[dlyLogMonthFilter]+'）');
     const table = document.getElementById('dlyLogTable');
-    const rowsHtml = filtered.slice(0,300).map(function(e){
-      return '<tr><td>'+e.date+'</td><td>'+e.dep+'</td><td>'+e.flight+'</td>'+
-        '<td><span class="badge-type '+badgeClass(e.type)+'">'+e.type+'</span></td>'+
-        '<td>'+e.code+'</td><td style="max-width:420px;">'+(e.reason && e.reason.trim() ? tDlyReason(e.reason) : '<span class="empty-note" style="padding:0;">'+t('label_not_provided')+'</span>')+'</td></tr>';
+    const rowsHtml = filtered.map(function(e){
+      return '<tr><td>'+esc(e.date)+'</td><td>'+esc(e.dep)+'</td><td>'+esc(e.flight)+'</td>'+
+        '<td><span class="badge-type '+badgeClass(e.type)+'">'+esc(e.type)+'</span></td>'+
+        '<td>'+esc(e.code)+'</td><td style="max-width:420px;">'+(e.reason && String(e.reason).trim() ? esc(tDlyReason(e.reason)) : '<span class="empty-note" style="padding:0;">'+t('label_not_provided')+'</span>')+'</td></tr>';
     }).join('');
     table.innerHTML = '<thead><tr><th>'+t('th_date')+'</th><th>'+t('th_dep')+'</th><th>'+t('th_flight')+'</th><th>'+t('th_type')+'</th><th>'+t('th_code')+'</th><th>'+t('th_reason')+'</th></tr></thead>'+
       '<tbody>'+(rowsHtml || '<tr><td colspan="6" class="empty-note">'+t('empty_no_records')+'</td></tr>')+'</tbody>';
@@ -5292,13 +5390,16 @@
     if (!ws) return null;
     const rows = getRows(ws);
     const MONTH_MAP = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+    function rmin(v){ return (v instanceof Date && !isNaN(v)) ? new Date(Math.round(v.getTime()/60000)*60000) : v; }
     function tstr(v){
+      v = rmin(v);
       if (v instanceof Date) { const hh=('0'+v.getHours()).slice(-2), mm=('0'+v.getMinutes()).slice(-2); return hh+':'+mm; }
       if (typeof v === 'string' && /^\d{1,2}:\d{2}/.test(v)) return v.slice(0,5);
       return null;
     }
     function dnum(v){ return (typeof v === 'number' && !isNaN(v)) ? Math.round(v) : null; }
     function minutesBetween(a, b){
+      a = rmin(a); b = rmin(b);
       if (a instanceof Date && b instanceof Date) return Math.round((b-a)/60000);
       return null;
     }
@@ -5307,7 +5408,7 @@
     for (let r=5; r<=rows.length; r++){
       const flt = cell(rows, r, 6);
       if (flt === null || flt === undefined) continue;
-      const dateV = cell(rows, r, 5);
+      const dateV = rmin(cell(rows, r, 5));
       let dateStr = '', day = null, monthIdx = null;
       if (dateV instanceof Date){
         dateStr = dateV.getFullYear()+'-'+('0'+(dateV.getMonth()+1)).slice(-2)+'-'+('0'+dateV.getDate()).slice(-2);
@@ -5587,6 +5688,13 @@
       reader.onload = function(evt){
         try {
           var wb = XLSX.read(evt.target.result, {type:'array'});
+          var NEED = ['2026 INAD總表','根因分析','圖表分析','INAD每月詳細資料','各站每月疏失紀錄','疏失分類說明','SAIP圖表分析','客清總表 Overall','DLY總表'];
+          var miss = NEED.filter(function(n){ return wb.SheetNames.indexOf(n) < 0; });
+          if (miss.length === NEED.length){
+            monthlyStatus.textContent = '❌ 找不到任何月報工作表（例如「2026 INAD總表」），資料未更新，請確認上傳的是月報 Excel';
+            monthlyStatus.style.color = '#e05';
+            return;
+          }
           STATE = parseWorkbook(wb);
           // record the real filename & date so the download and status reflect it
           if (STATE.meta) {
@@ -5596,11 +5704,16 @@
           selectedMonth = 'all';
           renderMonthBar();
           renderAll();
-          monthlyStatus.textContent = '✅ 已更新：' + file.name;
-          monthlyStatus.style.color = 'var(--earth-gold)';
+          if (miss.length){
+            monthlyStatus.textContent = '⚠️ 已更新：' + file.name + '，但缺少工作表：' + miss.join('、') + '（相關區塊會顯示空白，下載前請確認）';
+            monthlyStatus.style.color = '#c77d1a';
+          } else {
+            monthlyStatus.textContent = '✅ 已更新：' + file.name;
+            monthlyStatus.style.color = 'var(--earth-gold)';
+          }
           showBanner('月報資料已更新：' + file.name, false);
         } catch(err) {
-          monthlyStatus.textContent = '❌ 讀取失敗：' + (err.message || '格式錯誤');
+          monthlyStatus.textContent = '❌ 讀取失敗：' + (/Encrypted|EncryptionInfo|password/i.test(err.message||'') ? '這個檔案有加密保護（密碼或公司敏感度標籤），瀏覽器無法讀取。請移除密碼／把敏感度標籤改為不加密後另存新檔，再重新上傳。' : (err.message || '格式錯誤'));
           monthlyStatus.style.color = '#e05';
         }
       };
@@ -5641,7 +5754,7 @@
           ohtStatus.style.color = 'var(--earth-gold)';
           showBanner('OPS 資料已更新：' + file.name, false);
         } catch(err) {
-          ohtStatus.textContent = '❌ 讀取失敗：' + (err.message || '格式錯誤');
+          ohtStatus.textContent = '❌ 讀取失敗：' + (/Encrypted|EncryptionInfo|password/i.test(err.message||'') ? '這個檔案有加密保護（密碼或公司敏感度標籤），瀏覽器無法讀取。請移除密碼／把敏感度標籤改為不加密後另存新檔，再重新上傳。' : (err.message || '格式錯誤'));
           ohtStatus.style.color = '#e05';
         }
       };
