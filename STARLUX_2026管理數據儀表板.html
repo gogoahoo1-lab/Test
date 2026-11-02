@@ -373,6 +373,37 @@
   .sz-meta .badge-type{ font-size:11px; }
   .sz-desc{ font-size:13px; color:var(--ink); line-height:1.55; white-space:pre-wrap; word-break:break-word; }
   #saipZoneSummaryTable tr.sz-row:hover .kpi-chip, #saipZoneSummaryTable tr.sz-row.open .kpi-chip{ background:var(--paper); }
+  /* Station profile modal */
+  .st-link{ cursor:pointer; font-weight:700; color:inherit; border-bottom:1px dashed var(--earth-gold); transition:color .15s, border-color .15s; }
+  .st-link:hover{ color:var(--earth-gold); border-bottom-style:solid; }
+  .st-link:focus-visible{ outline:2px solid var(--earth-gold); outline-offset:2px; border-radius:3px; }
+  .st-modal{ width:min(760px, 94vw); max-height:86vh; }
+  .st-head{ padding:20px 22px 16px; border-bottom:1px solid var(--line); flex-shrink:0; }
+  .st-title{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+  .st-code{ font-family:'Noto Serif TC',serif; font-size:28px; font-weight:800; color:var(--obsidian); letter-spacing:.04em; line-height:1; }
+  .st-sub{ font-size:12.5px; color:var(--muted); margin-top:6px; }
+  .st-stats{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:16px; }
+  .st-stat{ background:var(--cream-2); border-radius:10px; padding:9px 10px; text-align:left; border:1.5px solid transparent; cursor:pointer; font:inherit; color:inherit; transition:border-color .15s, background .15s; }
+  .st-stat:hover{ border-color:rgba(184,135,79,.45); }
+  .st-stat.active{ border-color:var(--earth-gold); background:var(--paper); }
+  .st-stat.zero{ opacity:.5; cursor:default; }
+  .st-stat .k{ font-size:11px; font-weight:700; color:var(--muted); letter-spacing:.05em; }
+  .st-stat .v{ font-size:21px; font-weight:800; color:var(--ink); line-height:1.2; margin-top:2px; }
+  .st-strip{ display:grid; grid-template-columns:repeat(12,1fr); gap:3px; margin-top:12px; }
+  .st-strip div{ text-align:center; font-size:10px; color:var(--muted); }
+  .st-strip i{ display:block; height:22px; border-radius:4px; margin-bottom:3px; font-style:normal; font-size:11px; font-weight:800; line-height:22px; }
+  .st-body{ padding:16px 22px 24px; overflow-y:auto; }
+  .st-month-h{ font-size:13px; font-weight:800; color:var(--earth-gold); margin:16px 0 8px; display:flex; align-items:center; gap:8px; }
+  .st-month-h:first-child{ margin-top:0; }
+  .st-month-h::after{ content:''; flex:1; height:1px; background:var(--line); }
+  .st-case{ background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:8px; }
+  .st-case .badge-type{ background:var(--cream-2); }
+  #stationModal .insights-close:focus:not(:focus-visible){ outline:none; }
+  .st-case .sz-meta{ margin-bottom:5px; }
+  .st-src{ font-size:10.5px; font-weight:800; letter-spacing:.06em; padding:2px 7px; border-radius:5px; color:#fff; }
+  .st-src.saip{ background:#8a6a45; } .st-src.inad{ background:#b5573f; } .st-src.dly{ background:#3f5f74; }
+  .st-cabin{ font-size:13px; color:var(--ink-soft); background:var(--cream-2); border-radius:10px; padding:10px 12px; }
+  @media (max-width:640px){ .st-stats{ gap:6px; } .st-stat{ padding:7px 8px; } .st-stat .k{ font-size:10px; letter-spacing:0; white-space:nowrap; } .st-stat .v{ font-size:18px; } .st-sub{ font-size:12px; } .st-code{ font-size:24px; } .st-head{ padding:16px; } .st-body{ padding:14px 16px 20px; } }
   .sz-hint{ font-size:12px; color:var(--muted); font-weight:500; margin-left:6px; }
   @media (max-width:640px){ .sz-case{ grid-template-columns:44px 1fr; gap:10px; } }
   thead th{
@@ -1131,6 +1162,12 @@
     <button class="insights-close" id="insightsClose" aria-label="Close">&times;</button>
   </div>
   <div class="insights-modal-body" id="insightsBody"></div>
+</div>
+
+<div class="insights-backdrop" id="stationBackdrop"></div>
+<div class="insights-modal st-modal" id="stationModal" role="dialog" aria-modal="true" aria-labelledby="stModalCode">
+  <div class="st-head" id="stationHead"></div>
+  <div class="st-body" id="stationBody"></div>
 </div>
 
 <input type="file" id="fileInput" accept=".xlsx" style="display:none">
@@ -3091,6 +3128,138 @@
     }
     return html;
   }
+  // ================= STATION PROFILE MODAL =================
+  // Click any station code (class .st-link) to see every case that station had this year.
+  function stLink(code){
+    if (!code) return '';
+    return '<span class="st-link" data-st="'+esc(code)+'" tabindex="0" role="button">'+esc(code)+'</span>';
+  }
+  let stationModalCode = null, stationModalSrc = 'all';
+  function stationProfile(code){
+    const items = [];
+    (STATE.saipStationLog||[]).forEach(function(e){
+      if (e.station !== code) return;
+      items.push({src:'saip', month:(e.month==null?-1:e.month), date:fmtDateCell(e.flightDate), code:e.code,
+        label: tSaipDescription(e.code, null), ref: e.caseNo ? '#'+e.caseNo : '', text:e.description});
+    });
+    (STATE.inadCases||[]).forEach(function(c){
+      if (c.objectStation !== code) return;
+      const st = c.subType || '';
+      const formal = st.indexOf('Document Violation-With Fine') >= 0 || st.indexOf('Document Violation-Without Fine') >= 0;
+      const what = anonymizeCaseText((c.description||'').trim());
+      const rc = anonymizeCaseText(c.rootCause||'');
+      items.push({src:'inad', formal:formal, month:caseMonthIndex(c.flightDate), date:fmtDateCell(c.flightDate), code:displaySubtype(st),
+        label: (c.fine && c.fine!=='-') ? (t('th_fine')+' '+c.fine) : '', ref: [c.flightNo, (c.objectStation||'?')+'→'+(c.reportStation||'?')].filter(Boolean).join('　'),
+        text: what + (rc && rc.trim() && rc.trim()!=='-' ? '\n'+t('label_root_cause')+'：'+rc : '')});
+    });
+    (STATE.dlyLog||[]).forEach(function(e){
+      if (e.dep !== code) return;
+      const mi = logMonthIndex(e.date);
+      items.push({src:'dly', month:mi, date:'2026/'+String(e.date).replace(/^0/,'').replace('/0','/'), code:(e.type ? e.type+' Code' : 'DLY'),
+        label: e.code || '', ref: e.flight || '', text: tDlyReason(e.reason) || ''});
+    });
+    const cabin = Array(12).fill(0);
+    const sections = (STATE.cabinClean && STATE.cabinClean.stationSections) || {};
+    Object.keys(sections).forEach(function(region){
+      (sections[region].items||[]).forEach(function(it){
+        if (it.name !== code) return;
+        (it.values||[]).slice(0,12).forEach(function(v,i){ cabin[i] += (+v||0); });
+      });
+    });
+    items.sort(function(a,b){
+      const ma = a.month<0?99:a.month, mb = b.month<0?99:b.month;
+      if (ma !== mb) return ma - mb;
+      return String(a.date).localeCompare(String(b.date), undefined, {numeric:true});
+    });
+    return {items:items, cabin:cabin};
+  }
+  function renderStationModal(){
+    const code = stationModalCode;
+    const prof = stationProfile(code);
+    const n = {saip:0, inad:0, dly:0}; let inadOther = 0;
+    prof.items.forEach(function(it){ if (it.src==='inad' && !it.formal) inadOther++; else n[it.src]++; });
+    const cabinTotal = prof.cabin.reduce(function(s,v){return s+v;},0);
+    const total = n.saip + n.inad + n.dly + cabinTotal;
+    // monthly totals for the heat strip
+    const per = Array(12).fill(0);
+    prof.items.forEach(function(it){ if (it.month>=0 && !(it.src==='inad' && !it.formal)) per[it.month]++; });
+    prof.cabin.forEach(function(v,i){ per[i]+=v; });
+    const mx = Math.max.apply(null, per.concat([1]));
+    const strip = per.map(function(v,i){
+      const a = v ? (0.18 + 0.82*v/mx) : 0;
+      const bg = v ? 'rgba(181,87,63,'+a.toFixed(2)+')' : 'var(--cream-2)';
+      const fg = v ? (a>0.55?'#fff':'var(--ink)') : 'transparent';
+      return '<div><i style="background:'+bg+';color:'+fg+'">'+(v||'')+'</i>'+(i+1)+'</div>';
+    }).join('');
+    const stat = function(key, label, val, extra){
+      const has = val || extra;
+      return '<button class="st-stat'+(stationModalSrc===key?' active':'')+(has?'':' zero')+'" data-stsrc="'+key+'"'+(has?'':' disabled')+'><div class="k">'+label+'</div><div class="v">'+val+
+        (extra ? '<span style="font-size:11px;font-weight:600;color:var(--muted);margin-left:6px;">+'+extra+' 其他</span>' : '')+'</div></button>';
+    };
+    document.getElementById('stationHead').innerHTML =
+      '<div class="st-title"><div><div class="st-code" id="stModalCode">'+esc(code)+'</div>'+
+      '<div class="st-sub">2026 全年共 <b style="color:var(--ink)">'+total+'</b> 件疏失　·　依月份排列'+(inadOther ? '　·　另有 '+inadOther+' 件 INAD 非違規紀錄（如移民原因），不計入件數' : '')+'</div></div>'+
+      '<button class="insights-close" id="stationClose" aria-label="關閉">&times;</button></div>'+
+      '<div class="st-stats">'+stat('saip','SAIP',n.saip)+stat('inad','INAD',n.inad,inadOther)+stat('dly','DLY',n.dly)+stat('cabin', currentLang==='en'?'CABIN':'客艙清潔', cabinTotal)+'</div>'+
+      '<div class="st-strip" aria-label="各月件數">'+strip+'</div>';
+    // body
+    let html = '';
+    const list = prof.items.filter(function(it){ return stationModalSrc==='all' || it.src===stationModalSrc; });
+    let lastM = null;
+    list.forEach(function(it){
+      if (it.month !== lastM){
+        lastM = it.month;
+        html += '<div class="st-month-h">'+(it.month>=0 ? MONTHS_ZH[it.month] : '月份不明')+'</div>';
+      }
+      html += '<div class="st-case"><div class="sz-meta">'+
+        '<span class="st-src '+it.src+'"'+(it.src==='inad' && !it.formal ? ' style="background:#9a8f80"' : '')+'>'+it.src.toUpperCase()+'</span>'+
+        '<span class="badge-type badge-other">'+esc(it.code)+'</span>'+
+        (it.label ? '<span>'+esc(it.label)+'</span>' : '')+
+        (it.date ? '<span>'+esc(it.date)+'</span>' : '')+
+        (it.ref ? '<span>'+esc(it.ref)+'</span>' : '')+
+        '</div><div class="sz-desc">'+(it.text && String(it.text).trim() ? esc(it.text) : '<span style="color:var(--muted)">'+t('label_not_provided')+'</span>')+'</div></div>';
+    });
+    if ((stationModalSrc==='all' || stationModalSrc==='cabin') && cabinTotal){
+      const parts = prof.cabin.map(function(v,i){ return v ? MONTHS_ZH[i]+' '+v+' 件' : null; }).filter(Boolean).join('、');
+      html += '<div class="st-month-h">客艙清潔</div><div class="st-cabin">'+parts+'<div style="font-size:11.5px;color:var(--muted);margin-top:4px;">客艙清潔僅有每月件數統計，無個案說明</div></div>';
+    }
+    if (!html) html = '<div class="empty-note">'+t('empty_no_records')+'</div>';
+    document.getElementById('stationBody').innerHTML = html;
+  }
+  function openStationModal(code){
+    if (!code) return;
+    stationModalCode = String(code).trim(); stationModalSrc = 'all';
+    renderStationModal();
+    document.getElementById('stationBody').scrollTop = 0;
+    document.getElementById('stationModal').classList.add('open');
+    document.getElementById('stationBackdrop').classList.add('open');
+    const c = document.getElementById('stationClose'); if (c) c.focus();
+  }
+  function closeStationModal(){
+    document.getElementById('stationModal').classList.remove('open');
+    document.getElementById('stationBackdrop').classList.remove('open');
+  }
+  document.getElementById('stationBackdrop').addEventListener('click', closeStationModal);
+  document.getElementById('stationModal').addEventListener('click', function(e){
+    if (e.target.closest('#stationClose')) { closeStationModal(); return; }
+    const b = e.target.closest('[data-stsrc]');
+    if (b && !b.disabled){ const k = b.getAttribute('data-stsrc'); stationModalSrc = (stationModalSrc===k) ? 'all' : k; renderStationModal(); }
+  });
+  document.addEventListener('click', function(e){
+    const l = e.target.closest('.st-link'); if (!l) return;
+    e.stopPropagation(); openStationModal(l.getAttribute('data-st'));
+  }, true);
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && document.getElementById('stationModal').classList.contains('open')) { closeStationModal(); return; }
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('st-link')){ e.preventDefault(); openStationModal(e.target.getAttribute('data-st')); }
+  });
+  function stationChartClick(evt, els, chart){
+    if (els && els.length) openStationModal(chart.data.labels[els[0].index]);
+  }
+  function stationChartHover(evt, els){
+    const c = evt && evt.native && evt.native.target; if (c) c.style.cursor = (els && els.length) ? 'pointer' : 'default';
+  }
+
   function openInsightsModal(){
     document.getElementById('insightsBody').innerHTML = buildInsightsSummary();
     document.getElementById('insightsModal').classList.add('open');
@@ -3320,7 +3489,7 @@
       charts.portDeparture = new Chart(document.getElementById('chartPortDeparture'), {
         type:'bar',
         data:{ labels: dep.map(function(d){return d[0];}), datasets:[{label:t('leg_count'), data: dep.map(function(d){return d[1];}), backgroundColor: COLORS.gold}] },
-        options: baseOpts({ indexAxis:'y', interaction:{mode:'index', intersect:false, axis:'y'}, plugins:{legend:{display:false}}, scales:{ x:{ ticks:{precision:0, font:{family:"'Noto Sans TC'",size:11},color:COLORS.muted} } } })
+        options: baseOpts({ onClick: stationChartClick, onHover: stationChartHover, indexAxis:'y', interaction:{mode:'index', intersect:false, axis:'y'}, plugins:{legend:{display:false}}, scales:{ x:{ ticks:{precision:0, font:{family:"'Noto Sans TC'",size:11},color:COLORS.muted} } } })
       });
     }
     destroy('portArrival');
@@ -3359,7 +3528,7 @@
       const maxCount = parts.reduce(function(mx,c){ return Math.max(mx, r[c[0]]); }, 0);
       const topReasons = parts.filter(function(c){ return r[c[0]] === maxCount; });
       const reasonText = topReasons.length ? topReasons.map(function(c){ return c[1]; }).join('、') : '—';
-      return '<tr><td>'+r.station+'</td><td class="num flagged">'+r.total+'</td><td>'+reasonText+'</td><td><div class="kpi-breakdown" style="margin-top:0;">'+chips+'</div></td></tr>';
+      return '<tr><td>'+stLink(r.station)+'</td><td class="num flagged">'+r.total+'</td><td>'+reasonText+'</td><td><div class="kpi-breakdown" style="margin-top:0;">'+chips+'</div></td></tr>';
     }).join('');
     table.innerHTML = '<colgroup><col style="width:90px;"><col style="width:64px;"><col style="width:120px;"><col></colgroup>'+
       '<thead><tr><th>'+t('th_station')+'</th><th>'+t('th_case_no')+'</th><th>'+t('th_attention_reason')+'</th><th>'+t('th_attention_breakdown')+'</th></tr></thead>'+
@@ -3465,7 +3634,7 @@
         charts.saipZoneTop10 = new Chart(document.getElementById('chartSaipZoneTop10'), {
           type:'bar',
           data:{ labels: ranking.map(function(r){return r.station;}), datasets:[{label:t('leg_count'), data: ranking.map(function(r){return r.total;}), backgroundColor: COLORS.gold}] },
-          options: baseOpts({ indexAxis:'y', interaction:{mode:'index', intersect:false, axis:'y'}, plugins:{legend:{display:false}, tooltip:{ callbacks:{ afterLabel: function(ctx){
+          options: baseOpts({ onClick: stationChartClick, onHover: stationChartHover, indexAxis:'y', interaction:{mode:'index', intersect:false, axis:'y'}, plugins:{legend:{display:false}, tooltip:{ callbacks:{ afterLabel: function(ctx){
             const idx = ctx.dataIndex;
             const cats = ranking[idx].byCategory;
             const parts = Object.keys(cats).sort(function(a,b){return cats[b]-cats[a];}).map(function(c){ return c+' '+cats[c]; });
@@ -3524,7 +3693,7 @@
           if (ma !== mb) return ma - mb;
           return String(a.flightDate).localeCompare(String(b.flightDate), undefined, {numeric:true});
         });
-        html += '<tr class="sz-detail"><td colspan="3"><div class="sz-cases">'+cases.map(function(e){
+        html += '<tr class="sz-detail"><td colspan="3"><div style="text-align:right;margin:2px 0 8px;font-size:12px;"><span class="st-link" data-st="'+esc(r.station)+'" tabindex="0" role="button">查看 '+esc(r.station)+' 全部案件（SAIP／INAD／DLY）→</span></div><div class="sz-cases">'+cases.map(function(e){
           const hasM = e.month !== null && e.month !== undefined;
           const meaning = tSaipDescription(e.code, null);
           const desc = (e.description||'').trim();
@@ -3594,7 +3763,7 @@
     const rowsHtml = sorted.map(function(e){
       const monthLabel = (e.month!==null && e.month!==undefined) ? MONTHS_ZH[e.month] : '—';
       const meaning = tSaipDescription(e.code, e.description);
-      return '<tr><td>'+esc(e.station)+'</td><td>'+monthLabel+'</td><td><span class="badge-type badge-other">'+esc(e.code)+'</span></td><td>'+esc(meaning)+'</td></tr>';
+      return '<tr><td>'+stLink(e.station)+'</td><td>'+monthLabel+'</td><td><span class="badge-type badge-other">'+esc(e.code)+'</span></td><td>'+esc(meaning)+'</td></tr>';
     }).join('');
     table.innerHTML = '<thead><tr><th>'+t('th_station')+'</th><th>'+t('th_month')+'</th><th>'+t('th_code')+'</th><th>'+t('th_desc')+'</th></tr></thead>'+
       '<tbody>'+(rowsHtml || '<tr><td colspan="4" class="empty-note">'+t('empty_no_records')+'</td></tr>')+'</tbody>';
@@ -3680,7 +3849,7 @@
     }).join('') + '<th>'+t('th_code_severity')+'</th>';
     const rowsHtml = filtered.map(function(e){
       const monthLabel = (e.month!==null && e.month!==undefined) ? MONTHS_ZH[e.month] : '—';
-      return '<tr><td>'+e.category+'</td><td>'+e.station+'</td><td>'+monthLabel+'</td><td>'+e.code+'</td></tr>';
+      return '<tr><td>'+esc(e.category)+'</td><td>'+stLink(e.station)+'</td><td>'+monthLabel+'</td><td>'+e.code+'</td></tr>';
     }).join('');
     table.innerHTML = '<thead><tr>'+headHtml+'</tr></thead>'+
       '<tbody>'+(rowsHtml || '<tr><td colspan="4" class="empty-note">'+t('empty_no_records')+'</td></tr>')+'</tbody>';
@@ -3960,7 +4129,18 @@
       'DENIED':1,'ARRIVED':1,'ONBOARD':1,'BOARD':1,'WHO':1,'TO':1,'AT':1,'ON':1,'IN':1,'OF':1,'BY':1,'IS':1,'HAS':1,'HAD':1,'THIS':1,'THAT':1,
       'PLEASE':1,'NOTE':1,'PAX':1,'PASSENGER':1,'NOT':1,'ALLOWED':1,'ENTER':1,'IMMIGRATION':1,'REASON':1,'WITHOUT':1,'FINE':1,'FLIGHT':1};
     const re = /\b([A-Z][A-Za-z]{1,25})\s*\/\s*([A-Z][A-Za-z]*(?:[\- ][A-Z][A-Za-z]*){0,3})\b(\s*(?:MR|MS|MRS)\.?)?/g;
-    return text.replace(re, function(m, surname, given, title){
+    // Second pass: names written WITHOUT a slash but followed by a title, e.g. "SURNAME GIVEN MS".
+    const reTitle = /\b((?:[A-Z]{2,}[ \-]){1,4}[A-Z]{2,})(\s+)(MR|MS|MRS|MSTR|MISS)\b/g;
+    const NOT_NAME = {'INAD':1,'IMM':1,'PPT':1,'VISA':1,'SEC':1,'SN':1,'JX':1,'TPE':1,'NOTOC':1,'DOCS':1,'APIS':1,'ETA':1,'ESTA':1,'CHD':1,'INF':1,'DOCUMENT':1,'VIOLATION':1,'CASE':1,'HUMAN':1,'ERROR':1,'GROUP':1,'CREW':1,'STAFF':1,'AGENT':1};
+    const titleNames = function(str){
+      return str.replace(reTitle, function(m, name, sp, title){
+        const words = name.split(/[ \-]+/);
+        if (words.some(function(w){ return STOPWORDS[w] || NOT_NAME[w]; })) return m;
+        if (name.replace(/[ \-]/g,'').length < 4) return m;
+        return getCode(name.replace(/[ \-]+/g,' ')) + sp + title;
+      });
+    };
+    return titleNames(text.replace(re, function(m, surname, given, title){
       const tokens = given.split(/([\- ]+)/); // alternating word / separator tokens
       let cut = given.length, idx = 0;
       for (let wi=0; wi<tokens.length; wi+=2){
@@ -3974,7 +4154,7 @@
       if (!trimmedGiven || lettersOnly.length < 4) return m;
       const code = getCode(surname+'/'+trimmedGiven);
       return code + leftover + (title||'');
-    });
+    }));
   }
   function inadCaseSummaryHtml(c){
     const descAnon = anonymizeCaseText((c.description||'').trim());
@@ -4001,7 +4181,7 @@
     const filtered = inadActiveSubtype==='all' ? baseCases : baseCases.filter(function(c){ return (c.subType||'?')===inadActiveSubtype; });
     const table = document.getElementById('inadCaseTable');
     const rowsHtml = filtered.map(function(c){
-      const route = (c.objectStation || c.reportStation) ? esc(c.objectStation||'?')+' → '+esc(c.reportStation||'?') : '—';
+      const route = (c.objectStation || c.reportStation) ? (c.objectStation ? stLink(c.objectStation) : '?')+' → '+esc(c.reportStation||'?') : '—';
       return '<tr><td>'+esc(c.flightDate)+'</td><td>'+esc(c.flightNo)+'</td><td>'+route+'</td>'+
         '<td>'+esc(displaySubtype(c.subType||''))+'</td><td>'+(c.fine&&c.fine!=='-'?esc(c.fine):'—')+'</td>'+
         '<td style="max-width:420px;">'+inadCaseSummaryHtml(c)+'</td></tr>';
@@ -4187,7 +4367,7 @@
         const hl = isSelectedMonth && !flagged ? ' style="color:var(--earth-gold); font-weight:800;"' : '';
         return '<td class="'+cls+'"'+hl+'>'+(v||0)+'</td>';
       }).join('');
-      return '<tr><td>'+it.name+'</td>'+cellsHtml+'<td class="num'+(total>=1?' flagged':'')+'">'+total+'</td></tr>';
+      return '<tr><td>'+stLink(it.name)+'</td>'+cellsHtml+'<td class="num'+(total>=1?' flagged':'')+'">'+total+'</td></tr>';
     }).join('');
     const totalRow = block.total ? '<tr class="total-row"><td>'+block.total.name+'</td>'+block.total.values.map(function(v){return '<td class="num">'+(v||0)+'</td>';}).join('')+'<td class="num">'+block.total.values.reduce(function(s,v){return s+(v||0);},0)+'</td></tr>' : '';
     table.innerHTML = '<thead><tr><th>'+t('th_station')+'</th>'+headerCells+'<th>'+t('th_total')+'</th></tr></thead>'+
@@ -4311,7 +4491,7 @@
     document.getElementById('dlyLogCountTag').textContent = filtered.length + ' '+t('unit_pcs') + (dlyLogMonthFilter==='all' ? '（'+t('ytd')+'）' : '（'+MONTHS_ZH[dlyLogMonthFilter]+'）');
     const table = document.getElementById('dlyLogTable');
     const rowsHtml = filtered.map(function(e){
-      return '<tr><td>'+esc(e.date)+'</td><td>'+esc(e.dep)+'</td><td>'+esc(e.flight)+'</td>'+
+      return '<tr><td>'+esc(e.date)+'</td><td>'+stLink(e.dep)+'</td><td>'+esc(e.flight)+'</td>'+
         '<td><span class="badge-type '+badgeClass(e.type)+'">'+esc(e.type)+'</span></td>'+
         '<td>'+esc(e.code)+'</td><td style="max-width:420px;">'+(e.reason && String(e.reason).trim() ? esc(tDlyReason(e.reason)) : '<span class="empty-note" style="padding:0;">'+t('label_not_provided')+'</span>')+'</td></tr>';
     }).join('');
