@@ -801,6 +801,26 @@ nav button[aria-selected="true"] .navbadge{background:#fff;color:var(--acc)}
 .hlv.l1{background:#f1f0eb;color:#3a3a3a}
 .dg{border-radius:2px}
 #relayBanner{background:#f4f2ec!important;border:0!important;border-left:3px solid var(--acc)!important;border-radius:0!important;margin:12px 20px 0!important}
+/* 資料更新列 */
+.upd-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:18px 0 18px}
+.upd-lab{font-size:12.5px;color:var(--dim);margin-right:2px}
+.upd-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;background:var(--bg);border:1px solid var(--line);box-shadow:var(--emb);font-size:13px;color:var(--txt);white-space:nowrap}
+.upd-chip b{font-weight:700}
+.upd-dot{width:8px;height:8px;border-radius:50%;flex:none;background:#2f8f5b}
+.upd-chip.warn .upd-dot{background:#d08a1c}.upd-chip.bad .upd-dot{background:#c0392b}.upd-chip.none .upd-dot{background:#b9b5aa}
+.upd-t{font-variant-numeric:tabular-nums}
+.upd-ago{color:var(--dim)}
+.upd-chip.warn .upd-ago{color:#9a5d00}.upd-chip.bad .upd-ago{color:#c0392b}
+.upd-chip.none .upd-t{color:var(--dim)}
+.upd-bar + *{margin-top:14px}
+@media (max-width:760px){
+  .upd-bar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:14px 0 16px}
+  .upd-lab{grid-column:1/-1;font-size:12px}
+  .upd-chip{display:grid;grid-template-columns:auto 1fr;column-gap:7px;row-gap:1px;align-items:center;border-radius:14px;padding:8px 12px;white-space:normal;min-width:0}
+  .upd-chip b{font-size:13px}
+  .upd-chip .upd-t{grid-column:2;font-size:12px;color:var(--dim)}
+  .upd-chip .upd-ago{grid-column:2;font-size:12px}
+}
 /* 手機：底部分頁列（圖示＋文字），內容留出空間 */
 @media (max-width:760px){
   h1{font-size:30px}
@@ -840,7 +860,7 @@ nav button[aria-selected="true"] .navbadge{background:#fff;color:var(--acc)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-11-01g</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-11-02a</span></p>
     </div>
     <div class="stamp">
       <div class="sw-clock"><b id="swClock">--:--</b><i>TPE 當地時間</i></div>
@@ -6633,6 +6653,7 @@ function seatLinks(r){
 /* AIRS Office iWatch（擴充功能 v2.12 抓取）：出境 STD／ETD／ATD、入境 STA／ETA／ATA，台北時間毫秒 */
 var AIRS = { rows:[], t:0, idx:{} };
 function airsSet(rows, t){
+  setTimeout(function(){ try{ updPaint(); }catch(e){} }, 0);
   AIRS.rows = (Array.isArray(rows) ? rows : []).filter(function(r){ return r && (r.d === "A" || r.d === "D") && /^[A-Z0-9]{2}\d{1,4}[A-Z]?$/.test(String(r.f || "")) && +r.s > 0; })
     .map(function(r){ return { d:r.d, f:String(r.f), o:String(r.o || "").replace(/[^A-Z]/g, "").slice(0, 3), t:String(r.t || "").replace(/[^A-Z]/g, "").slice(0, 3), r:String(r.r || "").replace(/[^A-Z0-9]/g, "").slice(0, 8), s:+r.s, e:+r.e || 0, a:+r.a || 0, st:String(r.st || "").slice(0, 20) }; });
   AIRS.t = +t || 0; AIRS.idx = {};
@@ -6694,6 +6715,7 @@ function seatTotCell(r, tot, ov){
     (ov ? '<span class="seat-b" style="color:var(--bad)">含超賣艙等</span>' : '') + '</td>';
 }
 function seatRender(){
+  try{ updPaint(); }catch(e){}
   var box = $("seatResult");
   if(!SEAT.rows.length){ box.hidden = true; return; }
   box.hidden = false;
@@ -7014,6 +7036,7 @@ function relayLiveSnap(c){
 }
 function relayDbSnap(c){
   var o = packDB(flightsToKeep());   // 和管理員看板保留的天數相同（班表分析、時段分布才會一致）
+  if(UPD.tdx) o.tdxT = UPD.tdx;
   // 選用：空位查詢清單（OpsLink），只在勾選「也分享空位」時才帶上
   if(c && c.seat && $("seatRaw") && $("seatRaw").value.trim()) o.seat = { text: $("seatRaw").value, utc: !!($("seatUtc") && $("seatUtc").checked), t: SEAT.feedT || Date.now() };
   if(c && c.seat && AIRS.rows.length) o.airs = { t: AIRS.t, rows: airsCompact() };   // AIRS iWatch 的實際／預估時間（跟著空位清單一起分享）
@@ -7160,8 +7183,8 @@ function relayViewPaint(){
     };
     return;
   }
-  el.innerHTML = "📡 資料來自 <b>" + esc(RELAY.name || "AMP值班台") + "</b> 的看板（中繼）・地圖更新 " + (RELAY.liveT ? fixHm(RELAY.liveT) : "—") +
-    "・到離資料 " + (RELAY.dbT ? fixHm(RELAY.dbT) : "—") + (RELAY.viewMsg ? '　<span style="color:var(--bad)">' + esc(RELAY.viewMsg) + "</span>" : "") +
+  updPaint();
+  el.innerHTML = "📡 資料來自 <b>" + esc(RELAY.name || "AMP值班台") + "</b> 的看板（中繼）" + (RELAY.viewMsg ? '　<span style="color:var(--bad)">' + esc(RELAY.viewMsg) + "</span>" : "") +
     (RELAY.liveT && Date.now() - RELAY.liveT > 15*60000 ? '　<span style="color:var(--bad)">（超過 15 分鐘沒有更新：分享者的看板可能沒開）</span>' : "");
 }
 function relayViewInit(){
@@ -7185,6 +7208,7 @@ function relayViewInit(){
   function live(){
     v = cfgNow();
     relayGet(v, "live", RELAY.liveT).then(function(s){
+      RELAY.readAt = Date.now();
       if(s){ RELAY.liveT = s.__t || s.t; RELAY.name = s.name || RELAY.name; relayApplyLive(s); }
       RELAY.viewMsg = ""; RELAY.needCode = false; relayViewPaint();
     }, onErr);
@@ -7192,7 +7216,8 @@ function relayViewInit(){
   function db(){
     v = cfgNow();
     relayGet(v, "db", RELAY.dbT).then(function(s){
-      if(s){ RELAY.dbT = s.__t || Date.now(); var d = unpackDB(s); if(d){ DB = d; refreshAll();
+      RELAY.readAt = Date.now();
+      if(s){ RELAY.dbT = s.__t || Date.now(); RELAY.tdxT = +s.tdxT || 0; var d = unpackDB(s); if(d){ DB = d; refreshAll();
           // 第一次載入：跟完整版一樣先看今天（台北日期），不要三天混在一起
           if(!RELAY.dateSet){ RELAY.dateSet = true; var fd = $("fDate"), td = twDate(); if(fd && fd.value === "all" && [].some.call(fd.options, function(o){ return o.value === td; })){ fd.value = td; renderBoard(); } } }
         if(s.airs) airsSet(s.airs.rows, s.airs.t); relayApplySeat(s.seat); }
@@ -7224,6 +7249,56 @@ function schedSeg(v){
   if(v !== "obs" && $("gsGroup")){ var want = v === "station" ? "station" : ($("gsGroup").value === "station" ? "flight" : $("gsGroup").value); if($("gsGroup").value !== want){ $("gsGroup").value = want; try{ gsRender(); }catch(e){} } }
   [].forEach.call($("segSched").querySelectorAll("button"), function(b){ b.setAttribute("aria-pressed", b.getAttribute("data-v") === v ? "true" : "false"); });
   try{ localStorage.setItem("schedSeg", v); }catch(e){}
+}
+/* ── 資料更新列：每項資料一顆標籤（圓點＝新鮮度：綠＝正常、橘＝偏舊、紅＝過久） ── */
+var UPD = { tdx: 0 };
+try{ UPD.tdx = +(localStorage.getItem("updTdx") || 0); }catch(e){}
+function updAgo(ms){
+  var m = Math.max(0, Math.round((Date.now() - ms) / 60000));
+  if(m < 1) return "剛剛";
+  if(m < 60) return m + " 分前";
+  var h = Math.floor(m / 60);
+  return h + " 小時 " + (m % 60) + " 分前";
+}
+function updTime(ms){
+  var p = twParts(ms), t = twParts(Date.now());
+  return (p.y === t.y && p.mo === t.mo && p.d === t.d ? "" : p.mo + "/" + p.d + " ") + p.hm;
+}
+function updItems(){
+  var seatOpt = 0; try{ seatOpt = +((JSON.parse(localStorage.getItem("seatOpt") || "null") || {}).t || 0); }catch(e){}
+  var hasSeat = SEAT.rows && SEAT.rows.length;
+  // [名稱, 時間, 偏舊（分）, 過久（分）]
+  if(RELAY.view) return [
+    ["到離資料", RELAY.tdxT || RELAY.dbT, 20, 60],
+    ["航班地圖", RELAY.liveT, 5, 15],
+    hasSeat ? ["空位清單", RELAY.seatT, 240, 480] : null,
+    AIRS.t ? ["AIRS", AIRS.t, 15, 60] : null,
+    ["本頁讀取", RELAY.readAt, 10, 30]
+  ];
+  return [
+    ["到離資料", UPD.tdx, 20, 60],
+    HOLD.on || HOLD.lastOk ? ["航班地圖", HOLD.lastOk, 3, 10] : null,
+    hasSeat ? ["空位清單", SEAT.feedT || seatOpt, 240, 480] : null,
+    AIRS.t ? ["AIRS", AIRS.t, 15, 60] : null,
+    relayCfg().on ? ["中繼上傳", Math.max(RELAY.lastDb || 0, RELAY.lastLive || 0), 20, 60] : null
+  ];
+}
+function updPaint(){
+  var bar = $("updBar"); if(!bar) return;
+  var items = updItems().filter(Boolean);
+  bar.innerHTML = '<span class="upd-lab">資料更新</span>' + items.map(function(x){
+    var t = +x[1] || 0, age = t ? (Date.now() - t) / 60000 : Infinity;
+    var lv = !t ? "none" : age > x[3] ? "bad" : age > x[2] ? "warn" : "ok";
+    return '<span class="upd-chip ' + lv + '" title="' + esc(x[0]) + (t ? "：" + esc(new Date(t).toLocaleString("zh-TW", { hour12:false })) : "：尚無資料") + '">' +
+      '<i class="upd-dot"></i><b>' + esc(x[0]) + "</b>" +
+      (t ? '<span class="upd-t">' + updTime(t) + ' 更新</span><span class="upd-ago">（' + updAgo(t) + "）</span>" : '<span class="upd-t">尚無資料</span>') + "</span>";
+  }).join("");
+}
+function updInit(){
+  var bar = document.createElement("div"); bar.id = "updBar"; bar.className = "upd-bar"; bar.setAttribute("aria-label", "資料更新時間");
+  var w = document.querySelector(".wrap"); if(w) w.insertBefore(bar, w.firstChild);
+  updPaint(); setInterval(updPaint, 20000);
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden) updPaint(); });
 }
 function navInit(){
   // 即時到離：到離看板｜航空公司
@@ -7769,6 +7844,7 @@ async function updateTDX(){
     }).join("｜");
 
     st.textContent = "TDX 已更新｜" + new Date().toLocaleTimeString("zh-TW",{hour12:false});
+    if(count > 0){ UPD.tdx = Date.now(); try{ localStorage.setItem("updTdx", String(UPD.tdx)); }catch(e){} updPaint(); }
     tdxShow(
       "抓取場站：" + apts.join("、") + "<br>" +
       perApt.join("<br>") + "<br>" +
@@ -8677,6 +8753,7 @@ function shift(hhmm, mins){
   fixInit();
   hsInit();
   navInit();
+  updInit();
   seatInit();
   ospInit();
   // 切回分頁時立即更新一次（背景時可能暫停了抓取）
