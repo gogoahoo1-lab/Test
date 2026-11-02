@@ -860,7 +860,7 @@ nav button[aria-selected="true"] .navbadge{background:#fff;color:var(--acc)}
   <div class="hbar">
     <div>
       <h1>即時航班<span>看板</span></h1>
-      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-11-02a</span></p>
+      <p class="sub">串接 TDX 即時航班，檢視各場站到離場、航空公司與班表結構　<span id="buildTag" style="opacity:.7">版本 2026-11-02b</span></p>
     </div>
     <div class="stamp">
       <div class="sw-clock"><b id="swClock">--:--</b><i>TPE 當地時間</i></div>
@@ -932,6 +932,9 @@ nav button[aria-selected="true"] .navbadge{background:#fff;color:var(--acc)}
         <option value="180000">3 分鐘</option>
         <option value="300000" selected>5 分鐘</option>
         <option value="600000">10 分鐘</option>
+        <option value="7200000">每 2 小時</option>
+        <option value="14400000">每 4 小時</option>
+        <option value="86400000">每日一次</option>
       </select>
     </label>
     <label class="f">抓取後跳到日期
@@ -7036,7 +7039,7 @@ function relayLiveSnap(c){
 }
 function relayDbSnap(c){
   var o = packDB(flightsToKeep());   // 和管理員看板保留的天數相同（班表分析、時段分布才會一致）
-  if(UPD.tdx) o.tdxT = UPD.tdx;
+  if(UPD.tdx){ o.tdxT = UPD.tdx; o.tdxIv = tdxIvMs(); }
   // 選用：空位查詢清單（OpsLink），只在勾選「也分享空位」時才帶上
   if(c && c.seat && $("seatRaw") && $("seatRaw").value.trim()) o.seat = { text: $("seatRaw").value, utc: !!($("seatUtc") && $("seatUtc").checked), t: SEAT.feedT || Date.now() };
   if(c && c.seat && AIRS.rows.length) o.airs = { t: AIRS.t, rows: airsCompact() };   // AIRS iWatch 的實際／預估時間（跟著空位清單一起分享）
@@ -7217,7 +7220,7 @@ function relayViewInit(){
     v = cfgNow();
     relayGet(v, "db", RELAY.dbT).then(function(s){
       RELAY.readAt = Date.now();
-      if(s){ RELAY.dbT = s.__t || Date.now(); RELAY.tdxT = +s.tdxT || 0; var d = unpackDB(s); if(d){ DB = d; refreshAll();
+      if(s){ RELAY.dbT = s.__t || Date.now(); RELAY.tdxT = +s.tdxT || 0; RELAY.tdxIv = +s.tdxIv || 0; var d = unpackDB(s); if(d){ DB = d; refreshAll();
           // 第一次載入：跟完整版一樣先看今天（台北日期），不要三天混在一起
           if(!RELAY.dateSet){ RELAY.dateSet = true; var fd = $("fDate"), td = twDate(); if(fd && fd.value === "all" && [].some.call(fd.options, function(o){ return o.value === td; })){ fd.value = td; renderBoard(); } } }
         if(s.airs) airsSet(s.airs.rows, s.airs.t); relayApplySeat(s.seat); }
@@ -7269,14 +7272,14 @@ function updItems(){
   var hasSeat = SEAT.rows && SEAT.rows.length;
   // [名稱, 時間, 偏舊（分）, 過久（分）]
   if(RELAY.view) return [
-    ["到離資料", RELAY.tdxT || RELAY.dbT, 20, 60],
+    ["到離資料", RELAY.tdxT || RELAY.dbT, Math.max(20, (RELAY.tdxIv || 300000)/60000*1.5 + 20), Math.max(60, (RELAY.tdxIv || 300000)/60000*3 + 30)],
     ["航班地圖", RELAY.liveT, 5, 15],
     hasSeat ? ["空位清單", RELAY.seatT, 240, 480] : null,
     AIRS.t ? ["AIRS", AIRS.t, 15, 60] : null,
     ["本頁讀取", RELAY.readAt, 10, 30]
   ];
   return [
-    ["到離資料", UPD.tdx, 20, 60],
+    ["到離資料", UPD.tdx, Math.max(20, tdxIvMs()/60000*1.5 + 5), Math.max(60, tdxIvMs()/60000*3 + 10)],
     HOLD.on || HOLD.lastOk ? ["航班地圖", HOLD.lastOk, 3, 10] : null,
     hasSeat ? ["空位清單", SEAT.feedT || seatOpt, 240, 480] : null,
     AIRS.t ? ["AIRS", AIRS.t, 15, 60] : null,
@@ -8284,13 +8287,15 @@ function gsRender(){
 
 function gsDayLbl(d){ return d ? d.iso.slice(5).replace("-","/").replace(/^0/,"") + "&#10;" + GS_DOW_TW[d.dow].replace(/^週/,"") : ""; }
 
+function tdxIvText(ms){ return ms >= 86400000 ? "每日" : ms >= 3600000 ? "每 " + Math.round(ms/3600000) + " 小時" : "每 " + Math.round(ms/60000) + " 分鐘"; }
+function tdxIvMs(){ return Number($("tdxInterval") && $("tdxInterval").value) || 300000; }
 function startTDXAuto(){
   stopTDXAuto();
   var ms = Number($("tdxInterval").value) || 300000;
   updateTDX();
   tdxTimer = setInterval(updateTDX, ms);
   $("btnTdxAuto").textContent = "TDX 自動更新中";
-  tdxShow("已啟用 TDX 自動更新，每 " + Math.round(ms/60000) + " 分鐘抓取一次。", "info");
+  tdxShow("已啟用 TDX 自動更新，" + tdxIvText(ms) + "抓取一次。" + (ms >= 86400000 ? "（每日一次：從現在起每 24 小時抓一次；看板要一直開著才會自動抓）" : ""), "info");
 }
 
 function stopTDXAuto(){
@@ -8582,6 +8587,9 @@ function shift(hhmm, mins){
       $("tdxClientSecret").addEventListener("input", saveTdxCreds);
       $("tdxInterval").addEventListener("change", function(){
         localStorage.setItem("tdxInterval",$("tdxInterval").value);
+        // 自動更新進行中：直接換成新間隔（不立刻多抓一次）
+        if(tdxTimer){ clearInterval(tdxTimer); var ms2 = tdxIvMs(); tdxTimer = setInterval(updateTDX, ms2); tdxShow("已改成" + tdxIvText(ms2) + "抓取一次。", "info"); }
+        try{ updPaint(); }catch(e){}
       });
       if($("tdxRemember")){
         $("tdxRemember").addEventListener("change", function(){
