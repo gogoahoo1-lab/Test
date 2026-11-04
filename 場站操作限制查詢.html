@@ -4685,6 +4685,27 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     if(tx && tx.est) return { ms: tx.est, kind:"est", live:true };
     return { ms: r.dep || r.std, kind: r.bf === "A" ? "act" : r.bf === "E" ? "est" : (r.dep && r.std && r.dep !== r.std ? "est" : "sch"), live:false };
   }
+  /* 清單時間基準自動校正：值班台未標記 UTC 時，用 AIRS 表定／機場實際預估時間比對。
+     至少 3 班可比對、且中位差約 +8 小時，才視為 UTC；校正後各站依當地時區顯示。 */
+  function seatOffsets(rows){
+    var out = [];
+    rows.forEach(function(r){
+      if(!r.std || !isBase(r.from)) return;
+      var best = null;
+      (AIRS["D|" + fnN(r.flt)] || []).forEach(function(a){ var d = a.s - r.std; if(a.s && Math.abs(d) < 12*3600000 && (best == null || Math.abs(d) < Math.abs(best))) best = d; });
+      if(best == null){ var t = tdxDep(r), v = t && (t.act || t.est); if(v) best = v - r.std; }
+      if(best != null) out.push(best);
+    });
+    return out.sort(function(a, b){ return a - b; });
+  }
+  function parseSeat(text, flag){
+    var p = parse(text, flag);
+    S.tzFix = false;
+    if(flag) return { p:p, utc:true };
+    var o = seatOffsets(p.rows), m = o.length >= 3 ? o[Math.floor(o.length/2)] : 0;
+    if(m >= 6.5*3600000 && m <= 9.5*3600000){ S.tzFix = true; return { p:parse(text, true), utc:true }; }
+    return { p:p, utc:false };
+  }
   /* 各航點時區：外站出發時間以當地時間顯示 */
   var APT_TZ = {};
   function tzPut(tz, list){ list.split(" ").forEach(function(a){ APT_TZ[a] = tz; }); }
@@ -5247,7 +5268,7 @@ renderList(); renderDetail(); window.scrollTo({top:0});
     var stale = S.t && Date.now() - S.t > 5*3600000;
     el.innerHTML = '<span>📡 空位清單來自 <b>' + SRC_NAME + "</b>" +
       (S.t ? "・系統清單 " + dayHm(S.t) + " 更新" + (stale ? '<span class="err">（超過 5 小時未更新）</span>' : "・預計下次約 " + dayHm(S.t + 3*3600000)) : "") +
-      (!R.cached && R.t ? airsBadge() : "") + (R.cached ? '・<span class="err">連線失敗，顯示上次快取</span>' : "") + (R.busy ? "・讀取中…" : "") + (R.err ? '・<span class="err">' + esc(R.err) + "</span>" : "") + "</span>" +
+      (S.tzFix ? "・清單時間已自動由 UTC 校正為各站當地時間" : "") + (!R.cached && R.t ? airsBadge() : "") + (R.cached ? '・<span class="err">連線失敗，顯示上次快取</span>' : "") + (R.busy ? "・讀取中…" : "") + (R.err ? '・<span class="err">' + esc(R.err) + "</span>" : "") + "</span>" +
       '<button class="sx-btn ghost" id="sxReload" type="button">重新讀取</button>' + (CRED.any() ? '<button class="sx-btn ghost" id="sxLogout" type="button" title="清除這台裝置上的查看碼、編輯碼與快取資料">🚪 登出本機</button>' : "") +
       '<div data-dstat style="flex-basis:100%">' + statusHtml() + '</div>' +
       (R.warn && !R.cached ? '<div class="sx-warn"><b>⚠ 值班台回報（' + clockOf(R.warn.t) + '）</b><ul data-noi18n>' + R.warn.msgs.map(function(m){ return "<li>" + esc(m) + "</li>"; }).join("") + "</ul></div>" : "");
@@ -5273,9 +5294,9 @@ renderList(); renderDetail(); window.scrollTo({top:0});
         tdxIndex(j); airsIndex(j);
         R.warn = j.warn && j.warn.msgs && j.warn.msgs.length && Date.now() - (j.warn.t || 0) < 6*3600000 ? j.warn : null;   // 值班台上傳的警告
         if(j.seat && j.seat.text){
-          var p = parse(j.seat.text, !!j.seat.utc);
+          var q = parseSeat(j.seat.text, !!j.seat.utc), p = q.p;
           S.rows = p.rows; S.legs = p.legs; S.t = j.seat.t || R.t; R.cached = false;
-          saveCache(j.seat.text, !!j.seat.utc, S.t, p.legs);
+          saveCache(j.seat.text, q.utc, S.t, p.legs);
           if(!p.rows.length) R.err = "清單內容看不懂";
         } else {
           S.rows = []; S.legs = [];
