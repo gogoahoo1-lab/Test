@@ -311,7 +311,7 @@ function promptNumber(){
 
 /* ---------- 狀態 ---------- */
 const S={tab:'check',agents:[],insps:{},refs:{},currentId:null,loaded:false,slow:false,
-  form:{agentId:store.get('uld.agent')||'',flight:'',station:'',reg:'',date:today()},
+  form:{agentId:'',flight:'',station:'',reg:'',date:today()},
   hold:store.get('uld.hold')||'FWD',editHead:false,addingAgent:false,busy:null,errors:[],openEdit:null,openAgent:null,viewInsp:null,resolving:null,confirm:null,lightbox:null,toast:null,copy:null};
 const cap={sample:null,db:null,assets:null,downloads:null,limits:null,ready:false};
 const localPhotos=new Map();   // photoId → {url, file}
@@ -617,7 +617,7 @@ function renderSample(){
     {id:'b',label:'右前',status:'partial',reason:'鎖爪傾斜，與底座之間有間隙',box:[725,790,80,100]}]};
   return `<section class="row between"><h2>辨識結果會長這樣</h2><span class="tag">範例</span></section>${renderUld(i,u,{readonly:true})}`;
 }
-function canStart(){const f=S.form;return !!(current()||(f.agentId&&f.flight.trim()))&&!S.busy}
+function canStart(){const f=S.form;return !!(current()||f.flight.trim())&&!S.busy}
 function renderCapture(){
   return `<section class="panel">
     <div class="field"><span class="lbl">這次拍攝的貨艙</span><div class="seg" role="group">${['FWD','AFT','BULK'].map(h=>`<button aria-pressed="${S.hold===h}" data-a="hold" data-v="${h}">${h}</button>`).join('')}</div></div>
@@ -625,7 +625,7 @@ function renderCapture(){
       <button class="btn primary big" data-a="capture" data-m="cam" ${canStart()?'':'disabled'}><svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.4" stroke="currentColor" stroke-width="2"/></svg>拍貨艙照片</button>
       <button class="btn big side" data-a="capture" data-m="lib" ${canStart()?'':'disabled'}>從相簿選</button>
     </div>
-    ${!canStart()&&!S.busy?'<p class="hint">先選地勤代理並填航班，就能開始拍照。</p>':'<p class="hint">貨櫃拍兩張最準：一張含完整號碼，一張貼近底座。貨盤不用號碼，把底座紅色鎖爪整排拍清楚就好。</p>'}
+    ${!canStart()&&!S.busy?'<p class="hint">填入航班後就能開始拍照。</p>':'<p class="hint">貨櫃拍兩張最準：一張含完整號碼，一張貼近底座。貨盤不用號碼，把底座紅色鎖爪整排拍清楚就好。</p>'}
   </section>`;
 }
 function renderBusy(){
@@ -638,11 +638,6 @@ function renderPhotoIssues(i){
 function renderForm(){
   const f=S.form;
   return `<section class="panel">
-    <div class="field"><span class="lbl">地勤代理</span>
-      <div class="chips">${S.agents.map(a=>`<button class="chip" aria-pressed="${f.agentId===a.id}" data-a="pickAgent" data-v="${esc(a.id)}">${esc(a.name)}</button>`).join('')}
-      <button class="chip ghost" data-a="toggleAddAgent">新增代理</button></div>
-      ${S.addingAgent||!S.agents.length?`<form id="agentForm" class="row" style="margin-top:6px"><input id="agentName" class="grow" type="text" style="flex:1;min-width:0;width:auto" placeholder="輸入地勤代理名稱" autocomplete="off" aria-label="地勤代理名稱"><button class="btn small" type="submit" style="min-height:46px">加入</button></form>`:''}
-    </div>
     <div class="grid2">
       <div class="field"><label for="fFlight">航班</label><input id="fFlight" class="mono" type="text" value="${esc(f.flight)}" data-c="form" data-k="flight" placeholder="航班編號" autocomplete="off"></div>
       <div class="field"><label for="fDate">日期</label><input id="fDate" type="date" value="${esc(f.date)}" data-c="form" data-k="date"></div>
@@ -658,7 +653,7 @@ function renderCheck(){
   if(S.slow)h+='<div class="notice">紀錄還沒載入，網路可能不穩。</div>';
   h+=S.errors.map(e=>`<div class="notice bad">${esc(e)}</div>`).join('');
   if(i){
-    h+=`<section class="row between"><div class="grow"><div style="font-weight:700">${esc(i.agentName)}</div><div class="stat" style="color:var(--muted)">${headLine(i)}</div></div>
+    h+=`<section class="row between"><div class="grow"><div class="stat" style="font-size:16px">${headLine(i)}</div></div>
       <div class="row"><button class="btn small" data-a="copyReport" data-i="${esc(i.id)}">複製回報</button></div></section>`;
     h+=renderBusy();
     h+=renderSummary(i)+renderPhotoIssues(i);
@@ -678,7 +673,7 @@ function renderIssues(){
   if(!items.length)return h+`<section class="panel"><div class="empty">${glyph('locked',40)}<strong style="color:var(--ink)">目前沒有待處理的 ULD</strong><span>未扣、未完全扣好、看不清或缺號碼的 ULD 會列在這裡。</span></div></section>`;
   const groups={};for(const it of items)(groups[it.i.id]=groups[it.i.id]||{i:it.i,l:[]}).l.push(it.u);
   for(const g of Object.values(groups)){
-    h+=`<section class="panel"><div><div style="font-weight:700">${esc(g.i.agentName)}</div><div class="stat" style="color:var(--muted)">${headLine(g.i)}</div></div><div>`;
+    h+=`<section class="panel"><div class="stat" style="font-size:15px">${headLine(g.i)}</div><div>`;
     for(const u of g.l){
       const s=uldStatus(u),bad=u.latches.filter(l=>eff(l)!=='locked');
       h+=`<div class="issue"><div style="min-width:0;display:flex;flex-direction:column;gap:6px">
@@ -697,21 +692,12 @@ function renderIssues(){
   }
   return h;
 }
-function agentStats(id){
-  const ins=allInsps().filter(i=>i.agentId===id);let total=0,pass=0,bad=0,open=0;
-  for(const i of ins)for(const u of i.ulds){total++;const s=u.initial||uldStatus(u);if(s==='locked')pass++;if(s==='partial'||s==='unlocked')bad++;if(isOpen(u))open++}
-  return{ins,total,pass,bad,open,rate:total?Math.round(pass/total*100):null};
-}
 function renderAgents(){
-  let h=`<header class="top"><div><div class="eyebrow">GROUND HANDLERS</div><h1>地勤代理</h1></div><button class="link" data-a="exportCsv">匯出 CSV</button></header>`;
+  const list=allInsps();
+  let h=`<header class="top"><div><div class="eyebrow">RECORDS</div><h1>檢查紀錄</h1></div><button class="link" data-a="exportCsv">匯出 CSV</button></header>`;
   h+='<section class="panel">';
-  if(!S.agents.length)h+='<div class="empty"><strong style="color:var(--ink)">還沒有地勤代理</strong><span>到「檢查」頁新增代理，這裡會累積各代理的鎖扣紀錄。</span></div>';
-  else h+='<div>'+S.agents.map(a=>{const s=agentStats(a.id),open=S.openAgent===a.id;
-    return `<div class="agent"><div class="row between"><button class="agent-name grow" data-a="toggleAgent" data-v="${esc(a.id)}" aria-expanded="${open}">${esc(a.name)}</button><span class="stat">${s.rate==null?'尚無資料':s.rate+'%'}</span></div>
-      <div class="rate" role="img" aria-label="首次檢查全部扣好比率 ${s.rate??0}%"><i style="width:${s.rate??0}%"></i></div>
-      <div class="row hint" style="gap:12px"><span>${s.ins.length} 趟</span><span>${s.total} 個 ULD</span><span>未扣或未完全 ${s.bad}</span><span>待處理 ${s.open}</span></div>
-      ${open?`<div class="hist">${s.ins.length?s.ins.map(i=>{const c=i.ulds.filter(isOpen).length;return `<button data-a="openInsp" data-i="${esc(i.id)}"><span class="stat">${headLine(i)}</span><span class="${c?'s-unlocked':'s-locked'}" style="font-weight:700;font-size:13px;white-space:nowrap">${c?c+' 待處理':i.ulds.length+' 全扣好'}</span></button>`}).join(''):'<p class="hint">尚無檢查紀錄</p>'}</div>
-      ${S.confirm==='a'+a.id?`<button class="btn small danger" data-a="delAgent" data-v="${esc(a.id)}">確定從名單移除</button>`:`<button class="link" style="color:var(--muted);align-self:flex-start" data-a="askConfirm" data-k="a${esc(a.id)}">從名單移除</button>`}`:''}</div>`}).join('')+'</div>';
+  if(!list.length)h+='<div class="empty"><strong style="color:var(--ink)">還沒有檢查紀錄</strong><span>完成第一次拍照後，紀錄會累積在這裡。</span></div>';
+  else h+='<div class="hist">'+list.map(i=>{const c=i.ulds.filter(isOpen).length;return `<button data-a="openInsp" data-i="${esc(i.id)}"><span class="stat">${headLine(i)}</span><span class="${c?'s-unlocked':'s-locked'}" style="font-weight:700;font-size:13px;white-space:nowrap">${c?c+' 待處理':i.ulds.length?i.ulds.length+' 全扣好':'尚無結果'}</span></button>`}).join('')+'</div>';
   h+='</section>';
   const rl=S.refs.locked,ru=S.refs.unlocked,rp=S.refs.palletLocked;
   h+=`<section class="panel"><div><h2>基準照片</h2><p class="hint">AI 判讀前會先參考這些實拍範例。點選圖片可以更換。</p></div>
@@ -728,7 +714,7 @@ function render(){
   app.innerHTML=S.tab==='check'?renderCheck():S.tab==='issues'?renderIssues():renderAgents();
   if(aid){const el=document.getElementById(aid);if(el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA')){el.value=val;el.focus()}}
   const n=openItems().length;
-  $('#nav').innerHTML=[['check','檢查'],['issues','待處理'],['agents','代理']].map(([k,t])=>`<button data-a="tab" data-v="${k}" ${S.tab===k?'aria-current="page"':''}>${t}${k==='issues'&&n?`<span class="badge">${n}</span>`:''}</button>`).join('');
+  $('#nav').innerHTML=[['check','檢查'],['issues','待處理'],['agents','紀錄']].map(([k,t])=>`<button data-a="tab" data-v="${k}" ${S.tab===k?'aria-current="page"':''}>${t}${k==='issues'&&n?`<span class="badge">${n}</span>`:''}</button>`).join('');
   let ov=document.getElementById('overlay');if(!ov){ov=document.createElement('div');ov.id='overlay';document.body.append(ov)}
   let o='';
   if(S.lightbox){const{i,u}=S.lightbox;o+=`<div class="lightbox"><button class="close" data-a="closeLb">關閉</button><div class="frame"><img src="${esc(photoURL(i,u.photoId))}" alt="放大的貨艙照片">${marks(u)}</div></div>`}
@@ -740,7 +726,7 @@ let toastT;function toast(t){S.toast=t;render();clearTimeout(toastT);toastT=setT
 
 /* ---------- 回報與匯出 ---------- */
 function reportText(i){
-  const c=countsOf(i.ulds),L=[`【ULD 鎖扣檢視】${[i.flight,i.station,i.date].filter(Boolean).join(' ')}`,`地勤代理：${i.agentName}${i.reg?'　機號：'+i.reg:''}`,`共 ${i.ulds.length} 個：已扣好 ${c.locked}／未完全 ${c.partial}／未扣 ${c.unlocked}／無法判定 ${c.unclear}`];
+  const c=countsOf(i.ulds),L=[`【ULD 鎖扣檢視】${[i.flight,i.station,i.date].filter(Boolean).join(' ')}`,`共 ${i.ulds.length} 個：已扣好 ${c.locked}／未完全 ${c.partial}／未扣 ${c.unlocked}／無法判定 ${c.unclear}`];
   const open=i.ulds.filter(isOpen);
   if(open.length){L.push('','需處理：');for(const u of open){L.push(`・${numberOK(u.number)?fmtNumber(u.number):u.pallet?'貨盤':'號碼待確認'}${u.position?' ('+u.position+')':''}：${STATUS[uldStatus(u)].t}`);for(const l of u.latches.filter(x=>eff(x)!=='locked'))L.push(`　${l.label}：${STATUS[eff(l)].short}${l.reason?'，'+l.reason:''}`)}}
   else if(i.ulds.length)L.push('','全部 ULD 已扣好。');
@@ -748,8 +734,8 @@ function reportText(i){
 }
 function csvCell(v){v=String(v??'');if(/^[=+\-@\t\r]/.test(v))v="'"+v;return /[",\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v}
 function buildCsv(){
-  const rows=[['日期','航班','場站','機號','地勤代理','艙別','艙位','ULD號碼','首次判定','目前判定','鎖扣明細','處理狀態','處理說明']];
-  for(const i of allInsps())for(const u of i.ulds)rows.push([i.date,i.flight,i.station,i.reg,i.agentName,u.hold,u.position,u.number||(u.pallet?'貨盤':''),STATUS[u.initial||uldStatus(u)].t,STATUS[uldStatus(u)].t,u.latches.map(l=>`${l.label}:${STATUS[eff(l)].short}`).join(' / '),u.resolved?'已處理':isOpen(u)?'待處理':'無需處理',u.resolved?.note||'']);
+  const rows=[['日期','航班','艙別','艙位','ULD號碼','首次判定','目前判定','鎖扣明細','處理狀態','處理說明']];
+  for(const i of allInsps())for(const u of i.ulds)rows.push([i.date,i.flight,u.hold,u.position,u.number||(u.pallet?'貨盤':''),STATUS[u.initial||uldStatus(u)].t,STATUS[uldStatus(u)].t,u.latches.map(l=>`${l.label}:${STATUS[eff(l)].short}`).join(' / '),u.resolved?'已處理':isOpen(u)?'待處理':'無需處理',u.resolved?.note||'']);
   return '﻿'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n');
 }
 
@@ -758,8 +744,6 @@ const findU=(d)=>{const i=S.insps[d.i];return{i,u:i?.ulds.find(x=>x.id===d.u)}};
 const actions={
   tab(d){S.tab=d.v;S.confirm=null;window.scrollTo(0,0);render()},
   hold(d){S.hold=d.v;store.set('uld.hold',d.v);render()},
-  pickAgent(d){S.form.agentId=d.v;store.set('uld.agent',d.v);render()},
-  toggleAddAgent(){S.addingAgent=!S.addingAgent;render()},
   capture(d){
     if(S.busy){toast('請等目前這張辨識完成');return}
     capture=d.m==='cam'||d.m==='lib'?{mode:'new'}:d.m==='ref'?{mode:'ref',key:d.k}:{mode:d.m,iid:d.i,uid:d.u};
@@ -781,10 +765,8 @@ const actions={
     if(cap.db)await cap.db.doc('inspections/'+i.id).delete().catch(()=>{});
     delete S.insps[d.i];if(S.currentId===d.i)S.currentId=null;S.viewInsp=null;render();toast('已刪除');
   },
-  delAgent(d){S.agents=S.agents.filter(a=>a.id!==d.v);if(S.form.agentId===d.v)S.form.agentId='';S.confirm=null;S.openAgent=null;saveAgents();render()},
   newInsp(){if(S.viewInsp&&S.viewInsp!==S.currentId){S.viewInsp=null}else{S.currentId=null;S.viewInsp=null;S.form.flight='';S.form.reg='';S.form.date=today()}S.errors=[];S.tab='check';window.scrollTo(0,0);render()},
   openInsp(d){S.viewInsp=d.i;S.tab='check';render();const t=d.u&&document.getElementById('u-'+d.u);t?t.scrollIntoView():window.scrollTo(0,0)},
-  toggleAgent(d){S.openAgent=S.openAgent===d.v?null:d.v;render()},
   toggleResolve(d){S.resolving=S.resolving===d.u?null:d.u;render()},
   zoom(d){const{i,u}=findU(d);if(i&&u){S.lightbox={i,u};render()}},
   closeLb(){S.lightbox=null;render()},
@@ -815,10 +797,7 @@ document.addEventListener('change',e=>{
 document.addEventListener('input',e=>{const t=e.target;if(t.dataset.c==='form'){S.form[t.dataset.k]=t.value;const can=canStart();document.querySelectorAll('[data-a="capture"][data-m="cam"],[data-a="capture"][data-m="lib"]').forEach(b=>b.disabled=!can)}});
 document.addEventListener('submit',e=>{
   e.preventDefault();const t=e.target;
-  if(t.id==='agentForm'){
-    const v=$('#agentName').value.trim();if(!v)return;
-    const a={id:uid(),name:v.slice(0,40)};S.agents.push(a);S.form.agentId=a.id;store.set('uld.agent',a.id);S.addingAgent=false;saveAgents();render();
-  }else if(t.classList.contains('resolveForm')){
+  if(t.classList.contains('resolveForm')){
     const{i,u}=findU(t.dataset);if(!u)return;
     u.resolved={at:Date.now(),note:t.querySelector('input').value.trim().slice(0,120)};S.resolving=null;saveInsp(i);render();toast('已標記為現場處理完成');
   }
