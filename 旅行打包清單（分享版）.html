@@ -249,6 +249,14 @@ svg{display:block}
   box-shadow:0 14px 24px -10px rgba(255,92,100,.85),inset 0 2px 0 rgba(255,255,255,.45),0 0 0 5px rgba(255,255,255,.8);transition:transform .2s cubic-bezier(.3,1.6,.5,1)}
 .fabn svg{width:26px;height:26px}
 .fabn:active{transform:scale(.9) rotate(90deg)}
+.pv{will-change:transform;touch-action:pan-y}
+.tip{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 96px);transform:translate(-50%,10px);opacity:0;z-index:31;
+  padding:10px 16px;border-radius:999px;background:rgba(21,22,27,.88);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;gap:10px;
+  box-shadow:0 12px 24px -10px rgba(10,12,20,.6);transition:all .35s cubic-bezier(.3,1.3,.5,1);pointer-events:none;white-space:nowrap}
+.tip.show{opacity:1;transform:translate(-50%,0)}
+.tip span{opacity:.6;font-size:16px;animation:nud 1.2s ease-in-out infinite}
+.tip span:last-child{animation-direction:reverse}
+@keyframes nud{50%{transform:translateX(-3px)}}
 .wxmini{display:flex;align-items:center;gap:10px;width:100%;margin-top:-2px;padding:9px 12px;border-radius:14px;background:linear-gradient(135deg,#f3f7ff,#fbf5f6);font-size:13px;color:var(--sub);text-align:left}
 .wxmini svg{width:26px;height:26px;flex:none}
 .wxmini span{display:flex;align-items:center;gap:8px;flex:1}
@@ -748,11 +756,67 @@ function navHTML(){
     '<div class="nfab"><button class="fabn" data-act="addmenu" aria-label="新增">'+ic('plus',2.6)+'</button></div>'+
     it('wx','wx','天氣')+'<button class="nb" data-act="menu">'+ic('dots',2.4)+'<span>更多</span></button></nav>';
 }
-function setView(v){
+var VIEWS=['pack','trip','wx'];
+function setView(v,fromSwipe){
   if(ui.view===v){window.scrollTo({top:0,behavior:'smooth'});return;}
-  var nav=document.getElementById('nav');if(nav){nav.style.setProperty('--i',NAV_IDX[v]);nav.querySelectorAll('.nb[data-v]').forEach(function(b){b.classList.toggle('on',b.dataset.v===v);});}
-  ui.view=v;ui.adding=false;saveUI();
-  setTimeout(function(){var y=window.scrollY,pt=document.querySelector('.panel');render(true);var lim=pt?pt.offsetTop-60:0;window.scrollTo(0,Math.min(y,Math.max(lim,0)));},160);
+  var dir=VIEWS.indexOf(v)>VIEWS.indexOf(ui.view)?1:-1;
+  var nav=document.getElementById('nav');if(nav){var ind=nav.querySelector('.ind');if(ind)ind.style.transition='';nav.style.setProperty('--i',NAV_IDX[v]);nav.querySelectorAll('.nb[data-v]').forEach(function(b){b.classList.toggle('on',b.dataset.v===v);});}
+  var pv=document.getElementById('pv');
+  function swap(){
+    ui.view=v;ui.adding=false;saveUI();
+    var y=window.scrollY,pt=document.querySelector('.panel'),lim=pt?pt.offsetTop-60:0;
+    render(false);window.scrollTo(0,Math.min(y,Math.max(lim,0)));
+    var n=document.getElementById('pv');if(!n)return;
+    n.style.transition='none';n.style.transform='translateX('+(dir*56)+'px)';n.style.opacity='0';
+    n.getBoundingClientRect();
+    n.style.transition='transform .42s cubic-bezier(.2,.9,.25,1),opacity .3s ease';n.style.transform='';n.style.opacity='';
+  }
+  if(pv&&!fromSwipe){pv.style.transition='transform .16s ease-in,opacity .16s ease-in';pv.style.transform='translateX('+(-dir*36)+'px)';pv.style.opacity='0';setTimeout(swap,150);}
+  else if(pv&&fromSwipe){pv.style.transition='transform .16s ease-out,opacity .16s';pv.style.transform='translateX('+(-dir*window.innerWidth*.5)+'px)';pv.style.opacity='0';setTimeout(swap,140);}
+  else swap();
+}
+
+/* ---------- 左右滑動切換頁籤 ---------- */
+(function(){
+  var g=null,EDGE=22,NOSWIPE='.sheet,.scrim,.tabs,.wxs,input,textarea,select,.addf';
+  function navI(v){return NAV_IDX[v]||0;}
+  document.addEventListener('touchstart',function(e){
+    g=null;if(e.touches.length!==1||document.querySelector('.sheet'))return;
+    var t=e.touches[0],tg=e.target;
+    if(t.clientX<EDGE||t.clientX>window.innerWidth-EDGE)return;
+    if(tg.closest&&tg.closest(NOSWIPE))return;
+    g={x:t.clientX,y:t.clientY,t:Date.now(),lock:null,dx:0};
+  },{passive:true});
+  document.addEventListener('touchmove',function(e){
+    if(!g||e.touches.length!==1)return;
+    var t=e.touches[0],dx=t.clientX-g.x,dy=t.clientY-g.y;
+    if(!g.lock){if(Math.abs(dx)<9&&Math.abs(dy)<9)return;g.lock=Math.abs(dx)>Math.abs(dy)*1.25?'h':'v';
+      if(g.lock==='v'){g=null;return;}
+      g.pv=document.getElementById('pv');g.nav=document.getElementById('nav');g.ind=g.nav&&g.nav.querySelector('.ind');g.i=VIEWS.indexOf(ui.view);g.x=t.clientX-(dx>0?9:-9);dx=t.clientX-g.x;}
+    if(e.cancelable)e.preventDefault();
+    var tgt=VIEWS[g.i+(dx<0?1:-1)],w=window.innerWidth,d=tgt?dx:dx*.22;
+    g.dx=dx;
+    if(g.pv){g.pv.style.transition='none';g.pv.style.transform='translateX('+d+'px)';g.pv.style.opacity=String(1-Math.min(Math.abs(d)/w,.5)*.6);}
+    if(g.ind&&tgt){var a=navI(ui.view),b=navI(tgt),p=Math.min(Math.abs(dx)/(w*.6),1);g.ind.style.transition='none';g.nav.style.setProperty('--i',a+(b-a)*p);}
+  },{passive:false});
+  function end(){
+    if(!g||g.lock!=='h'){g=null;return;}
+    var dx=g.dx,v=Math.abs(dx)/Math.max(Date.now()-g.t,1),tgt=VIEWS[g.i+(dx<0?1:-1)],w=window.innerWidth,G=g;g=null;
+    if(tgt&&(Math.abs(dx)>w*.22||(v>.45&&Math.abs(dx)>30))){setView(tgt,true);return;}
+    if(G.pv){G.pv.style.transition='transform .38s cubic-bezier(.3,1.35,.5,1),opacity .25s';G.pv.style.transform='';G.pv.style.opacity='';}
+    if(G.ind){G.ind.style.transition='';G.nav.style.setProperty('--i',navI(ui.view));}
+  }
+  document.addEventListener('touchend',end,{passive:true});
+  document.addEventListener('touchcancel',end,{passive:true});
+})();
+
+/* ---------- 首次提示 ---------- */
+function swipeTip(){
+  try{if(localStorage.getItem('packing-tip-swipe'))return;localStorage.setItem('packing-tip-swipe','1');}catch(e){return;}
+  if(!('ontouchstart' in window))return;
+  var t=document.createElement('div');t.className='tip';t.innerHTML='<span>‹</span>左右滑動可切換頁籤<span>›</span>';document.body.appendChild(t);
+  requestAnimationFrame(function(){t.classList.add('show');});
+  setTimeout(function(){t.classList.remove('show');setTimeout(function(){t.remove();},400);},3200);
 }
 function addMenu(){
   var c=curCat();
@@ -778,9 +842,9 @@ function render(anim){
    '<header class="top"><button class="circ" data-act="trip" aria-label="旅程設定">'+ic('cal')+'</button>'+
    '<button class="tt" data-act="trip"><b>'+esc(state.trip)+'</b><small>'+headTxt()+'</small></button>'+
    '<button class="circ" data-act="menu" aria-label="更多">'+ic('dots',2.4)+'</button></header>'+mapHTML()+
-   '<main class="panel'+(anim?' anim':'')+'"><div class="grab"></div>'+
+   '<main class="panel'+(anim?' anim':'')+'"><div class="grab"></div><div class="pv" id="pv">'+
    (ui.view==='trip'?tripHTML():ui.view==='wx'?wxHTML():packHTML())+
-   '<div class="foot '+sync+'" id="sync"><i></i><span>'+SYNC[sync]+'</span><br>所有變更都會保存在 App 內</div></main></div>'+navHTML();
+   '<div class="foot '+sync+'" id="sync"><i></i><span>'+SYNC[sync]+'</span><br>所有變更都會保存在 App 內</div></div></main></div>'+navHTML();
   app.innerHTML=h;
   if(ui.adding){var inp=document.getElementById('addin');if(inp)inp.focus();}
   var on=document.querySelector('.tab.on'),tb=document.querySelector('.tabs');if(on&&tb)tb.scrollLeft=Math.max(0,on.offsetLeft-(tb.clientWidth-on.offsetWidth)/2);
@@ -1066,7 +1130,7 @@ app.addEventListener('click',function(e){
     case 'wxreload':loadWx(true);break;
   }
 });
-document.body.classList.add('intro');render(true);setTimeout(function(){loadWx(false);},300);setTimeout(function(){document.body.classList.remove('intro');},2800);
+document.body.classList.add('intro');render(true);setTimeout(swipeTip,1600);setTimeout(function(){loadWx(false);},300);setTimeout(function(){document.body.classList.remove('intro');},2800);
 })();
 </script>
 </body>
