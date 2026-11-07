@@ -901,7 +901,7 @@ function bizAuto(){return /出差|商務|公務|會議|拜訪/.test(state.trip)|
 function isBiz(){return state.biz==null?bizAuto():!!state.biz;}
 function clothesPlan(){
   var sp=tripSpan();if(!sp)return null;
-  var D=Math.max(1,daysBetween(sp.s,sp.e)+1),C=Math.min(D,7),biz=isBiz();
+  var D=Math.max(1,daysBetween(sp.s,sp.e)+1),N=D-1,C=Math.min(Math.max(N,1),7),biz=isBiz();
   // 停留期間（目的地，不含轉機）
   var stay={};state.stops.forEach(function(x){if(x.role!=='transit')stayDays(x).forEach(function(d){stay[d]=1;});});
   var sd=Object.keys(stay);if(!sd.length)sd=rangeDays(sp.s,sp.e);
@@ -911,14 +911,14 @@ function clothesPlan(){
   state.stops.forEach(function(x){var w=state.wx[x.code];if(!w||!w.days)return;stayDays(x).forEach(function(d){var v=w.days[d];if(!v)return;
     var l=v.fl!=null?v.fl:v.lo;if(l!=null&&(lo==null||l<lo))lo=l;if(v.hi!=null&&(hi==null||v.hi>hi))hi=v.hi;if((v.p||0)>=50&&rain.indexOf(d)<0)rain.push(d);});});
   rain.sort();
-  var shirts=biz?Math.max(1,Math.min(wd,5)):0,tops=Math.max(1,C-shirts);
+  var shirts=biz?Math.max(1,Math.min(wd,5,C)):0,tops=Math.max(0,C-shirts),per=N>7?'以 7 晚為上限':'共 '+Math.max(N,1)+' 晚';
   var L=[
-    {k:'under',n:'內衣褲',q:C+1,u:'套',why:'每天 1 套＋1 備用'},
-    {k:'socks',n:'襪子',q:C+1,u:'雙',why:'每天 1 雙＋1 備用'},
-    {k:'tops',n:'外出上衣',q:tops,u:'件',why:biz?'非上班日每天 1 件':'每天 1 件'},
-    {k:'pants',n:'外出褲子',q:Math.min(3,Math.max(1,Math.ceil(tops/3))),u:'件',why:'約 3 天 1 件'},
-    {k:'sleep',n:'睡衣',q:D>5?2:1,u:'套',why:D>5?'住超過 5 晚帶 2 套':'1 套'}
+    {k:'under',n:'內衣褲',q:C,u:'套',why:per+'，每晚 1 套'},
+    {k:'socks',n:'襪子',q:C,u:'雙',why:per+'，每晚 1 雙'}
   ];
+  if(tops>0){L.push({k:'tops',n:'外出上衣',q:tops,u:'件',why:biz?C+' 套扣掉上班日 '+shirts+' 天':per+'，每晚 1 件'});
+    L.push({k:'pants',n:'外出褲子',q:Math.min(3,Math.max(1,Math.ceil(tops/3))),u:'件',why:'約 3 晚 1 件'});}
+  L.push({k:'sleep',n:'睡衣',q:N>5?2:1,u:'套',why:N>5?'住超過 5 晚帶 2 套':'1 套'});
   if(biz){L.push({k:'shirt',n:'上班襯衫',q:shirts,u:'件',why:'上班日 '+wd+' 天'});L.push({k:'suit',n:'西裝外套',q:1,u:'件',why:'正式場合'});}
   var coat=null;
   if(lo==null)coat={k:'coat',n:'外套',q:1,u:'件',why:'出發前看天氣再決定厚薄'};
@@ -927,7 +927,7 @@ function clothesPlan(){
   else if(lo<=18)coat={k:'coat',n:'薄外套',q:1,u:'件',why:'早晚 '+lo+'° 左右'};
   if(coat)L.push(coat);
   if(rain.length)L.push({k:'rain',n:'雨傘或雨衣',q:1,u:'把',why:rain.map(md).join('、')+' 可能下雨'});
-  return {D:D,N:D-1,s:sp.s,e:sp.e,back:sp.back,wd:wd,biz:biz,lo:lo,hi:hi,rain:rain,laundry:D>7,list:L};
+  return {D:D,N:N,s:sp.s,e:sp.e,back:sp.back,wd:wd,biz:biz,lo:lo,hi:hi,rain:rain,laundry:N>7,list:L};
 }
 var CL_KEYS={under:[/內衣|內褲/],socks:[/襪/],sleep:[/睡覺|睡衣/],shirt:[/襯衫|上班/],suit:[/西裝/],tops:[/出外衣|外出衣|上衣|T恤|衣服/],
   pants:[/長褲|褲子|外出褲/],coat:[/外套|大衣|羽絨/],rain:[/雨傘|雨衣|雨具/]};
@@ -969,7 +969,7 @@ function clothesHTML(){
   h+='<div class="cg">'+plan.list.map(function(x){var m=map[x.k],tag=m&&m.combined?'併入衣褲':m?'清單：'+m.it.t:'會新增';
     return '<div class="cc"><div class="cq num">'+x.q+'<small>'+x.u+'</small></div><div class="cn2"><b>'+esc(x.n)+'</b><small>'+esc(x.why)+'</small><em>'+esc(tag)+'</em></div></div>';}).join('')+'</div>';
   var notes=[];
-  if(plan.laundry)notes.push('旅程 '+plan.D+' 天，以 7 天份為上限，記得安排在當地洗衣。');
+  if(plan.laundry)notes.push('旅程共 '+plan.N+' 晚，衣服以 7 晚份為上限，記得安排在當地洗衣。');
   if(!plan.back)notes.push('還沒有回程航班，以目前最後一段航班計算。');
   if(notes.length)h+='<div class="cnote">'+notes.map(esc).join('<br>')+'</div>';
   h+='<button class="capply'+(applied?' done':'')+'" data-act="capply">'+(applied?ic('ok',2)+'已套用到清單 · 再套用一次':ic('checks',2)+'套用數量到打包清單')+'</button></div>';
