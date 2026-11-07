@@ -39,7 +39,11 @@ header.top{padding:26px 0 14px;display:flex;align-items:flex-end;gap:18px;flex-w
 h1{font-size:22px;line-height:1.25;margin:0;font-weight:700;letter-spacing:.01em}
 .sub{color:var(--muted);font-size:12.5px;margin-top:2px}
 .stat{display:flex;gap:22px}
-.langsw{margin-left:auto;align-self:flex-start;display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--panel)}
+.topr{order:-1;flex:0 0 100%;display:flex;flex-direction:row-reverse;align-items:center;gap:10px;margin:-14px 0 -4px}
+.ver{display:inline-flex;align-items:baseline;gap:5px;font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--muted);font-variant-numeric:tabular-nums;padding-right:4px;white-space:nowrap}
+.ver span{font-size:10px;font-weight:600;letter-spacing:.12em;opacity:.75}
+header.top .stat{margin-left:auto}
+.langsw{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--panel)}
 .langsw button{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-size:12.5px;font-weight:700;padding:6px 13px;cursor:pointer;min-height:32px}
 .langsw button[aria-pressed="true"]{background:var(--gold);color:#15202b}
 .stat div{text-align:right}
@@ -289,9 +293,10 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
   .slot .lb{min-height:auto}
   .bigcode{font-size:36px}
   .stat{margin-left:0;width:100%;justify-content:flex-start;gap:26px}
-  .langsw{position:absolute;top:18px;right:16px}
+  .topr{margin:-16px 0 -2px}
+  .ver{font-size:10px;letter-spacing:.02em;padding-right:2px}
+  .ver span{display:none}
   header.top{position:relative}
-  header.top .mark{padding-right:112px}
   .stat div{text-align:left}
 }
 @media print{
@@ -692,8 +697,11 @@ html[data-skin] .sky{ border-color:var(--line); }
       <div class="sub">轉降、滯機加油、下客入境的第一線判斷依據</div>
     </div>
   </div>
-  <div class="langsw" role="group" aria-label="Language" data-noi18n>
-    <button type="button" data-lang="zh">中文</button><button type="button" data-lang="en">EN</button>
+  <div class="topr">
+    <div class="langsw" role="group" aria-label="Language" data-noi18n>
+      <button type="button" data-lang="zh">中文</button><button type="button" data-lang="en">EN</button>
+    </div>
+    <div class="ver" data-noi18n title="2026.11.07：左右滑動切換頁籤、STD 依出發站當地時間顯示（UTC 自動校正）"><span>版次</span>v2026.11.07</div>
   </div>
   <div class="stat">
     <div><b id="statStations">0</b><span>收錄場站</span></div>
