@@ -190,6 +190,14 @@ svg{display:block}
 .wd svg{width:30px;height:30px;margin:6px auto 4px}
 .wd .hl{font-size:16px;font-weight:800}
 .wd .hl small{font-size:13px;color:var(--sub);font-weight:600}
+.wd .cn{font-size:11px;color:var(--sub);font-weight:600;margin:-2px 0 2px}
+.wxbar{display:flex;align-items:center;gap:10px;margin:-2px 2px 12px;font-size:12.5px;color:var(--sub)}
+.wxbar span{flex:1;display:flex;align-items:center;gap:7px;min-width:0}
+.wxbar .dot{width:7px;height:7px;border-radius:50%;background:#30d158;flex:none;box-shadow:0 0 0 3px rgba(48,209,88,.18)}
+.wxbar .dot.off{background:#c6ccd8;box-shadow:none}
+.wxbar .spin{width:12px;height:12px;border-radius:50%;border:2px solid #d6dbe5;border-top-color:var(--coral);animation:sp 0.8s linear infinite;flex:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+.wxbar .pl[disabled]{opacity:.5}
 .wd .fl2{font-size:11px;color:#ff7a59;font-weight:700;margin-top:3px}
 .wd .fl2.na{color:var(--faint);font-weight:500}
 .wd .p{font-size:11px;color:var(--blue);font-weight:700;margin-top:2px}
@@ -269,6 +277,9 @@ select.fi{background-image:linear-gradient(45deg,transparent 50%,#8a92a3 50%),li
 .acts .ok{background:var(--grad);color:#fff;box-shadow:var(--glow)}
 .acts .danger{background:#ff453a;color:#fff}
 .alt{display:block;width:100%;margin-top:10px;height:46px;color:#ff453a;font-size:15px;font-weight:700}
+.ta{height:130px;padding:12px 14px;font-size:12px;line-height:1.5;font-family:ui-monospace,Menlo,monospace;resize:none;word-break:break-all}
+.filebtn{display:inline-flex;align-items:center;height:36px;padding:0 14px;border-radius:12px;background:#f1f3f8;font-size:13.5px;font-weight:700;color:#3b414f;margin:-4px 0 14px;position:relative;overflow:hidden}
+.filebtn input{position:absolute;inset:0;opacity:0}
 .err{color:#ff453a;font-size:13px;margin:-6px 0 12px 2px;min-height:0}
 .menu{margin:4px 0 6px}
 .menu button{display:flex;align-items:center;gap:14px;width:100%;height:58px;padding:0 6px;font-size:16px;font-weight:600;text-align:left;border-bottom:1px solid var(--line)}
@@ -283,7 +294,7 @@ select.fi{background-image:linear-gradient(45deg,transparent 50%,#8a92a3 50%),li
 </head>
 <body>
 <div id="app"></div>
-<script id="state" type="application/json">{"v":3,"updated":1794016355000,"trip":"下一趟旅程","from":{"code":"TPE","city":"台北"},"stops":[{"id":"s1","code":"NRT","role":"dest","arrive":"","leave":""}],"flights":[],"wx":{"NRT":{"at":"2026-11-07","days":{"2026-11-07":{"hi":20,"lo":10,"p":0},"2026-11-08":{"hi":16,"lo":9,"p":0},"2026-11-09":{"hi":11,"lo":9,"p":0},"2026-11-10":{"hi":13,"lo":10,"p":0},"2026-11-11":{"hi":15,"lo":7,"p":0},"2026-11-12":{"hi":19,"lo":9,"p":0},"2026-11-13":{"hi":20,"lo":10,"p":0},"2026-11-14":{"hi":18,"lo":11,"p":0}}}},"cats":[{"id":"med","name":"藥品","icon":"pill","color":"#ff7a59","items":[{"id":"m1","t":"痘痘藥","d":false},{"id":"m2","t":"止癢藥","d":false},{"id":"m3","t":"消毒酒精","d":false},{"id":"m4","t":"眼藥水","d":false},{"id":"m5","t":"髮蠟","d":false},{"id":"m6","t":"牙刷","d":false},{"id":"m7","t":"牙膏","d":false},{"id":"m8","t":"刮鬍刀","d":false},{"id":"m9","t":"洗面乳","d":false},{"id":"m10","t":"口罩","d":false}]},{"id":"wear","name":"穿著","icon":"shirt","color":"#7b8cff","items":[{"id":"w1","t":"內衣褲","d":false},{"id":"w2","t":"出外衣褲","d":false},{"id":"w3","t":"睡覺衣褲","d":false},{"id":"w4","t":"襪子","d":false},{"id":"w5","t":"上班襯衫褲子","d":false},{"id":"w6","t":"西裝外套","d":false},{"id":"w7","t":"手錶","d":false},{"id":"w8","t":"拖鞋","d":false},{"id":"w9","t":"外套","d":false}]},{"id":"out","name":"出外","icon":"plane","color":"#3aa8ff","items":[{"id":"o1","t":"太陽眼鏡","d":false},{"id":"o2","t":"眼鏡","d":false},{"id":"o3","t":"雨傘","d":false},{"id":"o4","t":"護照","d":false},{"id":"o5","t":"簽證","d":false},{"id":"o6","t":"eSIM","d":false}]}],"log":[]}</script>
+<script id="state" type="application/json">{"v":3,"updated":1794016355000,"trip":"下一趟旅程","from":{"code":"TPE","city":"台北"},"stops":[{"id":"s1","code":"NRT","role":"dest","arrive":"","leave":""}],"flights":[],"wx":{"NRT":{"at":"2026-11-07","days":{"2026-11-07":{"hi":20,"lo":10,"p":0},"2026-11-08":{"hi":16,"lo":9,"p":0},"2026-11-09":{"hi":11,"lo":9,"p":0},"2026-11-10":{"hi":13,"lo":10,"p":0},"2026-11-11":{"hi":15,"lo":7,"p":0},"2026-11-12":{"hi":19,"lo":9,"p":0},"2026-11-13":{"hi":20,"lo":10,"p":0},"2026-11-14":{"hi":18,"lo":11,"p":0}}},"SEA":{"at":"2026-11-07","days":{"2026-11-06":{"hi":14,"lo":10,"p":50},"2026-11-07":{"hi":16,"lo":10,"p":20},"2026-11-08":{"hi":13,"lo":7,"p":15},"2026-11-09":{"hi":13,"lo":7,"p":70},"2026-11-10":{"hi":14,"lo":12,"p":75},"2026-11-11":{"hi":18,"lo":12,"p":10},"2026-11-12":{"hi":14,"lo":10,"p":45},"2026-11-13":{"hi":12,"lo":10,"p":75}}},"BOS":{"at":"2026-11-07","days":{"2026-11-06":{"hi":19,"lo":14,"p":85},"2026-11-07":{"hi":14,"lo":8,"p":70},"2026-11-08":{"hi":14,"lo":8,"p":15},"2026-11-09":{"hi":13,"lo":7,"p":20},"2026-11-10":{"hi":13,"lo":7,"p":10},"2026-11-11":{"hi":15,"lo":6,"p":10},"2026-11-12":{"hi":10,"lo":4,"p":55},"2026-11-13":{"hi":7,"lo":4,"p":25}}}},"cats":[{"id":"med","name":"藥品","icon":"pill","color":"#ff7a59","items":[{"id":"m1","t":"痘痘藥","d":false},{"id":"m2","t":"止癢藥","d":false},{"id":"m3","t":"消毒酒精","d":false},{"id":"m4","t":"眼藥水","d":false},{"id":"m5","t":"髮蠟","d":false},{"id":"m6","t":"牙刷","d":false},{"id":"m7","t":"牙膏","d":false},{"id":"m8","t":"刮鬍刀","d":false},{"id":"m9","t":"洗面乳","d":false},{"id":"m10","t":"口罩","d":false}]},{"id":"wear","name":"穿著","icon":"shirt","color":"#7b8cff","items":[{"id":"w1","t":"內衣褲","d":false},{"id":"w2","t":"出外衣褲","d":false},{"id":"w3","t":"睡覺衣褲","d":false},{"id":"w4","t":"襪子","d":false},{"id":"w5","t":"上班襯衫褲子","d":false},{"id":"w6","t":"西裝外套","d":false},{"id":"w7","t":"手錶","d":false},{"id":"w8","t":"拖鞋","d":false},{"id":"w9","t":"外套","d":false}]},{"id":"out","name":"出外","icon":"plane","color":"#3aa8ff","items":[{"id":"o1","t":"太陽眼鏡","d":false},{"id":"o2","t":"眼鏡","d":false},{"id":"o3","t":"雨傘","d":false},{"id":"o4","t":"護照","d":false},{"id":"o5","t":"簽證","d":false},{"id":"o6","t":"eSIM","d":false}]}],"log":[]}</script>
 <script id="main">
 (function(){
 "use strict";
@@ -357,31 +368,49 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){retur
 function uid(){return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 
 /* ---------- 天氣圖示 ---------- */
+function wmo(c){
+  if(c==null)return null;
+  if(c===0)return ['clear','晴'];if(c<=2)return ['part','晴時多雲'];if(c===3)return ['cloud','陰天'];
+  if(c===45||c===48)return ['fog','霧'];if(c>=51&&c<=57)return ['rain','毛毛雨'];if(c>=61&&c<=67)return ['rain','下雨'];
+  if(c>=71&&c<=77)return ['snow','下雪'];if(c>=80&&c<=82)return ['rain','陣雨'];if(c>=85&&c<=86)return ['snow','陣雪'];if(c>=95)return ['storm','雷雨'];
+  return ['cloud','多雲'];
+}
+function wxKind(d){var w=wmo(d.c);if(w)return w;var p=d.p||0;return p>=50?['rain','可能下雨']:p>=20?['part','多雲']:['clear','晴'];}
 function wxIcon(d){
   var sun='<circle cx="16" cy="16" r="6" fill="#ffb84a"/><g stroke="#ffb84a" stroke-width="2" stroke-linecap="round"><path d="M16 4v3M16 25v3M4 16h3M25 16h3M7.5 7.5l2 2M22.5 22.5l2 2M7.5 24.5l2-2M22.5 9.5l2-2"/></g>';
   var cl='<path d="M10 25h13a5 5 0 0 0 .6-9.96A7 7 0 0 0 10.3 15.5 4.75 4.75 0 0 0 10 25z" fill="#fff" stroke="#c3cbe0" stroke-width="1.6"/>';
-  var p=d.p||0, s=d.snow;
-  if(s)return '<svg viewBox="0 0 32 32">'+cl+'<g fill="#9ec5ff"><circle cx="12" cy="29" r="1.6"/><circle cx="17" cy="30" r="1.6"/><circle cx="22" cy="29" r="1.6"/></g></svg>';
-  if(p>=50)return '<svg viewBox="0 0 32 32">'+cl+'<g stroke="#5b9bff" stroke-width="2" stroke-linecap="round"><path d="M12 27.5l-1 3M17 27.5l-1 3M22 27.5l-1 3"/></g></svg>';
-  if(p>=20)return '<svg viewBox="0 0 32 32"><g transform="translate(-3 -4) scale(.85)">'+sun+'</g>'+cl+'</svg>';
-  return '<svg viewBox="0 0 32 32">'+sun+'</svg>';
+  var cl2='<path d="M14 14h9a4 4 0 0 0 .4-7.97A5.5 5.5 0 0 0 13.2 7.6 3.6 3.6 0 0 0 14 14z" fill="#eef1f8" stroke="#c9d0e2" stroke-width="1.4"/>';
+  var k=wxKind(d)[0],o='<svg viewBox="0 0 32 32">';
+  if(k==='clear')return o+sun+'</svg>';
+  if(k==='part')return o+'<g transform="translate(-3 -4) scale(.85)">'+sun+'</g>'+cl+'</svg>';
+  if(k==='cloud')return o+cl2+cl+'</svg>';
+  if(k==='fog')return o+cl+'<g stroke="#b7c0d4" stroke-width="2" stroke-linecap="round"><path d="M8 28h16M11 31h10"/></g></svg>';
+  if(k==='snow')return o+cl+'<g fill="#9ec5ff"><circle cx="12" cy="29" r="1.7"/><circle cx="17" cy="30.5" r="1.7"/><circle cx="22" cy="29" r="1.7"/></g></svg>';
+  if(k==='storm')return o+cl+'<path d="M17 25l-3 4h3l-2 3.5" fill="none" stroke="#ffb020" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  return o+cl+'<g stroke="#5b9bff" stroke-width="2" stroke-linecap="round"><path d="M12 27.5l-1 3M17 27.5l-1 3M22 27.5l-1 3"/></g></svg>';
 }
 
 /* ---------- 狀態 ---------- */
 var state=null;
 try{state=JSON.parse(document.getElementById('state').textContent);}catch(e){}
-try{var local=JSON.parse(localStorage.getItem(LS));if(local&&local.cats&&(local.updated||0)>((state&&state.updated)||0)){var emb=state;state=local;
-  if(emb&&emb.wx){state.wx=state.wx||{};Object.keys(emb.wx).forEach(function(k){var a=state.wx[k],b=emb.wx[k];if(!a||(b&&(b.at||'')>(a.at||'')))state.wx[k]=b;});}}}catch(e){}
+try{var local=JSON.parse(localStorage.getItem(LS));if(local&&local.cats){
+  var other=state;if((local.updated||0)>((state&&state.updated)||0)){state=local;}else other=local;
+  if(state&&other&&other.wx){state.wx=state.wx||{};var wt=function(w){return (w&&(w.ts||Date.parse(w.at)))||0;};
+    Object.keys(other.wx).forEach(function(k){if(wt(other.wx[k])>wt(state.wx[k]))state.wx[k]=other.wx[k];});}}}catch(e){}
 if(!state||!state.cats)state={cats:[]};
-(function migrate(){
+function migrate(){
   if(!state.log)state.log=[];if(!state.trip)state.trip='下一趟旅程';
   if(!state.from)state.from={code:'TPE',city:'台北'};
   if(!state.stops){state.stops=[];if(state.to&&state.to.code&&state.to.code!=='---')state.stops.push({id:uid(),code:state.to.code,city:state.to.city,role:'dest',arrive:state.start||'',leave:state.end||''});}
   delete state.to;delete state.start;delete state.end;
   if(!state.flights)state.flights=[];if(!state.wx)state.wx={};
-  state.cats.forEach(function(c,i){if(!c.color||c.color.length!==7)c.color=COLORS[i%COLORS.length];if(!c.icon)c.icon='bag';});
+  state.cats.forEach(function(c,i){if(!c.id)c.id=uid();if(!c.name)c.name='未命名';if(!c.color||String(c.color).length!==7)c.color=COLORS[i%COLORS.length];if(!c.icon)c.icon='bag';
+    c.items=c.items.filter(function(x){return x&&x.t!=null;});c.items.forEach(function(x){if(!x.id)x.id=uid();x.t=String(x.t);x.d=!!x.d;});});
+  state.stops=state.stops.filter(function(x){return x&&x.code;});state.stops.forEach(function(x){if(!x.id)x.id=uid();});
+  state.flights=state.flights.filter(function(x){return x&&x.from&&x.to;});state.flights.forEach(function(x){if(!x.id)x.id=uid();});
   state.v=3;
-})();
+}
+migrate();
 var ui={view:'pack',cur:null,todo:false,edit:false,adding:false};
 try{var u=JSON.parse(localStorage.getItem(LSUI));if(u){ui.cur=u.cur;ui.todo=!!u.todo;ui.view=u.view==='trip'?'trip':'pack';}}catch(e){}
 function saveUI(){try{localStorage.setItem(LSUI,JSON.stringify({cur:ui.cur,todo:ui.todo,view:ui.view}));}catch(e){}}
@@ -441,6 +470,7 @@ function diffTxt(tz,date){
 }
 function diffShort(tz,date){var d=offDiff(tz,TW,date);if(d==null)return '';return d?hmShort(d):'同台灣';}
 function pairDiff(a,b,date){var d=offDiff(b,a,date);if(d==null)return '';return d?'時差 '+hmShort(d):'無時差';}
+function utcTxt(tz,date){var o=tzOff(tz,date);if(o==null)return '';var a=Math.abs(o);return 'UTC'+(o>=0?'+':'−')+Math.floor(a/60)+(a%60?':'+String(a%60).padStart(2,'0'):'');}
 function clock(tz){try{return new Intl.DateTimeFormat('zh-TW',{timeZone:tz,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());}catch(e){return '--:--';}}
 function clockDay(tz){try{var p={};new Intl.DateTimeFormat('zh-TW',{timeZone:tz,month:'numeric',day:'numeric',weekday:'short'}).formatToParts(new Date()).forEach(function(x){p[x.type]=x.value;});return p.month+'/'+p.day+' '+p.weekday;}catch(e){return '';}}
 var WK='日一二三四五六';
@@ -485,6 +515,54 @@ function stayDays(s){
   return out;
 }
 
+/* ---------- 即時天氣（Open-Meteo，免金鑰） ---------- */
+var WX_TTL=3*36e5,wxBusy={},wxStat={loading:false,err:false,last:0};
+function saveLocal(){try{localStorage.setItem(LS,JSON.stringify(state));}catch(e){}}
+function getJSON(url){
+  var c=typeof AbortController!=='undefined'?new AbortController():null,t=setTimeout(function(){if(c)c.abort();},12000);
+  return fetch(url,c?{signal:c.signal}:{}).then(function(r){clearTimeout(t);if(!r.ok)throw new Error('HTTP '+r.status);return r.json();},function(e){clearTimeout(t);throw e;});
+}
+function stopGeo(s){var a=AP[s.code];if(a)return Promise.resolve({lat:a.lat,lon:a.lon});if(s.lat!=null)return Promise.resolve({lat:s.lat,lon:s.lon});
+  return getJSON('https://geocoding-api.open-meteo.com/v1/search?count=1&language=zh&name='+encodeURIComponent(s.city||s.code)).then(function(j){
+    var r=j&&j.results&&j.results[0];if(!r)throw new Error('找不到地點');s.lat=Math.round(r.latitude*1000)/1000;s.lon=Math.round(r.longitude*1000)/1000;return {lat:s.lat,lon:s.lon};});}
+function rd(v){return v==null||isNaN(v)?null:Math.round(v);}
+function loadWx(force){
+  if(typeof fetch!=='function'||!state.stops.length)return;
+  var by={};state.stops.forEach(function(s){if(!by[s.code])by[s.code]=s;});
+  var jobs=Object.keys(by).filter(function(k){var w=state.wx[k];return !wxBusy[k]&&(force||!w||w.src!=='live'||Date.now()-(w.ts||0)>WX_TTL);});
+  if(!jobs.length)return;
+  wxStat.loading=true;wxBar();
+  Promise.all(jobs.map(function(k){
+    wxBusy[k]=1;
+    return stopGeo(by[k]).then(function(g){
+      return getJSON('https://api.open-meteo.com/v1/forecast?latitude='+g.lat+'&longitude='+g.lon+
+        '&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max&timezone=auto&forecast_days=16');
+    }).then(function(j){
+      var d=j&&j.daily,days={};if(!d||!d.time)throw new Error('資料格式不符');
+      d.time.forEach(function(t,i){var hi=rd(d.temperature_2m_max[i]);if(hi==null)return;
+        days[t]={hi:hi,lo:rd(d.temperature_2m_min[i]),fh:rd(d.apparent_temperature_max&&d.apparent_temperature_max[i]),fl:rd(d.apparent_temperature_min&&d.apparent_temperature_min[i]),
+          p:d.precipitation_probability_max&&d.precipitation_probability_max[i]!=null?d.precipitation_probability_max[i]:null,c:d.weather_code?d.weather_code[i]:null};});
+      state.wx[k]={at:todayStr(),src:'live',ts:Date.now(),days:days};return true;
+    }).catch(function(){return false;}).then(function(ok){delete wxBusy[k];return ok;});
+  })).then(function(r){
+    var ok=r.filter(Boolean).length;wxStat.loading=false;wxStat.err=!ok;if(ok){wxStat.last=Date.now();saveLocal();}
+    safeRender();
+  });
+}
+function wxBarHTML(){
+  var live=Object.keys(state.wx).some(function(k){return state.wx[k].src==='live';}),t='';
+  if(wxStat.loading)t='<i class="spin"></i>正在抓取最新天氣…';
+  else if(wxStat.err&&!live)t='<i class="dot off"></i>目前無法連網，顯示 Claude 寫入的預報';
+  else if(live){var ts=0;Object.keys(state.wx).forEach(function(k){ts=Math.max(ts,state.wx[k].ts||0);});
+    t='<i class="dot"></i>即時天氣・更新於 '+new Date(ts).toTimeString().slice(0,5);}
+  else t='<i class="dot off"></i>天氣尚未抓取';
+  return '<div class="wxbar" id="wxbar"><span>'+t+'</span>'+(state.stops.length?'<button class="pl" data-act="wxreload"'+(wxStat.loading?' disabled':'')+'>'+ic('reset',2)+'重新整理</button>':'')+'</div>';
+}
+function wxBar(){var el=document.getElementById('wxbar');if(el)el.outerHTML=wxBarHTML();}
+function safeRender(){var a=document.activeElement;if(document.querySelector('.sheet')||(a&&a.id==='addin'&&a.value)){clearTimeout(safeRender.t);safeRender.t=setTimeout(safeRender,1500);return;}render();}
+setInterval(function(){if(!document.hidden)loadWx(false);},10*60000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden)loadWx(false);});
+
 /* ---------- 點陣地圖 ---------- */
 var MAPD=(function(){
   var ox=85;
@@ -527,7 +605,7 @@ function mapHTML(){
     if(!key&&days.length)days.forEach(function(d){if(!key&&w[d])key=d;});
     if(!key&&!days.length&&w[td])key=td;
     var wd=key?w[key]:null;
-    chip='<button class="cd" data-act="view-trip"><div class="c1">'+esc(short(cityOf(ms.code,ms)))+(wd?' · '+(key===td?'今天':md(key)):' · 當地時間')+'</div>'+
+    chip='<button class="cd" data-act="view-trip"><div class="c1">'+esc(short(cityOf(ms.code,ms)))+(wd?' · '+(key===td?'今天':md(key))+' · '+wxKind(wd)[1]:' · 當地時間')+'</div>'+
       (wd?'<b class="num">'+wd.hi+'°<small>/ '+wd.lo+'°</small></b>':'<b class="num" data-clock="'+tz+'">'+clock(tz)+'</b>')+
       '<div class="c3">'+(wd?'當地 <span data-clock="'+tz+'">'+clock(tz)+'</span> · ':'')+'較台灣 '+diffShort(tz,now)+'</div></button>';
   }else chip='<button class="cd set" data-act="addstop"><div class="c1">還沒有目的地</div><b>＋ 目的地</b><div class="c3">顯示天氣與時差</div></button>';
@@ -584,7 +662,7 @@ function stopCard(s,i){
   var a=apInfo(s.code,s),tz=a?a.tz:null,now=new Date(),h='';
   var refDate=s.arrive?new Date(pd(s.arrive).getTime()+12*36e5):now;
   h+='<div class="st" style="animation-delay:'+(i*40)+'ms"><button class="hd" data-act="editstop" data-id="'+s.id+'"><div class="nm"><span class="role'+(s.role==='transit'?' tr':'')+'">'+(s.role==='transit'?'轉機地':'目的地')+'</span>'+
-    '<b>'+esc(s.code)+'<span>'+esc(a?a.city:s.city||'')+'</span></b><small>'+esc(a&&a.country?a.country:'')+(tz?' · '+tz.split('/').pop().replace(/_/g,' '):'')+'</small></div>'+
+    '<b>'+esc(s.code)+'<span>'+esc(a?a.city:s.city||'')+'</span></b><small>'+esc(a&&a.country?a.country:'')+(tz?' · '+utcTxt(tz,refDate):'')+'</small></div>'+
     (tz?'<div class="clk"><b class="num" data-clock="'+tz+'">'+clock(tz)+'</b><small data-clockday="'+tz+'">當地 '+clockDay(tz)+'</small><em>'+esc(diffTxt(tz,refDate))+'</em></div>':'')+'</button>';
   var days=stayDays(s);
   h+='<div class="dt">'+ic('cal',2)+(s.arrive?(s.role==='transit'&&(!s.leave||s.leave===s.arrive)?mdw(s.arrive)+' 轉機':mdw(s.arrive)+' – '+mdw(s.leave||s.arrive)):'尚未設定日期')+
@@ -595,28 +673,28 @@ function stopCard(s,i){
     h+='<div class="wxs">'+show.map(function(d){var x=wd[d],dd=pd(d);
       if(!x)return '<div class="wd na"><div class="d">'+(dd.getMonth()+1)+'/'+dd.getDate()+'<small>'+WK[dd.getDay()]+'</small></div><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="9" fill="none" stroke="#d3d9e6" stroke-width="2" stroke-dasharray="3 4"/></svg><div class="hl">尚無</div><div class="fl2 na">預報未出</div></div>';
       return '<div class="wd"><div class="d">'+(d===td?'今天':(dd.getMonth()+1)+'/'+dd.getDate())+'<small>'+WK[dd.getDay()]+'</small></div>'+wxIcon(x)+
-        '<div class="hl num">'+x.hi+'°<small> / '+x.lo+'°</small></div>'+
+        '<div class="cn">'+wxKind(x)[1]+'</div><div class="hl num">'+x.hi+'°<small> / '+x.lo+'°</small></div>'+
         (x.fh!=null?'<div class="fl2 num">體感 '+x.fh+'° / '+x.fl+'°</div>':'<div class="fl2 na">體感 見連結</div>')+
-        '<div class="p num">降雨 '+(x.p||0)+'%</div></div>';}).join('')+'</div>';
+        (x.p!=null?'<div class="p num">降雨 '+x.p+'%</div>':'')+'</div>';}).join('')+'</div>';
   }
   var note='';
   if(!days.length&&have)note='近日預報（設定停留日期後會只顯示停留期間）';
-  else if(days.length&&!have){var away=daysBetween(td,days[0]);
-    note=away>8?'距離抵達還有 '+away+' 天，出發前一週內才有可靠預報':'預報資料尚未更新';}
+  else if(days.length&&!have){var away=daysBetween(td,days[0]),hz=w&&w.src==='live'?15:7;
+    note=days[days.length-1]<td?'停留期間已過':away>hz?'距離抵達還有 '+away+' 天，約出發前 '+(hz+1)+' 天內才有預報':(wxBusy[s.code]?'正在抓取天氣…':'預報資料尚未更新');}
   else if(days.length&&have<days.length)note='部分日期預報尚未發布';
   var link=a&&a.lat!=null?'https://www.timeanddate.com/weather/@'+a.lat+','+a.lon+'/ext':'https://www.google.com/search?q='+encodeURIComponent((a?a.city:s.city||s.code)+' 天氣 體感溫度');
-  h+='<div class="wnote">'+(w&&w.at&&have?'<span>預報更新於 '+md(w.at)+'</span>':'')+(note?'<span>'+esc(note)+'</span>':'')+
-    '<a href="'+link+'" target="_blank" rel="noopener">即時預報與體感'+ic('ext',2.4)+'</a></div>';
+  h+='<div class="wnote">'+(w&&have?'<span>'+(w.src==='live'?'即時預報 · '+new Date(w.ts).toTimeString().slice(0,5)+' 更新':'Claude 寫入 · '+md(w.at))+'</span>':'')+(note?'<span>'+esc(note)+'</span>':'')+
+    '<a href="'+link+'" target="_blank" rel="noopener">14 天預報'+ic('ext',2.4)+'</a></div>';
   return h+'</div>';
 }
 function tripHTML(){
   var fl=sortedFlights(),ss=sortedStops(),h='';
   h+='<div class="sec"><div class="sh"><h2>航班<small>'+(fl.length?fl.length+' 段':'')+'</small></h2><button class="pl g" data-act="addflight">'+ic('plus',2.4)+'航班</button></div>';
   h+=fl.length?fl.map(flightCard).join(''):'<button class="addrow" data-act="addflight">'+ic('plane',2)+'新增第一段航班</button>';
-  h+='</div><div class="sec"><div class="sh"><h2>停留地<small>'+(ss.length?ss.length+' 個':'')+'</small></h2><button class="pl" data-act="addstop">'+ic('plus',2.4)+'目的地／轉機</button></div>';
+  h+='</div><div class="sec"><div class="sh"><h2>停留地<small>'+(ss.length?ss.length+' 個':'')+'</small></h2><button class="pl" data-act="addstop">'+ic('plus',2.4)+'目的地／轉機</button></div>'+(ss.length?wxBarHTML():'');
   h+=ss.length?ss.map(stopCard).join(''):'<button class="addrow" data-act="addstop">'+ic('pin',2)+'新增目的地或轉機地</button>';
   h+='</div><div class="hint">'+ic('globe',2).replace('<svg','<svg style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:6px"')+
-    '當地時間與時差會自動計算（含夏令時間）。天氣預報由 Claude 寫入 App：行程排好後跟 Claude 說<b>「更新打包清單的天氣」</b>即可。每日體感溫度請點各地的<b>「即時預報與體感」</b>。</div>';
+    '當地時間與時差會自動計算（含夏令時間）。天氣會在連網時自動抓取未來 16 天預報（含<b>體感溫度</b>），每 3 小時更新；若目前開啟的方式無法連網，會改顯示 Claude 寫入的預報。</div>';
   return h;
 }
 
@@ -627,7 +705,7 @@ function render(anim){
   var h='<div class="bg"></div><div class="wrap">'+
    '<div class="cloud" style="left:-70px;top:60px;width:220px;height:110px"></div><div class="cloud" style="right:0;top:250px;width:160px;height:110px;opacity:.6"></div>'+
    '<header class="top"><button class="circ" data-act="trip" aria-label="旅程設定">'+ic('cal')+'</button>'+
-   '<button class="tt" data-act="trip"><b>'+esc(state.trip)+'</b><small>'+tripRange()+(cd?' · <em>'+cd+'</em>':'')+'</small></button>'+
+   '<button class="tt" data-act="trip"><b>'+esc(state.trip)+'</b><small>'+headTxt()+'</small></button>'+
    '<button class="circ" data-act="menu" aria-label="更多">'+ic('dots',2.4)+'</button></header>'+mapHTML()+
    '<main class="panel'+(anim?' anim':'')+'"><div class="grab"></div>'+
    '<div class="vs"><button data-act="view" data-v="pack" class="'+(ui.view==='pack'?'on':'')+'">'+ic('list',2)+'打包清單</button>'+
@@ -638,7 +716,9 @@ function render(anim){
   if(ui.adding){var inp=document.getElementById('addin');if(inp)inp.focus();}
   var on=document.querySelector('.tab.on'),tb=document.querySelector('.tabs');if(on&&tb)tb.scrollLeft=Math.max(0,on.offsetLeft-(tb.clientWidth-on.offsetWidth)/2);
 }
+function headTxt(){var cd=countdownTxt();return esc(tripRange())+(cd?' · <em>'+cd+'</em>':'');}
 function tick(){
+  var hs=document.querySelector('.tt small');if(hs)hs.innerHTML=headTxt();
   document.querySelectorAll('[data-clock]').forEach(function(el){el.textContent=clock(el.getAttribute('data-clock'));});
   document.querySelectorAll('[data-clockday]').forEach(function(el){el.textContent='當地 '+clockDay(el.getAttribute('data-clockday'));});
 }
@@ -754,9 +834,9 @@ function stopSheet(st){
         var ar=s.querySelector('#da').value,lv=s.querySelector('#dl').value;
         if(ar&&lv&&lv<ar){er.textContent='離開日不能早於抵達日';return;}
         var o=st||{id:uid()};o.auto=false;o.code=code;o.role=role;o.arrive=ar;o.leave=lv;
-        if(custom){o.city=city;o.tz=tz;}else{delete o.city;delete o.tz;}
+        if(custom){if(o.city!==city){delete o.lat;delete o.lon;}o.city=city;o.tz=tz;}else{delete o.city;delete o.tz;delete o.lat;delete o.lon;}
         if(isNew)state.stops.push(o);
-        closeSheet();ui.view='trip';saveUI();commit();render();
+        closeSheet();ui.view='trip';saveUI();commit();render();setTimeout(function(){loadWx(false);},450);
       }
       else if(b.dataset.s==='del'){closeSheet();confirmDel('刪除 '+st.code+'？','只會刪除這個停留地，航班不受影響。',function(){state.stops=state.stops.filter(function(x){return x!==st;});commit();render();});}
     });
@@ -792,7 +872,7 @@ function flightSheet(f){
         var fa=apInfo(o.from),ta=apInfo(o.to);
         if(o.arr&&fa&&ta&&toUTC(o.arr,ta.tz)<=toUTC(o.dep,fa.tz)){er.textContent='抵達時間早於起飛時間，請確認是否為當地時間';return;}
         var tgt=f||{id:uid()};Object.keys(o).forEach(function(k){tgt[k]=o[k];});if(isNew)state.flights.push(tgt);
-        autoStops();closeSheet();ui.view='trip';saveUI();commit();render();
+        autoStops();closeSheet();ui.view='trip';saveUI();commit();render();setTimeout(function(){loadWx(false);},450);
       }
       else if(b.dataset.s==='del'){closeSheet();confirmDel('刪除航班 '+(f.no||'')+'？','停留地不會被刪除。',function(){state.flights=state.flights.filter(function(x){return x!==f;});autoStops();commit();render();});}
     });
@@ -823,12 +903,48 @@ function menuSheet(){
     '<button data-m="newcat"><span class="mi">'+ic('folder')+'</span>新增打包分類</button>'+
     (c?'<button data-m="all"><span class="mi">'+ic('checks',2)+'</span>「'+esc(c.name)+'」全部勾選</button>':'')+
     '<button data-m="edit" class="'+(ui.edit?'on':'')+'"><span class="mi">'+ic('grid')+'</span>編輯打包項目<small>刪除、改名</small></button>'+
+    '<button data-m="export"><span class="mi">'+ic('folder')+'</span>匯出備份<small>複製或下載</small></button>'+
+    '<button data-m="import"><span class="mi">'+ic('reset',2)+'</span>匯入備份<small>還原資料</small></button>'+
     '<button data-m="reset" class="red"><span class="mi">'+ic('reset',2)+'</span>重設，準備下一趟</button></div>',
   function(s){s.addEventListener('click',function(e){var b=e.target.closest('[data-m]');if(!b)return;var m=b.dataset.m;closeSheet(true);
     if(m==='trip')tripSheet();else if(m==='flight')flightSheet(null);else if(m==='stop')stopSheet(null);else if(m==='newcat')catSheet(null);
     else if(m==='edit'){ui.edit=!ui.edit;ui.adding=false;ui.view='pack';saveUI();render();}
     else if(m==='all'){c.items.forEach(function(i){i.d=true;});commit();render();}
+    else if(m==='export')exportSheet();else if(m==='import')importSheet();
     else if(m==='reset')resetSheet();});});
+}
+function backupJSON(){var o=JSON.parse(JSON.stringify(state));o.app='packing-list';o.exported=new Date().toISOString();return JSON.stringify(o);}
+function exportSheet(){
+  var txt=backupJSON(),canDl=!art&&typeof Blob!=='undefined',d=new Date();
+  var fn='打包清單備份-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.json';
+  sheet('<h3>匯出備份</h3><p>資料包含打包清單、航班、停留地與旅程紀錄。換手機或重新下載 App 後，用「匯入備份」即可還原。</p>'+
+    '<textarea class="fi ta" id="bx" readonly>'+esc(txt)+'</textarea><div class="err" id="er" style="color:#20b555"></div>'+
+    '<div class="acts"><button data-s="cancel">關閉</button>'+(canDl?'<button data-k="dl">下載檔案</button>':'')+'<button data-k="cp" class="ok">複製</button></div>',
+  function(s){s.addEventListener('click',function(e){var b=e.target.closest('[data-k]');if(!b)return;var er=s.querySelector('#er'),ta=s.querySelector('#bx');
+    if(b.dataset.k==='cp'){
+      var done=function(){er.textContent='已複製，可貼到備忘錄或傳給自己保存';};
+      var fallback=function(){ta.removeAttribute('readonly');ta.focus();ta.select();try{document.execCommand('copy');done();}catch(x){er.style.color='';er.textContent='請長按文字框手動全選複製';}ta.setAttribute('readonly','');};
+      try{navigator.clipboard.writeText(txt).then(done,fallback);}catch(x){fallback();}
+    }else if(b.dataset.k==='dl'){
+      try{var u=URL.createObjectURL(new Blob([txt],{type:'application/json'})),a=document.createElement('a');a.href=u;a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},4000);er.textContent='已下載 '+fn;}
+      catch(x){er.style.color='';er.textContent='此環境無法下載，請改用「複製」';}
+    }});});
+}
+function importSheet(){
+  sheet('<h3>匯入備份</h3><p>貼上先前「匯出備份」複製的內容，或選擇備份檔。<b>目前的資料會被取代。</b></p>'+
+    '<textarea class="fi ta" id="bx" placeholder="在此貼上備份內容"></textarea>'+
+    '<label class="filebtn">選擇備份檔<input type="file" id="bf" accept=".json,application/json,text/plain"></label>'+
+    '<div class="err" id="er"></div><div class="acts"><button data-s="cancel">取消</button><button data-s="ok" class="ok">匯入</button></div>',
+  function(s){
+    s.querySelector('#bf').addEventListener('change',function(e){var f=e.target.files&&e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){s.querySelector('#bx').value=String(r.result||'');};r.readAsText(f);});
+    s.querySelector('[data-s="ok"]').addEventListener('click',function(){
+      var er=s.querySelector('#er'),o;
+      try{o=JSON.parse(s.querySelector('#bx').value.trim());}catch(x){er.textContent='內容格式不正確，請確認是完整的備份文字';return;}
+      if(!o||!Array.isArray(o.cats)||!o.cats.every(function(c){return c&&Array.isArray(c.items);})){er.textContent='這不是打包清單的備份資料';return;}
+      delete o.app;delete o.exported;state=o;migrate();state.updated=Date.now();ui.cur=null;
+      closeSheet();commit();render(true);setTimeout(function(){loadWx(false);},400);
+    });
+  });
 }
 function resetSheet(){
   var T=total(),hasTrip=state.flights.length||state.stops.length;
@@ -879,9 +995,10 @@ app.addEventListener('click',function(e){
     case 'editflight':flightSheet(byId(state.flights));break;
     case 'addstop':stopSheet(null);break;
     case 'editstop':stopSheet(byId(state.stops));break;
+    case 'wxreload':loadWx(true);break;
   }
 });
-document.body.classList.add('intro');render(true);setTimeout(function(){document.body.classList.remove('intro');},2800);
+document.body.classList.add('intro');render(true);setTimeout(function(){loadWx(false);},300);setTimeout(function(){document.body.classList.remove('intro');},2800);
 })();
 </script>
 </body>
