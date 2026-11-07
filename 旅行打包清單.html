@@ -257,6 +257,42 @@ svg{display:block}
 .tip span{opacity:.6;font-size:16px;animation:nud 1.2s ease-in-out infinite}
 .tip span:last-child{animation-direction:reverse}
 @keyframes nud{50%{transform:translateX(-3px)}}
+.two2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.pick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.pbtn{position:relative;overflow:hidden;height:96px;border-radius:20px;background:var(--grad);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  font-size:15px;font-weight:800;box-shadow:var(--glow);cursor:pointer}
+.pbtn svg{width:28px;height:28px}
+.pbtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.pbtn.ghost{background:#f1f3f8;color:#3b414f;box-shadow:none}
+.pick .pbtn:only-child{grid-column:1/-1}
+.egn{font-size:12.5px;color:var(--sub);line-height:1.6;background:#f6f8fc;border-radius:14px;padding:10px 12px;margin-bottom:14px}
+.egn b{color:var(--ink)}.egn .bad{color:#ff453a;font-weight:600}
+.thumbs{display:flex;gap:8px;overflow-x:auto;margin-bottom:16px}
+.thumbs img{width:76px;height:104px;object-fit:cover;border-radius:12px;box-shadow:0 6px 14px -8px rgba(40,60,110,.5);flex:none}
+.pbar{height:8px;border-radius:5px;background:#eef1f6;overflow:hidden}
+.pbar i{display:block;height:100%;width:0;background:var(--grad);border-radius:5px;transition:width .4s ease}
+.pst{font-size:13.5px;color:var(--sub);margin:10px 0 16px;font-weight:600}
+.rvh{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
+.rvh b{font-size:16px}.rvh span{font-size:12.5px;color:var(--sub)}
+.rseg{display:flex;gap:12px;padding:12px;border-radius:18px;background:#f6f7fa;margin-bottom:10px;border:1.5px solid transparent;transition:all .2s}
+.rseg.on{background:#fff;border-color:rgba(255,106,92,.35);box-shadow:0 8px 18px -12px rgba(255,92,100,.5)}
+.rck{position:relative;flex:none;padding-top:8px}
+.rck input{position:absolute;opacity:0;width:24px;height:24px;margin:0}
+.rck span{display:block;width:24px;height:24px;border-radius:50%;border:1.6px solid #c6ccd8;background:#fff}
+.rseg.on .rck span{background:#15161b;border-color:#15161b;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l4 4L18 8' fill='none' stroke='white' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-size:14px;background-repeat:no-repeat;background-position:center}
+.rbody{flex:1;min-width:0}
+.rr{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.rr label{flex:1;min-width:0;font-size:11px;color:var(--sub);font-weight:700}
+.ri{height:38px;border-radius:11px;border:1px solid rgba(20,30,60,.08);background:#f8f9fc;padding:0 8px;font-size:15px;font-weight:700;min-width:0;outline:none;-webkit-appearance:none}
+.ri:focus{border-color:rgba(255,106,92,.5);background:#fff}
+.ri.no{width:92px;flex:none}.ri.ap{width:62px;flex:none;text-align:center;letter-spacing:.04em}
+.rr.dts{flex-direction:column;align-items:stretch;gap:6px}
+.rr.dts label{display:flex;align-items:center;gap:10px;font-size:12px}
+.ri.dt{flex:1;width:auto;font-size:14px;font-weight:600;display:block}
+.arw{color:var(--faint);font-weight:700}
+.rw{font-size:12px;color:#e8833a;font-weight:600;min-height:0}
+.raw{margin-top:14px;font-size:13px;color:var(--sub)}.raw summary{cursor:pointer;margin-bottom:8px}
+.acts button[disabled]{opacity:.45}
 .wxmini{display:flex;align-items:center;gap:10px;width:100%;margin-top:-2px;padding:9px 12px;border-radius:14px;background:linear-gradient(135deg,#f3f7ff,#fbf5f6);font-size:13px;color:var(--sub);text-align:left}
 .wxmini svg{width:26px;height:26px;flex:none}
 .wxmini span{display:flex;align-items:center;gap:8px;flex:1}
@@ -481,6 +517,170 @@ function flush(){
   });
 }
 document.addEventListener('visibilitychange',function(){if(document.hidden&&sync==='pending'&&!busy())flush();});
+
+/* 行程文字解析器：把機票、行程信、登機證、App 截圖辨識出的文字轉成航班段 */
+function makeItinParser(AP, toUTC, todayStr){
+  var AIR=('JX CI BR AE B7 IT MM GK 7C LJ TW ZE BX KE OZ JL NH CX HX UO SQ TR TG FD SL VZ VN VJ QH PR Z2 5J MH AK D7 OD GA QZ ID 3K '+
+    'CA MU CZ HU FM MF 9C HO NX KA UA DL AA AS AC WS HA B6 WN NK F9 BA VS LH LX OS SN AF KL EK EY QR TK SU AY SK IB VY FR U2 AZ LO TP '+
+    'EI QF VA JQ NZ FJ NQ GA AI 6E UK SV MS ET WY GF KU RJ PG 8M BI KC HY CI').split(' ');
+  var AIRSET={};AIR.forEach(function(c){AIRSET[c]=1;});
+  var MON={JAN:1,FEB:2,MAR:3,APR:4,MAY:5,JUN:6,JUL:7,AUG:8,SEP:9,OCT:10,NOV:11,DEC:12};
+  // 中文城市名 → 代碼（長名優先）
+  var CITY=[];
+  Object.keys(AP).forEach(function(k){
+    var c=AP[k].city,m=c.match(/^(.+?)\((.+)\)$/);
+    if(m){CITY.push([m[1]+m[2],k]);CITY.push([m[2],k]);CITY.push([m[1],k]);}else CITY.push([c,k]);
+  });
+  var seenCity={};CITY=CITY.filter(function(x){if(seenCity[x[0]])return false;seenCity[x[0]]=1;return true;}).sort(function(a,b){return b[0].length-a[0].length;});
+  var EN={TAIPEI:'TPE',TAOYUAN:'TPE',KAOHSIUNG:'KHH',TOKYO:'NRT',NARITA:'NRT',HANEDA:'HND',OSAKA:'KIX',KANSAI:'KIX',SEOUL:'ICN',INCHEON:'ICN','HONG KONG':'HKG',
+    SINGAPORE:'SIN',BANGKOK:'BKK',SEATTLE:'SEA',BOSTON:'BOS','LOS ANGELES':'LAX','SAN FRANCISCO':'SFO','NEW YORK':'JFK',VANCOUVER:'YVR',LONDON:'LHR',PARIS:'CDG',
+    FUKUOKA:'FUK',SAPPORO:'CTS',OKINAWA:'OKA',NAGOYA:'NGO',MANILA:'MNL',HANOI:'HAN',DUBAI:'DXB',SYDNEY:'SYD',MACAU:'MFM',SHANGHAI:'PVG',BEIJING:'PEK'};
+
+  function norm(t){
+    return String(t||'').replace(/[！-～]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-0xFEE0);})
+      .replace(/　/g,' ').replace(/[–—−→➔➜►▶]/g,' > ').replace(/\r/g,'');
+  }
+  function pad(n){return String(n).padStart(2,'0');}
+  function inferYear(m,d){
+    var t=todayStr(),y=+t.slice(0,4),cand=y+'-'+pad(m)+'-'+pad(d);
+    var back=new Date(+t.slice(0,4),+t.slice(5,7)-1,+t.slice(8,10)-45);
+    var b=back.getFullYear()+'-'+pad(back.getMonth()+1)+'-'+pad(back.getDate());
+    return cand<b?y+1:y;
+  }
+  function mkDate(y,m,d){m=+m;d=+d;if(!(m>=1&&m<=12&&d>=1&&d<=31))return null;if(!y)y=inferYear(m,d);else if(y<100)y=2000+y;return y+'-'+pad(m)+'-'+pad(d);}
+  function addDays(s,n){var a=s.split('-');var dt=new Date(+a[0],+a[1]-1,+a[2]+n);return dt.getFullYear()+'-'+pad(dt.getMonth()+1)+'-'+pad(dt.getDate());}
+
+  function tokens(raw){
+    var t=norm(raw),T=[],mask=t;
+    function blank(i,len){mask=mask.slice(0,i)+' '.repeat(len)+mask.slice(i+len);}
+    function each(re,fn){var m;re.lastIndex=0;while((m=re.exec(mask))){fn(m);}}
+    // 日期
+    each(/(20\d{2})\s*[年\/\-.]\s*(\d{1,2})\s*[月\/\-.]\s*(\d{1,2})\s*日?/g,function(m){var v=mkDate(+m[1],m[2],m[3]);if(v)T.push({k:'date',i:m.index,v:v,e:m.index+m[0].length});blank(m.index,m[0].length);});
+    each(/(\d{1,2})\s*月\s*(\d{1,2})\s*日/g,function(m){var v=mkDate(0,m[1],m[2]);if(v)T.push({k:'date',i:m.index,v:v,e:m.index+m[0].length});blank(m.index,m[0].length);});
+    each(/(?:^|[^0-9A-Za-z])([0-9O]{1,2})\s?(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Za-z]*\.?\s?(\d{4}|\d{2}(?![0-9:]))?/gi,function(m){
+      var s=m.index+m[0].indexOf(m[1]),d=m[1].replace(/O/g,'0'),y=m[3]?+m[3]:0;var v=mkDate(y,MON[m[2].toUpperCase()],d);if(v)T.push({k:'date',i:s,v:v,e:m.index+m[0].length});blank(s,m.index+m[0].length-s);});
+    each(/(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[a-z]*\.?\s+(\d{1,2})(?:st|nd|rd|th)?\b,?\s*(20\d{2})?/gi,function(m){var v=mkDate(m[3]?+m[3]:0,MON[m[1].toUpperCase()],m[2]);if(v)T.push({k:'date',i:m.index,v:v,e:m.index+m[0].length});blank(m.index,m[0].length);});
+    each(/(?:^|[^0-9\/:.])(\d{1,2})\/(\d{1,2})(?![0-9\/:])/g,function(m){var s=m.index+m[0].indexOf(m[1]);var v=mkDate(0,m[1],m[2]);if(v){T.push({k:'date',i:s,v:v,e:m.index+m[0].length});blank(s,m.index+m[0].length-s);}});
+    // 時間
+    each(/(?:^|[^0-9])([01]?\d|2[0-3])[ \t]?[:：][ \t]?([0-5]\d)(?![0-9])(?:[ \t]*(AM|PM|am|pm|上午|下午))?([ \t]*\+[ \t]*1)?/g,function(m){
+      var s=m.index+m[0].indexOf(m[1]),h=+m[1],ap=(m[3]||'').toUpperCase();
+      if((ap==='PM'||ap==='下午')&&h<12)h+=12;if((ap==='AM'||ap==='上午')&&h===12)h=0;
+      var before=mask.slice(Math.max(0,s-16),s),line=before.split('\n').pop();
+      if(/BOARD|登機|GATE CLOS|關閉|報到|CHECK.?IN|集合/i.test(line))return;
+      T.push({k:'time',i:s,v:pad(h)+':'+m[2],plus:!!m[4]||/^\s*\(?\+1/.test(mask.slice(m.index+m[0].length,m.index+m[0].length+5)),e:m.index+m[0].length});});
+    // 航班編號
+    each(/(?:^|[^A-Za-z0-9])([A-Z][A-Z0-9]|[0-9][A-Z])\s?([0-9O]{1,4})(?![0-9A-Za-z:])/g,function(m){
+      if(!AIRSET[m[1]])return;var num=m[2].replace(/O/g,'0');if(!/^[0-9]+$/.test(num)||+num===0)return;
+      var s=m.index+m[0].indexOf(m[1]);T.push({k:'fl',i:s,v:m[1]+String(+num),e:m.index+m[0].length});blank(s,m.index+m[0].length-s);});
+    // 機場代碼
+    var codes=[];
+    each(/(?:^|[^A-Za-z])([A-Z]{3})(?![A-Za-z])/g,function(m){var s=m.index+m[0].indexOf(m[1]);if(AP[m[1]])codes.push({k:'ap',i:s,v:m[1],e:s+3});});
+    // 城市名（只在附近沒有代碼時採用）
+    CITY.forEach(function(x){var i=-1;while((i=mask.indexOf(x[0],i+1))>=0){
+      var near=codes.some(function(c){return c.i>=i-6&&c.i<=i+x[0].length+6;});
+      var inside=codes.some(function(c){return c.city&&i>=c.i&&i<c.e;});
+      if(!near&&!inside){codes.push({k:'ap',i:i,v:x[1],e:i+x[0].length,city:1});}}});
+    Object.keys(EN).forEach(function(n){var re=new RegExp('\\b'+n+'\\b','gi'),m;while((m=re.exec(mask))){var i=m.index;
+      if(!codes.some(function(c){return c.i>=i-8&&c.i<=i+n.length+8;}))codes.push({k:'ap',i:i,v:EN[n],e:i+n.length,city:1});}});
+    T=T.concat(codes).sort(function(a,b){return a.i-b.i;});
+    return {t:t,T:T};
+  }
+
+  function build(fl,toks,carryDate){
+    var ap=[],tm=[],dt=[];
+    toks.forEach(function(x){if(x.k==='ap'&&(!ap.length||ap[ap.length-1].v!==x.v))ap.push(x);else if(x.k==='time')tm.push(x);else if(x.k==='date')dt.push(x);});
+    return assemble(fl,ap[0]&&ap[0].v,ap[1]&&ap[1].v,tm[0],tm[1],dt[0]&&dt[0].v,dt[1]&&dt[1].v,carryDate);
+  }
+  function assemble(no,from,to,t1,t2,d1,d2,carry){
+    var s={no:no||'',from:from||'',to:to||'',dep:'',arr:'',flags:[]};
+    var date=d1||carry||'';if(!d1&&carry)s.flags.push('date');if(!date)s.flags.push('nodate');
+    if(t1&&date)s.dep=date+'T'+t1.v;
+    if(t2&&date){
+      var ad=d2&&d2>=date?d2:date;if(!(d2&&d2>=date)&&t2.plus)ad=addDays(date,1);
+      s.arr=ad+'T'+t2.v;
+      var fa=AP[s.from],ta=AP[s.to];
+      if(fa&&ta&&s.dep&&!(d2&&d2>=date)){for(var k=0;k<2&&toUTC(s.arr,ta.tz)<=toUTC(s.dep,fa.tz);k++){ad=addDays(ad,1);s.arr=ad+'T'+t2.v;}}
+    }
+    s._t1=!!t1;s._t2=!!t2;s._d=!!d1;
+    return s;
+  }
+  function lastDateBefore(T,pos){var d=null;T.forEach(function(x){if(x.k==='date'&&x.i<pos)d=x.v;});return d;}
+
+  function modeAfter(P){
+    var F=P.T.filter(function(x){return x.k==='fl';});if(!F.length)return null;var out=[],carry=lastDateBefore(P.T,F[0].i);
+    F.forEach(function(f,j){var end=j+1<F.length?F[j+1].i:1e9;var s=build(f.v,P.T.filter(function(x){return x.i>f.i&&x.i<end;}),carry);if(s.dep)carry=s.dep.slice(0,10);out.push(s);});
+    return out;
+  }
+  function modeBefore(P){
+    var F=P.T.filter(function(x){return x.k==='fl';});if(!F.length)return null;var out=[],carry=null,prev=0;
+    F.forEach(function(f){var nl=P.t.indexOf('\n',f.e);var end=nl<0?1e9:nl;var s=build(f.v,P.T.filter(function(x){return x.i>=prev&&x.i<end&&x.k!=='fl';}),carry);
+      if(s.dep)carry=s.dep.slice(0,10);out.push(s);prev=end;});
+    return out;
+  }
+  function modeBlock(P){
+    var F=P.T.filter(function(x){return x.k==='fl';}),D=P.T.filter(function(x){return x.k==='date';});
+    if(!F.length||D.length!==F.length)return null;var out=[];
+    D.forEach(function(d,j){var end=j+1<D.length?D[j+1].i:1e9;var inB=P.T.filter(function(x){return x.i>=d.i&&x.i<end;});
+      var fl=inB.filter(function(x){return x.k==='fl';});out.push(build(fl.length?fl[0].v:'',inB.filter(function(x){return x.k!=='fl';}),null));});
+    return out;
+  }
+  function modeColumn(P){
+    var F=P.T.filter(function(x){return x.k==='fl';}),N=F.length;if(!N)return null;
+    var ap=[],tm=P.T.filter(function(x){return x.k==='time';}),dt=P.T.filter(function(x){return x.k==='date';});
+    P.T.forEach(function(x){if(x.k==='ap')ap.push(x);});
+    if(ap.length<2*N||tm.length<N)return null;
+    var out=[],carry=dt.length?dt[0].v:null;
+    for(var i=0;i<N;i++){var d=dt.length>=N?dt[i].v:(i===0&&dt[0]?dt[0].v:null);
+      var s=assemble(F[i].v,ap[i].v,ap[N+i].v,tm[i],tm.length>=2*N?tm[N+i]:null,d,null,carry);if(s.dep)carry=s.dep.slice(0,10);out.push(s);}
+    return out;
+  }
+  function modeLeg(P){
+    var lines=P.t.split('\n'),off=0,L=[];
+    lines.forEach(function(l){L.push({s:off,e:off+l.length});off+=l.length+1;});
+    function inL(x,l){return x.i>=l.s&&x.i<l.e;}
+    var chunks=[],i=0;
+    while(i<L.length){var tms=P.T.filter(function(x){return x.k==='time'&&inL(x,L[i]);});
+      if(tms.length>=2){chunks.push({s:L[i].s,e:L[i].e});i++;continue;}
+      if(tms.length===1){var j=i+1;while(j<L.length&&j<=i+2&&!P.T.some(function(x){return x.k==='time'&&inL(x,L[j]);}))j++;
+        if(j<L.length&&j<=i+2){var t2=P.T.filter(function(x){return x.k==='time'&&inL(x,L[j]);});
+          if(t2.length===1){var aps=P.T.filter(function(x){return x.k==='ap'&&x.i>=L[i].s&&x.i<L[j].e;});if(aps.length>=1){chunks.push({s:L[i].s,e:L[j].e});i=j+1;continue;}}}}
+      i++;}
+    if(!chunks.length)return null;
+    var out=[],prev=0,carry=null;
+    chunks.forEach(function(c){
+      var fl=P.T.filter(function(x){return x.k==='fl'&&x.i>=prev&&x.i<c.e;}),dts=P.T.filter(function(x){return x.k==='date'&&x.i>=prev&&x.i<c.e;});
+      var inC=P.T.filter(function(x){return x.i>=c.s&&x.i<c.e&&(x.k==='ap'||x.k==='time');});
+      if(!carry)carry=lastDateBefore(P.T,prev);
+      var s=build(fl.length?fl[fl.length-1].v:'',inC.concat(dts.length?[dts[dts.length-1]]:[]).sort(function(a,b){return a.i-b.i;}),carry);
+      if(s.dep)carry=s.dep.slice(0,10);out.push(s);prev=c.e;});
+    return out;
+  }
+  function score(segs){
+    if(!segs||!segs.length)return -1e9;var sc=0;
+    segs.forEach(function(s){
+      sc+=(s.no?1:0)+(s.from?1:0)+(s.to?1:0)+(s._t1?1:0)+(s._t2?1:0)+(s._d?1:(s.dep?.4:0));
+      if(s.from&&s.to&&s.from!==s.to)sc+=.5;if(s.from&&s.from===s.to)sc-=2;
+      var fa=AP[s.from],ta=AP[s.to];
+      if(fa&&ta&&s.dep&&s.arr){var h=(toUTC(s.arr,ta.tz)-toUTC(s.dep,fa.tz))/36e5;sc+=(h>=.3&&h<=20)?1:-3;}
+      if(!s._t1&&!s._t2)sc-=1;
+    });
+    return sc;
+  }
+  return function parse(text){
+    var P=tokens(text),best=null,bs=-1e9,names=['after','before','block','leg','column'];
+    [modeAfter,modeBefore,modeBlock,modeLeg,modeColumn].forEach(function(fn,k){var r=fn(P);var sc=score(r)-k*.01;if(r&&sc>bs){bs=sc;best={mode:names[k],segs:r};}});
+    if(!best)return {mode:'none',segs:[]};
+    best.segs=best.segs.filter(function(s){return s.no||s.from||s.to||s.dep;}).map(function(s){
+      var miss=[];if(!s.no)miss.push('航班編號');if(!s.from)miss.push('出發機場');if(!s.to)miss.push('抵達機場');if(!s._t1)miss.push('起飛時間');if(!s._t2)miss.push('抵達時間');
+      return {no:s.no,from:s.from,to:s.to,dep:s.dep,arr:s.arr,miss:miss,guessDate:s.flags.indexOf('date')>=0,noDate:s.flags.indexOf('nodate')>=0};});
+    return best;
+  };
+}
+
+/* ---------- Claude 看圖（僅 App 連結版可用） ---------- */
+var sampleFn=null,visionOK=false;
+try{if(window.claude&&typeof window.claude.use==='function'){window.claude.use('sample').then(function(fn){
+  if(!fn)return;sampleFn=fn;if(fn.limits)fn.limits().then(function(l){visionOK=!!(l&&l.images);}).catch(function(){});}).catch(function(){});}}catch(e){}
 
 /* ---------- 時間與時區 ---------- */
 function tzOff(tz,date){
@@ -730,8 +930,8 @@ function stopCard(s,i,mode){
 }
 function tripHTML(){
   var fl=sortedFlights(),ss=sortedStops(),h='';
-  h+='<div class="sec"><div class="sh"><h2>航班<small>'+(fl.length?fl.length+' 段':'')+'</small></h2><button class="pl g" data-act="addflight">'+ic('plus',2.4)+'航班</button></div>';
-  h+=fl.length?fl.map(flightCard).join(''):'<button class="addrow" data-act="addflight">'+ic('plane',2)+'新增第一段航班</button>';
+  h+='<div class="sec"><div class="sh"><h2>航班<small>'+(fl.length?fl.length+' 段':'')+'</small></h2><button class="pl" data-act="photo">'+ic('camera',2)+'照片</button><button class="pl g" data-act="addflight">'+ic('plus',2.4)+'航班</button></div>';
+  h+=fl.length?fl.map(flightCard).join(''):'<div class="two2"><button class="addrow" data-act="photo">'+ic('camera',2)+'用照片匯入</button><button class="addrow" data-act="addflight">'+ic('plane',2)+'手動輸入</button></div>';
   h+='</div><div class="sec"><div class="sh"><h2>停留地<small>'+(ss.length?ss.length+' 個':'')+'</small></h2><button class="pl" data-act="addstop">'+ic('plus',2.4)+'目的地／轉機</button></div>';
   h+=ss.length?ss.map(function(x,i){return stopCard(x,i,'trip');}).join(''):'<button class="addrow" data-act="addstop">'+ic('pin',2)+'新增目的地或轉機地</button>';
   h+='</div><div class="hint">'+ic('globe',2).replace('<svg','<svg style="width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:6px"')+
@@ -818,16 +1018,140 @@ function swipeTip(){
   requestAnimationFrame(function(){t.classList.add('show');});
   setTimeout(function(){t.classList.remove('show');setTimeout(function(){t.remove();},400);},3200);
 }
+var parseItin=null;
+function getParser(){if(!parseItin)parseItin=makeItinParser(AP,toUTC,todayStr);return parseItin;}
+function toJpeg(file){return new Promise(function(res){
+  try{var u=URL.createObjectURL(file),img=new Image();
+    img.onload=function(){var M=2200,w=img.naturalWidth,h=img.naturalHeight,k=Math.min(1,M/Math.max(w,h));var c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(function(b){res(b||file);},'image/jpeg',.9);};
+    img.onerror=function(){URL.revokeObjectURL(u);res(file);};img.src=u;}catch(e){res(file);}});}
+function loadTesseract(){
+  if(window.Tesseract)return Promise.resolve(window.Tesseract);
+  if(loadTesseract.p)return loadTesseract.p;
+  loadTesseract.p=new Promise(function(res,rej){var sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    sc.onload=function(){window.Tesseract?res(window.Tesseract):rej(new Error('載入失敗'));};sc.onerror=function(){loadTesseract.p=null;rej(new Error('無法下載辨識引擎'));};document.head.appendChild(sc);});
+  return loadTesseract.p;
+}
+function engine(){return (sampleFn&&visionOK)?'claude':(!art&&navigator.onLine!==false?'ocr':'none');}
+var VISION_PROMPT='你會看到 1 到數張機票、訂位確認信、登機證或航空公司 App 的截圖。請找出所有航班段，只回覆 JSON 陣列，不要其他文字。\n'+
+  '每段格式：{"no":"JX800","from":"TPE","to":"NRT","dep":"2026-11-20T08:30","arr":"2026-11-20T12:45"}\n'+
+  '規則：\n- no：航空公司兩碼加數字，不含空格。\n- from／to：IATA 三碼機場代碼；只有城市名時填該城市主要機場代碼。\n'+
+  '- dep／arr：各機場的當地時間，24 小時制，格式 YYYY-MM-DDTHH:MM；抵達標示 +1 或跨日時要用正確日期。\n'+
+  '- 圖上沒有年份時，取今天（{today}）之後最近的日期。\n- 看不出來的欄位填空字串 ""。登機時間、報到時間不是起飛時間。\n'+
+  '- 同一段在多張圖重複出現只列一次，依起飛時間排序。\n沒有航班就回覆 []。';
+function cleanSeg(x){
+  function t(v){v=String(v==null?'':v).trim();return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(v)?v.slice(0,16):'';}
+  var s={no:String(x&&x.no||'').toUpperCase().replace(/\s+/g,'').slice(0,8),from:String(x&&x.from||'').toUpperCase().replace(/[^A-Z]/g,'').slice(0,3),
+    to:String(x&&x.to||'').toUpperCase().replace(/[^A-Z]/g,'').slice(0,3),dep:t(x&&x.dep),arr:t(x&&x.arr)};
+  var miss=[];if(!s.no)miss.push('航班編號');if(!s.from)miss.push('出發機場');if(!s.to)miss.push('抵達機場');if(!s.dep)miss.push('起飛時間');if(!s.arr)miss.push('抵達時間');
+  s.miss=x&&x.miss?x.miss:miss;s.guessDate=!!(x&&x.guessDate);return s;
+}
+function photoSheet(){
+  var eg=engine(),ctl=null,segs=[],rawText='';
+  var egTxt={claude:'<b>由 Claude 看圖判讀</b>，準確度最高；會使用你的 Claude 用量，第一次會詢問是否允許。',
+    ocr:'<b>在手機上辨識文字</b>；第一次使用需下載約 10MB 辨識資料，之後會更快。',
+    none:'目前的開啟方式無法辨識照片。請用 iPhone 長按照片裡的文字 → 拷貝，再選「貼上文字」。'}[eg];
+  var s=sheet('<h3>照片匯入航班</h3><p>電子機票、訂位確認信、登機證或航空公司 App 截圖都可以，可一次選多張。</p>'+
+    '<div id="pk"><div class="pick">'+(eg!=='none'?'<label class="pbtn">'+ic('camera',2)+'<span>選擇照片</span><input type="file" id="pf" accept="image/*" multiple></label>':'')+
+    '<button class="pbtn ghost" data-k="paste">'+ic('list',2)+'<span>貼上文字</span></button></div><div class="egn">'+egTxt+'</div>'+
+    '<div id="pa" style="display:none"><textarea class="fi ta" id="pt" placeholder="貼上行程文字，或用 iPhone 長按照片文字 → 拷貝後貼上"></textarea>'+
+    '<div class="acts"><button data-s="cancel">取消</button><button class="ok" data-k="parse">解析文字</button></div></div></div>'+
+    '<div id="pg" style="display:none"><div class="thumbs" id="th"></div><div class="pbar"><i id="pbi"></i></div><div class="pst" id="pst">準備中…</div>'+
+    '<div class="acts"><button data-k="stop">停止</button></div></div>'+
+    '<div id="rv" style="display:none"></div>',
+  function(s){
+    function $(id){return s.querySelector('#'+id);}
+    function stage(n){['pk','pg','rv'].forEach(function(k){$(k).style.display=k===n?'':'none';});}
+    function prog(p,t){$('pbi').style.width=Math.round(p*100)+'%';if(t)$('pst').textContent=t;}
+    function fail(msg){stage('pk');$('pa').style.display='';var e=s.querySelector('.egn');e.innerHTML='<span class="bad">'+esc(msg)+'</span>';if(rawText)$('pt').value=rawText;}
+    var pf=$('pf');
+    if(pf)pf.addEventListener('change',function(){
+      var files=Array.prototype.slice.call(pf.files||[]).slice(0,6);pf.value='';if(!files.length)return;
+      stage('pg');$('th').innerHTML=files.map(function(f){return '<img src="'+URL.createObjectURL(f)+'" alt="">';}).join('');prog(.04,'整理照片…');
+      ctl=typeof AbortController!=='undefined'?new AbortController():null;var stopped=false;ctl&&ctl.signal.addEventListener('abort',function(){stopped=true;});
+      Promise.all(files.map(toJpeg)).then(function(blobs){
+        if(stopped)return;
+        if(eg==='claude'){
+          prog(.2,'Claude 判讀中…（約 10–40 秒）');var tk=setInterval(function(){var w=parseFloat($('pbi').style.width)||20;if(w<92)$('pbi').style.width=(w+2)+'%';},700);
+          return sampleFn.json(VISION_PROMPT.replace('{today}',todayStr()),{images:blobs,signal:ctl?ctl.signal:undefined}).then(function(v){clearInterval(tk);
+            if(!Array.isArray(v))throw {code:'invalid_json'};segs=v.map(cleanSeg).filter(function(x){return x.no||x.from||x.dep;});review('Claude 判讀');},
+          function(e){clearInterval(tk);throw e;});
+        }
+        prog(.06,'下載辨識引擎…');
+        return loadTesseract().then(function(T){
+          if(stopped)return;
+          return T.createWorker(['eng','chi_tra'],1,{logger:function(m){if(m&&m.status==='recognizing text')prog(.35+.6*(m.progress||0),'辨識文字中 '+Math.round((m.progress||0)*100)+'%');
+              else if(m&&/load|initializ/.test(m.status||''))prog(.08+.25*(m.progress||0),'準備辨識資料…');}}).then(function(w){
+            var out=[],i=0;
+            function next(){if(stopped||i>=blobs.length){return w.terminate().then(function(){return out.join('\n\n');});}
+              return w.recognize(blobs[i++]).then(function(r){out.push(r&&r.data?r.data.text:'');return next();});}
+            return next();
+          }).then(function(text){if(stopped)return;rawText=text||'';var r=getParser()(rawText);segs=r.segs.map(cleanSeg);review('手機辨識');});
+        });
+      }).catch(function(e){
+        if(stopped||(e&&e.code==='cancelled'))return;
+        var c=e&&e.code;
+        fail(c==='not_granted'?'你沒有允許使用 Claude，請改用「貼上文字」。':c==='rate_limited'?'Claude 用量暫時已滿，請稍後再試或改用「貼上文字」。':
+          c==='image_rejected'?'這張照片無法讀取，請換一張或改用截圖。':(e&&e.message&&/下載|載入/.test(e.message))?'無法下載辨識引擎（需要網路）。可改用 iPhone 長按照片文字拷貝後「貼上文字」。':
+          '辨識失敗，請再試一次或改用「貼上文字」。');
+      });
+    });
+    function dupe(x){return state.flights.some(function(f){return f.no&&f.no===x.no&&(f.dep||'').slice(0,10)===(x.dep||'').slice(0,10);});}
+    function review(src){
+      stage('rv');
+      if(!segs.length){$('rv').innerHTML='<div class="empty" style="padding:10px 0 14px">沒有找到航班資訊。</div>'+
+        '<div class="fl">辨識出的文字（可修改後重新解析）</div><textarea class="fi ta" id="rt">'+esc(rawText)+'</textarea>'+
+        '<div class="acts"><button data-k="again">重新選擇</button><button class="ok" data-k="reparse">重新解析</button></div>';return;}
+      segs.forEach(function(x){x.on=!dupe(x)&&!!(x.from&&x.to&&x.dep);x.dupe=dupe(x);});
+      $('rv').innerHTML='<div class="rvh"><b>找到 '+segs.length+' 段航班</b><span>'+src+' · 請確認後加入</span></div>'+
+        segs.map(function(x,i){
+          var warn=[];if(x.dupe)warn.push('行程裡已有這段');if(x.miss.length)warn.push('缺少：'+x.miss.join('、'));if(x.guessDate)warn.push('日期為推測，請確認');
+          return '<div class="rseg'+(x.on?' on':'')+'" data-i="'+i+'"><label class="rck"><input type="checkbox" data-f="on"'+(x.on?' checked':'')+'><span></span></label>'+
+            '<div class="rbody"><div class="rr"><input class="ri no up" data-f="no" value="'+esc(x.no)+'" placeholder="航班" maxlength="8">'+
+            '<input class="ri ap up" data-f="from" value="'+esc(x.from)+'" placeholder="出發" maxlength="3"><span class="arw">→</span><input class="ri ap up" data-f="to" value="'+esc(x.to)+'" placeholder="抵達" maxlength="3"></div>'+
+            '<div class="rr dts"><label>起飛<input class="ri dt" type="datetime-local" data-f="dep" value="'+esc(x.dep)+'"></label><label>抵達<input class="ri dt" type="datetime-local" data-f="arr" value="'+esc(x.arr)+'"></label></div>'+
+            '<div class="rw" data-w>'+esc(warn.join(' · '))+'</div></div></div>';}).join('')+
+        '<div class="err" id="rer"></div><div class="acts"><button data-k="again">重新選擇</button><button class="ok" data-k="add" id="addb"></button></div>'+
+        (rawText?'<details class="raw"><summary>查看辨識出的文字</summary><textarea class="fi ta" id="rt">'+esc(rawText)+'</textarea><button class="pl" data-k="reparse">修改後重新解析</button></details>':'');
+      count();
+    }
+    function count(){var n=segs.filter(function(x){return x.on;}).length,b=$('addb');if(b){b.textContent=n?'加入 '+n+' 段航班':'請勾選要加入的航班';b.disabled=!n;}}
+    s.addEventListener('input',function(e){var f=e.target.dataset&&e.target.dataset.f,card=e.target.closest('.rseg');if(!f||!card)return;var x=segs[+card.dataset.i];
+      if(f==='on'){x.on=e.target.checked;card.classList.toggle('on',x.on);count();return;}
+      var v=e.target.value.trim();if(f==='no'||f==='from'||f==='to')v=v.toUpperCase().replace(/\s+/g,'');x[f]=v;});
+    s.addEventListener('click',function(e){var b=e.target.closest('[data-k]');if(!b)return;var k=b.dataset.k;
+      if(k==='paste'){$('pa').style.display='';$('pt').focus();}
+      else if(k==='parse'){rawText=$('pt').value;if(!rawText.trim()){$('pt').focus();return;}segs=getParser()(rawText).segs.map(cleanSeg);review('文字解析');}
+      else if(k==='reparse'){rawText=($('rt')||{}).value||rawText;segs=getParser()(rawText).segs.map(cleanSeg);review('文字解析');}
+      else if(k==='again'){segs=[];if(pf)pf.value='';stage('pk');}
+      else if(k==='stop'){if(ctl)ctl.abort();stage('pk');}
+      else if(k==='add'){
+        var er=$('rer'),bad=null;
+        segs.forEach(function(x,i){if(!x.on||bad)return;
+          if(!x.from||!x.to||!x.dep){bad='第 '+(i+1)+' 段缺少出發、抵達機場或起飛時間';return;}
+          var fa=apInfo(x.from),ta=apInfo(x.to);if(x.arr&&fa&&ta&&toUTC(x.arr,ta.tz)<=toUTC(x.dep,fa.tz))bad='第 '+(i+1)+' 段抵達時間早於起飛時間，請確認是否為當地時間';});
+        if(bad){er.textContent=bad;return;}
+        var n=0;segs.forEach(function(x){if(!x.on)return;state.flights.push({id:uid(),no:x.no,from:x.from,to:x.to,dep:x.dep,arr:x.arr});n++;});
+        autoStops();closeSheet();ui.view='trip';saveUI();commit();render(true);setTimeout(function(){loadWx(false);},450);
+        toast('已加入 '+n+' 段航班');
+      }
+    });
+  });
+}
+function toast(t){var d=document.createElement('div');d.className='tip';d.textContent=t;document.body.appendChild(d);requestAnimationFrame(function(){d.classList.add('show');});
+  setTimeout(function(){d.classList.remove('show');setTimeout(function(){d.remove();},400);},2200);}
 function addMenu(){
   var c=curCat();
   sheet('<h3>新增</h3><div class="menu">'+
     '<button data-m="item"><span class="mi on2">'+ic('list',2)+'</span>打包項目'+(c?'<small>加到「'+esc(c.name)+'」</small>':'')+'</button>'+
-    '<button data-m="flight"><span class="mi">'+ic('plane')+'</span>航班<small>自動加入停留地</small></button>'+
+    '<button data-m="photo"><span class="mi on2">'+ic('camera',2)+'</span>照片匯入航班<small>機票、登機證截圖</small></button>'+
+    '<button data-m="flight"><span class="mi">'+ic('plane')+'</span>手動輸入航班<small>自動加入停留地</small></button>'+
     '<button data-m="stop"><span class="mi">'+ic('pin')+'</span>目的地／轉機地</button>'+
     '<button data-m="newcat"><span class="mi">'+ic('folder')+'</span>打包分類</button></div>',
   function(s){s.addEventListener('click',function(e){var b=e.target.closest('[data-m]');if(!b)return;var m=b.dataset.m;closeSheet(true);
     if(m==='item'){if(!c){catSheet(null);return;}ui.view='pack';ui.adding=true;ui.edit=false;ui.todo=false;saveUI();render();
       var f=document.querySelector('.addf');if(f)f.scrollIntoView({block:'center'});}
+    else if(m==='photo')photoSheet();
     else if(m==='flight')flightSheet(null);else if(m==='stop')stopSheet(null);else if(m==='newcat')catSheet(null);});});
 }
 document.addEventListener('focusin',function(e){if(e.target.matches&&e.target.matches('.panel input'))document.body.classList.add('typing');});
@@ -1109,6 +1433,7 @@ app.addEventListener('click',function(e){
     case 'view-trip':setView('trip');break;
     case 'view-wx':setView('wx');break;
     case 'addmenu':addMenu();break;
+    case 'photo':photoSheet();break;
     case 'tab':ui.cur=b.dataset.id;ui.adding=false;saveUI();render(true);break;
     case 'todo':ui.todo=!ui.todo;saveUI();render(true);break;
     case 'edit':ui.edit=!ui.edit;ui.adding=false;render();break;
