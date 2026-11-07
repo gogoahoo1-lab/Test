@@ -203,6 +203,10 @@ svg{display:block}
 .wd .p{font-size:11px;color:var(--blue);font-weight:700;margin-top:2px}
 .wd.na{background:#f5f7fb}
 .wd.na .hl{color:var(--faint);font-size:14px}
+.wref{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#6470f0;margin:-2px 0 8px}
+.wref svg{width:15px;height:15px}
+.wxs.ref .wd{background:linear-gradient(180deg,#f5f6ff,#f8f6fb);border:1px dashed rgba(100,112,240,.3)}
+.wnote .src{white-space:nowrap}
 .wnote{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:var(--sub);flex-wrap:wrap}
 .wnote a{margin-left:auto;font-weight:700;color:var(--blue);display:flex;align-items:center;gap:3px}
 .wnote a svg{width:13px;height:13px}
@@ -257,6 +261,35 @@ svg{display:block}
 .tip span{opacity:.6;font-size:16px;animation:nud 1.2s ease-in-out infinite}
 .tip span:last-child{animation-direction:reverse}
 @keyframes nud{50%{transform:translateX(-3px)}}
+.cs{background:linear-gradient(135deg,rgba(255,255,255,.92),rgba(255,246,243,.88));border:1px solid #fff;border-radius:22px;margin:0 0 16px;padding:4px 14px 14px;
+  box-shadow:0 14px 30px -18px rgba(255,92,100,.45),inset 0 0 0 1px rgba(255,106,92,.08)}
+.cs.empty2{padding:4px 14px}
+.csbtn{display:block;width:100%;text-align:left}
+.csh{display:flex;align-items:center;gap:11px;padding:10px 0 8px}
+.csi{width:38px;height:38px;border-radius:13px;background:var(--grad);color:#fff;display:grid;place-items:center;flex:none;box-shadow:0 8px 16px -8px rgba(255,92,100,.7)}
+.csi svg{width:20px;height:20px}
+.cst{flex:1;min-width:0}.cst b{display:block;font-size:16px;font-weight:800}.cst small{font-size:12.5px;color:var(--sub)}
+.chev2{width:28px;height:28px;display:grid;place-items:center;color:var(--faint);transition:transform .3s}.chev2 svg{width:18px;height:18px}.chev2.up{transform:rotate(180deg)}
+.cmini{font-size:13px;color:var(--sub);padding:0 0 4px 49px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cmini b{color:var(--coral);font-weight:800}
+.cbar{display:flex;align-items:center;gap:10px;margin:2px 0 12px}
+.sw{display:flex;align-items:center;gap:8px;height:32px;padding:0 12px 0 6px;border-radius:999px;background:#f1f3f8;font-size:13px;font-weight:700;color:#5d6475}
+.sw i{width:30px;height:20px;border-radius:10px;background:#d6dbe5;position:relative;transition:background .2s}
+.sw i::after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .25s cubic-bezier(.3,1.4,.5,1)}
+.sw.on{color:var(--ink);background:#fff;box-shadow:0 4px 10px -6px rgba(40,60,110,.4)}.sw.on i{background:#30d158}.sw.on i::after{transform:translateX(10px)}
+.ctemp{margin-left:auto;font-size:12.5px;color:var(--blue);font-weight:700}
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cc{display:flex;gap:10px;align-items:center;background:#fff;border-radius:15px;padding:10px 11px;border:1px solid rgba(20,30,60,.05)}
+.cq{font-size:24px;font-weight:900;color:var(--coral);min-width:38px;text-align:center;line-height:1}.cq small{font-size:11px;font-weight:700;margin-left:1px}
+.cn2{min-width:0;flex:1}.cn2 b{display:block;font-size:14px;font-weight:800;line-height:1.3}.cn2 small{display:block;font-size:11px;color:var(--sub);line-height:1.35}
+.cn2 em{display:block;font-style:normal;font-size:10.5px;color:var(--faint);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cnote{font-size:12.5px;color:#c26a1c;background:#fff6ea;border-radius:12px;padding:9px 12px;margin-top:10px;line-height:1.6}
+.capply{width:100%;height:46px;margin-top:12px;border-radius:15px;background:var(--grad);color:#fff;font-weight:800;font-size:14.5px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:var(--glow)}
+.capply svg{width:17px;height:17px}.capply.done{background:#15161b;box-shadow:0 12px 22px -14px rgba(10,12,20,.7)}
+.qty{flex:none;font-size:12.5px;font-weight:800;color:var(--coral);background:rgba(255,106,92,.1);border-radius:8px;padding:3px 7px}
+.tile.on .qty{color:var(--faint);background:#eef0f4}
+.step{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.step button{width:50px;height:50px;border-radius:15px;background:#f1f3f8;font-size:24px;font-weight:700;color:#3b414f}
+.step b{flex:1;text-align:center;font-size:24px;font-weight:900}
 .two2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .pick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .pbtn{position:relative;overflow:hidden;height:96px;border-radius:20px;background:var(--grad);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
@@ -477,15 +510,15 @@ function migrate(){
   delete state.to;delete state.start;delete state.end;
   if(!state.flights)state.flights=[];if(!state.wx)state.wx={};
   state.cats.forEach(function(c,i){if(!c.id)c.id=uid();if(!c.name)c.name='未命名';if(!c.color||String(c.color).length!==7)c.color=COLORS[i%COLORS.length];if(!c.icon)c.icon='bag';
-    c.items=c.items.filter(function(x){return x&&x.t!=null;});c.items.forEach(function(x){if(!x.id)x.id=uid();x.t=String(x.t);x.d=!!x.d;});});
+    c.items=c.items.filter(function(x){return x&&x.t!=null;});c.items.forEach(function(x){if(!x.id)x.id=uid();x.t=String(x.t);x.d=!!x.d;if(x.q!=null){x.q=Math.max(0,Math.min(99,+x.q||0));if(!x.q)delete x.q;}});});
   state.stops=state.stops.filter(function(x){return x&&x.code;});state.stops.forEach(function(x){if(!x.id)x.id=uid();});
   state.flights=state.flights.filter(function(x){return x&&x.from&&x.to;});state.flights.forEach(function(x){if(!x.id)x.id=uid();});
   state.v=3;
 }
 migrate();
 var ui={view:'pack',cur:null,todo:false,edit:false,adding:false};
-try{var u=JSON.parse(localStorage.getItem(LSUI));if(u){ui.cur=u.cur;ui.todo=!!u.todo;ui.view=(u.view==='trip'||u.view==='wx')?u.view:'pack';}}catch(e){}
-function saveUI(){try{localStorage.setItem(LSUI,JSON.stringify({cur:ui.cur,todo:ui.todo,view:ui.view}));}catch(e){}}
+try{var u=JSON.parse(localStorage.getItem(LSUI));if(u){ui.cur=u.cur;ui.todo=!!u.todo;ui.clClosed=!!u.clClosed;ui.view=(u.view==='trip'||u.view==='wx')?u.view:'pack';}}catch(e){}
+function saveUI(){try{localStorage.setItem(LSUI,JSON.stringify({cur:ui.cur,todo:ui.todo,view:ui.view,clClosed:ui.clClosed}));}catch(e){}}
 function curCat(){var c=null;state.cats.forEach(function(x){if(x.id===ui.cur)c=x;});if(!c&&state.cats.length){c=state.cats[0];ui.cur=c.id;}return c;}
 
 /* ---------- 儲存：寫回 App 本身 ---------- */
@@ -761,6 +794,7 @@ function getJSON(url){
 function stopGeo(s){var a=AP[s.code];if(a)return Promise.resolve({lat:a.lat,lon:a.lon});if(s.lat!=null)return Promise.resolve({lat:s.lat,lon:s.lon});
   return getJSON('https://geocoding-api.open-meteo.com/v1/search?count=1&language=zh&name='+encodeURIComponent(s.city||s.code)).then(function(j){
     var r=j&&j.results&&j.results[0];if(!r)throw new Error('找不到地點');s.lat=Math.round(r.latitude*1000)/1000;s.lon=Math.round(r.longitude*1000)/1000;return {lat:s.lat,lon:s.lon};});}
+function addD(s,n){var d=pd(s);return ymd(new Date(d.getFullYear(),d.getMonth(),d.getDate()+n));}
 function rd(v){return v==null||isNaN(v)?null:Math.round(v);}
 function loadWx(force){
   if(typeof fetch!=='function'||!state.stops.length)return;
@@ -839,7 +873,7 @@ function mapHTML(){
     var tz=stopTz(ms),w=(state.wx[ms.code]||{}).days||{},days=stayDays(ms),key=null,now=new Date(),td=todayStr();
     if(w[td]&&(!days.length||days.indexOf(td)>=0))key=td;
     if(!key&&days.length)days.forEach(function(d){if(!key&&w[d])key=d;});
-    if(!key&&!days.length&&w[td])key=td;
+    if(!key&&w[td])key=td;
     var wd=key?w[key]:null;
     chip='<button class="cd" data-act="view-wx"><div class="c1">'+esc(short(cityOf(ms.code,ms)))+(wd?' · '+(key===td?'今天':md(key))+' · '+wxKind(wd)[1]:' · 當地時間')+'</div>'+
       (wd?'<b class="num">'+wd.hi+'°<small>/ '+wd.lo+'°</small></b>':'<b class="num" data-clock="'+tz+'">'+clock(tz)+'</b>')+
@@ -853,12 +887,101 @@ function mapHTML(){
 function tally(c){var d=0;c.items.forEach(function(i){if(i.d)d++;});return {d:d,t:c.items.length};}
 function total(){var d=0,t=0;state.cats.forEach(function(c){var x=tally(c);d+=x.d;t+=x.t;});return {d:d,t:t};}
 function toolTxt(c){var x=tally(c);return '<b>'+esc(c.name)+'</b> · '+(x.t-x.d?'剩 '+(x.t-x.d)+' 件':(x.t?'全部完成':'尚無項目'));}
+/* ---------- 穿搭建議 ---------- */
+function tripSpan(){
+  var fl=sortedFlights().filter(function(f){return f.dep;});
+  if(fl.length){var last=fl[fl.length-1],home=AP[state.from.code],la=AP[last.to];
+    var back=last.to===state.from.code||!!(home&&la&&home.country===la.country),e=(last.arr||last.dep).slice(0,10);
+    if(!back){var r0=tripDates();if(r0&&r0.e>e)e=r0.e;}
+    return {s:fl[0].dep.slice(0,10),e:e,back:back};}
+  var r=tripDates();return r?{s:r.s,e:r.e,back:true}:null;
+}
+function rangeDays(a,b){var out=[],d=pd(a),e=pd(b);for(var i=0;i<60&&d<=e;i++){out.push(ymd(d));d=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1);}return out;}
+function bizAuto(){return /出差|商務|公務|會議|拜訪/.test(state.trip)||state.cats.some(function(c){return c.items.some(function(i){return /上班|襯衫|西裝/.test(i.t);});});}
+function isBiz(){return state.biz==null?bizAuto():!!state.biz;}
+function clothesPlan(){
+  var sp=tripSpan();if(!sp)return null;
+  var D=Math.max(1,daysBetween(sp.s,sp.e)+1),C=Math.min(D,7),biz=isBiz();
+  // 停留期間（目的地，不含轉機）
+  var stay={};state.stops.forEach(function(x){if(x.role!=='transit')stayDays(x).forEach(function(d){stay[d]=1;});});
+  var sd=Object.keys(stay);if(!sd.length)sd=rangeDays(sp.s,sp.e);
+  var wd=sd.filter(function(d){var w=pd(d).getDay();return w>0&&w<6;}).length;
+  // 天氣：停留期間全部停留地
+  var lo=null,hi=null,rain=[];
+  state.stops.forEach(function(x){var w=state.wx[x.code];if(!w||!w.days)return;stayDays(x).forEach(function(d){var v=w.days[d];if(!v)return;
+    var l=v.fl!=null?v.fl:v.lo;if(l!=null&&(lo==null||l<lo))lo=l;if(v.hi!=null&&(hi==null||v.hi>hi))hi=v.hi;if((v.p||0)>=50&&rain.indexOf(d)<0)rain.push(d);});});
+  rain.sort();
+  var shirts=biz?Math.max(1,Math.min(wd,5)):0,tops=Math.max(1,C-shirts);
+  var L=[
+    {k:'under',n:'內衣褲',q:C+1,u:'套',why:'每天 1 套＋1 備用'},
+    {k:'socks',n:'襪子',q:C+1,u:'雙',why:'每天 1 雙＋1 備用'},
+    {k:'tops',n:'外出上衣',q:tops,u:'件',why:biz?'非上班日每天 1 件':'每天 1 件'},
+    {k:'pants',n:'外出褲子',q:Math.min(3,Math.max(1,Math.ceil(tops/3))),u:'件',why:'約 3 天 1 件'},
+    {k:'sleep',n:'睡衣',q:D>5?2:1,u:'套',why:D>5?'住超過 5 晚帶 2 套':'1 套'}
+  ];
+  if(biz){L.push({k:'shirt',n:'上班襯衫',q:shirts,u:'件',why:'上班日 '+wd+' 天'});L.push({k:'suit',n:'西裝外套',q:1,u:'件',why:'正式場合'});}
+  var coat=null;
+  if(lo==null)coat={k:'coat',n:'外套',q:1,u:'件',why:'出發前看天氣再決定厚薄'};
+  else if(lo<=5)coat={k:'coat',n:'保暖外套（羽絨或大衣）',q:1,u:'件',why:'最低體感 '+lo+'°'};
+  else if(lo<=12)coat={k:'coat',n:'保暖外套',q:1,u:'件',why:'最低體感 '+lo+'°'};
+  else if(lo<=18)coat={k:'coat',n:'薄外套',q:1,u:'件',why:'早晚 '+lo+'° 左右'};
+  if(coat)L.push(coat);
+  if(rain.length)L.push({k:'rain',n:'雨傘或雨衣',q:1,u:'把',why:rain.map(md).join('、')+' 可能下雨'});
+  return {D:D,N:D-1,s:sp.s,e:sp.e,back:sp.back,wd:wd,biz:biz,lo:lo,hi:hi,rain:rain,laundry:D>7,list:L};
+}
+var CL_KEYS={under:[/內衣|內褲/],socks:[/襪/],sleep:[/睡覺|睡衣/],shirt:[/襯衫|上班/],suit:[/西裝/],tops:[/出外衣|外出衣|上衣|T恤|衣服/],
+  pants:[/長褲|褲子|外出褲/],coat:[/外套|大衣|羽絨/],rain:[/雨傘|雨衣|雨具/]};
+var CL_ORDER=['under','socks','sleep','shirt','suit','tops','pants','coat','rain'];
+function clothesMatch(plan){
+  var used={},map={};
+  CL_ORDER.forEach(function(k){var sug=null;plan.list.forEach(function(x){if(x.k===k)sug=x;});if(!sug)return;
+    var hit=null;state.cats.forEach(function(c){c.items.forEach(function(it){if(hit||used[it.id])return;
+      if(k==='coat'&&/西裝/.test(it.t))return;if(k==='pants'&&/內|睡|襯衫/.test(it.t))return;
+      if(CL_KEYS[k].some(function(re){return re.test(it.t);}))hit={it:it,c:c};});});
+    if(hit){used[hit.it.id]=1;map[k]=hit;}});
+  if(map.tops&&/褲/.test(map.tops.it.t)&&!map.pants)map.pants={combined:true};
+  return map;
+}
+function clothesApply(){
+  var plan=clothesPlan();if(!plan)return 0;var map=clothesMatch(plan),n=0;
+  var wear=null;state.cats.forEach(function(c){if(!wear&&(c.icon==='shirt'||/穿|衣/.test(c.name)))wear=c;});
+  if(!wear){wear={id:uid(),name:'穿著',icon:'shirt',color:COLORS[1],items:[]};state.cats.push(wear);}
+  plan.list.forEach(function(x){var m=map[x.k];
+    if(m&&m.combined)return;
+    if(m){m.it.q=x.q;n++;}
+    else{var tgt=wear;if(x.k==='rain'){state.cats.forEach(function(c){if(c.icon==='plane'||/出外|隨身/.test(c.name))tgt=c;});}
+      tgt.items.push({id:uid(),t:x.n,d:false,q:x.q});n++;}
+  });
+  state.clApplied=plan.s+'~'+plan.e+(plan.biz?'b':'');
+  return n;
+}
+function clothesHTML(){
+  var plan=clothesPlan(),open=!ui.clClosed;
+  if(!plan)return '<div class="cs empty2"><div class="csh"><span class="csi">'+ic('shirt',2)+'</span><div class="cst"><b>穿搭建議</b><small>新增航班後，會依天數建議要帶幾套衣服</small></div>'+
+    '<button class="pl" data-act="photo">'+ic('camera',2)+'照片</button><button class="pl" data-act="addflight">'+ic('plus',2.4)+'航班</button></div></div>';
+  var map=clothesMatch(plan),applied=state.clApplied===plan.s+'~'+plan.e+(plan.biz?'b':'');
+  var head='<div class="csh" data-act="cstog"><span class="csi">'+ic('shirt',2)+'</span><div class="cst"><b>穿搭建議</b><small class="num">'+plan.D+' 天 '+plan.N+' 夜 · '+md(plan.s)+' – '+md(plan.e)+'</small></div>'+
+    '<span class="chev2'+(open?' up':'')+'">'+'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></div>';
+  if(!open)return '<div class="cs"><button class="csbtn" data-act="cstog">'+head+'<div class="cmini">'+plan.list.slice(0,4).map(function(x){return esc(x.n.replace(/（.+）/,''))+' <b class="num">'+x.q+'</b>';}).join('　')+'…</div></button></div>';
+  var h='<div class="cs"><button class="csbtn" data-act="cstog">'+head+'</button>';
+  h+='<div class="cbar"><button class="sw'+(plan.biz?' on':'')+'" data-act="biz"><i></i>出差模式</button>'+
+    (plan.lo!=null?'<span class="ctemp num">體感 '+plan.lo+'° – '+plan.hi+'°</span>':'<span class="ctemp">天氣資料尚未取得</span>')+'</div>';
+  h+='<div class="cg">'+plan.list.map(function(x){var m=map[x.k],tag=m&&m.combined?'併入衣褲':m?'清單：'+m.it.t:'會新增';
+    return '<div class="cc"><div class="cq num">'+x.q+'<small>'+x.u+'</small></div><div class="cn2"><b>'+esc(x.n)+'</b><small>'+esc(x.why)+'</small><em>'+esc(tag)+'</em></div></div>';}).join('')+'</div>';
+  var notes=[];
+  if(plan.laundry)notes.push('旅程 '+plan.D+' 天，以 7 天份為上限，記得安排在當地洗衣。');
+  if(!plan.back)notes.push('還沒有回程航班，以目前最後一段航班計算。');
+  if(notes.length)h+='<div class="cnote">'+notes.map(esc).join('<br>')+'</div>';
+  h+='<button class="capply'+(applied?' done':'')+'" data-act="capply">'+(applied?ic('ok',2)+'已套用到清單 · 再套用一次':ic('checks',2)+'套用數量到打包清單')+'</button></div>';
+  return h;
+}
 function packHTML(){
   var T=total(),pct=T.t?Math.round(T.d/T.t*100):0,c=curCat(),h='';
   h+='<div class="stat"><b class="num" id="sd">'+T.d+'<small> / '+T.t+'</small></b><span class="lb">件已打包</span>'+
    '<div class="r'+(T.t&&T.d===T.t?' ok':'')+'" id="sr">完成度<strong class="num">'+pct+'%</strong></div></div>'+
    '<div class="seg3">'+state.cats.map(function(k,i){var x=tally(k);return '<i style="flex:'+Math.max(x.t,1)+'"><u data-seg="'+k.id+'" style="width:'+(x.t?x.d/x.t*100:0)+'%;background:'+(i===0?'linear-gradient(90deg,#ff9554,#ff5b80)':k.color)+'"></u></i>';}).join('')+'</div>';
   if(T.t&&T.d===T.t&&!ui.edit)h+='<div class="allok">'+ic('ok',2)+'全部打包完成，祝旅途愉快！</div>';
+  if(!ui.edit)h+=clothesHTML();
   h+='<div class="tabs">'+state.cats.map(function(k){var x=tally(k);return '<button class="tab'+(c&&k.id===c.id?' on':'')+'" data-act="tab" data-id="'+k.id+'">'+ic(k.icon,2)+esc(k.name)+'<em class="num" data-tc="'+k.id+'">'+x.d+'/'+x.t+'</em></button>';}).join('')+
    '<button class="tab add" data-act="newcat" aria-label="新增分類">'+ic('plus',2.2)+'</button></div>';
   if(c){
@@ -869,7 +992,7 @@ function packHTML(){
     c.items.forEach(function(it,i){
       if(ui.todo&&it.d&&!ui.edit)return;shown++;
       h+='<button class="tile'+(it.d&&!ui.edit?' on':'')+'" data-act="'+(ui.edit?'renitem':'toggle')+'" data-item="'+it.id+'" style="animation-delay:'+Math.min(i*18,240)+'ms">'+
-        CK+'<span class="t"><s>'+esc(it.t)+'</s></span>'+(ui.edit?'<span class="pen">'+ic('pen',2)+'</span><span class="x" data-act="delitem">'+ic('minus',3)+'</span>':'')+'</button>';
+        CK+'<span class="t"><s>'+esc(it.t)+'</s></span>'+(it.q>0?'<span class="qty num">×'+it.q+'</span>':'')+(ui.edit?'<span class="pen">'+ic('pen',2)+'</span><span class="x" data-act="delitem">'+ic('minus',3)+'</span>':'')+'</button>';
     });
     if(!shown&&!ui.adding)h+=c.items.length?'<div class="empty"><b>✓</b>「'+esc(c.name)+'」都打包好了</div>':'<div class="empty">這個分類還沒有項目</div>';
     h+=ui.adding?'<form class="addf"><input id="addin" maxlength="40" autocomplete="off" enterkeyhint="done" placeholder="輸入要帶的東西"><button type="submit" class="go">加入</button><button type="button" class="no" data-act="addcancel">取消</button></form>'
@@ -906,25 +1029,38 @@ function stopCard(s,i,mode){
     '<span>'+(s.arrive?(s.role==='transit'&&days.length<=1?'過境':'停留 '+days.length+' 天'):'點標題編輯')+'</span></div>';
   var w=state.wx[s.code],wd=(w&&w.days)||{},td=todayStr(),show=days.length?days:Object.keys(wd).filter(function(d){return d>=td;}).sort().slice(0,6);
   if(mode!=='wx'){
-    var got=show.filter(function(d){return wd[d];}),hi=-99,lo=99;got.forEach(function(d){hi=Math.max(hi,wd[d].hi);lo=Math.min(lo,wd[d].lo);});
-    return h+'<button class="wxmini" data-act="view" data-v="wx">'+(got.length?wxIcon(wd[got[0]])+'<span><b class="num">'+lo+'° – '+hi+'°</b>'+(days.length?'停留期間':'近日')+'氣溫</span>':'<span>'+ic('wx',2)+'查看當地天氣</span>')+'<em>天氣 ›</em></button></div>';
+    var got=show.filter(function(d){return wd[d];}),lbl=days.length?'停留期間':'近日',hi=-99,lo=99;
+    if(!got.length){got=Object.keys(wd).filter(function(d){return d>=td;}).sort().slice(0,7);if(got.length)lbl='近 '+got.length+' 天參考';}
+    got.forEach(function(d){hi=Math.max(hi,wd[d].hi);lo=Math.min(lo,wd[d].lo);});
+    return h+'<button class="wxmini" data-act="view" data-v="wx">'+(got.length?wxIcon(wd[got[0]])+'<span><b class="num">'+lo+'° – '+hi+'°</b>'+lbl+'氣溫</span>':'<span>'+ic('wx',2)+'查看當地天氣</span>')+'<em>天氣 ›</em></button></div>';
   }
-  var have=show.filter(function(d){return wd[d];}).length;
-  if(show.length&&(have||!days.length)){
-    h+='<div class="wxs">'+show.map(function(d){var x=wd[d],dd=pd(d);
-      if(!x)return '<div class="wd na"><div class="d">'+(dd.getMonth()+1)+'/'+dd.getDate()+'<small>'+WK[dd.getDay()]+'</small></div><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="9" fill="none" stroke="#d3d9e6" stroke-width="2" stroke-dasharray="3 4"/></svg><div class="hl">尚無</div><div class="fl2 na">預報未出</div></div>';
+  var avail=Object.keys(wd).filter(function(d){return d>=td;}).sort(),hzEnd=avail.length?avail[avail.length-1]:null,live=w&&w.src==='live',lead=live?15:7;
+  var shown=[],ref=false,notes=[],stayHave=days.filter(function(d){return wd[d];});
+  var rng=days.length?(days.length>1?md(days[0])+'–'+md(days[days.length-1]):md(days[0])):'';
+  if(days.length&&stayHave.length){
+    shown=days;var miss=days.filter(function(d){return !wd[d];}),past=miss.filter(function(d){return d<td;}),fut=miss.filter(function(d){return d>=td;});
+    if(fut.length)notes.push('目前可預報到 '+md(hzEnd)+'；'+md(fut[0])+(fut.length>1?' 起 '+fut.length+' 天':'')+'尚無預報，約 '+md(addD(fut[0],-lead))+' 起會陸續補上');
+    if(past.length)notes.push(past.length+' 天已過');
+  }else if(days.length){
+    if(days[days.length-1]<td)notes.push('停留期間 '+rng+' 已過');
+    else if(avail.length)notes.push('停留 '+rng+' 超出預報範圍（目前可預報到 '+md(hzEnd)+'，共 '+avail.length+' 天），約 '+md(addD(days[0],-lead))+' 起會出現停留期間的預報');
+    else notes.push(wxBusy[s.code]?'正在抓取天氣…':'尚未取得天氣資料');
+    if(avail.length){shown=avail;ref=true;}
+  }else if(avail.length){shown=avail;notes.push('近 '+avail.length+' 天預報（設定停留日期後只顯示停留期間）');}
+  var shownData=shown.filter(function(d){return wd[d];});
+  if(shownData.length&&!shownData.some(function(d){return wd[d].fh!=null;}))notes.push('這份預報沒有體感溫度，可點「14 天預報」查看');
+  if(shown.length){
+    if(ref)h+='<div class="wref">'+ic('wx',2)+'先參考目前可取得的 '+avail.length+' 天預報</div>';
+    h+='<div class="wxs'+(ref?' ref':'')+'">'+shown.map(function(d){var x=wd[d],dd=pd(d);
+      if(!x)return '<div class="wd na"><div class="d">'+(dd.getMonth()+1)+'/'+dd.getDate()+'<small>'+WK[dd.getDay()]+'</small></div><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="9" fill="none" stroke="#d3d9e6" stroke-width="2" stroke-dasharray="3 4"/></svg><div class="hl">尚無</div><div class="fl2 na">'+(d<td?'已過':'預報未出')+'</div></div>';
       return '<div class="wd"><div class="d">'+(d===td?'今天':(dd.getMonth()+1)+'/'+dd.getDate())+'<small>'+WK[dd.getDay()]+'</small></div>'+wxIcon(x)+
         '<div class="cn">'+wxKind(x)[1]+'</div><div class="hl num">'+x.hi+'°<small> / '+x.lo+'°</small></div>'+
-        (x.fh!=null?'<div class="fl2 num">體感 '+x.fh+'° / '+x.fl+'°</div>':'<div class="fl2 na">體感 見連結</div>')+
+        (x.fh!=null?'<div class="fl2 num">體感 '+x.fh+'° / '+x.fl+'°</div>':'<div class="fl2 na">無體感資料</div>')+
         (x.p!=null?'<div class="p num">降雨 '+x.p+'%</div>':'')+'</div>';}).join('')+'</div>';
   }
-  var note='';
-  if(!days.length&&have)note='近日預報（設定停留日期後會只顯示停留期間）';
-  else if(days.length&&!have){var away=daysBetween(td,days[0]),hz=w&&w.src==='live'?15:7;
-    note=days[days.length-1]<td?'停留期間已過':away>hz?'距離抵達還有 '+away+' 天，約出發前 '+(hz+1)+' 天內才有預報':(wxBusy[s.code]?'正在抓取天氣…':'預報資料尚未更新');}
-  else if(days.length&&have<days.length)note='部分日期預報尚未發布';
+  var have=shownData.length,note=notes.join('。');
   var link=a&&a.lat!=null?'https://www.timeanddate.com/weather/@'+a.lat+','+a.lon+'/ext':'https://www.google.com/search?q='+encodeURIComponent((a?a.city:s.city||s.code)+' 天氣 體感溫度');
-  h+='<div class="wnote">'+(w&&have?'<span>'+(w.src==='live'?'即時預報 · '+new Date(w.ts).toTimeString().slice(0,5)+' 更新':'Claude 寫入 · '+md(w.at))+'</span>':'')+(note?'<span>'+esc(note)+'</span>':'')+
+  h+='<div class="wnote">'+(w&&have?'<span class="src">'+(w.src==='live'?'即時預報 · '+new Date(w.ts).toTimeString().slice(0,5)+' 更新':'Claude 寫入 · '+md(w.at))+'</span>':'')+(note?'<span>'+esc(note)+'</span>':'')+
     '<a href="'+link+'" target="_blank" rel="noopener">14 天預報'+ic('ext',2.4)+'</a></div>';
   return h+'</div>';
 }
@@ -1138,6 +1274,16 @@ function photoSheet(){
     });
   });
 }
+function itemSheet(it){
+  var q=it.q||0;
+  sheet('<h3>修改項目</h3><div class="fl">名稱</div><input class="fi" id="si" maxlength="40" autocomplete="off" value="'+esc(it.t)+'" autofocus>'+
+    '<div class="fl">數量</div><div class="step"><button type="button" data-q="-1">−</button><b class="num" id="qv">'+(q||'不標示')+'</b><button type="button" data-q="1">＋</button></div>'+
+    '<div class="acts"><button data-s="cancel">取消</button><button data-s="ok" class="ok">儲存</button></div>',
+  function(s){
+    s.addEventListener('click',function(e){var b=e.target.closest('[data-q]');if(!b)return;q=Math.max(0,Math.min(99,q+(+b.dataset.q)));s.querySelector('#qv').textContent=q||'不標示';});
+    s.querySelector('[data-s="ok"]').addEventListener('click',function(){var v=s.querySelector('#si').value.trim();if(!v){s.querySelector('#si').focus();return;}
+      it.t=v;if(q>0)it.q=q;else delete it.q;closeSheet();commit();render();});});
+}
 function toast(t){var d=document.createElement('div');d.className='tip';d.textContent=t;document.body.appendChild(d);requestAnimationFrame(function(){d.classList.add('show');});
   setTimeout(function(){d.classList.remove('show');setTimeout(function(){d.remove();},400);},2200);}
 function addMenu(){
@@ -1341,15 +1487,18 @@ function autoStops(){
     if(!f.to||f.to===state.from.code||!AP[f.to])return;
     var home=AP[state.from.code],onward=fl.slice(i+1).some(function(g){return g.from===f.to;});
     if(home&&AP[f.to].country===home.country&&!onward)return;
-    var st=null;state.stops.forEach(function(x){if(!st&&x.code===f.to)st=x;});
+    var st=null;
+    state.stops.forEach(function(x){if(!st&&x.auto&&x.fid===f.id)st=x;});
+    if(!st)state.stops.forEach(function(x){if(!st&&x.auto&&!x.fid&&x.code===f.to)st=x;});
+    if(!st)state.stops.forEach(function(x){if(!st&&!x.auto&&x.code===f.to&&(!x.arrive||x.arrive===(f.arr||f.dep||'').slice(0,10)))st=x;});
     var next=null;for(var j=i+1;j<fl.length;j++){if(fl[j].from===f.to){next=fl[j];break;}}
     var arrD=(f.arr||f.dep||'').slice(0,10),role='dest',leave='';
     if(next&&next.dep){var tz=AP[f.to].tz,gap=(toUTC(next.dep,tz)-toUTC(f.arr||f.dep,tz))/36e5;if(gap>=0&&gap<24)role='transit';leave=next.dep.slice(0,10);}
-    if(!st)state.stops.push({id:uid(),code:f.to,role:role,arrive:arrD,leave:leave,auto:true});
-    else if(st.auto){st.role=role;st.arrive=arrD;st.leave=leave;}
+    if(!st)state.stops.push({id:uid(),code:f.to,role:role,arrive:arrD,leave:leave,auto:true,fid:f.id});
+    else if(st.auto){st.fid=f.id;st.role=role;st.arrive=arrD;st.leave=leave;}
     else{if(!st.arrive)st.arrive=arrD;if(!st.leave&&leave)st.leave=leave;}
   });
-  state.stops=state.stops.filter(function(x){return !x.auto||fl.some(function(f){return f.to===x.code;});});
+  state.stops=state.stops.filter(function(x){return !x.auto||(x.fid?fl.some(function(f){return f.id===x.fid;}):fl.some(function(f){return f.to===x.code;}));});
 }
 function menuSheet(){
   var c=curCat();
@@ -1442,7 +1591,10 @@ app.addEventListener('click',function(e){
     case 'delitem':e.stopPropagation();
       var t=b.closest('[data-item]'),id=t.dataset.item;t.classList.add('leaving');
       setTimeout(function(){c.items=c.items.filter(function(x){return x.id!==id;});commit();render();},280);break;
-    case 'renitem':simple({title:'修改項目',input:it.t,ph:'項目名稱',ok:'儲存',onOk:function(v){it.t=v;commit();render();}});break;
+    case 'renitem':itemSheet(it);break;
+    case 'cstog':ui.clClosed=!ui.clClosed;saveUI();render();break;
+    case 'biz':state.biz=!isBiz();commit();render();break;
+    case 'capply':var n=clothesApply();ui.clClosed=true;saveUI();commit();render();toast('已更新 '+n+' 個項目的數量');break;
     case 'catedit':catSheet(c);break;
     case 'newcat':catSheet(null);break;
     case 'trip':tripSheet();break;
