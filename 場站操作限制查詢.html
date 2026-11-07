@@ -306,6 +306,16 @@ button,.step,.chip,.code,.slot,.btn,.rm,.addleg,label{touch-action:manipulation}
 .sky{position:relative;border:1px solid var(--line);border-top:0;border-bottom:0;background:#040a12;overflow:hidden;line-height:0}
 .sky canvas{display:block;width:100%;height:260px}
 @media print{.sky{border-color:#bbb !important}}
+
+/* ---------- 左右滑動切換頁籤 ---------- */
+section[role=tabpanel]{touch-action:pan-y pinch-zoom}
+section[role=tabpanel].sw-drag{transition:none;will-change:transform}
+section[role=tabpanel].sw-back{transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .28s}
+@keyframes swInL{from{transform:translate3d(42px,0,0);opacity:0}to{transform:none;opacity:1}}
+@keyframes swInR{from{transform:translate3d(-42px,0,0);opacity:0}to{transform:none;opacity:1}}
+section[role=tabpanel].sw-inL{animation:swInL .3s cubic-bezier(.2,.8,.2,1)}
+section[role=tabpanel].sw-inR{animation:swInR .3s cubic-bezier(.2,.8,.2,1)}
+@media (prefers-reduced-motion:reduce){section[role=tabpanel].sw-inL,section[role=tabpanel].sw-inR{animation:none}}
 </style>
 <style>
 /* ---------- 空位查詢（資料來自 AMP值班台 的中繼） ---------- */
@@ -6126,6 +6136,77 @@ I18N.init();
     build(id);
     new MutationObserver(function(){ build(id); }).observe(box, { childList:true, subtree:true, attributes:true, attributeFilter:["aria-pressed"] });
   });
+})();
+</script>
+<script>
+/* 左右滑動切換頁籤：向左滑到下一頁、向右滑回上一頁；
+   在可橫向捲動的表格、輸入框、動畫或彈窗內不觸發 */
+(function(){
+  var tabs = [].slice.call(document.querySelectorAll('nav.tabs button[role=tab]'));
+  var nav = document.querySelector('nav.tabs');
+  if(!tabs.length) return;
+  function idx(){ for(var i=0;i<tabs.length;i++) if(tabs[i].getAttribute("aria-selected")==="true") return i; return 0; }
+  function panel(){ return document.getElementById(tabs[idx()].dataset.panel); }
+  function centerTab(b, smooth){
+    if(!nav || !b) return;
+    var x = b.offsetLeft - (nav.clientWidth - b.offsetWidth)/2;
+    nav.scrollTo({ left:Math.max(0, x), behavior: smooth ? "smooth" : "auto" });
+  }
+  tabs.forEach(function(b){ b.addEventListener("click", function(){ centerTab(b, true); }); });
+  function blocked(el, dx){
+    for(var n = el; n && n !== document.body; n = n.parentElement){
+      if(n.matches && n.matches('input,textarea,select,canvas,[contenteditable],dialog,nav.tabs,.no-swipe')) return true;
+      if(n.scrollWidth > n.clientWidth + 2){
+        var ox = getComputedStyle(n).overflowX;
+        if(ox === "auto" || ox === "scroll"){
+          if(dx < 0 && n.scrollLeft + n.clientWidth < n.scrollWidth - 1) return true;
+          if(dx > 0 && n.scrollLeft > 1) return true;
+        }
+      }
+    }
+    return false;
+  }
+  var st = null;
+  document.addEventListener("touchstart", function(e){
+    if(e.touches.length !== 1 || document.querySelector("dialog[open]")){ st = null; return; }
+    var t = e.touches[0], p = panel();
+    st = p && p.contains(e.target) ? { x:t.clientX, y:t.clientY, el:e.target, p:p, lock:0, t:Date.now() } : null;
+  }, { passive:true });
+  document.addEventListener("touchmove", function(e){
+    if(!st) return;
+    var t = e.touches[0], dx = t.clientX - st.x, dy = t.clientY - st.y;
+    if(!st.lock){
+      if(Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+      if(Math.abs(dx) > Math.abs(dy) * 1.4 && !blocked(st.el, dx)){ st.lock = 1; st.p.classList.add("sw-drag"); }
+      else { st = null; return; }
+    }
+    var i = idx(), edge = (dx > 0 && i === 0) || (dx < 0 && i === tabs.length - 1);
+    var v = edge ? dx * .18 : dx * .45;
+    st.p.style.transform = "translate3d(" + v + "px,0,0)";
+    st.p.style.opacity = String(1 - Math.min(Math.abs(v)/600, .25));
+    st.dx = dx;
+  }, { passive:true });
+  function end(){
+    if(!st || !st.lock){ st = null; return; }
+    var p = st.p, dx = st.dx || 0, fast = Math.abs(dx) / Math.max(Date.now() - st.t, 1) > .45;
+    var i = idx(), go = (Math.abs(dx) > Math.min(90, innerWidth * .22) || (fast && Math.abs(dx) > 35)) ? (dx < 0 ? 1 : -1) : 0;
+    var j = i + go; st = null;
+    p.classList.remove("sw-drag");
+    if(!go || j < 0 || j >= tabs.length){
+      p.classList.add("sw-back"); p.style.transform = ""; p.style.opacity = "";
+      setTimeout(function(){ p.classList.remove("sw-back"); }, 300);
+      return;
+    }
+    p.style.transform = ""; p.style.opacity = "";
+    tabs[j].click();
+    var np = document.getElementById(tabs[j].dataset.panel), c = go > 0 ? "sw-inL" : "sw-inR";
+    if(np){ np.classList.remove("sw-inL","sw-inR"); void np.offsetWidth; np.classList.add(c);
+      np.addEventListener("animationend", function f(){ np.classList.remove(c); np.removeEventListener("animationend", f); }); }
+    if(navigator.vibrate) try{ navigator.vibrate(8); }catch(_){}
+  }
+  document.addEventListener("touchend", end, { passive:true });
+  document.addEventListener("touchcancel", end, { passive:true });
+  centerTab(tabs[idx()], false);
 })();
 </script>
 </body>
