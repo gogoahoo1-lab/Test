@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#f3f6fc">
 <title>旅行打包清單</title>
 <style id="css">
+@property --ang{syntax:'<angle>';inherits:true;initial-value:-25deg}
 :root{
   --ink:#14161c;--sub:#7d8494;--faint:#a3a9b6;--line:rgba(20,30,60,.07);
   --coral:#ff6a5c;--blue:#2f7cf6;--grad:linear-gradient(135deg,#ff9554 0%,#ff6a5f 55%,#ff5b80 100%);
@@ -240,12 +241,22 @@ svg{display:block}
   background:rgba(255,255,255,.58);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);
   border:1px solid rgba(255,255,255,.95);box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(20,30,60,.05),0 22px 40px -16px rgba(40,60,120,.5),0 2px 6px rgba(40,60,120,.06)}
 .typing .nav{transform:translate(-50%,120px);opacity:0;pointer-events:none}
-.nav .ind{position:absolute;left:6px;top:6px;bottom:6px;width:calc((100% - 12px)/5);transform:translateX(calc(var(--i)*100%));transition:transform .5s cubic-bezier(.3,1.25,.45,1);pointer-events:none;z-index:1}
+.nav .ind{position:absolute;left:6px;top:6px;bottom:6px;width:calc((100% - 12px)/5);transform:translateX(calc(var(--i)*100%));transition:transform .5s cubic-bezier(.3,1.25,.45,1),--ang 1.05s cubic-bezier(.35,.7,.3,1);pointer-events:none;z-index:1}
 .nav .ind::before{content:"";position:absolute;inset:0 3px;border-radius:28px;background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(255,255,255,.62));border:1px solid #fff;
   box-shadow:inset 0 0 0 1px rgba(255,106,92,.16),inset 0 -6px 12px -6px rgba(255,120,110,.25),0 10px 20px -10px rgba(255,92,100,.55)}
 .nav .ind::after{content:"";position:absolute;left:12px;right:12px;top:4px;height:12px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(255,255,255,0))}
 .nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:700;color:#6b7284;position:relative;z-index:2;transition:color .3s,transform .15s}
 .nb svg{width:22px;height:22px}
+.nb canvas.pxi{width:26px;height:26px;display:block;margin:-1px 0 -2px}
+.nav .ind{--ang:-25deg}
+.nav .ind .rim,.nav .ind .rim2,.nav .ind .rim3{position:absolute;inset:0 3px;border-radius:28px;pointer-events:none;
+  background:conic-gradient(from var(--ang),transparent 0deg,#ffb347 26deg,#fff6e8 64deg,#ff7a5c 104deg,transparent 140deg,transparent 360deg)}
+.nav .ind .rim{padding:2px;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+.nav .ind .rim2{inset:-2px 1px;padding:4px;filter:blur(4px);opacity:.9;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+.nav .ind .rim3{inset:-8px -4px;border-radius:34px;filter:blur(12px);opacity:.55;
+  -webkit-mask:radial-gradient(closest-side,transparent 60%,#000 75%);mask:radial-gradient(closest-side,transparent 60%,#000 75%)}
 .nb.on{color:var(--coral)}
 .nb:active{transform:scale(.9)}
 .nfab{flex:1;display:grid;place-items:center;position:relative;z-index:3}
@@ -1087,16 +1098,100 @@ function wxHTML(){
 var NAV_IDX={pack:0,trip:1,wx:3};
 function navHTML(){
   var i=NAV_IDX[ui.view]||0;
-  function it(v,icn,t){return '<button class="nb'+(ui.view===v?' on':'')+'" data-act="view" data-v="'+v+'">'+ic(icn,1.9)+'<span>'+t+'</span></button>';}
-  return '<nav class="nav" id="nav" style="--i:'+i+'"><div class="ind"></div>'+it('pack','list','打包')+it('trip','plane','行程')+
+  function it(v,icn,t){return '<button class="nb'+(ui.view===v?' on':'')+'" data-act="view" data-v="'+v+'"><canvas class="pxi" data-ic="'+icn+'" data-v="'+v+'"></canvas><span>'+t+'</span></button>';}
+  return '<nav class="nav" id="nav" style="--i:'+i+'"><div class="ind"><i class="rim3"></i><i class="rim2"></i><i class="rim"></i></div>'+it('pack','list','打包')+it('trip','plane','行程')+
     '<div class="nfab"><button class="fabn" data-act="addmenu" aria-label="新增">'+ic('plus',2.6)+'</button></div>'+
-    it('wx','wx','天氣')+'<button class="nb" data-act="menu">'+ic('dots',2.4)+'<span>更多</span></button></nav>';
+    it('wx','wx','天氣')+'<button class="nb" data-act="menu"><canvas class="pxi" data-ic="dots" data-v="more"></canvas><span>更多</span></button></nav>';
 }
+/* ---------- 點陣粒子圖示 ---------- */
+var PX={G:15,S:26,icons:{},cur:null,run:false,ang:-25};
+var PX_GRAY=[138,145,161],PX_ON=[255,106,92];
+function pxShape(name){
+  var G=PX.G,pts=[],x,y;
+  function has(px,py){for(var i=0;i<pts.length;i++)if(pts[i][0]===px&&pts[i][1]===py)return true;return false;}
+  function add(px,py){if(px>=0&&py>=0&&px<G&&py<G&&!has(px,py))pts.push([px,py]);}
+  function circ(cx,cy,r){return function(px,py){return (px-cx)*(px-cx)+(py-cy)*(py-cy)<=r*r;};}
+  if(name==='list'){
+    [3,7,11].forEach(function(r){for(y=r;y<r+2;y++){for(x=1;x<4;x++)add(x,y);for(x=5;x<14;x++)add(x,y);}add(1,r+2);add(2,r+2);add(3,r+2);});
+  }else if(name==='plane'){
+    var art=['.......#.......','......###......','......###......','......###......','.....#####.....','...#########...',
+      '.#############.','###.#######.###','......###......','......###......','......###......','.....#####.....','....#######....','....##...##....','...............'];
+    art.forEach(function(row,yy){for(var xx=0;xx<row.length;xx++)if(row[xx]==='#')add(xx,yy);});
+  }else if(name==='wx'){
+    var cl=[circ(9.4,9.2,2.9),circ(12.2,10.6,2.2),circ(6.4,11,2)];
+    function cloud(px,py){return cl.some(function(f){return f(px,py);})||(px>=6&&px<=14&&py>=11&&py<=13);}
+    function near(px,py){for(var dy=-1;dy<=1;dy++)for(var dx=-1;dx<=1;dx++)if(cloud(px+dx,py+dy))return true;return false;}
+    for(y=0;y<G;y++)for(x=0;x<G;x++){if(cloud(x,y))add(x,y);else if(circ(5,5,2.9)(x,y)&&!near(x,y))add(x,y);}
+    [[5,0],[0,5],[1,1],[9,1],[1,9],[10,5],[9,9]].forEach(function(q){if(!near(q[0],q[1]))add(q[0],q[1]);});
+  }else if(name==='dots'){
+    [1,6,11].forEach(function(c){for(y=6;y<9;y++)for(x=c;x<c+3;x++)add(x,y);});
+  }
+  return pts;
+}
+function pxInit(){
+  var dpr=Math.min(window.devicePixelRatio||1,3),S=PX.S,cell=S/PX.G;
+  document.querySelectorAll('#nav canvas.pxi').forEach(function(cv){
+    cv.width=S*dpr;cv.height=S*dpr;var ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+    var pts=pxShape(cv.dataset.ic),on=cv.dataset.v===ui.view;
+    var parts=pts.map(function(p){var x=p[0]*cell,y=p[1]*cell;return {x:x,y:y,tx:x,ty:y,vx:0,vy:0,d:0};});
+    PX.icons[cv.dataset.v]={cv:cv,ctx:ctx,parts:parts,cell:cell,c0:on?PX_ON:PX_GRAY,c1:on?PX_ON:PX_GRAY,t0:0,anim:false};
+  });
+  PX.cur=ui.view;pxDrawAll(performance.now());
+  var ind=document.querySelector('#nav .ind');if(ind)ind.style.setProperty('--ang',PX.ang+'deg');
+}
+function syncNav(){
+  var nav=document.getElementById('nav');if(!nav)return;
+  nav.style.setProperty('--i',NAV_IDX[ui.view]||0);
+  nav.querySelectorAll('.nb[data-v]').forEach(function(b){b.classList.toggle('on',b.dataset.v===ui.view);});
+  if(PX.cur!==ui.view)pxActivate(ui.view,PX.cur);
+}
+function pxBurst(ic,strong,toCol){
+  var now=performance.now(),S=PX.S;ic.t0=now;ic.anim=true;
+  ic.c0=pxColNow(ic,now);ic.c1=toCol;
+  ic.parts.forEach(function(p){var a=Math.atan2(p.y-S/2,p.x-S/2)+(Math.random()-.5)*1.8,sp=(strong?1.1:.45)+Math.random()*(strong?2.2:.8);
+    p.vx=Math.cos(a)*sp;p.vy=Math.sin(a)*sp;p.d=(strong?90:40)+Math.random()*(strong?240:120);});
+}
+function pxColNow(ic,now){var k=ic.anim?Math.min(1,(now-ic.t0)/600):1;return [0,1,2].map(function(i){return ic.c0[i]+(ic.c1[i]-ic.c0[i])*k;});}
+function pxActivate(v,prev){
+  if(!PX.icons.pack)return;
+  if(PX.cur===v)return;PX.cur=v;
+  var a=PX.icons[v],b=PX.icons[prev];
+  if(a)pxBurst(a,true,PX_ON);
+  if(b&&b!==a)pxBurst(b,false,PX_GRAY);
+  var ind=document.querySelector('#nav .ind');if(ind){PX.ang+=360;ind.style.setProperty('--ang',PX.ang+'deg');}
+  if(!PX.run){PX.run=true;requestAnimationFrame(pxLoop);}
+}
+function pxTap(v){var a=PX.icons[v];if(!a)return;pxBurst(a,false,a.c1);if(!PX.run){PX.run=true;requestAnimationFrame(pxLoop);}}
+function pxLoop(now){
+  var busy=pxDrawAll(now);
+  if(busy)requestAnimationFrame(pxLoop);else PX.run=false;
+}
+function pxDrawAll(now){
+  var busy=false;
+  Object.keys(PX.icons).forEach(function(k){
+    var ic=PX.icons[k];if(!ic.cv.isConnected)return;
+    var t=now-ic.t0,ctx=ic.ctx,S=PX.S,cell=ic.cell,settled=true;
+    if(ic.anim){
+      ic.parts.forEach(function(p){
+        if(t<p.d){p.vx*=.9;p.vy*=.9;p.x+=p.vx;p.y+=p.vy;settled=false;}
+        else{p.vx=(p.vx+(p.tx-p.x)*.12)*.7;p.vy=(p.vy+(p.ty-p.y)*.12)*.7;p.x+=p.vx;p.y+=p.vy;
+          if(Math.abs(p.tx-p.x)>.03||Math.abs(p.ty-p.y)>.03)settled=false;}
+      });
+      if(settled&&t>650){ic.anim=false;ic.c0=ic.c1;ic.parts.forEach(function(p){p.x=p.tx;p.y=p.ty;});}else busy=true;
+    }
+    var c=pxColNow(ic,now),sz=cell*.78;
+    ctx.clearRect(0,0,S,S);ctx.fillStyle='rgb('+c.map(Math.round).join(',')+')';
+    ic.parts.forEach(function(p){ctx.fillRect(p.x+(cell-sz)/2,p.y+(cell-sz)/2,sz,sz);});
+  });
+  return busy;
+}
+
 var VIEWS=['pack','trip','wx'];
 function setView(v,fromSwipe){
   if(ui.view===v){window.scrollTo({top:0,behavior:'smooth'});return;}
   var dir=VIEWS.indexOf(v)>VIEWS.indexOf(ui.view)?1:-1;
   var nav=document.getElementById('nav');if(nav){var ind=nav.querySelector('.ind');if(ind)ind.style.transition='';nav.style.setProperty('--i',NAV_IDX[v]);nav.querySelectorAll('.nb[data-v]').forEach(function(b){b.classList.toggle('on',b.dataset.v===v);});}
+  pxActivate(v,ui.view);
   var pv=document.getElementById('pv');
   function swap(){
     ui.view=v;ui.adding=false;saveUI();
@@ -1314,8 +1409,12 @@ function render(anim){
    '<button class="circ" data-act="menu" aria-label="更多">'+ic('dots',2.4)+'</button></header>'+mapHTML()+
    '<main class="panel'+(anim?' anim':'')+'"><div class="grab"></div><div class="pv" id="pv">'+
    (ui.view==='trip'?tripHTML():ui.view==='wx'?wxHTML():packHTML())+
-   '<div class="foot '+sync+'" id="sync"><i></i><span>'+SYNC[sync]+'</span><br>所有變更都會保存在 App 內</div></div></main></div>'+navHTML();
+   '<div class="foot '+sync+'" id="sync"><i></i><span>'+SYNC[sync]+'</span><br>所有變更都會保存在 App 內</div></div></main></div><div id="navslot"></div>';
+  var oldNav=document.getElementById('nav');if(oldNav&&oldNav.parentNode)oldNav.parentNode.removeChild(oldNav);
   app.innerHTML=h;
+  var slot=document.getElementById('navslot');
+  if(oldNav){slot.parentNode.replaceChild(oldNav,slot);syncNav();}
+  else{slot.outerHTML=navHTML();pxInit();}
   if(ui.adding){var inp=document.getElementById('addin');if(inp)inp.focus();}
   var on=document.querySelector('.tab.on'),tb=document.querySelector('.tabs');if(on&&tb)tb.scrollLeft=Math.max(0,on.offsetLeft-(tb.clientWidth-on.offsetWidth)/2);
 }
@@ -1598,7 +1697,7 @@ app.addEventListener('click',function(e){
     case 'catedit':catSheet(c);break;
     case 'newcat':catSheet(null);break;
     case 'trip':tripSheet();break;
-    case 'menu':menuSheet();break;
+    case 'menu':if(b.closest('#nav'))pxTap('more');menuSheet();break;
     case 'reset':resetSheet();break;
     case 'addflight':flightSheet(null);break;
     case 'editflight':flightSheet(byId(state.flights));break;
