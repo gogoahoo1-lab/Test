@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-Hant" data-skin="ivory">
+<html lang="zh-Hant" data-skin="glass">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -661,6 +661,103 @@ html[data-skin] dialog.sr{ box-shadow:0 24px 60px rgba(0,0,0,.25); }
 html[data-skin] .f input::-webkit-calendar-picker-indicator, html[data-skin] .srtime input::-webkit-calendar-picker-indicator{ filter:none; }
 html[data-skin] .sky{ border-color:var(--line); }
 </style>
+<style id="glass-skin">
+/* ================= 壓克力玻璃主題（v2026.11.10）=================
+   冷灰壓克力底＋環境色光；按鈕為同一塊玻璃：極細漸層亮邊、頂部斜角亮線、輪廓內厚度邊、底緣出光細線、陰影中的焦散光 */
+html[data-skin="glass"]{ --ink:#E2E3E7; --panel:#FAFAFC; --panel2:#F1F2F5; --raise:#E7E9ED; --line:rgba(40,48,66,.14); --line2:rgba(40,48,66,.08);
+  --text:#25272C; --sub:#41444C; --muted:#5A5E67; --dim:#8B8F98; --gold:#3E5FB4; --goldbg:#5B80DE; --cyan:#2A7590;
+  --soft:rgba(40,48,66,.045); --glow:rgba(140,175,255,.12); color-scheme:light;
+  --gFace:linear-gradient(180deg,rgba(255,255,255,.46) 0%,rgba(250,251,253,.20) 46%,rgba(236,239,245,.28) 100%);
+  --gSheen:radial-gradient(9% 26% at 4% 86%,rgba(255,255,255,.75),rgba(255,255,255,0) 80%),radial-gradient(9% 26% at 96% 86%,rgba(255,255,255,.6),rgba(255,255,255,0) 80%),linear-gradient(180deg,rgba(255,255,255,.30) 0%,rgba(255,255,255,.05) 44%,rgba(255,255,255,0) 52%);
+  --gShadow:inset 0 2px 3px -1.5px rgba(255,255,255,.6),inset 0 -1.5px 1px rgba(255,255,255,.6),inset 0 -4.5px 0 rgba(166,178,202,.36),inset 0 -6.5px 5px -3px rgba(255,255,255,.8),0 0 0 .5px rgba(100,108,128,.15),0 1px 1px rgba(55,62,80,.13),0 4px 7px -2px rgba(45,50,66,.15),0 13px 20px -10px rgba(45,50,66,.24);
+  --gPeach:linear-gradient(180deg,rgba(255,234,208,.86) 0%,rgba(253,202,150,.76) 52%,rgba(246,172,108,.82) 100%);
+  --gPeachShadow:inset 0 2px 3px -1.5px rgba(255,255,255,.7),inset 0 -1.5px 1px rgba(255,246,232,.7),inset 0 -4.5px 0 rgba(226,128,52,.30),inset 0 -6.5px 5px -3px rgba(255,236,212,.85),0 0 0 .5px rgba(214,124,52,.55),0 0 10px 2px rgba(255,166,86,.40),0 0 22px 4px rgba(255,176,100,.18),0 1px 1px rgba(150,80,30,.18),0 13px 20px -10px rgba(190,100,35,.30);
+}
+html[data-skin="glass"]{background:linear-gradient(165deg,#E9EAED 0%,#DEDFE3 55%,#D3D4D9 100%) fixed #E2E3E7}
+html[data-skin="glass"] body{background:transparent}
+html[data-skin="glass"] body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(520px 360px at 88% 4%,rgba(140,180,255,.32),transparent 70%),radial-gradient(480px 360px at 4% 34%,rgba(255,186,125,.26),transparent 70%),
+    radial-gradient(520px 380px at 96% 62%,rgba(150,185,255,.24),transparent 70%),radial-gradient(460px 340px at 22% 86%,rgba(170,225,205,.20),transparent 70%),
+    radial-gradient(420px 300px at 76% 100%,rgba(255,150,140,.18),transparent 70%),radial-gradient(380px 280px at 10% 0%,rgba(255,255,255,.7),transparent 70%)}
+
+/* ---- 共用玻璃材質 ---- */
+html[data-skin="glass"][data-skin] :where(.chip,.code,.langsw,nav.tabs,.srfab,.sx-btn,.btn,.sx-dir button,.totop,.mark .jx){border:0;background:var(--gSheen),var(--gFace);color:var(--text);box-shadow:var(--gShadow);
+  -webkit-backdrop-filter:blur(20px) saturate(1.8) brightness(1.03);backdrop-filter:blur(20px) saturate(1.8) brightness(1.03);
+  isolation:isolate;transition:box-shadow .25s,background .25s,color .2s,transform .12s}
+html[data-skin="glass"] :is(.chip,.code,.langsw,nav.tabs,.sx-btn,.btn,.sx-dir button,.mark .jx){position:relative}
+html[data-skin="glass"] :is(.chip,.code,.sx-btn,.btn,.sx-dir button):active{transform:translateY(1px)}
+html[data-skin="glass"] :is(.chip,.code,.sx-btn,.btn,.sx-dir button,.langsw button,nav.tabs button):hover{color:var(--text)}
+html[data-skin="glass"] .code:hover{background:var(--gSheen),var(--gFace);transform:translateY(-1px)}
+/* 漸層亮邊（.code 用 ::before，因 ::after 是宵禁紅點） */
+html[data-skin="glass"] :is(.chip,.langsw,.srfab,.sx-btn,.btn,.sx-dir button,.totop,.mark .jx,.gknob)::after,html[data-skin="glass"] .code::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;z-index:-1;
+  background:radial-gradient(16% 90% at 24% 0%,#fff,rgba(255,255,255,0) 70%),radial-gradient(5% 60% at 4% 50%,rgba(255,255,255,.7),rgba(255,255,255,0) 70%),
+    radial-gradient(18% 60% at 82% 100%,var(--rimHot,#fff),rgba(255,255,255,0) 72%),
+    linear-gradient(180deg,rgba(255,255,255,.62) 0%,rgba(255,255,255,.30) 22%,rgba(255,255,255,.06) 50%,rgba(255,255,255,.30) 80%,var(--rimBot,rgba(255,255,255,.92)) 100%),
+    linear-gradient(90deg,rgba(255,255,255,.35),rgba(255,255,255,0) 30%,rgba(255,255,255,0) 70%,rgba(255,255,255,.18));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+/* 焦散光 */
+html[data-skin="glass"] :is(.chip,.srfab,.sx-dir button,.mark .jx)::before{content:"";position:absolute;left:20%;right:20%;top:calc(100% + 1.5px);height:6px;border-radius:50%;pointer-events:none;z-index:-1;
+  background:radial-gradient(closest-side,var(--caustic,rgba(255,255,255,.9)),rgba(255,255,255,0));filter:blur(1.2px);opacity:.85}
+
+/* ---- 區域／篩選 chips：選中＝蜜桃橘玻璃，深色字 ---- */
+html[data-skin="glass"] .chip{color:var(--text);font-weight:600}
+html[data-skin="glass"] :is(.chip,.sx-dir button)[aria-pressed="true"]{background:var(--gSheen),var(--gPeach);color:#25272C;font-weight:700;box-shadow:var(--gPeachShadow);
+  --rimBot:rgba(255,242,222,1);--rimHot:rgba(255,236,205,1);--caustic:rgba(255,168,88,.95)}
+html[data-skin="glass"] .chip.cstd[aria-pressed="true"] .cs b,html[data-skin="glass"] .chip.cstd[aria-pressed="true"] .cs u,html[data-skin="glass"] .chip.cstd[aria-pressed="true"] .cs small{color:#25272C}
+html[data-skin="glass"] .chip.cstd[aria-pressed="true"] .cs i{color:#25272C;background:rgba(37,39,44,.10)}
+html[data-skin="glass"] .sx-dir button{color:var(--muted)}
+
+/* ---- 場站卡：選中＝藍、白、藍雙圈霓虹 ---- */
+html[data-skin="glass"] .code{border-radius:14px}
+html[data-skin="glass"] .code[aria-pressed="true"]{color:var(--text);
+  background:var(--gSheen),linear-gradient(180deg,rgba(247,250,255,.66) 0%,rgba(224,233,252,.38) 100%);
+  box-shadow:inset 0 -1px 0 rgba(240,246,255,1),inset 0 -4.5px 0 rgba(110,150,230,.26),inset 0 0 0 1.5px rgba(255,255,255,.92),inset 0 0 0 3px rgba(145,184,255,.92),
+    inset 0 0 10px 1px rgba(120,165,255,.38),0 0 0 1px rgba(255,255,255,.95),0 0 0 2.5px rgba(120,168,255,.85),0 0 12px 3px rgba(105,155,255,.48),0 0 28px 6px rgba(105,155,255,.20),0 13px 20px -10px rgba(40,60,110,.24)}
+html[data-skin="glass"] .code[aria-pressed="true"]::before{display:none}
+html[data-skin="glass"] .code.has-cf::after{top:7px;right:7px;width:7px;height:7px;background:radial-gradient(circle at 35% 35%,#ff8a80,#d42a35);box-shadow:0 0 0 1.5px rgba(255,255,255,.95),0 0 6px rgba(220,40,50,.55)}
+
+/* ---- 頁籤：內凹玻璃槽＋滑動的白色浮起膠囊 ---- */
+html[data-skin="glass"] nav.tabs{border-radius:999px;padding:5px;
+  background:linear-gradient(180deg,rgba(214,218,226,.32),rgba(240,242,246,.20));
+  box-shadow:inset 0 1.5px 3px rgba(70,78,98,.16),inset 0 -1px 0 rgba(255,255,255,.95),0 0 0 .5px rgba(100,108,128,.24),0 1px 0 rgba(255,255,255,.95)}
+html[data-skin="glass"] nav.tabs button{position:relative;z-index:1;border-radius:999px;color:var(--muted);background:transparent !important;box-shadow:none !important}
+html[data-skin="glass"] nav.tabs button[aria-selected="true"]{color:var(--text);font-weight:700}
+/* 中英文：仿 On／Off，前置指示點 */
+html[data-skin="glass"] .langsw{padding:4px;border-radius:999px;overflow:visible}
+html[data-skin="glass"] .langsw button{position:relative;z-index:1;background:transparent !important;color:var(--muted) !important;border-radius:999px;display:flex;align-items:center;gap:6px;padding:5px 12px 5px 9px;min-height:30px}
+html[data-skin="glass"] .langsw button::before{content:"";width:10px;height:10px;border-radius:50%;flex:none;background:radial-gradient(circle at 40% 35%,#fff,#E2E3E8);box-shadow:0 0 0 .75px rgba(120,126,145,.4),0 1px 2px rgba(50,55,70,.22)}
+html[data-skin="glass"] .langsw button[aria-pressed="true"]{color:var(--text) !important}
+html[data-skin="glass"] .langsw button[aria-pressed="true"]::before{border-radius:3.5px;background:linear-gradient(180deg,#8FB0FF,#4A79F0);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 0 .75px rgba(255,255,255,.9),0 0 7px rgba(90,140,255,.7)}
+/* 滑塊（JS 產生 .gknob） */
+html[data-skin="glass"] .gknob{position:absolute;z-index:0;border-radius:999px;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.92) 0%,rgba(251,252,254,.70) 100%);
+  -webkit-backdrop-filter:blur(10px) saturate(1.5);backdrop-filter:blur(10px) saturate(1.5);
+  box-shadow:inset 0 2px 2px -1.5px rgba(255,255,255,.8),inset 0 -2.5px 0 rgba(176,186,206,.30),inset 0 -4px 4px -2px rgba(255,255,255,.8),
+    0 0 0 .5px rgba(100,108,128,.16),0 1px 1px rgba(55,62,80,.14),0 3px 6px -2px rgba(45,50,66,.20);
+  transition:left .38s cubic-bezier(.3,1.25,.5,1),width .38s cubic-bezier(.3,1.25,.5,1),top .2s,height .2s}
+html:not([data-skin="glass"]) .gknob{display:none}
+
+/* ---- 其他按鈕 ---- */
+html[data-skin="glass"] .sx-btn,html[data-skin="glass"] .btn{border-radius:999px;color:var(--text)}
+html[data-skin="glass"] .sx-btn.pri{color:#fff;background:var(--gSheen),linear-gradient(180deg,rgba(143,176,255,.92),rgba(84,124,236,.92));--rimBot:rgba(200,220,255,1);
+  box-shadow:inset 0 2px 3px -1.5px rgba(255,255,255,.7),inset 0 -4.5px 0 rgba(40,70,170,.25),0 0 0 .5px rgba(60,90,190,.5),0 0 12px rgba(90,140,255,.35),0 1px 1px rgba(30,50,120,.2),0 12px 18px -10px rgba(40,70,170,.4)}
+html[data-skin="glass"] .btn.sr{color:#C33A30}
+html[data-skin="glass"] .btn.sr:hover{color:#C33A30;background:var(--gSheen),var(--gFace)}
+html[data-skin="glass"] .mark .jx{color:#3A3C42}
+/* 異常速報：玻璃膠囊＋發光圓環 */
+html[data-skin="glass"] button.srfab{color:#C33A30;border-radius:999px;padding:10px 20px 10px 12px;gap:10px;--caustic:rgba(255,140,125,.9);
+  box-shadow:var(--gShadow),0 0 18px rgba(232,90,80,.18)}
+html[data-skin="glass"] button.srfab:hover{color:#C33A30;background:var(--gSheen),var(--gFace)}
+html[data-skin="glass"] .srfab i{width:20px;height:20px;background:radial-gradient(circle,#fff 0 28%,transparent 31%),conic-gradient(from 200deg,#FF5A4E,#FF9A7A,#E8453A,#FF7466,#FF5A4E);
+  box-shadow:0 0 0 1.5px rgba(255,255,255,.95),0 0 10px rgba(240,80,70,.6);animation:gpulse 1.8s ease-in-out infinite}
+@keyframes gpulse{50%{box-shadow:0 0 0 1.5px rgba(255,255,255,.95),0 0 18px 4px rgba(240,80,70,.45)}}
+html[data-skin="glass"] button.totop{color:var(--text);border-radius:50%;background:var(--gSheen),linear-gradient(180deg,rgba(255,255,255,.86),rgba(240,242,246,.74))}
+html[data-skin="glass"] button.totop:hover{background:var(--gSheen),linear-gradient(180deg,rgba(255,255,255,.9),rgba(240,242,246,.8));color:var(--text)}
+html[data-skin="glass"] .totop:not(.show){box-shadow:none}
+html[data-skin="glass"] :is(input,button,select,[tabindex]):focus-visible{outline:2px solid rgba(91,128,222,.55);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){ html[data-skin="glass"] .gknob{transition:none} html[data-skin="glass"] .srfab i{animation:none} }
+</style>
 <style>
 /* ---------- 空位查詢篩選：2×2 下拉選單（方案 B） ---------- */
 #sxFilt{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}
@@ -701,7 +798,7 @@ html[data-skin] .sky{ border-color:var(--line); }
     <div class="langsw" role="group" aria-label="Language" data-noi18n>
       <button type="button" data-lang="zh">中文</button><button type="button" data-lang="en">EN</button>
     </div>
-    <div class="ver" data-noi18n title="2026.11.07：左右滑動切換頁籤、STD 依出發站當地時間顯示（UTC 自動校正）"><span>版次</span>v2026.11.07</div>
+    <div class="ver" data-noi18n title="2026.11.10：壓克力玻璃按鈕與冷灰底色｜2026.11.07：左右滑動切換頁籤、STD 依出發站當地時間顯示（UTC 自動校正）"><span>版次</span>v2026.11.10</div>
   </div>
   <div class="stat">
     <div><b id="statStations">0</b><span>收錄場站</span></div>
@@ -6215,6 +6312,28 @@ I18N.init();
   document.addEventListener("touchend", end, { passive:true });
   document.addEventListener("touchcancel", end, { passive:true });
   centerTab(tabs[idx()], false);
+})();
+</script>
+<script>
+/* 壓克力玻璃：頁籤與中英文的滑動膠囊 */
+(function(){
+  function knob(box, sel){
+    if(!box) return;
+    var k = document.createElement("span"); k.className = "gknob"; k.setAttribute("aria-hidden","true");
+    box.insertBefore(k, box.firstChild);
+    function place(){
+      var b = box.querySelector(sel); if(!b){ k.style.opacity = 0; return; }
+      k.style.opacity = 1;
+      k.style.left = b.offsetLeft + "px"; k.style.width = b.offsetWidth + "px";
+      k.style.top = b.offsetTop + "px"; k.style.height = b.offsetHeight + "px";
+    }
+    new MutationObserver(place).observe(box, { attributes:true, subtree:true, childList:true, characterData:true, attributeFilter:["aria-selected","aria-pressed","class"] });
+    if(window.ResizeObserver){ var ro = new ResizeObserver(place); ro.observe(box); [].forEach.call(box.querySelectorAll("button"), function(b){ ro.observe(b); }); }
+    addEventListener("resize", place); place();
+    if(document.fonts && document.fonts.ready) document.fonts.ready.then(place);
+  }
+  knob(document.querySelector("nav.tabs"), 'button[aria-selected="true"]');
+  knob(document.querySelector(".langsw"), 'button[aria-pressed="true"]');
 })();
 </script>
 </body>
