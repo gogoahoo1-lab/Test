@@ -1,58 +1,114 @@
-# .github/workflows/awc.yml
-name: 更新 TAF 與 METAR
+/**
+ * awc-relay：航空天氣轉接（Cloudflare Worker）
+ * 讓「場站操作限制查詢」「航點天氣警戒」直接拿到 AWC 的即時 METAR／TAF，
+ * 不受瀏覽器跨網域限制，也不必等 GitHub 排程。
+ *
+ *   GET /wx?ids=RJAA,RJBB      → { metar:[…], taf:[…], at:"…Z" }（邊緣快取 5 分鐘）
+ *   GET /metar?ids=…           → AWC 原始 METAR 陣列
+ *   GET /taf?ids=…             → AWC 原始 TAF 陣列
+ *   GET /proxy?url=<AWC 網址>  → 給「航點天氣警戒」的「自訂中繼」用（只放行 aviationweather.gov/api/data/）
+ *   GET /                      → 健康檢查
+ *
+ * 排程（選用）：每 15 分鐘觸發 GitHub 倉庫的「更新 TAF 與 METAR」工作流程，
+ * 讓倉庫快取也準時更新。需要在 Worker 設定兩個變數：
+ *   GH_TOKEN（密鑰）：GitHub 細部權杖，只給 gogoahoo1-lab/Test 的 Actions「讀取與寫入」
+ *   GH_REPO：gogoahoo1-lab/Test
+ */
+const AWC = "https://aviationweather.gov/api/data/";
+const UA = "starlux-weather-watch/1.0 (contact: gogoahoo1@gmail.com)";
+const TTL = 300; // 秒；METAR 約每 30–60 分鐘發布一次，5 分鐘快取足夠即時
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Max-Age": "86400",
+};
+const json = (obj, status = 200, extra = {}) =>
+  new Response(JSON.stringify(obj), {
+    status,
+    headers: { "Content-Type": "application/json; charset=utf-8", ...CORS, ...extra },
+  });
 
-on:
-  schedule:
-    - cron: "*/15 * * * *"   # 每 15 分鐘；GitHub 排程常有數分鐘延遲，屬正常
-  workflow_dispatch:          # 也可在 Actions 頁面手動執行
+function cleanIds(q) {
+  const ids = [...new Set(String(q || "").toUpperCase().split(/[\s,]+/).filter((x) => /^[A-Z0-9]{3,4}$/.test(x)))];
+  return ids.sort().slice(0, 120);
+}
 
-permissions:
-  contents: write
+async function awc(kind, ids, ctx) {
+  const url = AWC + kind + "?format=json&ids=" + ids.join(",");
+  const cache = caches.default;
+  const key = new Request("https://awc-relay.cache/" + kind + "/" + ids.join(","));
+  const hit = await cache.match(key);
+  if (hit) return hit.json();
+  const r = await fetch(url, { headers: { "User-Agent": UA, Accept: "application/json" } });
+  if (!r.ok) throw new Error("AWC " + kind + " " + r.status);
+  const text = await r.text();
+  let data = [];
+  if (text.trim()) {
+    data = JSON.parse(text);
+    if (!Array.isArray(data)) throw new Error("AWC " + kind + " 回應不是陣列");
+  }
+  ctx.waitUntil(cache.put(key, new Response(JSON.stringify(data), {
+    headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=" + TTL },
+  })));
+  return data;
+}
 
-jobs:
-  fetch:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+async function triggerRepo(env) {
+  if (!env.GH_TOKEN || !env.GH_REPO) return "未設定 GH_TOKEN／GH_REPO，略過";
+  const r = await fetch("https://api.github.com/repos/" + env.GH_REPO + "/actions/workflows/awc.yml/dispatches", {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + env.GH_TOKEN,
+      Accept: "application/vnd.github+json",
+      "User-Agent": "awc-relay",
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+    body: JSON.stringify({ ref: env.GH_REF || "main" }),
+  });
+  return r.status === 204 ? "已觸發" : "觸發失敗 " + r.status + " " + (await r.text()).slice(0, 200);
+}
 
-      - name: 抓取 AWC 資料
-        env:
-          # 航點的 ICAO 清單，新增或刪除航點時改這裡
-          IDS: >-
-            RCTP,RCMQ,RCKH,RJAA,RJBB,RJBE,RJGG,RJFF,RJFT,RJOT,RJCC,RJCH,RJSS,
-            ROAH,ROMY,RKPK,WSSS,VTBS,VTCC,WADD,WIII,VVNB,VVTS,VVDN,VVPQ,RPLC,
-            RPVM,VHHH,VMMC,KLAX,KSFO,KSEA,KONT,KPDX,KPHX,KLAS,KDFW,LKPR
-          # AWC 要求帶可識別的 User-Agent，請換成你自己的聯絡方式
-          UA: "starlux-weather-watch/1.0 (contact: gogoahoo1@gmail.com)"
-        run: |
-          set -euo pipefail
-          mkdir -p data
-          CLEAN=$(echo "$IDS" | tr -d ' \n')
+export default {
+  async fetch(req, env, ctx) {
+    if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
+    if (req.method !== "GET") return json({ error: "只接受 GET" }, 405);
+    const u = new URL(req.url);
+    const path = u.pathname.replace(/\/+$/, "") || "/";
+    if (path === "/") return json({ ok: true, service: "awc-relay", at: new Date().toISOString() });
 
-          curl -sS --fail --retry 3 --retry-delay 5 -A "$UA" \
-            "https://aviationweather.gov/api/data/taf?format=json&ids=$CLEAN" \
-            -o data/taf.new.json
-          curl -sS --fail --retry 3 --retry-delay 5 -A "$UA" \
-            "https://aviationweather.gov/api/data/metar?format=json&ids=$CLEAN" \
-            -o data/metar.new.json
+    if (path === "/proxy") {
+      const target = u.searchParams.get("url") || "";
+      let t;
+      try { t = new URL(target); } catch (e) { return json({ error: "url 格式錯誤" }, 400); }
+      if (t.protocol !== "https:" || t.hostname !== "aviationweather.gov" || !t.pathname.startsWith("/api/data/"))
+        return json({ error: "只放行 aviationweather.gov/api/data/" }, 403);
+      const cache = caches.default, key = new Request("https://awc-relay.cache/proxy/" + t.pathname + t.search);
+      const hit = await cache.match(key);
+      if (hit) return new Response(hit.body, { headers: { "Content-Type": hit.headers.get("Content-Type") || "application/json", ...CORS } });
+      const r = await fetch(t.toString(), { headers: { "User-Agent": UA } });
+      const body = await r.text();
+      if (r.ok) ctx.waitUntil(cache.put(key, new Response(body, { headers: { "Content-Type": r.headers.get("Content-Type") || "application/json", "Cache-Control": "public, max-age=" + TTL } })));
+      return new Response(body, { status: r.status, headers: { "Content-Type": r.headers.get("Content-Type") || "application/json", ...CORS } });
+    }
 
-          # 內容必須是 JSON 陣列才覆蓋，避免把錯誤頁寫進倉庫
-          for f in taf metar; do
-            if jq -e 'type == "array"' "data/$f.new.json" > /dev/null; then
-              mv "data/$f.new.json" "data/$f.json"
-            else
-              echo "$f 回應不是 JSON 陣列，保留上一版"
-              rm -f "data/$f.new.json"
-            fi
-          done
+    const ids = cleanIds(u.searchParams.get("ids"));
+    if (!ids.length) return json({ error: "請帶 ids，例如 ?ids=RJAA,RJBB" }, 400);
+    try {
+      if (path === "/metar" || path === "/taf") {
+        return json(await awc(path.slice(1), ids, ctx), 200, { "Cache-Control": "public, max-age=60" });
+      }
+      if (path === "/wx") {
+        const [metar, taf] = await Promise.all([awc("metar", ids, ctx), awc("taf", ids, ctx).catch(() => [])]);
+        return json({ metar, taf, at: new Date().toISOString() }, 200, { "Cache-Control": "public, max-age=60" });
+      }
+      return json({ error: "找不到路徑" }, 404);
+    } catch (e) {
+      return json({ error: String(e.message || e) }, 502);
+    }
+  },
 
-          date -u +"%Y-%m-%dT%H:%M:%SZ" > data/updated.txt
-          echo "TAF $(jq 'length' data/taf.json) 筆，METAR $(jq 'length' data/metar.json) 筆"
-
-      - name: 提交變更
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/
-          git diff --staged --quiet || git commit -m "更新 TAF 與 METAR $(date -u +'%Y-%m-%d %H:%M')Z"
-          git push
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(triggerRepo(env).then((m) => console.log("GitHub 排程：", m)));
+  },
+};
