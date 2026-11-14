@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-Hant" data-skin="glass" data-ver="v2026.11.14d">
+<html lang="zh-Hant" data-skin="glass" data-ver="v2026.11.14f">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -920,7 +920,7 @@ html[data-skin="glass"] :is(nav.tabs,.langsw,.tabbar) button:active::after{opaci
       <button type="button" data-lang="zh">中文</button><button type="button" data-lang="en">EN</button>
     </div>
     <span class="offbadge" id="offBadge" data-noi18n><i></i><span id="offTxt">離線</span></span>
-    <div class="ver" id="appVerTag" data-noi18n title="2026.11.14d：頁籤與切換鈕選中時散光、按下閃光｜2026.11.14c：天氣加註資料有效時限（METAR 實況時效、TAF 效期），TAF 過期不判讀｜2026.11.14b：場站天氣改與「航點天氣警戒」同源、同一套 TAF 判讀｜2026.11.14：底部頁籤列、場站天氣、宵禁倒數、離線可用與新版提示、版面精簡｜2026.11.10：壓克力玻璃按鈕與冷灰底色｜2026.11.07：左右滑動切換頁籤、STD 依出發站當地時間顯示（UTC 自動校正）"><span>版次</span>v2026.11.14d</div>
+    <div class="ver" id="appVerTag" data-noi18n title="2026.11.14f：天氣改由 Cloudflare 轉接即時 METAR／TAF｜2026.11.14e：開啟即事先載入全部場站天氣｜2026.11.14d：頁籤與切換鈕選中時散光、按下閃光｜2026.11.14c：天氣加註資料有效時限（METAR 實況時效、TAF 效期），TAF 過期不判讀｜2026.11.14b：場站天氣改與「航點天氣警戒」同源、同一套 TAF 判讀｜2026.11.14：底部頁籤列、場站天氣、宵禁倒數、離線可用與新版提示、版面精簡｜2026.11.10：壓克力玻璃按鈕與冷灰底色｜2026.11.07：左右滑動切換頁籤、STD 依出發站當地時間顯示（UTC 自動校正）"><span>版次</span>v2026.11.14f</div>
   </div>
   <div class="stat">
     <div><b id="statStations">0</b><span>收錄場站</span></div>
@@ -6769,13 +6769,30 @@ I18N.init();
       "&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,cloud_cover_low,weather_code&wind_speed_unit=kn&timezone=UTC", 8000)
       .then(function(j){ var c = j && j.current; if(!c) throw 0; return c; });
   };
+  /* 天氣轉接 Worker：即時 AWC 資料、邊緣快取 5 分鐘；不通時才退回倉庫快取與其他來源 */
+  var WX_WORKER = "https://awc-relay.gogoahoo.workers.dev";
+  var VIA_W = function(){ return T("即時（Cloudflare）","live (Cloudflare)"); };
+  var workerWx = function(icaos){
+    if(!WX_WORKER) return Promise.reject(new Error("off"));
+    return tryJSON(WX_WORKER + "/wx?ids=" + icaos.join(","), 8000).then(function(j){
+      if(!j || !Array.isArray(j.metar)) throw new Error("bad");
+      var met = {}, taf = {};
+      j.metar.forEach(function(x){ if(x && x.icaoId && (!met[x.icaoId] || (x.obsTime||0) > (met[x.icaoId].obsTime||0))) met[x.icaoId] = x; });
+      (Array.isArray(j.taf) ? j.taf : []).forEach(function(x){ if(x && x.icaoId && x.rawTAF && (!taf[x.icaoId] || x.mostRecent)) taf[x.icaoId] = x; });
+      return {metar:met, taf:taf};
+    });
+  };
   var loadWx = function(code){
     var st = ST[code]; if(!st) return;
     var e = WXC[code];
     if(e && (e.loading || (Date.now() - e.t < 10*60000))) return;
+    if(PRE.busy || !PRE.t) return;   /* 事先載入尚未完成時，等它帶回結果 */
     WXC[code] = {loading:true, t:0};
     var icao = st[0], done = function(d){ WXC[code] = d; if(typeof current !== "undefined" && current && current.code === code) wxInject(); };
-    loadRepo().then(function(){
+    workerWx([icao]).then(function(wk){
+      var m = wk.metar[icao]; if(!m) throw new Error("none");
+      return {t:Date.now(), metar:m, taf:wk.taf[icao] || REPO.taf[icao] || null, via:VIA_W()};
+    }).catch(function(){ return loadRepo().then(function(){
       var m = REPO.metar[icao], tf = REPO.taf[icao];
       var tp = tf && tf.rawTAF ? parseTAF(tf.rawTAF) : null;
       var tafOk = !tf || (tp && tp.validTo != null && tp.validTo - Date.now() > 3600000);
@@ -6785,7 +6802,84 @@ I18N.init();
         if(m || tf) return {t:Date.now(), metar:m || null, taf:tf || null, via:T("倉庫快取","repo cache"), stale:true};
         return meteo(st[1], st[2]).then(function(c){ return {t:Date.now(), model:c, via:"Open-Meteo"}; });
       });
-    }).then(done, function(){ done({t:Date.now() - 8*60000, fail:true}); });
+    }); }).then(done, function(){ done({t:Date.now() - 8*60000, fail:true}); });
+  };
+  /* 事先載入：開啟 app 就把所有場站天氣一次備好（快取一次讀完，過舊或缺的站合併成一次即時查詢，再缺的合併成一次模式估計） */
+  var PRE = {busy:null, t:0};
+  var pickLatest = function(arr, key){
+    var o = {};
+    (Array.isArray(arr) ? arr : []).forEach(function(x){
+      if(!x || !x.icaoId) return;
+      var p = o[x.icaoId];
+      if(!p || (x[key]||0) > (p[key]||0)) o[x.icaoId] = x;
+    });
+    return o;
+  };
+  var awcBatch = function(ids){
+    var q = ids.join(","), mu = "https://aviationweather.gov/api/data/metar?format=json&ids=" + q, tu = "https://aviationweather.gov/api/data/taf?format=json&ids=" + q;
+    var i = 0;
+    var next = function(){
+      if(i >= RELAYS.length) return Promise.reject(new Error("all"));
+      var R = RELAYS[i++];
+      return tryJSON(R(mu), 9000).then(function(m){
+        if(!Array.isArray(m)) throw new Error("bad");
+        return tryJSON(R(tu), 9000).catch(function(){ return []; }).then(function(t){
+          var tafs = {}; (Array.isArray(t) ? t : []).forEach(function(x){ if(x && x.icaoId && x.rawTAF && (!tafs[x.icaoId] || x.mostRecent)) tafs[x.icaoId] = x; });
+          return {metar:pickLatest(m, "obsTime"), taf:tafs, via: i === 1 ? "AWC" : T("AWC（中繼）","AWC (relay)")};
+        });
+      }).catch(next);
+    };
+    return next();
+  };
+  var meteoBatch = function(codes){
+    var la = codes.map(function(c){ return ST[c][1]; }).join(","), lo = codes.map(function(c){ return ST[c][2]; }).join(",");
+    return tryJSON("https://api.open-meteo.com/v1/forecast?latitude=" + la + "&longitude=" + lo +
+      "&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,cloud_cover_low,weather_code&wind_speed_unit=kn&timezone=UTC", 9000)
+      .then(function(j){ var a = Array.isArray(j) ? j : [j]; var o = {}; codes.forEach(function(c, k){ if(a[k] && a[k].current) o[c] = a[k].current; }); return o; });
+  };
+  var isFresh = function(m, tf){
+    var now = Date.now(), tp = tf && tf.rawTAF ? parseTAF(tf.rawTAF) : null;
+    var tafOk = !tf || (tp && tp.validTo != null && tp.validTo - now > 3600000);
+    return !!(m && m.obsTime && (now - m.obsTime*1000 < FRESH) && tafOk);
+  };
+  var prefetchAll = function(){
+    if(PRE.busy) return PRE.busy;
+    var codes = Object.keys(ST), need = [];
+    var wk = null;
+    PRE.busy = workerWx(codes.map(function(c){ return ST[c][0]; })).then(function(x){ wk = x; }, function(){ wk = null; }).then(loadRepo).then(function(){
+      var now = Date.now();
+      codes.forEach(function(code){
+        var icao = ST[code][0], m = REPO.metar[icao], tf = REPO.taf[icao];
+        if(wk && wk.metar[icao]) WXC[code] = {t:now, metar:wk.metar[icao], taf:wk.taf[icao] || tf || null, via:VIA_W()};
+        else if(isFresh(m, tf)) WXC[code] = {t:now, metar:m, taf:tf || null, via:T("倉庫快取","repo cache")};
+        else { need.push(code); if(!WXC[code] || !WXC[code].metar) WXC[code] = {loading:true, t:0}; }
+      });
+      if(!need.length) return;
+      var keepRepo = function(code){
+        var icao = ST[code][0], m = REPO.metar[icao], tf = REPO.taf[icao];
+        if(m || tf){ WXC[code] = {t:Date.now(), metar:m || null, taf:tf || null, via:T("倉庫快取","repo cache"), stale:true}; return true; }
+        return false;
+      };
+      return (wk ? Promise.reject(new Error("worker-asked")) : awcBatch(need.map(function(c){ return ST[c][0]; }))).then(function(r){
+        need.forEach(function(code){
+          var icao = ST[code][0], m = r.metar[icao];
+          if(m) WXC[code] = {t:Date.now(), metar:m, taf:r.taf[icao] || REPO.taf[icao] || null, via:r.via};
+          else keepRepo(code);
+        });
+      }, function(){ need.forEach(keepRepo); }).then(function(){
+        var none = need.filter(function(c){ return !WXC[c] || WXC[c].loading; });
+        if(!none.length) return;
+        return meteoBatch(none).then(function(o){
+          none.forEach(function(c){ WXC[c] = o[c] ? {t:Date.now(), model:o[c], via:"Open-Meteo"} : {t:Date.now() - 8*60000, fail:true}; });
+        }, function(){ none.forEach(function(c){ WXC[c] = {t:Date.now() - 8*60000, fail:true}; }); });
+      });
+    }).catch(function(){
+      codes.forEach(function(c){ if(WXC[c] && WXC[c].loading) WXC[c] = {t:Date.now() - 8*60000, fail:true}; });
+    }).then(function(){
+      PRE.busy = null; PRE.t = Date.now();
+      try{ if(typeof current !== "undefined" && current) wxInject(); }catch(e){}
+    });
+    return PRE.busy;
   };
   var fmtVis = function(m){ return m==null ? "—" : m >= 9999 ? "10km+" : m >= 1000 ? (Math.round(m/100)/10) + "km" : Math.round(m) + "m"; };
   var ago = function(ms){ var m = Math.max(0, Math.round((Date.now()-ms)/60000)); return m < 60 ? T(m + " 分鐘前", m + " min ago") : T(Math.floor(m/60) + " 小時 " + (m%60) + " 分前", Math.floor(m/60) + "h " + (m%60) + "m ago"); };
@@ -6894,6 +6988,10 @@ I18N.init();
     try{ if(typeof current !== "undefined" && current) updateLive(); }catch(e){}
   }
   window.cdTick();
+  prefetchAll();
+  setInterval(function(){ if(!document.hidden) prefetchAll(); }, 10*60000);
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden && Date.now() - PRE.t > 10*60000) prefetchAll(); });
+  addEventListener("online", function(){ prefetchAll(); });
   document.addEventListener("touchstart", function(){}, { passive:true });
 })();
 
