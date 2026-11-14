@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-Hant" data-skin="glass">
+<html lang="zh-Hant" data-skin="glass" data-ver="v2026.11.14d">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -758,6 +758,127 @@ html[data-skin="glass"] .totop:not(.show){box-shadow:none}
 html[data-skin="glass"] :is(input,button,select,[tabindex]):focus-visible{outline:2px solid rgba(91,128,222,.55);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){ html[data-skin="glass"] .gknob{transition:none} html[data-skin="glass"] .srfab i{animation:none} }
 </style>
+<style id="ux-1114">
+/* ================= v2026.11.14 版面精簡與新功能 ================= */
+/* A2 首頁統計改一行小字 */
+header.top .stat{display:none !important}
+.minstat{flex-basis:100%;margin:-2px 2px 2px;font-size:12.5px;color:var(--muted);letter-spacing:.02em}
+.minstat b{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums}
+/* A3 異常速報浮動鈕：捲動時縮成圓鈕 */
+.srfab .lbl{display:inline-block;max-width:6.5em;overflow:hidden;white-space:nowrap;transition:max-width .32s cubic-bezier(.3,1,.5,1),opacity .2s}
+.srfab{transition:padding .32s cubic-bezier(.3,1,.5,1),gap .32s,box-shadow .25s,background .25s}
+.srfab.compact{padding:14px !important;gap:0 !important}
+.srfab.compact .lbl{max-width:0;opacity:0}
+/* A4 轉機人數：管理選單 */
+#sxXup,#sxXtpl,#sxXclr,#sxXcode{display:none !important}
+.sx-xbar{position:relative}
+.sx-xbar .mgbtn{margin-left:auto}
+.mgmenu{position:absolute;right:8px;top:calc(100% + 8px);z-index:40;min-width:190px;padding:6px;border-radius:16px;
+  background:rgba(250,250,252,.94);-webkit-backdrop-filter:blur(22px) saturate(1.6);backdrop-filter:blur(22px) saturate(1.6);
+  box-shadow:0 0 0 .5px rgba(100,108,128,.22),0 16px 34px -12px rgba(40,45,60,.38)}
+.mgmenu[hidden]{display:none}
+.mgmenu button{display:block;width:100%;text-align:left;appearance:none;border:0;background:transparent;font:inherit;font-size:14px;color:var(--text);padding:11px 12px;border-radius:10px;cursor:pointer}
+.mgmenu button+button{border-top:.5px solid var(--line2)}
+.mgmenu button:hover,.mgmenu button:focus-visible{background:rgba(91,128,222,.08)}
+.mgmenu button.dz{color:#C33A30}
+/* A5 說明收合 */
+.sx-freq{display:block;margin:-4px 0 14px;padding:0}
+.infopill{display:inline-flex;align-items:center;gap:8px;appearance:none;border:0;font:inherit;font-size:12.5px;color:var(--muted);padding:6px 8px 6px 13px;border-radius:999px;cursor:pointer;
+  background:var(--gSheen,none),var(--gFace,rgba(255,255,255,.6));box-shadow:var(--gShadow,0 0 0 1px var(--line))}
+.infopill .ii{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;font-style:normal;color:#fff;background:linear-gradient(180deg,#8FB0FF,#4A79F0);transition:transform .25s}
+.infopill[aria-expanded="true"] .ii{transform:rotate(180deg)}
+.infomore{margin:10px 2px 0;font-size:12.5px;color:var(--muted);line-height:1.7;display:grid;gap:4px}
+.infomore[hidden]{display:none}
+.sx-note{margin-top:14px}
+/* A6 手機隱藏列印 */
+@media (max-width:760px){ .actions .btn.prt{display:none} }
+/* B1 底部頁籤列（手機） */
+.tabbar{display:none}
+@media (max-width:760px){
+  nav.tabs{display:none !important}
+  .tabbar{position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:62;display:flex;padding:6px;border-radius:26px;
+    background:linear-gradient(180deg,rgba(255,255,255,.84),rgba(246,247,250,.76));-webkit-backdrop-filter:blur(24px) saturate(1.8);backdrop-filter:blur(24px) saturate(1.8);
+    box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(255,255,255,.7),0 0 0 .5px rgba(100,108,128,.2),0 12px 28px -10px rgba(40,45,60,.35)}
+  .tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 0 6px;border-radius:20px;appearance:none;border:0;background:transparent;
+    font:inherit;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:color .2s,background .25s,box-shadow .25s}
+  .tabbar svg{width:22px;height:22px}
+  .tabbar button[aria-current="page"]{color:#3E5FB4;background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(250,251,254,.78));
+    box-shadow:inset 0 -2px 0 rgba(176,186,206,.3),0 0 0 .5px rgba(100,108,128,.18),0 3px 8px -3px rgba(45,50,66,.25)}
+  .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px)) !important}
+  .srfab{bottom:calc(92px + env(safe-area-inset-bottom,0px)) !important}
+  header.top{padding-bottom:6px}
+}
+@media print{ .tabbar,.cdbanner,.uptoast{display:none !important} }
+/* C1 離線標示與新版提示 */
+.offbadge{display:none;align-items:center;gap:5px;font-size:10.5px;font-weight:700;color:#9A5A08;background:rgba(184,110,10,.12);padding:3px 9px;border-radius:999px;white-space:nowrap}
+.offbadge i{width:6px;height:6px;border-radius:50%;background:#C98A2C}
+html.is-offline .offbadge{display:inline-flex}
+.uptoast{position:fixed;left:16px;right:16px;max-width:460px;margin:0 auto;bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:75;display:flex;align-items:center;gap:12px;
+  padding:12px 12px 12px 16px;border-radius:18px;background:rgba(250,250,252,.94);-webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px);
+  box-shadow:0 0 0 .5px rgba(100,108,128,.2),0 14px 30px -10px rgba(40,45,60,.35);font-size:13.5px;color:var(--text);
+  transform:translateY(20px);opacity:0;pointer-events:none;transition:transform .35s cubic-bezier(.3,1.2,.5,1),opacity .25s}
+.uptoast.show{transform:none;opacity:1;pointer-events:auto}
+.uptoast b{font-weight:700}
+.uptoast .go{margin-left:auto;appearance:none;border:0;border-radius:999px;padding:8px 15px;font:inherit;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(180deg,#8FB0FF,#5480EA);box-shadow:0 4px 10px -4px rgba(60,100,220,.6)}
+.uptoast .x{appearance:none;border:0;background:transparent;color:var(--dim);font-size:18px;cursor:pointer;padding:4px 6px}
+@media (min-width:761px){ .uptoast{bottom:24px} }
+/* C3 場站天氣 */
+.wxcard{margin:10px 0 6px;padding:12px 14px;border-radius:14px;background:var(--soft);border-left:3px solid #4A79F0}
+.wxcard.lv-caution{border-left-color:#C98A2C}.wxcard.lv-alert{border-left-color:#C9382E}
+.wxcard .t{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;color:var(--text)}
+.wxcard .t{flex-wrap:wrap;row-gap:2px}.wxcard .t .tt{white-space:nowrap}.wxcard .t small{order:3;flex-basis:100%;font-weight:600;font-size:11px;color:var(--dim)}.wxcard .lv{white-space:nowrap}
+.wxcard .lv{margin-left:auto;font-size:11px;font-weight:700;color:#fff;padding:2px 9px;border-radius:999px;background:#17905F}
+.wxcard.lv-caution .lv{background:#C98A2C}.wxcard.lv-alert .lv{background:#C9382E}
+.wxcard .g{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;font-size:11.5px;color:var(--muted)}
+.wxcard .g b{display:block;font-size:14px;color:var(--text);font-variant-numeric:tabular-nums}
+.wxcard .taf{margin-top:8px;font-size:12.5px;line-height:1.6;color:#9A5A08}.wxcard.lv-alert .taf{color:#B42A22}.wxcard .taf.ok{color:var(--muted)}
+.wxcard .taf b{font-weight:700;margin-right:6px;color:var(--text)}
+.wxcard .rawtaf{margin-top:4px;font-size:11.5px;color:var(--dim)}.wxcard .rawtaf summary{cursor:pointer}
+.wxcard .stale{color:#9A5A08;font-weight:700}
+.wxcard .vt{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.wxcard .vt span{font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;font-variant-numeric:tabular-nums;line-height:1.5}
+.wxcard .vt .ok{color:#17805A;background:rgba(23,144,95,.10)}
+.wxcard .vt .w{color:#9A5A08;background:rgba(184,110,10,.12)}
+.wxcard .vt .x{color:#B42A22;background:rgba(201,56,46,.11)}
+.wxcard .lv.na{background:#8B8F98}
+.wxcard .g.old{opacity:.5}
+.wxcard .raw{margin-top:7px;font:11px/1.5 ui-monospace,Menlo,monospace;color:var(--dim);word-break:break-all}
+.wxcard .src{margin-top:4px;font-size:10.5px;color:var(--dim)}
+.wxcard .src a{color:var(--dim)}
+@media (max-width:420px){ .wxcard .g{grid-template-columns:repeat(2,1fr)} }
+/* C4 宵禁倒數 */
+.cdbanner{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:12px;z-index:70;display:flex;align-items:center;gap:7px;padding:7px 14px 7px 12px;border-radius:999px;white-space:nowrap;
+  font-size:13px;color:#7A4A06;background:linear-gradient(180deg,rgba(255,246,228,.94),rgba(255,236,205,.88));-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
+  box-shadow:inset 0 1px 0 #fff,0 0 0 .5px rgba(201,138,44,.45),0 0 16px rgba(240,170,80,.25),0 10px 22px -10px rgba(150,90,20,.4);
+  transform:translateY(-140%);opacity:0;pointer-events:none;transition:transform .4s cubic-bezier(.3,1.2,.5,1),opacity .25s}
+.cdbanner.show{transform:none;opacity:1;pointer-events:auto;cursor:pointer}
+.cdbanner b{font-size:16px;font-variant-numeric:tabular-nums;color:#B06A0A}
+.cdbanner.red{color:#8A1F17;background:linear-gradient(180deg,rgba(255,240,236,.95),rgba(255,224,218,.9));box-shadow:inset 0 1px 0 #fff,0 0 0 .5px rgba(201,56,46,.4),0 0 18px rgba(232,90,80,.3),0 10px 22px -10px rgba(160,40,30,.4);animation:cdp 2s ease-in-out infinite}
+.cdbanner.red b{color:#C33A30}
+@keyframes cdp{50%{box-shadow:inset 0 1px 0 #fff,0 0 0 .5px rgba(201,56,46,.5),0 0 26px 4px rgba(232,90,80,.38),0 10px 22px -10px rgba(160,40,30,.4)}}
+@media (prefers-reduced-motion:reduce){ .cdbanner.red{animation:none} .srfab .lbl,.srfab{transition:none} }
+</style>
+<style id="ux-glow">
+/* 頁籤與切換鈕：選中時滑塊散光、凹槽跟著亮；按下瞬間閃光 */
+html[data-skin="glass"] .gglow{position:absolute;z-index:0;pointer-events:none;border-radius:999px;opacity:1;
+  background:radial-gradient(closest-side,#fff,rgba(255,255,255,.9) 62%,rgba(150,188,255,.5) 82%,rgba(130,175,255,0));
+  filter:blur(4px);transition:left .38s cubic-bezier(.3,1.25,.5,1),width .38s cubic-bezier(.3,1.25,.5,1),top .2s,height .2s,opacity .3s}
+html[data-skin="glass"] .gglow.pop{animation:gpop .6s ease-out}
+@keyframes gpop{0%{opacity:1;filter:blur(3px) brightness(1.3) saturate(1.4)}100%{opacity:1;filter:blur(4px)}}
+html:not([data-skin="glass"]) .gglow{display:none}
+html[data-skin="glass"] .langsw{overflow:hidden}
+html[data-skin="glass"] .gknob{box-shadow:inset 0 2px 2px -1.5px rgba(255,255,255,.8),inset 0 -2.5px 0 rgba(176,186,206,.30),inset 0 -4px 4px -2px rgba(255,255,255,.8),
+  0 0 0 .5px rgba(100,108,128,.16),0 1px 1px rgba(55,62,80,.14),0 3px 6px -2px rgba(45,50,66,.20),0 0 8px 1px rgba(255,255,255,.85),0 0 14px 2px rgba(140,180,255,.30)}
+html[data-skin="glass"] :is(nav.tabs,.langsw,.tabbar) button{isolation:isolate}
+html[data-skin="glass"] .tabbar button{position:relative}
+html[data-skin="glass"] :is(nav.tabs,.langsw,.tabbar) button::after{content:"";position:absolute;inset:1px;border-radius:inherit;pointer-events:none;z-index:-1;opacity:0;
+  background:radial-gradient(closest-side,#fff,rgba(175,205,255,.75) 55%,rgba(150,188,255,0));transition:opacity .5s ease-out}
+html[data-skin="glass"] :is(nav.tabs,.langsw,.tabbar) button:active::after{opacity:1;transition:opacity .04s}
+@media (max-width:760px){
+  html[data-skin="glass"] .tabbar button[aria-current="page"]{box-shadow:inset 0 -2px 0 rgba(176,186,206,.3),0 0 0 .5px rgba(100,108,128,.18),0 3px 8px -3px rgba(45,50,66,.25),0 0 10px 1px rgba(140,180,255,.45)}
+}
+@media (prefers-reduced-motion:reduce){ html[data-skin="glass"] .gglow{transition:none} html[data-skin="glass"] .gglow.pop{animation:none} }
+</style>
 <style>
 /* ---------- 空位查詢篩選：2×2 下拉選單（方案 B） ---------- */
 #sxFilt{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}
@@ -798,7 +919,8 @@ html[data-skin="glass"] :is(input,button,select,[tabindex]):focus-visible{outlin
     <div class="langsw" role="group" aria-label="Language" data-noi18n>
       <button type="button" data-lang="zh">中文</button><button type="button" data-lang="en">EN</button>
     </div>
-    <div class="ver" data-noi18n title="2026.11.10：壓克力玻璃按鈕與冷灰底色｜2026.11.07：左右滑動切換頁籤、STD 依出發站當地時間顯示（UTC 自動校正）"><span>版次</span>v2026.11.10</div>
+    <span class="offbadge" id="offBadge" data-noi18n><i></i><span id="offTxt">離線</span></span>
+    <div class="ver" id="appVerTag" data-noi18n title="2026.11.14d：頁籤與切換鈕選中時散光、按下閃光｜2026.11.14c：天氣加註資料有效時限（METAR 實況時效、TAF 效期），TAF 過期不判讀｜2026.11.14b：場站天氣改與「航點天氣警戒」同源、同一套 TAF 判讀｜2026.11.14：底部頁籤列、場站天氣、宵禁倒數、離線可用與新版提示、版面精簡｜2026.11.10：壓克力玻璃按鈕與冷灰底色｜2026.11.07：左右滑動切換頁籤、STD 依出發站當地時間顯示（UTC 自動校正）"><span>版次</span>v2026.11.14d</div>
   </div>
   <div class="stat">
     <div><b id="statStations">0</b><span>收錄場站</span></div>
@@ -822,6 +944,7 @@ html[data-skin="glass"] :is(input,button,select,[tabindex]):focus-visible{outlin
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input id="q" type="search" placeholder="輸入場站代碼，例如 NRT、BKK" autocomplete="off">
     </div>
+  <div class="minstat" id="minStat"></div>
     <div class="chips" id="regionChips"></div>
   </div>
   <div id="stationList"></div>
@@ -861,8 +984,11 @@ html[data-skin="glass"] :is(input,button,select,[tabindex]):focus-visible{outlin
 <section id="p-seat" role="tabpanel" aria-labelledby="t-seat" class="hidden">
   <div class="sx-bar" id="sxBar">讀取中…</div>
   <div class="sx-freq">
-    <span><b>更新頻率</b>　約每 3 小時更新一次；停在本頁時每 5 分鐘自動檢查，也可按「重新讀取」。</span>
-    <em>⚠ 此為定時更新的訂位資料，非最即時資訊，僅供參考。</em>
+    <button type="button" class="infopill" aria-expanded="false" aria-controls="sxFreqMore">約每 3 小時更新・僅供參考<span class="ii">i</span></button>
+    <div class="infomore" id="sxFreqMore" hidden>
+      <span><b>更新頻率</b>　約每 3 小時更新一次；停在本頁時每 5 分鐘自動檢查，也可按「重新讀取」。</span>
+      <em>⚠ 此為定時更新的訂位資料，非最即時資訊，僅供參考。</em>
+    </div>
   </div>
   <div id="sxMain" hidden>
     <div class="sx-q">
@@ -888,14 +1014,15 @@ html[data-skin="glass"] :is(input,button,select,[tabindex]):focus-visible{outlin
       <span class="msg" id="sxXmsg" hidden></span></div>
     <div class="sx-kpis" id="sxKpis"></div>
     <div id="sxBody"></div>
-    <p class="calcnote" style="margin-top:14px">台灣出發與抵台時間為台北時間；外站回台的出發與表定時間為當地時間。抵台時間沒有 AIRS 資料時，以表定抵達加上起飛延誤推算。座位數以公開座位圖計算：A350-900 4／26／36／240、A350-1000 4／40／36／270、A330-900 28／269、A321neo 8／180。黃底為「回台後接飛」的班次。</p>
+    <div class="sx-note"><button type="button" class="infopill" aria-expanded="false" aria-controls="sxNoteMore">時間與座位數說明<span class="ii">i</span></button>
+    <p class="calcnote infomore" id="sxNoteMore" hidden>台灣出發與抵台時間為台北時間；外站回台的出發與表定時間為當地時間。抵台時間沒有 AIRS 資料時，以表定抵達加上起飛延誤推算。座位數以公開座位圖計算：A350-900 4／26／36／240、A350-1000 4／40／36／270、A330-900 28／269、A321neo 8／180。黃底為「回台後接飛」的班次。</p></div>
   </div>
 </section>
 
-<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。<br><span id="appVer">版本 2026-11-02d（CRK 跑道間距查證）</span></p>
+<p class="hint">資料來源：各站操作限制表（各站資料庫）。內容以場站最新公告為準，作業前請再與當站確認。</p>
 </div>
 
-<button class="srfab" id="srFab" type="button" aria-haspopup="dialog"><i></i>異常速報</button>
+<button class="srfab" id="srFab" type="button" aria-haspopup="dialog" aria-label="異常速報"><i></i><span class="lbl">異常速報</span></button>
 <dialog class="sr" id="srDlg" aria-labelledby="srTitle">
   <div class="srhead">
     <div><b id="srTitle">異常速報 SITUATION REPORT</b><span id="srStamp"></span></div>
@@ -3341,7 +3468,7 @@ function renderDetail(){
       <div class="actions">
         <button class="btn" id="liveBtn">${liveOn?"收合快報":"現況快報"}</button>
         <button class="btn sr" id="srBtn">異常速報</button>
-        <button class="btn" onclick="window.print()">列印本站</button>
+        <button class="btn prt" onclick="window.print()">列印本站</button>
       </div>
     </div>
     <div id="skySlot"></div>
@@ -6320,12 +6447,20 @@ I18N.init();
   function knob(box, sel){
     if(!box) return;
     var k = document.createElement("span"); k.className = "gknob"; k.setAttribute("aria-hidden","true");
-    box.insertBefore(k, box.firstChild);
+    var g = document.createElement("span"); g.className = "gglow"; g.setAttribute("aria-hidden","true");
+    box.insertBefore(k, box.firstChild); box.insertBefore(g, k);
+    var last = null;
     function place(){
-      var b = box.querySelector(sel); if(!b){ k.style.opacity = 0; return; }
-      k.style.opacity = 1;
+      var b = box.querySelector(sel); if(!b){ k.style.opacity = 0; g.style.opacity = 0; return; }
+      k.style.opacity = 1; g.style.opacity = "";
       k.style.left = b.offsetLeft + "px"; k.style.width = b.offsetWidth + "px";
       k.style.top = b.offsetTop + "px"; k.style.height = b.offsetHeight + "px";
+      /* 光暈比滑塊大一圈，讓凹槽在滑塊周圍亮起來 */
+      var px = Math.max(8, Math.min(18, b.offsetWidth * .09)), py = Math.max(4, b.offsetHeight * .22);
+      g.style.left = (b.offsetLeft - px) + "px"; g.style.width = (b.offsetWidth + px*2) + "px";
+      g.style.top = (b.offsetTop - py) + "px"; g.style.height = (b.offsetHeight + py*2) + "px";
+      if(last && last !== b){ g.classList.remove("pop"); void g.offsetWidth; g.classList.add("pop"); }
+      last = b;
     }
     new MutationObserver(place).observe(box, { attributes:true, subtree:true, childList:true, characterData:true, attributeFilter:["aria-selected","aria-pressed","class"] });
     if(window.ResizeObserver){ var ro = new ResizeObserver(place); ro.observe(box); [].forEach.call(box.querySelectorAll("button"), function(b){ ro.observe(b); }); }
@@ -6335,6 +6470,433 @@ I18N.init();
   knob(document.querySelector("nav.tabs"), 'button[aria-selected="true"]');
   knob(document.querySelector(".langsw"), 'button[aria-pressed="true"]');
 })();
+</script>
+<script>
+/* ===== v2026.11.14：底部頁籤列、場站天氣、宵禁倒數、離線與新版提示、版面精簡 ===== */
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var EN = function(){ return document.documentElement.lang === "en"; };
+  var T = function(zh, en){ return EN() ? en : zh; };
+  var p2 = function(n){ return String(n).padStart(2,"0"); };
+  var esc2 = function(x){ return String(x==null?"":x).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); };
+  var langHooks = [];
+  new MutationObserver(function(){ langHooks.forEach(function(f){ try{ f(); }catch(e){} }); })
+    .observe(document.documentElement, { attributes:true, attributeFilter:["lang"] });
+
+  /* ---------- A2 首頁統計：一行小字 ---------- */
+  var ms = $("minStat");
+  if(ms){
+    ms.setAttribute("data-noi18n","");
+    var paintStat = function(){
+      var a = ($("statStations")||{}).textContent||"0", b = ($("statRegions")||{}).textContent||"0", c = ($("statPending")||{}).textContent||"0";
+      ms.innerHTML = EN() ? "<b>"+a+"</b> stations ・ <b>"+b+"</b> regions ・ <b>"+c+"</b> pending data"
+                          : "共 <b>"+a+"</b> 站・<b>"+b+"</b> 區・<b>"+c+"</b> 站資料待補";
+    };
+    paintStat(); langHooks.push(paintStat);
+  }
+
+  /* ---------- A3 異常速報浮動鈕：捲動時縮成圓鈕 ---------- */
+  var fab = $("srFab"), ft;
+  if(fab){
+    addEventListener("scroll", function(){
+      if(scrollY < 80){ fab.classList.remove("compact"); return; }
+      fab.classList.add("compact"); clearTimeout(ft);
+      ft = setTimeout(function(){ fab.classList.remove("compact"); }, 1200);
+    }, { passive:true });
+  }
+
+  /* ---------- A4 轉機人數：收進「管理」選單 ---------- */
+  var xb = $("sxXbar");
+  if(xb){
+    var mb = document.createElement("button");
+    mb.type = "button"; mb.className = "sx-btn mgbtn"; mb.id = "sxXmg";
+    mb.setAttribute("aria-haspopup","menu"); mb.setAttribute("aria-expanded","false"); mb.setAttribute("data-noi18n","");
+    xb.insertBefore(mb, $("sxXfile"));
+    var menu = document.createElement("div");
+    menu.className = "mgmenu"; menu.id = "sxXmenu"; menu.hidden = true; menu.setAttribute("role","menu");
+    xb.appendChild(menu);
+    var paintMb = function(){ mb.textContent = T("⋯ 管理","⋯ Manage"); };
+    var closeM = function(){ menu.hidden = true; mb.setAttribute("aria-expanded","false"); };
+    var openM = function(){
+      menu.innerHTML = "";
+      ["sxXup","sxXtpl","sxXcode","sxXclr"].forEach(function(id){
+        var o = $(id); if(!o || o.hidden) return;
+        var b = document.createElement("button");
+        b.type = "button"; b.setAttribute("role","menuitem"); b.textContent = o.textContent;
+        if(id === "sxXclr") b.className = "dz";
+        b.onclick = function(){ closeM(); o.click(); };
+        menu.appendChild(b);
+      });
+      menu.hidden = false; mb.setAttribute("aria-expanded","true");
+    };
+    mb.onclick = function(e){ e.stopPropagation(); menu.hidden ? openM() : closeM(); };
+    document.addEventListener("click", function(e){ if(!menu.hidden && !menu.contains(e.target)) closeM(); });
+    document.addEventListener("keydown", function(e){ if(e.key === "Escape") closeM(); });
+    paintMb(); langHooks.push(paintMb);
+  }
+
+  /* ---------- A5 說明收合 ---------- */
+  [].forEach.call(document.querySelectorAll(".infopill[aria-controls]"), function(b){
+    b.addEventListener("click", function(){
+      var m = $(b.getAttribute("aria-controls")); if(!m) return;
+      var on = m.hidden; m.hidden = !on; b.setAttribute("aria-expanded", on ? "true" : "false");
+    });
+  });
+
+  /* ---------- B1 手機底部頁籤列 ---------- */
+  var nav = document.querySelector("nav.tabs");
+  if(nav){
+    var tabs = [].slice.call(nav.querySelectorAll('button[role="tab"]'));
+    var IC = [
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="3.5" y="4" width="17" height="16" rx="3"/><path d="M3.5 10h17M10 4v16"/></svg>',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2.5h6"/></svg>',
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 19V8a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v11"/><path d="M4 19h16M8 13h8"/></svg>'
+    ];
+    var LB = [["限制","Limits"],["對照","Matrix"],["備降","Alternates"],["試算","Calc"],["空位","Seats"]];
+    var bar = document.createElement("nav");
+    bar.className = "tabbar"; bar.setAttribute("data-noi18n","");
+    tabs.forEach(function(t, i){
+      var b = document.createElement("button");
+      b.type = "button"; b.innerHTML = (IC[i]||"") + "<span></span>";
+      b.onclick = function(){ var was = t.getAttribute("aria-selected") === "true"; t.click(); if(!was) scrollTo(0, 0); };
+      bar.appendChild(b);
+    });
+    document.body.appendChild(bar);
+    var btns = [].slice.call(bar.children);
+    var sync = function(){ tabs.forEach(function(t, i){ var on = t.getAttribute("aria-selected") === "true"; on ? btns[i].setAttribute("aria-current","page") : btns[i].removeAttribute("aria-current"); }); };
+    var paintBar = function(){ bar.setAttribute("aria-label", T("頁籤","Tabs")); btns.forEach(function(b, i){ b.lastChild.textContent = LB[i] ? (EN() ? LB[i][1] : LB[i][0]) : tabs[i].textContent; }); };
+    new MutationObserver(function(){ sync(); if(typeof cdTick === "function") cdTick(); }).observe(nav, { attributes:true, subtree:true, attributeFilter:["aria-selected"] });
+    sync(); paintBar(); langHooks.push(paintBar);
+  }
+
+  /* ---------- C1 離線可用＋新版提示 ---------- */
+  var VER = document.documentElement.getAttribute("data-ver") || "";
+  var isWeb = /^https?:/.test(location.protocol);
+  if(isWeb && "serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(function(){}); }
+  var KEY = "jx-last-online";
+  var stamp = function(){ try{ if(navigator.onLine) localStorage.setItem(KEY, String(Date.now())); }catch(e){} };
+  var paintOff = function(){
+    var off = !navigator.onLine;
+    document.documentElement.classList.toggle("is-offline", off);
+    var t = 0; try{ t = +localStorage.getItem(KEY) || 0; }catch(e){}
+    var d = t ? new Date(t) : null, el = $("offTxt");
+    if(el) el.textContent = T("離線","Offline") + (d ? T("・資料 ","・data ") + (d.getMonth()+1) + "/" + d.getDate() + " " + p2(d.getHours()) + ":" + p2(d.getMinutes()) : "");
+  };
+  var toast = document.createElement("div");
+  toast.className = "uptoast"; toast.setAttribute("role","status"); toast.setAttribute("data-noi18n","");
+  document.body.appendChild(toast);
+  var newVer = "";
+  var paintToast = function(){
+    if(!newVer) return;
+    toast.innerHTML = '<span aria-hidden="true">🔄</span><span><b>' + T("有新版 ","New version ") + esc2(newVer) + "</b><br>" + T("點更新即可換成最新版","Tap Update to load it") + '</span><button type="button" class="go">' + T("更新","Update") + '</button><button type="button" class="x" aria-label="' + T("稍後","Later") + '">×</button>';
+    toast.querySelector(".go").onclick = function(){
+      var go = function(){ location.reload(); };
+      if(navigator.serviceWorker && navigator.serviceWorker.getRegistration){
+        navigator.serviceWorker.getRegistration().then(function(r){ return r && r.update(); }).catch(function(){}).then(go);
+      } else go();
+    };
+    toast.querySelector(".x").onclick = function(){ toast.classList.remove("show"); };
+  };
+  var checkVer = function(){
+    if(!isWeb || !navigator.onLine || !VER) return;
+    fetch(location.href.split("#")[0], { cache:"no-store" }).then(function(r){ return r.ok ? r.text() : ""; }).then(function(h){
+      var m = /data-ver="([^"]+)"/.exec(h);
+      if(m && m[1] !== VER){ newVer = m[1]; paintToast(); toast.classList.add("show"); }
+    }).catch(function(){});
+  };
+  addEventListener("online", function(){ stamp(); paintOff(); checkVer(); });
+  addEventListener("offline", paintOff);
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden) checkVer(); });
+  setInterval(checkVer, 10*60000); setTimeout(checkVer, 5000);
+  stamp(); paintOff(); langHooks.push(paintOff, paintToast);
+
+  /* ---------- C3 場站天氣：與「航點天氣警戒」同源（倉庫 data/metar.json、data/taf.json），同一套 TAF 判讀 ---------- */
+  var ST = {TPE:["RCTP",25.077,121.233],RMQ:["RCMQ",24.264,120.621],KHH:["RCKH",22.577,120.350],HKG:["VHHH",22.308,113.918],MFM:["VMMC",22.150,113.592],
+    NRT:["RJAA",35.765,140.386],FUK:["RJFF",33.586,130.451],CTS:["RJCC",42.775,141.692],OKA:["ROAH",26.196,127.646],SDJ:["RJSS",38.140,140.917],
+    KIX:["RJBB",34.427,135.244],KMJ:["RJFT",32.837,130.855],NGO:["RJGG",34.858,136.805],HKD:["RJCH",41.770,140.822],TAK:["RJOT",34.214,134.016],
+    UKB:["RJBE",34.632,135.224],SHI:["RORS",24.827,125.145],PUS:["RKPK",35.180,128.938],MNL:["RPLL",14.509,121.020],CRK:["RPLC",15.186,120.560],
+    CEB:["RPVM",10.307,123.979],HAN:["VVNB",21.221,105.807],DAD:["VVDN",16.044,108.199],SGN:["VVTS",10.819,106.652],PQC:["VVPQ",10.170,103.993],
+    BKK:["VTBS",13.690,100.750],CNX:["VTCC",18.767,98.963],KUL:["WMKK",2.746,101.710],SIN:["WSSS",1.364,103.991],CGK:["WIII",-6.126,106.656],
+    DPS:["WADD",-8.748,115.167],LAX:["KLAX",33.942,-118.408],SFO:["KSFO",37.619,-122.375],SEA:["KSEA",47.450,-122.309],ONT:["KONT",34.056,-117.601],
+    PHX:["KPHX",33.434,-112.012],DFW:["KDFW",32.897,-97.038],IAD:["KIAD",38.944,-77.456],BOS:["KBOS",42.364,-71.005],PRG:["LKPR",50.101,14.260],
+    SYD:["YSSY",-33.946,151.177],AKL:["NZAA",-37.008,174.792],TSA:["RCSS",25.069,121.552]};
+
+  /* ===== 以下 TAF 解讀與判讀，原樣取自「航點天氣警戒」，兩邊結果一致 ===== */
+  var WXNAME={TS:"雷雨",TSRA:"雷雨",RA:"雨",SN:"雪",DZ:"毛毛雨",GR:"冰雹",GS:"霰",PL:"冰珠",SG:"雪珠",FG:"霧",BR:"輕霧",HZ:"靄",FU:"煙",SA:"揚沙",DU:"塵",VA:"火山灰",SQ:"颮",FC:"漏斗雲",SS:"沙暴",DS:"塵暴",IC:"冰針",UP:"未知降水"};
+  var DESCNAME={TS:"雷",SH:"陣",FZ:"凍",BL:"吹",DR:"低吹",MI:"淺",BC:"散片",PR:"部分"};
+  function tafTokens(g){ return String(g).replace(/(^|\s)(\d+)\s+(\d+)\/(\d+)SM\b/g,function(m,pre,a,b,c){return pre+(+a+(+b)/(+c))+"SM";}).split(" ").filter(Boolean); }
+  function decodeGroup(g){
+    var o={wind:0,gust:0,vis:null,ceil:null,ts:false,heavy:false,light:false,fz:false,fzfg:false,sn:false,fg:false,sq:false,va:false,wx:[]};
+    tafTokens(g).forEach(function(t){
+      var m=t.match(/^(\d{3}|VRB)(\d{2,3})(?:G(\d{2,3}))?(KT|MPS)$/);
+      if(m){var f=m[4]==="MPS"?1.94384:1;o.wind=Math.max(o.wind,+m[2]*f);if(m[3])o.gust=Math.max(o.gust,+m[3]*f);return;}
+      if(/^\d{4}$/.test(t)){var v=+t;o.vis=o.vis===null?(v===9999?10000:v):Math.min(o.vis,v===9999?10000:v);return;}
+      m=t.match(/^([PM]?)(\d+(?:\.\d+)?)(?:\/(\d+))?SM$/);
+      if(m){var w=(m[3]?(+m[2]/+m[3]):+m[2])*1609;if(m[1]==="P")w=Math.max(w,10000);o.vis=o.vis===null?w:Math.min(o.vis,w);return;}
+      m=t.match(/^(BKN|OVC|VV)(\d{3})/);
+      if(m){var ft=+m[2]*100;o.ceil=o.ceil===null?ft:Math.min(o.ceil,ft);return;}
+      m=t.match(/^([+-]?)(VC)?((?:TS|SH|FZ|MI|BC|DR|BL|PR)?)((?:RA|SN|DZ|GR|GS|PL|SG|IC|FG|BR|HZ|FU|SA|DU|VA|SQ|FC|SS|DS|UP)+)$/);
+      if(m&&m[4]){
+        var sev=m[1]==="+",lgt=m[1]==="-",desc=m[3],ph=m[4];
+        if(desc==="TS")o.ts=true; if(sev)o.heavy=true; if(lgt)o.light=true;
+        if(desc==="FZ"){ if(/RA|DZ|UP/.test(ph)) o.fz=true; else if(ph==="FG") o.fzfg=true; }
+        if(/SN|SG|PL|GS/.test(ph))o.sn=true; if(ph==="FG")o.fg=true; if(ph==="SQ"||ph==="FC")o.sq=true; if(/VA/.test(ph))o.va=true;
+        var nm=(sev?"強":lgt?"小":"")+(DESCNAME[desc]||"")+(WXNAME[ph]||ph);
+        if(o.wx.indexOf(nm)<0)o.wx.push(nm); return;
+      }
+      if(/^[+-]?(VC)?TS$/.test(t)){o.ts=true;if(o.wx.indexOf("雷雨")<0)o.wx.push("雷雨");return;}
+      if(/^[+-]?(VC)?VA$/.test(t))o.va=true;
+    });
+    return o;
+  }
+  function ddhhToMs(dd,hh){
+    if(!(dd>=1&&dd<=31)||!(hh>=0&&hh<=24)) return null;
+    var now=Date.now(),n=new Date(now),best=null;
+    for(var k=-1;k<=1;k++){var t=Date.UTC(n.getUTCFullYear(),n.getUTCMonth()+k,dd)+hh*3600000;if(best===null||Math.abs(t-now)<Math.abs(best-now))best=t;}
+    return best;
+  }
+  function spanOf(p){ var m=p.match(/\b(\d{2})(\d{2})\/(\d{2})(\d{2})\b/); return m?{from:ddhhToMs(+m[1],+m[2]),to:ddhhToMs(+m[3],+m[4])}:null; }
+  function extendPersistent(groups,vTo){
+    for(var i=0;i<groups.length;i++){
+      var k=groups[i].kind; if(k!=="MAIN"&&k!=="FM"&&k!=="BECMG") continue;
+      var end=vTo;
+      for(var j=i+1;j<groups.length;j++){ if(groups[j].kind==="FM"&&groups[j].from!=null){end=groups[j].from;break;} }
+      if(end!=null||k==="BECMG") groups[i].to=end;
+    }
+    return groups;
+  }
+  function parseTAF(raw){
+    if(!raw) return null;
+    var txt=raw.replace(/\s+/g," ").replace(/=+$/,"").trim();
+    var head=txt.match(/\b(\d{2})(\d{2})\/(\d{2})(\d{2})\b/);
+    var vFrom=head?ddhhToMs(+head[1],+head[2]):null, vTo=head?ddhhToMs(+head[3],+head[4]):null;
+    var parts=[];
+    txt.split(/ (?=FM\d{6}\b|TEMPO\b|BECMG\b|PROB\d{2}\b)/).forEach(function(p){
+      var prev=parts[parts.length-1];
+      if(prev!==undefined&&/^PROB\d{2}$/.test(prev.trim())) parts[parts.length-1]=prev+" "+p; else parts.push(p);
+    });
+    var groups=parts.map(function(p){
+      var kind=/^FM/.test(p)?"FM":/^PROB/.test(p)?"PROB":/^TEMPO/.test(p)?"TEMPO":/^BECMG/.test(p)?"BECMG":"MAIN";
+      var pb=p.match(/^PROB(\d{2})/), fm=p.match(/^FM(\d{2})(\d{2})(\d{2})/), from=null, to=null;
+      if(fm){var f=ddhhToMs(+fm[1],+fm[2]);from=f==null?null:f+(+fm[3])*60000;to=vTo;}
+      else if(kind==="MAIN"){from=vFrom;to=vTo;}
+      else{var sp=spanOf(p);if(sp){from=sp.from;to=sp.to;}}
+      return Object.assign(decodeGroup(p),{kind:kind,prob:pb?+pb[1]:null,from:from,to:to,txt:p});
+    });
+    extendPersistent(groups,vTo);
+    return {raw:txt,validFrom:vFrom,validTo:vTo,expired:vTo!=null&&vTo<=Date.now(),groups:groups};
+  }
+  function assessTAF(t){
+    if(!t) return null;
+    if(t.expired||(t.validTo!=null&&t.validTo<=Date.now())) return {lvl:0,notes:[],expired:true};
+    var now=Date.now(),out=[];
+    t.groups.forEach(function(g){
+      if(g.to!=null&&g.to<=now) return;
+      var tmp=g.kind==="TEMPO"||g.kind==="PROB", tag=g.prob?"（短時 "+g.prob+"%）":(tmp?"（短時）":""), gout=[];
+      if(g.va)gout.push([2,"火山灰"+tag]);
+      if(g.gust>=50)gout.push([2,"陣風 "+Math.round(g.gust)+" kt，颱風或強烈低壓"+tag]);
+      else if(g.gust>=40)gout.push([2,"陣風 "+Math.round(g.gust)+" kt，側風與亂流"+tag]);
+      else if(g.wind>=35)gout.push([2,"持續風 "+Math.round(g.wind)+" kt"+tag]);
+      else if(g.gust>=30||g.wind>=28)gout.push([1,"風 "+Math.round(Math.max(g.wind,g.gust))+" kt"+tag]);
+      if(g.vis!=null&&g.vis<800)gout.push([2,"能見度 "+Math.round(g.vis)+" m，低於一類標準"+tag]);
+      else if(g.vis!=null&&g.vis<3000)gout.push([1,"能見度 "+Math.round(g.vis)+" m"+tag]);
+      else if(g.fg)gout.push([1,"有霧"+tag]);
+      if(g.fzfg)gout.push([1,"凍霧，注意機體積冰"+tag]);
+      if(g.ceil!=null&&g.ceil<=200)gout.push([2,"雲底 "+g.ceil+" ft，低於一類標準"+tag]);
+      else if(g.ceil!=null&&g.ceil<500)gout.push([1,"雲底 "+g.ceil+" ft"+tag]);
+      if(g.heavy&&g.sn)gout.push([2,"強降雪，除冰與跑道摩擦係數"+tag]);
+      else if(g.wx.some(function(w){return /冰雹|霰/.test(w);}))gout.push([2,"冰雹"+tag]);
+      else if(g.heavy)gout.push([2,"強降雨，跑道積水與水花"+tag]);
+      else if(g.sn)gout.push([1,(g.light?"小雪":"降雪")+"，需除冰"+tag]);
+      if(g.fz)gout.push([2,"凍性降水，積冰風險"+tag]);
+      if(g.sq)gout.push([2,"颮線或漏斗雲"+tag]);
+      if(g.ts)gout.push([1,"雷雨"+tag]);
+      var cap=g.prob!=null&&g.prob<=30;
+      gout.forEach(function(x){ out.push(cap?[Math.min(x[0],1),x[1]]:x); });
+    });
+    out.sort(function(a,b){return b[0]-a[0];});
+    var seen={},notes=[],lvl=0;
+    out.forEach(function(x){ lvl=Math.max(lvl,x[0]); if(!seen[x[1]]){seen[x[1]]=1;notes.push(x[1]);} });
+    return {lvl:lvl,notes:notes.slice(0,5)};
+  }
+  /* ===== 以上取自「航點天氣警戒」 ===== */
+
+  /* 資料來源順序與天氣 app 相同：倉庫快取 → AWC 直連 → 公開中繼；快取超過 2 小時才改抓即時 */
+  var REPO = {t:0, metar:{}, taf:{}, at:null, busy:null};
+  var WXC = {};
+  var FRESH = 2*3600000;
+  var tryJSON = function(url, ms){
+    return Promise.race([
+      fetch(url, {cache:"no-store"}).then(function(r){ if(!r.ok) throw new Error(r.status); return r.text(); }),
+      new Promise(function(_, rej){ setTimeout(function(){ rej(new Error("timeout")); }, ms||8000); })
+    ]).then(function(t){ var j = JSON.parse(t); if(j && typeof j.contents === "string") j = JSON.parse(j.contents); return j; });
+  };
+  var loadRepo = function(){
+    if(REPO.busy) return REPO.busy;
+    if(Date.now() - REPO.t < 10*60000) return Promise.resolve(REPO);
+    REPO.busy = Promise.all([tryJSON("data/metar.json?t=" + Date.now()), tryJSON("data/taf.json?t=" + Date.now()).catch(function(){ return []; }),
+      fetch("data/updated.txt?t=" + Date.now(), {cache:"no-store"}).then(function(r){ return r.ok ? r.text() : ""; }).catch(function(){ return ""; })])
+      .then(function(a){
+        REPO.metar = {}; REPO.taf = {};
+        (Array.isArray(a[0]) ? a[0] : []).forEach(function(x){ if(x && x.icaoId) REPO.metar[x.icaoId] = x; });
+        (Array.isArray(a[1]) ? a[1] : []).forEach(function(x){ if(x && x.icaoId && x.rawTAF) REPO.taf[x.icaoId] = x; });
+        REPO.at = a[2] ? Date.parse(a[2].trim()) || null : null; REPO.t = Date.now();
+        return REPO;
+      }).catch(function(){ REPO.t = Date.now() - 8*60000; return REPO; })
+      .then(function(r){ REPO.busy = null; return r; });
+    return REPO.busy;
+  };
+  var RELAYS = [function(u){ return u; },
+    function(u){ return "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(u); },
+    function(u){ return "https://api.allorigins.win/get?url=" + encodeURIComponent(u); }];
+  var awcLive = function(icao){
+    var mu = "https://aviationweather.gov/api/data/metar?format=json&ids=" + icao, tu = "https://aviationweather.gov/api/data/taf?format=json&ids=" + icao;
+    var i = 0;
+    var next = function(){
+      if(i >= RELAYS.length) return Promise.reject(new Error("all"));
+      var R = RELAYS[i++];
+      return tryJSON(R(mu), 7000).then(function(m){
+        if(!Array.isArray(m) || !m[0]) throw new Error("empty");
+        return tryJSON(R(tu), 7000).catch(function(){ return []; }).then(function(t){ return {metar:m[0], taf:Array.isArray(t) ? t[0] : null, via: i === 1 ? "AWC" : T("AWC（中繼）","AWC (relay)")}; });
+      }).catch(next);
+    };
+    return next();
+  };
+  var meteo = function(la, lo){
+    return tryJSON("https://api.open-meteo.com/v1/forecast?latitude=" + la + "&longitude=" + lo +
+      "&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,cloud_cover_low,weather_code&wind_speed_unit=kn&timezone=UTC", 8000)
+      .then(function(j){ var c = j && j.current; if(!c) throw 0; return c; });
+  };
+  var loadWx = function(code){
+    var st = ST[code]; if(!st) return;
+    var e = WXC[code];
+    if(e && (e.loading || (Date.now() - e.t < 10*60000))) return;
+    WXC[code] = {loading:true, t:0};
+    var icao = st[0], done = function(d){ WXC[code] = d; if(typeof current !== "undefined" && current && current.code === code) wxInject(); };
+    loadRepo().then(function(){
+      var m = REPO.metar[icao], tf = REPO.taf[icao];
+      var tp = tf && tf.rawTAF ? parseTAF(tf.rawTAF) : null;
+      var tafOk = !tf || (tp && tp.validTo != null && tp.validTo - Date.now() > 3600000);
+      var fresh = m && m.obsTime && (Date.now() - m.obsTime*1000 < FRESH) && tafOk;
+      if(fresh) return {t:Date.now(), metar:m, taf:tf || null, via:T("倉庫快取","repo cache")};
+      return awcLive(icao).then(function(x){ x.t = Date.now(); return x; }, function(){
+        if(m || tf) return {t:Date.now(), metar:m || null, taf:tf || null, via:T("倉庫快取","repo cache"), stale:true};
+        return meteo(st[1], st[2]).then(function(c){ return {t:Date.now(), model:c, via:"Open-Meteo"}; });
+      });
+    }).then(done, function(){ done({t:Date.now() - 8*60000, fail:true}); });
+  };
+  var fmtVis = function(m){ return m==null ? "—" : m >= 9999 ? "10km+" : m >= 1000 ? (Math.round(m/100)/10) + "km" : Math.round(m) + "m"; };
+  var ago = function(ms){ var m = Math.max(0, Math.round((Date.now()-ms)/60000)); return m < 60 ? T(m + " 分鐘前", m + " min ago") : T(Math.floor(m/60) + " 小時 " + (m%60) + " 分前", Math.floor(m/60) + "h " + (m%60) + "m ago"); };
+  var LV = [{k:"ok", zh:"無警戒", en:"Normal"}, {k:"caution", zh:"觀察", en:"Watch"}, {k:"alert", zh:"嚴重", en:"Severe"}];
+  var wxHTML = function(code){
+    var st = ST[code], e = WXC[code], link = st ? "https://aviationweather.gov/data/metar/?id=" + st[0] + "&taf=1" : "";
+    var title = '<span class="tt"><span aria-hidden="true">🌤</span> ' + code + T(" 天氣"," weather") + "</span>";
+    var more = '<a href="' + link + '" target="_blank" rel="noopener">METAR／TAF</a>';
+    if(!st) return {cls:"", h:'<div class="t">' + title + '</div><div class="src">' + T("此站尚未設定天氣資料","No weather source for this station") + "</div>"};
+    if(!e || e.loading) return {cls:"", h:'<div class="t">' + title + "<small>" + T("讀取中…","Loading…") + "</small></div>"};
+    if(e.fail) return {cls:"", h:'<div class="t">' + title + '</div><div class="src">' + T("天氣暫時無法讀取，","Weather unavailable. ") + more + "</div>"};
+    if(e.model){
+      var c = e.model, w = c.weather_code;
+      return {cls:"", h:'<div class="t">' + title + "<small>" + T("模式估計（非 METAR）","Model estimate (not METAR)") + '</small></div>' +
+        '<div class="g"><span>' + T("風","Wind") + "<b>" + p2(Math.round(c.wind_direction_10m)).padStart(3,"0") + "°/" + Math.round(c.wind_speed_10m) + (c.wind_gusts_10m >= c.wind_speed_10m + 5 ? "G" + Math.round(c.wind_gusts_10m) : "") + "kt</b></span><span>" +
+        T("能見度","Visibility") + "<b>" + fmtVis(c.visibility) + "</b></span><span>" + T("低雲","Low cloud") + "<b>" + c.cloud_cover_low + "%</b></span><span>" + T("氣溫","Temp") + "<b>" + Math.round(c.temperature_2m) + "°C</b></span></div>" +
+        '<div class="src">' + T("此站讀不到 METAR／TAF，數值為模式估計，不做警戒判讀。","No METAR/TAF; model values only, not graded.") + " " + more + "</div>"};
+    }
+    var m = e.metar, P = e.taf ? parseTAF(e.taf.rawTAF) : null, A = P ? assessTAF(P) : null;
+    var lv = A && !A.expired ? LV[A.lvl] : null, now = Date.now();
+    var zt = function(ms){ var d = new Date(ms); return d.getUTCDate() + T("日 ","/") + p2(d.getUTCHours()) + p2(d.getUTCMinutes()) + "Z"; };
+    var hrs = function(ms){ var x = Math.max(0, Math.round(ms/60000)), H = Math.floor(x/60); return H ? T(H + " 小時" + (x%60 ? " " + x%60 + " 分" : ""), H + "h" + (x%60 ? " " + x%60 + "m" : "")) : T(x + " 分鐘", x + " min"); };
+    /* 時效：METAR 實況 75 分鐘內有效、超過 3 小時視為過舊；TAF 依效期，剩 2 小時內提示即將到期 */
+    var vt = [];
+    if(m && m.obsTime){
+      var age = now - m.obsTime*1000, ok = "METAR " + zt(m.obsTime*1000) + "・" + ago(m.obsTime*1000);
+      vt.push(age <= 75*60000 ? '<span class="ok">' + T("實況有效","Obs valid") + "・" + ok + "</span>"
+            : age <= 3*3600000 ? '<span class="w">' + T("實況逾時","Obs late") + "・" + ok + "</span>"
+            : '<span class="x">' + T("實況過舊","Obs stale") + "・" + ok + "</span>");
+    } else vt.push('<span class="x">' + T("無 METAR 實況","No METAR") + "</span>");
+    if(P && P.validFrom != null && P.validTo != null){
+      var win = zt(P.validFrom) + "–" + zt(P.validTo), left = P.validTo - now;
+      vt.push(left <= 0 ? '<span class="x">' + T("TAF 已過期・效期至 ","TAF expired・until ") + zt(P.validTo) + "</span>"
+            : P.validFrom > now ? '<span class="w">' + T("TAF 尚未生效・","TAF not yet valid・") + win + "</span>"
+            : left <= 2*3600000 ? '<span class="w">' + T("TAF 即將到期・","TAF ending・") + win + T("・剩 ","・") + hrs(left) + "</span>"
+            : '<span class="ok">' + T("TAF 有效・","TAF valid・") + win + T("・剩 ","・") + hrs(left) + "</span>");
+    } else if(e.taf) vt.push('<span class="w">' + T("TAF 效期無法判讀","TAF validity unknown") + "</span>");
+    var badge = lv ? '<span class="lv">' + (EN() ? lv.en : lv.zh) + "</span>"
+              : '<span class="lv na">' + (A && A.expired ? T("TAF 過期","TAF expired") : T("無有效 TAF","No valid TAF")) + "</span>";
+    var h = '<div class="t">' + title + badge + '</div><div class="vt">' + vt.join("") + "</div>";
+    if(m){
+      var vs = String(m.visib==null ? "" : m.visib), vm = vs === "" ? null : parseFloat(vs) * 1609.34;
+      if(vs.indexOf("+") >= 0 || (vm != null && vm >= 9600)) vm = 9999;
+      var ceil = null, cl = (m.clouds||[]).map(function(k){
+        if(/BKN|OVC|VV/.test(k.cover) && k.base != null && (ceil === null || k.base < ceil)) ceil = k.base;
+        return k.cover + (k.base != null ? String(Math.round(k.base/100)).padStart(3,"0") : "");
+      }).join(" ");
+      var wd = m.wspd === 0 ? "CALM" : (m.wdir === "VRB" || m.wdir == null ? "VRB" : String(m.wdir).padStart(3,"0") + "°") + "/" + (m.wspd==null ? "—" : m.wspd) + (m.wgst ? "G" + m.wgst : "") + "kt";
+      var old = m.obsTime && (Date.now() - m.obsTime*1000 > 3*3600000);
+      h += '<div class="g' + (old ? ' old" title="' + T("實況已超過 3 小時，數值僅供參考","Observation over 3h old") : "") + '"><span>' + T("風","Wind") + "<b>" + wd + "</b></span><span>" + T("能見度","Visibility") + "<b>" + fmtVis(vm) + "</b></span><span>" +
+        (ceil != null ? T("雲幕","Ceiling") + "<b>" + ceil + "ft" : T("雲","Cloud") + "<b>" + esc2(cl || m.cover || "—")) + "</b></span><span>" + T("氣溫","Temp") + "<b>" + (m.temp==null ? "—" : Math.round(m.temp) + "°C") + "</b></span></div>";
+    }
+    if(A){
+      h += A.expired ? '<div class="taf">' + T("TAF 已過期，不做警戒判讀；請以最新 METAR 與現場資訊為準","TAF expired; not graded") + "</div>"
+         : A.notes.length ? '<div class="taf"><b>' + T("TAF 預報","TAF") + "</b>" + A.notes.slice(0,3).map(esc2).join("、") + "</div>"
+         : '<div class="taf ok"><b>' + T("TAF 預報","TAF") + "</b>" + T("效期內未達警戒門檻","Below thresholds for the valid period") + "</div>";
+    } else h += '<div class="taf">' + T("此站沒有 TAF，僅顯示實況","No TAF; observation only") + "</div>";
+    if(m && m.rawOb) h += '<div class="raw">' + esc2(m.rawOb) + "</div>";
+    if(e.taf && e.taf.rawTAF) h += '<details class="rawtaf"><summary>' + T("TAF 原文","Raw TAF") + '</summary><div class="raw">' + esc2(e.taf.rawTAF) + "</div></details>";
+    h += '<div class="src">' + T("與「航點天氣警戒」同源、同一套判讀","Same source and grading as Weather Watch") + "・" + esc2(e.via) +
+      (e.stale ? '<span class="stale">' + T("・資料較舊","・stale") + "</span>" : "") + " " + more + "</div>";
+    return {cls: lv ? " lv-" + lv.k : "", h:h};
+  };
+  function wxInject(){
+    var box = $("live"); if(!box || typeof current === "undefined" || !current) return;
+    var head = box.querySelector(".livehead"); if(!head) return;
+    var code = current.code, el = box.querySelector(".wxcard");
+    if(!el){ el = document.createElement("div"); el.setAttribute("data-noi18n",""); head.after(el); }
+    var r = wxHTML(code); el.className = "wxcard" + r.cls; el.innerHTML = r.h;
+    loadWx(code);
+  }
+
+  /* ---------- C4 宵禁倒數（60 分鐘內顯示，30 分鐘內轉紅） ---------- */
+  var cd = document.createElement("div");
+  cd.className = "cdbanner"; cd.setAttribute("role","status"); cd.setAttribute("data-noi18n","");
+  document.body.appendChild(cd);
+  cd.onclick = function(){ var l = $("live"); if(l && !l.classList.contains("hidden")) l.scrollIntoView({behavior:"smooth", block:"start"}); };
+  window.cdTick = function(){
+    var hit = null;
+    try{
+      var lk = $("p-lookup");
+      if(lk && !lk.classList.contains("hidden") && current && current.items && current.items.curfew && current.items.curfew.status === "V"){
+        var tz = TZMAP[current.code], P = tz ? localParts(tz) : null, R = parseCurfew(current.items.curfew.time);
+        if(P && R.length){
+          applicableRanges(R, tz, P.wd).forEach(function(r){
+            if(r.skip || inR(P.min, r)) return;
+            var left = toStart(P.min, r);
+            if(left > 0 && left <= 60 && (!hit || left < hit.left)) hit = {left:left, r:r};
+          });
+        }
+      }
+    }catch(e){ hit = null; }
+    if(!hit){ cd.classList.remove("show","red"); return; }
+    var s = hit.r.s;
+    cd.innerHTML = '<span aria-hidden="true">⏱</span>' + current.code + T(" 宵禁 "," curfew ") + "<b>" + Math.floor(hit.left/60) + ":" + p2(hit.left%60) + "</b>";
+    cd.title = T("宵禁 ","Curfew ") + p2(Math.floor(s/60)) + ":" + p2(s%60) + T(" 開始，點一下看現況快報"," starts — tap for live status");
+    cd.classList.add("show"); cd.classList.toggle("red", hit.left <= 30);
+  };
+  setInterval(window.cdTick, 20000);
+  langHooks.push(window.cdTick, function(){ try{ wxInject(); }catch(e){} });
+
+  /* 掛在現況快報更新之後：每次重畫都補上天氣卡並更新倒數 */
+  if(typeof updateLive === "function"){
+    var _ul = updateLive;
+    updateLive = function(){ var r = _ul.apply(this, arguments); try{ wxInject(); }catch(e){} window.cdTick(); return r; };
+    try{ if(typeof current !== "undefined" && current) updateLive(); }catch(e){}
+  }
+  window.cdTick();
+  document.addEventListener("touchstart", function(){}, { passive:true });
+})();
+
 </script>
 </body>
 </html>
