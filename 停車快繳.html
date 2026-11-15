@@ -147,6 +147,11 @@ button{cursor:pointer;touch-action:manipulation}
 .dest .da{display:flex;gap:6px;flex-wrap:wrap}
 .dest .da a,.dest .da button{border:1px solid rgba(255,255,255,.3);background:transparent;color:inherit;border-radius:999px;padding:4px 11px;font-size:12.5px;min-height:34px;text-decoration:none;display:inline-flex;align-items:center}
 .dest .da .on{border-color:var(--signal);color:var(--signal)}
+.dest .dad{font-size:12.5px;opacity:.75;margin-top:-4px;overflow-wrap:anywhere}
+.cands{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:0 12px}
+.cands summary{font-size:13px;font-weight:700;padding:11px 0;cursor:pointer;color:var(--ink)}
+.cand{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;background:transparent;border:0;border-top:1px dashed var(--line);padding:10px 0;min-height:48px}
+.cand b{font-size:14.5px}.cand span{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
 .dkm{font-family:var(--f-mono);font-weight:700;color:var(--ink)}
 .ov{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;background:transparent;width:100%;text-align:left;min-height:52px}
 .ov b{flex:1;font-size:15px}
@@ -180,7 +185,7 @@ button{cursor:pointer;touch-action:manipulation}
   <section style="display:flex;flex-direction:column;gap:10px">
     <div class="list-head"><h2>目的地附近停車</h2><div class="right"><span class="upd" id="nearUpd"></span></div></div>
     <form class="nsearch" id="nearForm" novalidate>
-      <input id="nQ" type="search" placeholder="貼上店家地址，例：台北市信義區松高路19號" autocomplete="off" enterkeyhint="search">
+      <input id="nQ" type="search" placeholder="店名或地址，例：鼎泰豐 信義店" autocomplete="off" enterkeyhint="search">
       <button class="btn btn-pay" type="submit">找車位</button>
     </form>
     <div class="filters" id="nRadius">
@@ -296,6 +301,8 @@ button{cursor:pointer;touch-action:manipulation}
     <p class="hint">金鑰只存在這支手機的瀏覽器裡，不會上傳到其他地方。到 <a href="https://tdx.transportdata.tw/" target="_blank" rel="noopener" style="color:inherit">tdx.transportdata.tw</a> 註冊會員 → 會員中心 → API 金鑰。</p>
     <label class="field"><span>Client ID</span><input id="cId" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
     <label class="field"><span>Client Secret</span><input id="cSecret" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+    <label class="field"><span>Google Maps API 金鑰（選填，店名搜尋更準）</span><input id="cGkey" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="不填也能用，會改用開放地圖資料"></label>
+    <p class="hint">沒填的話，店名搜尋用 OpenStreetMap 與 TDX 地標資料，連鎖店與知名店家大多找得到，小店可能找不到；填了會優先用 Google 地點搜尋（需在 Google Cloud 啟用 Maps JavaScript API 與 Places API (New)）。</p>
     <label class="field"><span>預設縣市</span><select id="cCity"></select></label>
     <p class="err" id="cErr" hidden></p>
     <p class="hint" id="cOk" hidden style="color:var(--ok)"></p>
@@ -303,7 +310,9 @@ button{cursor:pointer;touch-action:manipulation}
       <button type="button" class="btn btn-plain" id="cCancel">關閉</button>
       <button type="submit" class="btn btn-pay" id="cSave">儲存並測試</button>
     </div>
-    <button type="button" class="chip" id="cClear" style="align-self:flex-start">清除金鑰</button>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button type="button" class="chip" id="cClear">清除金鑰</button>
+    </div>
   </form>
 </div>
 
@@ -336,7 +345,7 @@ button{cursor:pointer;touch-action:manipulation}
   const rj = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
   const wj = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
 
-  function loadLocal(){ const d = rj(KEY); if (d && Array.isArray(d.lots)) state = Object.assign(state, d); if (!Array.isArray(state.watch)) state.watch = []; if (!Array.isArray(state.recent)) state.recent = []; if (!state.nRadius) state.nRadius = 500; if (!CENT[state.city]) state.city = "Taipei"; }
+  function loadLocal(){ const d = rj(KEY); if (d && Array.isArray(d.lots)) state = Object.assign(state, d); if (!Array.isArray(state.watch)) state.watch = []; if (!Array.isArray(state.recent)) state.recent = []; if (!state.nRadius) state.nRadius = 500; if (!CENT[state.city]) state.city = "Taipei"; state.watch = state.watch.filter(w => !String(w.id).startsWith("DEMO-")); try { localStorage.removeItem("parking-pay-demo"); } catch (e) {} }
   function persist(){ state.updated = Date.now(); wj(KEY, state); }
   function toast(t){ const el = $("#toast"); el.textContent = t; el.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => el.hidden = true, 2000); }
   const uid = () => Math.random().toString(36).slice(2, 9);
@@ -457,7 +466,7 @@ button{cursor:pointer;touch-action:manipulation}
     $("#findBtn").hidden = false; $("#refreshBtn").hidden = false;
     let html = liveErr ? `<p class="err">${esc(liveErr)}</p>` : "";
     if (!state.watch.length) {
-      html += `<p class="empty">還沒有關注的停車場。按下方「搜尋停車場空位」，找到常去的按「關注」，空位就會固定顯示在這裡。</p>`;
+      html += `<p class="empty">還沒有關注的停車場。在附近停車結果或「全台停車場空位」裡按「關注」，空位就會固定顯示在這裡。</p>`;
     } else {
       html += `<div class="board">` + state.watch.map(w => {
         const d = info(w.city, w.id); const v = d && d.car; const [cls, lab] = level(v, d && d.full);
@@ -546,42 +555,101 @@ button{cursor:pointer;touch-action:manipulation}
     return out;
   }
   const wkt = g => { const m = String(g || "").match(/POINT\s*\(\s*(-?[\d.]+)\s+(-?[\d.]+)/i); return m ? { lon: +m[1], lat: +m[2] } : null; };
+  const looksAddr = q => /\d+\s*號|[路街大道]\s*\d|[段巷弄]\s*\d/.test(q);
+  const fmtAddr = s => norm(s).replace(/\s+/g, "");
   async function tdxGeo(kind, q){
     try {
       const j = await api(`${ADV}/V3/Map/GeoCode/Coordinate/${kind}/${encodeURIComponent(q)}?format=JSON`);
       const arr = Array.isArray(j) ? j : (j.Data || j.data || []);
-      return arr.map(x => { const p = wkt(x.Geometry || x.geometry); return p && Object.assign(p, { label: x.Address || x.MarkName || x.Markname || q }); }).filter(Boolean);
+      return arr.map(x => { const p = wkt(x.Geometry || x.geometry); if (!p) return null;
+        const nm = x.MarkName || x.Markname || ""; return Object.assign(p, { name: nm || x.Address || q, addr: x.Address || "", src: "TDX" }); }).filter(Boolean);
     } catch (e) { if (["NOKEY", "BADKEY"].includes(e.message)) throw e; return []; }
+  }
+  function bias(q){
+    const c = detectCity(q); if (c) return CENT[c];
+    if (nDest) return [nDest.lat, nDest.lon];
+    return CENT[state.city] || CENT.Taipei;
+  }
+  async function photonGeo(q){
+    try {
+      const [la, lo] = bias(q);
+      const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=10&lat=${la}&lon=${lo}&bbox=118.1,21.8,122.1,26.4`);
+      if (!r.ok) return [];
+      const j = await r.json();
+      return (j.features || []).map(f => { const p = f.properties || {}, c = f.geometry && f.geometry.coordinates; if (!c) return null;
+        const hn = p.housenumber ? (/號$/.test(p.housenumber) ? p.housenumber : p.housenumber + "號") : "";
+        const addr = fmtAddr([p.city || p.county || p.state, p.district || p.locality, p.street, hn].filter(Boolean).join(""));
+        return { lat: c[1], lon: c[0], name: p.name || addr || q, addr, src: "OSM" }; }).filter(Boolean);
+    } catch (e) { return []; }
   }
   async function osmGeo(q){
     try {
       const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=tw&limit=5&accept-language=zh-TW&q=${encodeURIComponent(q)}`);
       if (!r.ok) return [];
-      return (await r.json()).map(x => ({ lat: +x.lat, lon: +x.lon, label: x.display_name.split(",").map(s => s.trim()).reverse().filter(s => !/^(臺灣|Taiwan|\d{3,6})$/.test(s)).join("") }));
+      return (await r.json()).map(x => { const parts = x.display_name.split(",").map(s => s.trim());
+        const addr = fmtAddr(parts.slice(x.name ? 1 : 0).reverse().filter(s => !/^(臺灣|Taiwan|\d{3,6})$/.test(s)).join(""));
+        return { lat: +x.lat, lon: +x.lon, name: x.name || addr, addr, src: "OSM" }; });
     } catch (e) { return []; }
+  }
+  // 選用：Google 地點搜尋（店名最準，需自備 Google Maps API 金鑰）
+  let gmLoading = null;
+  function loadGoogle(key){
+    if (window.google && google.maps && google.maps.places) return Promise.resolve();
+    if (gmLoading) return gmLoading;
+    gmLoading = new Promise((res, rej) => {
+      window.__gmReady = () => res();
+      const sc = document.createElement("script");
+      sc.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&language=zh-TW&region=TW&loading=async&callback=__gmReady`;
+      sc.onerror = () => { gmLoading = null; rej(new Error("GM")); };
+      document.head.appendChild(sc); setTimeout(() => { gmLoading = null; rej(new Error("GM")); }, 9000);
+    });
+    return gmLoading;
+  }
+  async function googleGeo(q){
+    const key = (cred().gkey || "").trim(); if (!key) return [];
+    try {
+      await loadGoogle(key);
+      const [la, lo] = bias(q);
+      const { places } = await google.maps.places.Place.searchByText({ textQuery: q, fields: ["displayName", "formattedAddress", "location"],
+        language: "zh-TW", region: "tw", maxResultCount: 8, locationBias: { lat: la, lng: lo } });
+      return (places || []).map(p => ({ lat: p.location.lat(), lon: p.location.lng(), name: p.displayName || q,
+        addr: fmtAddr(String(p.formattedAddress || "").replace(/^\d{3,6}/, "").replace(/^臺灣/, "")), src: "Google" }));
+    } catch (e) { return []; }
+  }
+  function merge(lists){
+    const out = [];
+    lists.flat().forEach(c => { if (!c || !isFinite(c.lat) || !isFinite(c.lon)) return;
+      if (c.lat < 21.5 || c.lat > 26.6 || c.lon < 118 || c.lon > 122.3) return;
+      if (out.some(o => dist(o, c) < 60 && (o.name === c.name || !c.name))) return; out.push(c); });
+    return out.slice(0, 8);
   }
   async function geocode(q){
     const m = q.match(/@?(-?\d{1,2}\.\d{3,})\s*,\s*(-?\d{2,3}\.\d{3,})/);
-    if (m) return [{ lat: +m[1], lon: +m[2], label: `座標 ${(+m[1]).toFixed(5)}, ${(+m[2]).toFixed(5)}` }];
-    let out = await tdxGeo("Address", q);
-    if (!out.length) out = await tdxGeo("Markname", q);
-    if (!out.length) out = await osmGeo(q);
-    return out.slice(0, 5);
+    if (m) return [{ lat: +m[1], lon: +m[2], name: "指定座標", addr: `${(+m[1]).toFixed(5)}, ${(+m[2]).toFixed(5)}` }];
+    if (looksAddr(q)) {
+      const a = await tdxGeo("Address", q);
+      if (a.length) return a.slice(0, 1).map(x => Object.assign(x, { name: x.addr || q }));
+    }
+    // 店名：多個來源一起找，合併成候選清單
+    const [g, ph, tm, nm] = await Promise.all([googleGeo(q), photonGeo(q), tdxGeo("Markname", q), osmGeo(q)]);
+    const out = merge([g, ph, tm, nm]);
+    if (!out.length && !looksAddr(q)) { const a = await tdxGeo("Address", q); return a.slice(0, 1).map(x => Object.assign(x, { name: x.addr || q })); }
+    return out;
   }
   async function runNear(q){
     q = q.trim(); if (!q) { $("#nQ").focus(); return; }
     if (!hasKey()) { openSet(); return; }
-    nErr = ""; nBusy = "定位地址中…"; nDest = null; renderNear();
+    nErr = ""; nBusy = looksAddr(q) ? "定位地址中…" : `搜尋「${q}」…`; nDest = null; nCands = []; renderNear();
     let cands = [];
     try { cands = await geocode(q); } catch (e) { nErr = errText(e); }
-    if (!cands.length) { nBusy = ""; nErr = nErr || "找不到這個地址。試試加上縣市、改用門牌地址，或貼上 Google 地圖的座標（例：25.0408, 121.5671）。"; renderNear(); return; }
+    if (!cands.length) { nBusy = ""; nErr = nErr || (looksAddr(q) ? "找不到這個地址，試試加上縣市。" : "找不到這個店家。試試加上分店或地區（例：鼎泰豐 信義），或改貼地址。") + "也可以貼上 Google 地圖的座標（例：25.0408, 121.5671）。"; renderNear(); return; }
     cands.forEach(c => c.q = q); nCands = cands;
     state.recent = [q, ...state.recent.filter(x => x !== q)].slice(0, 5); persist(); renderRecent();
     pickDest(0);
   }
   async function pickDest(i){
     const d = nCands[i]; if (!d) return;
-    d.idx = i; d.cities = citiesNear(d, detectCity(d.label) || detectCity(d.q));
+    d.idx = i; d.cities = citiesNear(d, detectCity(d.addr) || detectCity(d.name) || detectCity(d.q));
     nDest = d; nBusy = `讀取${d.cities.map(cityName).join("、")}停車場…`; nErr = ""; renderNear();
     const res = await Promise.allSettled(d.cities.flatMap(c => [loadCarParks(c), live[c] && Date.now() - live[c].at < 30000 ? null : refreshCity(c)]));
     const bad = res.find(r => r.status === "rejected"); if (bad && !d.cities.some(c => carParks[c])) nErr = errText(bad.reason);
@@ -606,7 +674,7 @@ button{cursor:pointer;touch-action:manipulation}
     const box = $("#nearBox");
     if (nBusy) { box.innerHTML = `<div class="loading"><span class="spin">↻</span> ${esc(nBusy)}</div>`; return; }
     if (nErr && !nDest) { box.innerHTML = `<p class="err">${esc(nErr)}</p>`; return; }
-    if (!nDest) { box.innerHTML = `<p class="empty">在 Google 或 Apple 地圖找到店家後，複製地址貼到上面，就會列出附近停車場和剩餘車位。全台縣市都能查。</p>`; return; }
+    if (!nDest) { box.innerHTML = `<p class="empty">輸入店名（可加分店或地區，例：「鼎泰豐 信義」）或地址，就會列出附近停車場和剩餘車位。有多間分店時可以再選。全台縣市都能查。</p>`; return; }
     let rows = nearRows(); const allCnt = rows.length;
     const liveRows = rows.filter(r => r.d && r.d.car);
     const sumCar = liveRows.reduce((s, r) => s + Math.max(0, r.d.car.a), 0);
@@ -614,13 +682,14 @@ button{cursor:pointer;touch-action:manipulation}
     if (nOnly) rows = rows.filter(r => r.d && r.d.car && r.d.car.a > 0 && !r.d.full);
     const rad = state.nRadius >= 1000 ? state.nRadius / 1000 + " km" : state.nRadius + " m";
     const near1 = liveRows.find(r => r.d.car.a > 0 && !r.d.full);
-    const alt = nCands.length > 1 ? nCands.map((c, i) => `<button type="button" class="${i === nDest.idx ? "on" : ""}" data-cand="${i}">${esc(c.label.slice(0, 18))}</button>`).join("") : "";
+    const others = nCands.map((c, i) => [c, i]).filter(([, i]) => i !== nDest.idx);
     let html = `<div class="dest">
-      <div class="dl">目的地</div><b>${esc(nDest.label)}</b>
+      <div class="dl">目的地</div><b>${esc(nDest.name)}</b>${nDest.addr && nDest.addr !== nDest.name ? `<div class="dad">${esc(nDest.addr)}</div>` : ""}
       <div class="sum">${rad} 內 ${allCnt} 間停車場，${liveRows.length} 間有即時資料${liveRows.length ? `，共 <strong>${sumCar}</strong> 個汽車空位` : ""}${near1 ? `<br>最近有空位：${esc(near1.name)}（${fmtD(near1.m)}，剩 ${near1.d.car.a} 位）` : (liveRows.length ? "<br>附近有即時資料的停車場目前都滿了，放大範圍試試" : "")}</div>
-      <div class="da"><a href="${esc(mapUrl(nDest.label, nDest.lat, nDest.lon))}" target="_blank" rel="noopener">在地圖看目的地</a><button type="button" data-nclear>清除</button></div>
-      ${alt ? `<div class="dl">不是這裡？選其他結果</div><div class="da">${alt}</div>` : ""}
+      <div class="da"><a href="${esc(mapUrl(nDest.name, nDest.lat, nDest.lon))}" target="_blank" rel="noopener">在地圖確認位置</a><button type="button" data-nclear>清除</button></div>
     </div>`;
+    if (others.length) html += `<details class="cands"${nDest.idx === 0 && !nCands.pick ? " open" : ""}><summary>不是這間？還有 ${others.length} 個符合「${esc(nDest.q)}」的地點</summary>
+      ${others.map(([c, i]) => `<button type="button" class="cand" data-cand="${i}"><b>${esc(c.name)}</b><span>${esc(c.addr || "")}${c.addr ? " · " : ""}距目前選擇 ${fmtD(dist(c, nDest))}</span></button>`).join("")}</details>`;
     if (nErr) html += `<p class="err">${esc(nErr)}</p>`;
     if (!rows.length) {
       html += `<p class="empty">${nOnly ? "範圍內目前沒有確定有空位的停車場" : `${rad} 內沒有停車場資料`}${state.nRadius < 2000 ? "，" : "。"}</p>`
@@ -651,7 +720,7 @@ button{cursor:pointer;touch-action:manipulation}
     if (r) { state.nRadius = +r.dataset.r; persist(); renderNear(); return; }
     if (e.target.closest("#nOnly")) { nOnly = !nOnly; renderNear(); return; }
     const rc = e.target.closest("[data-recent]"); if (rc) { $("#nQ").value = rc.dataset.recent; runNear(rc.dataset.recent); return; }
-    const cd = e.target.closest("[data-cand]"); if (cd) { pickDest(+cd.dataset.cand); return; }
+    const cd = e.target.closest("[data-cand]"); if (cd) { nCands.pick = true; pickDest(+cd.dataset.cand); window.scrollTo({ top: $("#nearForm").getBoundingClientRect().top + scrollY - 16, behavior: "smooth" }); return; }
     if (e.target.closest("[data-nclear]")) { nDest = null; nCands = []; nErr = ""; $("#nQ").value = ""; $("#nearUpd").textContent = ""; renderNear(); return; }
     const nw = e.target.closest("[data-nwatch]");
     if (nw) {
@@ -777,19 +846,19 @@ button{cursor:pointer;touch-action:manipulation}
 
   /* ---------- 設定 ---------- */
   function openSet(){
-    const c = cred(); $("#cId").value = c.id || ""; $("#cSecret").value = c.secret || ""; $("#cCity").value = state.city || "Taipei";
+    const c = cred(); $("#cId").value = c.id || ""; $("#cSecret").value = c.secret || ""; $("#cGkey").value = c.gkey || ""; $("#cCity").value = state.city || "Taipei";
     $("#cErr").hidden = true; $("#cOk").hidden = true; $("#setSheet").hidden = false;
   }
   $("#gearBtn").addEventListener("click", openSet);
   $("#cCancel").addEventListener("click", () => $("#setSheet").hidden = true);
-  $("#cClear").addEventListener("click", () => { localStorage.removeItem(CRED); localStorage.removeItem(TOK); $("#cId").value = $("#cSecret").value = ""; setDot(""); render(); toast("已清除金鑰"); });
+  $("#cClear").addEventListener("click", () => { localStorage.removeItem(CRED); localStorage.removeItem(TOK); $("#cId").value = $("#cSecret").value = $("#cGkey").value = ""; setDot(""); render(); toast("已清除金鑰"); });
   $("#setForm").addEventListener("submit", async e => {
     e.preventDefault();
     const id = $("#cId").value.trim(), secret = $("#cSecret").value.trim();
     state.city = $("#cCity").value; persist();
     $("#cErr").hidden = true; $("#cOk").hidden = true;
     if (!id || !secret) { $("#cErr").textContent = "請填入 Client ID 和 Client Secret。"; $("#cErr").hidden = false; return; }
-    wj(CRED, { id, secret }); localStorage.removeItem(TOK);
+    wj(CRED, { id, secret, gkey: $("#cGkey").value.trim() }); gmLoading = null; localStorage.removeItem(TOK);
     $("#cSave").textContent = "測試中…";
     try {
       await refreshCity(state.city);
