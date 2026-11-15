@@ -152,6 +152,13 @@ button{cursor:pointer;touch-action:manipulation}
 .cands summary{font-size:13px;font-weight:700;padding:11px 0;cursor:pointer;color:var(--ink)}
 .cand{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;background:transparent;border:0;border-top:1px dashed var(--line);padding:10px 0;min-height:48px}
 .cand b{font-size:14.5px}.cand span{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.gm{background:var(--surface);border:1.5px solid var(--signal);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;font-size:13.5px}
+.gm>b{font-size:15.5px}.gm p{margin:0}
+.gm ol{margin:0;padding-left:20px;color:var(--muted)}.gm ol b{color:var(--ink)}
+.gma{display:flex;gap:8px;flex-wrap:wrap}.gma .btn{flex:1 1 140px}
+.gmrow{flex-direction:row!important;flex-wrap:wrap;align-items:center;gap:4px!important;font-size:12.5px;color:var(--muted)}
+.gmrow a{color:var(--ink);font-weight:700}
+.gmrow button{border:1px solid var(--line);background:transparent;border-radius:999px;padding:2px 10px;font-size:12.5px;min-height:30px}
 .dkm{font-family:var(--f-mono);font-weight:700;color:var(--ink)}
 .ov{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;background:transparent;width:100%;text-align:left;min-height:52px}
 .ov b{flex:1;font-size:15px}
@@ -194,6 +201,7 @@ button{cursor:pointer;touch-action:manipulation}
       <button type="button" class="chip" data-r="1000">1 km</button>
       <button type="button" class="chip" data-r="2000">2 km</button>
       <button type="button" class="chip" id="nOnly">只看有空位</button>
+      <button type="button" class="chip" data-gmpaste>貼上 Google 地圖</button>
     </div>
     <div class="filters" id="nRecent"></div>
     <div id="nearBox" class="list"></div>
@@ -650,19 +658,59 @@ button{cursor:pointer;touch-action:manipulation}
     if (!out.length && !looksAddr(q)) { const a = await tdxGeo("Address", q); return a.slice(0, 1).map(x => Object.assign(x, { name: x.addr || q })); }
     return out;
   }
-  let nSeq = 0, candOpen = true;
+  let nSeq = 0, candOpen = true, nMiss = "";
+  const gmUrl = q => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+  const isShare = t => /https?:\/\/|maps\.app\.goo\.gl|goo\.gl\/maps|google\.[a-z.]+\/maps/i.test(t) || /\n/.test(t.trim());
+  // 解析 Google 地圖「分享 → 拷貝」的內容：抓座標、地址、店名
+  function parseShare(text){
+    const t = String(text || "");
+    const c = t.match(/!3d(-?\d{1,2}\.\d+)!4d(-?\d{2,3}\.\d+)/) || t.match(/@(-?\d{1,2}\.\d+),(-?\d{2,3}\.\d+)/)
+      || t.match(/[?&](?:q|ll|query|center|destination)=(-?\d{1,2}\.\d+)(?:,|%2C)\s*(-?\d{2,3}\.\d+)/i);
+    const raw = t.replace(/https?:\/\/\S+/g, "\n").replace(/\r/g, ""), clean = norm(raw);
+    const am = clean.match(/(?:\d{3,6})?(?:臺灣)?((?:[一-鿿]{2}[縣市])[一-鿿\d０-９\-之、 ]*?\d+(?:-\d+)?號(?:之\d+)?(?:\d+樓(?:之\d+)?)?)/);
+    const am2 = am ? null : clean.match(/(?:\d{3,6})?(?:臺灣)?((?:[\u4e00-\u9fff]{2}[縣市])[\u4e00-\u9fff]{1,3}[區鄉鎮市][\u4e00-\u9fff\d段巷弄路街]*)/);
+    let addr = am ? am[1].replace(/\s+/g, "") : am2 ? am2[1] : "";
+    let name = "";
+    if (am || am2) name = raw.slice(0, (am || am2).index).replace(/(?:\d{3,6})?(?:臺灣)?\s*$/, "");
+    const pm = t.match(/\/maps\/place\/([^/@?]+)/);
+    if (!name.trim() && pm) { try { name = decodeURIComponent(pm[1].replace(/\+/g, " ")); } catch (e) {} }
+    if (!name.trim()) name = raw.split("\n").map(x => x.trim()).find(x => x && !/^\d{3,6}/.test(x) && (!addr || !x.includes(addr))) || "";
+    name = name.replace(/\s+/g, " ").replace(/[，,。·・|｜\-–—\s]+$/, "").trim().slice(0, 40);
+    return { name, addr, lat: c ? +c[1] : null, lon: c ? +c[2] : null };
+  }
   async function runNear(q){
-    q = q.trim(); if (!q) { $("#nQ").focus(); return; }
-    const my = ++nSeq; candOpen = true;
+    q = String(q || "").trim(); if (!q) { $("#nQ").focus(); return; }
+    const my = ++nSeq; candOpen = true; nMiss = "";
     if (!hasKey()) { openSet(); return; }
-    nErr = ""; nBusy = looksAddr(q) ? "定位地址中…" : `搜尋「${q}」…`; nDest = null; nCands = []; renderNear();
-    let cands = [];
-    try { cands = await geocode(q); } catch (e) { nErr = errText(e); }
+    let cands = [], label = q, share = null;
+    if (isShare(q)) {
+      share = parseShare(q); label = share.name || share.addr || "Google 地圖位置";
+      $("#nQ").value = label;
+    }
+    nErr = ""; nBusy = share ? "讀取 Google 地圖分享的位置…" : looksAddr(q) ? "定位地址中…" : `搜尋「${q}」…`; nDest = null; nCands = []; renderNear();
+    try {
+      if (share && share.lat && share.lon) cands = [{ lat: share.lat, lon: share.lon, name: share.name || share.addr || "Google 地圖位置", addr: share.addr }];
+      else if (share && share.addr) { cands = (await geocode(share.addr)).slice(0, 1); cands.forEach(c => { c.name = share.name || share.addr; c.addr = c.addr || share.addr; }); }
+      else if (share) { cands = []; }
+      else cands = await geocode(q);
+    } catch (e) { nErr = errText(e); }
     if (my !== nSeq) return;
-    if (!cands.length) { nBusy = ""; nErr = nErr || (looksAddr(q) ? "找不到這個地址，試試加上縣市。" : "找不到這個店家。試試加上分店或地區（例：鼎泰豐 信義），或改貼地址。") + "也可以貼上 Google 地圖的座標（例：25.0408, 121.5671）。"; renderNear(); return; }
-    cands.forEach(c => c.q = q); nCands = cands;
-    state.recent = [q, ...state.recent.filter(x => x !== q)].slice(0, 5); persist(); renderRecent();
+    if (!cands.length) {
+      nBusy = "";
+      if (share) nErr = share.name || share.addr ? `讀不到「${label}」的位置。` : "這段內容看不出地址或座標。";
+      else { nMiss = q; nErr = ""; }
+      if (share) nErr += "在 Google 地圖點店家 → 分享 → 選「拷貝」（要包含地址那段文字），再回來按「貼上 Google 地圖」。只複製短網址的話讀不到位置。";
+      renderNear(); return;
+    }
+    cands.forEach(c => c.q = label); nCands = cands;
+    state.recent = [label, ...state.recent.filter(x => x !== label)].slice(0, 5); persist(); renderRecent();
     pickDest(0);
+  }
+  async function pasteGoogle(){
+    let t = "";
+    try { t = await navigator.clipboard.readText(); } catch (e) {}
+    if (!t || !t.trim()) { $("#nQ").focus(); toast("讀不到剪貼簿，請在輸入框長按「貼上」再按找車位"); return; }
+    runNear(isShare(t) || looksAddr(t) ? t : t);
   }
   async function pickDest(i){
     const d = nCands[i]; if (!d) return;
@@ -693,6 +741,17 @@ button{cursor:pointer;touch-action:manipulation}
     $("#nOnly").classList.toggle("on", nOnly);
     const box = $("#nearBox");
     if (nBusy) { box.innerHTML = `<div class="loading"><span class="spin">↻</span> ${esc(nBusy)}</div>`; return; }
+    if (nMiss && !nDest) {
+      box.innerHTML = `<div class="gm">
+        <b>開放地圖找不到「${esc(nMiss)}」</b>
+        <p>改用 Google 地圖找，找到後把位置帶回來：</p>
+        <ol><li>按下方按鈕，在 Google 地圖找到這家店</li><li>點店家 → <b>分享</b> → <b>拷貝</b></li><li>回到這裡按「貼上並查停車位」</li></ol>
+        <div class="gma"><a class="btn btn-pay" href="${esc(gmUrl(nMiss))}" target="_blank" rel="noopener">到 Google 地圖查</a>
+        <button class="btn btn-plain" type="button" data-gmpaste>貼上並查停車位</button></div>
+        <p class="hint">想要全自動：在右上角設定填入 Google Maps API 金鑰，找不到時會直接用 Google 地點搜尋，不用切換。</p>
+      </div>`;
+      return;
+    }
     if (nErr && !nDest) { box.innerHTML = `<p class="err">${esc(nErr)}</p>`; return; }
     if (!nDest) { box.innerHTML = `<p class="empty">輸入店名（可加分店或地區，例：「鼎泰豐 信義」）或地址，就會列出附近停車場和剩餘車位。有多間分店時可以再選。全台縣市都能查。</p>`; return; }
     let rows = nearRows(); const allCnt = rows.length;
@@ -709,7 +768,9 @@ button{cursor:pointer;touch-action:manipulation}
       <div class="da"><a href="${esc(mapUrl(nDest.name, nDest.lat, nDest.lon))}" target="_blank" rel="noopener">在地圖確認位置</a><button type="button" data-nclear>清除</button></div>
     </div>`;
     if (others.length) html += `<details class="cands"${candOpen ? " open" : ""}><summary>不是這間？還有 ${others.length} 個符合「${esc(nDest.q)}」的地點</summary>
-      ${others.map(([c, i]) => `<button type="button" class="cand" data-cand="${i}"><b>${esc(c.name)}</b><span>${esc(c.addr || "")}${c.addr ? " · " : ""}距目前選擇 ${fmtD(dist(c, nDest))}</span></button>`).join("")}</details>`;
+      ${others.map(([c, i]) => `<button type="button" class="cand" data-cand="${i}"><b>${esc(c.name)}</b><span>${esc(c.addr || "")}${c.addr ? " · " : ""}距目前選擇 ${fmtD(dist(c, nDest))}</span></button>`).join("")}
+      <div class="cand gmrow">都不是？<a href="${esc(gmUrl(nDest.q))}" target="_blank" rel="noopener">到 Google 地圖查</a>，拷貝分享內容後按 <button type="button" data-gmpaste>貼上</button></div></details>`;
+    else html += `<p class="hint" style="text-align:center">位置不對？<a href="${esc(gmUrl(nDest.q))}" target="_blank" rel="noopener" style="color:inherit">到 Google 地圖查</a>，拷貝分享內容後按 <button type="button" class="chip" data-gmpaste>貼上 Google 地圖</button></p>`;
     if (nErr) html += `<p class="err">${esc(nErr)}</p>`;
     if (!rows.length) {
       html += `<p class="empty">${nOnly ? "範圍內目前沒有確定有空位的停車場" : `${rad} 內沒有停車場資料`}${state.nRadius < 2000 ? "，" : "。"}</p>`
@@ -740,9 +801,10 @@ button{cursor:pointer;touch-action:manipulation}
     const r = e.target.closest("[data-r]");
     if (r) { state.nRadius = +r.dataset.r; persist(); renderNear(); return; }
     if (e.target.closest("#nOnly")) { nOnly = !nOnly; renderNear(); return; }
+    if (e.target.closest("[data-gmpaste]")) { pasteGoogle(); return; }
     const rc = e.target.closest("[data-recent]"); if (rc) { $("#nQ").value = rc.dataset.recent; runNear(rc.dataset.recent); return; }
     const cd = e.target.closest("[data-cand]"); if (cd) { candOpen = false; pickDest(+cd.dataset.cand); window.scrollTo({ top: $("#nearForm").getBoundingClientRect().top + scrollY - 16, behavior: "smooth" }); return; }
-    if (e.target.closest("[data-nclear]")) { nDest = null; nCands = []; nErr = ""; $("#nQ").value = ""; $("#nearUpd").textContent = ""; renderNear(); return; }
+    if (e.target.closest("[data-nclear]")) { nMiss = ""; nDest = null; nCands = []; nErr = ""; $("#nQ").value = ""; $("#nearUpd").textContent = ""; renderNear(); return; }
     const nw = e.target.closest("[data-nwatch]");
     if (nw) {
       const [city, id] = nw.dataset.nwatch.split("|"); const i = state.watch.findIndex(w => w.id === id && w.city === city);
