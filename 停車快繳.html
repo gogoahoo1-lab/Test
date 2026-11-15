@@ -105,8 +105,6 @@ button{cursor:pointer;touch-action:manipulation}
 .chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:5px 11px;font-size:12.5px;color:var(--muted);min-height:34px}
 .chip.on{border-color:var(--ink);color:var(--ink);font-weight:700}
 .chip.del{align-self:flex-start}
-.example{opacity:.75;border-style:dashed}
-.tag{display:inline-block;font-size:11px;font-weight:700;border:1px solid var(--muted);color:var(--muted);border-radius:4px;padding:0 5px;margin-left:6px;vertical-align:2px}
 .empty{color:var(--muted);font-size:13.5px;text-align:center;padding:6px 0;margin:0}
 
 .sheet{position:fixed;inset:0;background:rgba(10,12,15,.55);display:flex;align-items:flex-end;justify-content:center;z-index:20;overscroll-behavior:contain}
@@ -141,10 +139,6 @@ button{cursor:pointer;touch-action:manipulation}
 .rnum small{font-size:11px;font-weight:700}
 .ract{grid-column:1 / -1;display:flex;gap:6px;flex-wrap:wrap}
 .ract a{text-decoration:none;display:inline-flex;align-items:center}
-.nsearch{display:flex;gap:8px}
-.nsearch input{flex:1;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface);font-size:16px}
-.nsearch input:focus{border-color:var(--ink);outline:none}
-.nsearch .btn{flex:0 0 auto;font-size:15px}
 .chip.rec{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dest{background:var(--asphalt);color:var(--asphalt-ink);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
 .dest .dl{font-size:12px;opacity:.7}
@@ -179,55 +173,11 @@ button{cursor:pointer;touch-action:manipulation}
 .miss b{font-size:15px}.miss span{color:var(--muted)}
 @media (prefers-reduced-motion:no-preference){
   .glow{animation:ring 1.5s ease-out infinite}
+  @keyframes ring{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--signal) 75%,transparent)}100%{box-shadow:0 0 0 16px transparent}}
 }
-/* Google 地圖接力卡 */
-.relay{background:var(--surface);border:1.5px solid var(--signal);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:12px}
-.rhead{display:flex;align-items:flex-start;gap:10px}
-.rpin{width:38px;height:38px;border-radius:10px;background:var(--signal);color:var(--signal-ink);display:grid;place-items:center;flex:none}
-.rt{flex:1;display:flex;flex-direction:column;gap:2px}
-.rt b{font-size:16px;line-height:1.35;overflow-wrap:anywhere}
-.rt small{font-size:12.5px;color:var(--muted)}
-.rx{flex:none;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:20px;line-height:1;display:grid;place-items:center}
-.steps{list-style:none;margin:0;padding:0;display:flex;align-items:center}
-.steps li{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);white-space:nowrap}
-.steps li:first-child{flex:1}
-.steps li:first-child::after{content:"";flex:1;height:2px;border-radius:1px;background:var(--line);margin:0 10px;min-width:14px}
-.steps li.done::after{background:var(--ok)}
-.steps i{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:700;font-size:12.5px;border:1.5px solid var(--line);background:var(--surface);flex:none;font-family:var(--f-mono)}
-.steps li.now{color:var(--ink);font-weight:700}
-.steps li.now i{background:var(--signal);border-color:var(--signal);color:var(--signal-ink)}
-.steps li.done i{background:var(--ok);border-color:var(--ok);color:#fff}
-.rbig{flex:none;min-height:54px;font-size:16.5px;border-radius:12px;gap:8px}
-.rtip{margin:0;font-size:13px;color:var(--muted);text-align:center}
-.rtip b{color:var(--ink)}
-.rlink{align-self:center;background:transparent;border:0;color:var(--ink);font-size:13px;font-weight:700;text-decoration:underline;text-underline-offset:3px;min-height:40px;padding:0 6px;display:inline-flex;align-items:center}
-.rnote{background:color-mix(in srgb,var(--warn) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--warn) 45%,transparent);color:var(--ink);border-radius:10px;padding:9px 11px;font-size:13px;line-height:1.5}
-.rback{margin:0;text-align:center;font-weight:700;font-size:14px;color:var(--ok)}
-.ill{display:grid;grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr);align-items:center;gap:6px;background:var(--bg);border-radius:12px;padding:12px}
-.illar{color:var(--muted);display:grid;place-items:center}
-.ph{aspect-ratio:10/11;max-height:150px;border:1.5px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden;display:flex;flex-direction:column}
-.phmap{flex:1;position:relative;background:
-  linear-gradient(90deg,transparent 46%,var(--line) 46% 50%,transparent 50%) 0 0/100% 100%,
-  linear-gradient(0deg,transparent 58%,var(--line) 58% 62%,transparent 62%) 0 0/100% 100%,
-  linear-gradient(135deg,color-mix(in srgb,var(--ok) 14%,var(--surface)),var(--surface))}
-.phpin{position:absolute;left:50%;top:50%;transform:translate(-50%,-70%);color:var(--danger)}
-.ph.dim .phmap{background:color-mix(in srgb,var(--ink) 18%,var(--surface))}
-.phsheet{padding:7px 7px 8px;border-top:1px solid var(--line);background:var(--surface)}
-.phsheet b{display:block;font-size:11px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.phsheet em{display:block;height:5px;width:62%;background:var(--line);border-radius:3px;margin:4px 0 6px}
-.phacts{display:flex;gap:3px}
-.phacts span{flex:1;font-size:10px;text-align:center;border:1px solid var(--line);border-radius:999px;padding:2px 0;color:var(--muted);white-space:nowrap}
-.phacts .hl{border-color:var(--signal);background:color-mix(in srgb,var(--signal) 26%,var(--surface));color:var(--ink);font-weight:700;position:relative}
-.tap{position:absolute;right:-3px;bottom:-7px;width:13px;height:13px;border-radius:50%;background:var(--ink);opacity:.3}
 .srcb{display:inline-block;margin-left:8px;font-size:11px;font-weight:700;color:var(--signal-ink);background:var(--signal);border-radius:4px;padding:0 6px;opacity:1;vertical-align:1px}
 .gmcand{flex-direction:row!important;align-items:center!important;gap:8px!important;text-decoration:none;color:inherit}
 .gmcand span{color:var(--ink)!important;font-weight:500;text-decoration:underline;text-underline-offset:3px}
-@media (prefers-reduced-motion:no-preference){
-  .tap{animation:tap 1.6s ease-out infinite}
-  @keyframes tap{0%{transform:scale(.6);opacity:.45}70%{transform:scale(1.6);opacity:0}100%{opacity:0}}
-  .relay.back .rpaste{animation:ring 1.5s ease-out infinite}
-  @keyframes ring{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--signal) 75%,transparent)}100%{box-shadow:0 0 0 16px transparent}}
-}
 .dkm{font-family:var(--f-mono);font-weight:700;color:var(--ink)}
 .ov{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;background:transparent;width:100%;text-align:left;min-height:52px}
 .ov b{flex:1;font-size:15px}
@@ -236,9 +186,6 @@ button{cursor:pointer;touch-action:manipulation}
 .loading{color:var(--muted);text-align:center;padding:20px 0;font-size:13.5px}
 
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom));background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:13.5px;z-index:40;font-weight:500;max-width:90vw;text-align:center}
-.tips{font-size:12.5px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
-.tips b{color:var(--ink)}
-.tips ol{margin:6px 0 0;padding-left:20px}
 [hidden]{display:none!important}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spin{display:inline-block;animation:spin .8s linear infinite}
@@ -389,7 +336,7 @@ button{cursor:pointer;touch-action:manipulation}
 
 <script>
 {
-  const KEY = "parking-pay-v1", CRED = "parking-pay-tdx-cred", TOK = "parking-pay-tdx-token", CP = "parking-pay-cp-";
+  const KEY = "parking-pay-v1", CRED = "parking-pay-tdx-cred", TOK = "parking-pay-tdx-token", CP = "parking-pay-cp2-";
   const AUTH = "https://tdx.transportdata.tw/auth/realms/TDXConnect/protocol/openid-connect/token";
   const BASE = "https://tdx.transportdata.tw/api/basic";
   const CITIES = [["Taipei","臺北市"],["NewTaipei","新北市"],["Taoyuan","桃園市"],["Taichung","臺中市"],["Tainan","臺南市"],["Kaohsiung","高雄市"],
@@ -719,7 +666,7 @@ button{cursor:pointer;touch-action:manipulation}
     if (!out.length && !looksAddr(q)) { const a = await tdxGeo("Address", q); return a.slice(0, 1).map(x => Object.assign(x, { name: x.addr || q })); }
     return out;
   }
-  let nSeq = 0, candOpen = true, gm = null, nMissQ = "";   // gm：Google 地圖接力卡狀態 {q, step, reason, note, opened, back}
+  let nSeq = 0, candOpen = true, nMissQ = "";
   const gmUrl = q => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
   const isShare = t => /https?:\/\/|maps\.app\.goo\.gl|goo\.gl\/maps|google\.[a-z.]+\/maps/i.test(t) || /\n/.test(t.trim());
   // 解析 Google 地圖「分享 → 拷貝」的內容：抓座標、地址、店名
@@ -731,10 +678,22 @@ button{cursor:pointer;touch-action:manipulation}
     const am = clean.match(/(?:\d{3,6})?(?:臺灣)?((?:[一-鿿]{2}[縣市])[一-鿿\d０-９\-之、 ]*?\d+(?:-\d+)?號(?:之\d+)?(?:\d+樓(?:之\d+)?)?)/);
     const am2 = am ? null : clean.match(/(?:\d{3,6})?(?:臺灣)?((?:[\u4e00-\u9fff]{2}[縣市])[\u4e00-\u9fff]{1,3}[區鄉鎮市][\u4e00-\u9fff\d段巷弄路街]*)/);
     let addr = am ? am[1].replace(/\s+/g, "") : am2 ? am2[1] : "";
+    if (!am) {   // 地址被拆成兩行：「南崁路一段112號」＋「338桃園市蘆竹區…」
+      const ls = clean.split("\n").map(x => x.trim()).filter(Boolean);
+      const road = ls.find(x => /\d+(?:-\d+)?號/.test(x) && !/[縣市]/.test(x));
+      const city = ls.find(x => /[\u4e00-\u9fff]{2}[縣市]/.test(x));
+      if (road && city) addr = city.replace(/^\d{3,6}\s*/, "").replace(/^臺灣\s*/, "").replace(/[\u4e00-\u9fff]{1,3}[里村]$/, "") + road;
+    }
     let name = "";
     if (am || am2) name = raw.slice(0, (am || am2).index).replace(/(?:\d{3,6})?(?:臺灣)?\s*$/, "");
-    const pm = t.match(/\/maps\/place\/([^/@?]+)/);
-    if (!name.trim() && pm) { try { name = decodeURIComponent(pm[1].replace(/\+/g, " ")); } catch (e) {} }
+    const dec = x => { try { return decodeURIComponent(String(x).replace(/\+/g, " ")).trim(); } catch (e) { return ""; } };
+    const pm = t.match(/\/maps\/(?:place|search)\/([^/@?\s]+)/);
+    if (!name.trim() && pm) name = dec(pm[1]);
+    const qm = !c && t.match(/[?&](?:q|query|destination|daddr)=([^&#\s]+)/i);
+    if (qm) {
+      const qt = norm(dec(qm[1])).replace(/^\d{3,6}\s*(?=[\u4e00-\u9fff])/, "").replace(/^臺灣\s*/, "");
+      if (qt && !/^-?\d+\.\d+\s*,/.test(qt)) { if (!addr && /[縣市].*(號|[區鄉鎮])/.test(qt)) addr = qt; else if (!name.trim()) name = qt; }
+    }
     if (!name.trim()) name = raw.split("\n").map(x => x.trim()).find(x => x && !/^\d{3,6}/.test(x) && (!addr || !x.includes(addr))) || "";
     name = name.replace(/\s+/g, " ").replace(/[，,。·・|｜\-–—\s]+$/, "").trim().slice(0, 40);
     return { name, addr, lat: c ? +c[1] : null, lon: c ? +c[2] : null };
@@ -742,17 +701,18 @@ button{cursor:pointer;touch-action:manipulation}
   async function runNear(q, fromPaste){
     q = String(q || "").trim(); if (!q) { $("#nQ").focus(); return; }
     const my = ++nSeq; candOpen = true;
-    gm = null; $("#nQ").classList.remove("pastehint");
+    $("#nQ").classList.remove("pastehint");
     if (!hasKey()) { openSet(); return; }
     let cands = [], label = q, share = null;
     if (isShare(q)) {
-      share = parseShare(q); label = share.name || share.addr || "Google 地圖位置";
+      share = parseShare(q); label = share.name || share.addr || "";
       $("#nQ").value = label;
     }
     nErr = ""; nBusy = share ? "讀取 Google 地圖分享的位置…" : looksAddr(q) ? "定位地址中…" : `搜尋「${q}」…`; nDest = null; nCands = []; renderNear();
     try {
-      if (share && share.lat && share.lon) cands = [{ lat: share.lat, lon: share.lon, name: share.name || share.addr || "Google 地圖位置", addr: share.addr }];
+      if (share && share.lat && share.lon) cands = [{ lat: share.lat, lon: share.lon, name: share.name || share.addr || `${share.lat.toFixed(5)}, ${share.lon.toFixed(5)}`, addr: share.addr }];
       else if (share && share.addr) { cands = (await geocode(share.addr)).slice(0, 1); cands.forEach(c => { c.name = share.name || share.addr; c.addr = c.addr || share.addr; }); }
+      else if (share && share.name) { cands = await geocode(share.name); }
       else if (share) { cands = []; }
       else cands = await geocode(q);
     } catch (e) { nErr = errText(e); }
@@ -761,17 +721,21 @@ button{cursor:pointer;touch-action:manipulation}
       nBusy = "";
       if (share || fromPaste) {
         gWait = true; gSync();
-        nErr = (share && !share.name && !share.addr)
-          ? "只拷貝到短網址。請在 Google 地圖按分享 → 拷貝整段文字"
-          : `讀不到「${label}」的位置，請改拷貝整段分享內容或地址`;
+        const onlyLink = share && !share.name && !share.addr;
+        nErr = onlyLink
+          ? "這是 Google 地圖的短網址，裡面沒有地址。請在店家頁點「地址」那一行 → 複製，再回來貼上。"
+          : `讀不到「${label || q.slice(0, 20)}」的位置。請在 Google 地圖店家頁點「地址」→ 複製，再回來貼上。`;
         nMissQ = "";
+        const box = $("#nQ"); box.value = ""; box.classList.add("pastehint"); box.placeholder = "長按這裡 → 貼上地址"; qSync();
       } else { nMissQ = q; nErr = ""; $("#gBtn").classList.add("glow"); }
       renderNear(); return;
     }
-    nMissQ = ""; $("#gBtn").classList.remove("glow");
-    if (share || fromPaste) { gDone(); cands.forEach(c => c.src = "Google"); }
-    cands.forEach(c => c.q = label); nCands = cands;
-    state.recent = [label, ...state.recent.filter(x => x !== label)].slice(0, 5); persist(); renderRecent();
+    nMissQ = ""; $("#gBtn").classList.remove("glow"); gDone();
+    if (share || fromPaste) cands.forEach(c => c.src = "Google");
+    const qLabel = label || cands[0].name || "";
+    cands.forEach(c => c.q = qLabel); nCands = cands;
+    if (!$("#nQ").value.trim() && qLabel) { $("#nQ").value = qLabel; qSync(); }
+    if (qLabel) { state.recent = [qLabel, ...state.recent.filter(x => x !== qLabel)].slice(0, 5); persist(); renderRecent(); }
     pickDest(0);
   }
   function firstLine(t){ return String(t || "").split(/\r?\n/).map(x => x.trim()).find(Boolean) || ""; }
@@ -813,54 +777,15 @@ button{cursor:pointer;touch-action:manipulation}
   function renderRecent(){
     $("#nRecent").innerHTML = state.recent.map(q => `<button type="button" class="chip rec" data-recent="${esc(q)}">${esc(q)}</button>`).join("");
   }
-  const ICON = {
-    pin: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
-    ext: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
-    clip: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4.5V3h6v1.5"/><path d="M9.5 12.5l2 2 3.5-4"/></svg>',
-    arrow: '<svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h11"/><path d="M11 5.5L15.5 10 11 14.5"/></svg>'
-  };
-  function gmIll(name){
-    const nm = esc(String(name || "店家").slice(0, 8));
-    return `<div class="ill" aria-hidden="true">
-      <div class="ph"><div class="phmap"><span class="phpin">${ICON.pin}</span></div>
-        <div class="phsheet"><b>${nm}</b><em></em><div class="phacts"><span>路線</span><span>儲存</span><span class="hl">分享<i class="tap"></i></span></div></div></div>
-      <span class="illar">${ICON.arrow}</span>
-      <div class="ph dim"><div class="phmap"></div>
-        <div class="phsheet"><b>分享</b><em style="width:40%"></em><div class="phacts"><span>訊息</span><span>郵件</span><span class="hl">拷貝<i class="tap"></i></span></div></div></div>
-    </div>`;
-  }
-  function gmCard(){
-    const two = gm.step === 2, url = esc(gmUrl(gm.q));
-    const title = gm.reason === "miss" ? `找不到「${esc(gm.q)}」` : `用 Google 地圖找「${esc(gm.q)}」`;
-
-    return `<section class="relay${gm.back ? " back" : ""}" aria-label="用 Google 地圖找店家">
-      <div class="rhead"><span class="rpin">${ICON.pin}</span><div class="rt"><b>${title}</b></div>
-        <button type="button" class="rx" data-gmclose aria-label="關閉">×</button></div>
-      <ol class="steps">
-        <li class="${two ? "done" : "now"}"><i>${two ? "✓" : "1"}</i><span>到 Google 地圖找店</span></li>
-        <li class="${two ? "now" : ""}"><i>2</i><span>拷貝後回來貼上</span></li>
-      </ol>
-      ${two ? `
-        
-        <button type="button" class="btn btn-pay wide rbig rpaste" data-gmpaste>${ICON.clip}<span>貼上並查停車位</span></button>
-        ${gm.note ? `<div class="rnote">${esc(gm.note)}</div>` : ""}
-        <a class="rlink" href="${url}" target="_blank" rel="noopener" data-gmopen>還沒找到？再開一次 Google 地圖</a>`
-      : `
-        <a class="btn btn-pay wide rbig" href="${url}" target="_blank" rel="noopener" data-gmopen>${ICON.ext}<span>開啟 Google 地圖搜尋</span></a>
-        ${gmIll(gm.q)}
-        <button type="button" class="rlink" data-gmskip>已經拷貝好了，直接貼上 →</button>`}
-    </section>`;
-  }
   function renderNear(){
     $("#nRadius").querySelectorAll("[data-r]").forEach(b => b.classList.toggle("on", +b.dataset.r === state.nRadius));
     $("#nOnly").classList.toggle("on", nOnly);
     $("#nRadius").hidden = !nDest || !!nBusy;
-    $("#nRecent").hidden = !!nDest || !!nBusy || !state.recent.length || !!gm;
+    $("#nRecent").hidden = !!nDest || !!nBusy || !state.recent.length;
     $("#qClear").hidden = !$("#nQ").value;
     const box = $("#nearBox");
     if (nBusy) { box.innerHTML = `<div class="loading"><span class="spin">↻</span> ${esc(nBusy)}</div>`; return; }
-    const gmHtml = gm ? gmCard() : "";
-    if (!nDest && nMissQ) { box.innerHTML = `<div class="miss"><b>找不到「${esc(nMissQ)}」</b><span>按「Google 地址」→ 分享 → 拷貝，回來按「貼上地址」</span></div>`; return; }
+    if (!nDest && nMissQ) { box.innerHTML = `<div class="miss"><b>找不到「${esc(nMissQ)}」</b><span>按「Google 地址」→ 點店家的地址 → 複製，回來按「貼上地址」</span></div>`; return; }
     if (nErr && !nDest) { box.innerHTML = `<p class="err">${esc(nErr)}</p>`; return; }
     if (!nDest) { box.innerHTML = ""; return; }
     let rows = nearRows(); const allCnt = rows.length;
@@ -871,7 +796,7 @@ button{cursor:pointer;touch-action:manipulation}
     const rad = state.nRadius >= 1000 ? state.nRadius / 1000 + " km" : state.nRadius + " m";
     const near1 = liveRows.find(r => r.d.car.a > 0 && !r.d.full);
     const others = nCands.map((c, i) => [c, i]).filter(([, i]) => i !== nDest.idx);
-    let html = gmHtml + `<div class="dest">
+    let html = `<div class="dest">
       <div class="dl">目的地${nDest.src === "Google" ? `<span class="srcb">來自 Google 地圖</span>` : ""}</div><b>${esc(nDest.name)}</b>${nDest.addr && nDest.addr !== nDest.name ? `<div class="dad">${esc(nDest.addr)}</div>` : ""}
       <div class="sum">${rad} 內 ${allCnt} 間停車場，${liveRows.length} 間有即時資料${liveRows.length ? `，共 <strong>${sumCar}</strong> 個汽車空位` : ""}${near1 ? `<br>最近有空位：${esc(near1.name)}（${fmtD(near1.m)}，剩 ${near1.d.car.a} 位）` : (liveRows.length ? "<br>附近有即時資料的停車場目前都滿了，放大範圍試試" : "")}</div>
       <div class="da"><a href="${esc(mapUrl(nDest.name, nDest.lat, nDest.lon))}" target="_blank" rel="noopener">看地圖</a><a href="${esc(gmUrl(nDest.q))}" target="_blank" rel="noopener" data-gmgo>位置不對？</a><button type="button" data-nclear>清除</button></div>
@@ -939,18 +864,10 @@ button{cursor:pointer;touch-action:manipulation}
     const r = e.target.closest("[data-r]");
     if (r) { state.nRadius = +r.dataset.r; persist(); renderNear(); return; }
     if (e.target.closest("#nOnly")) { nOnly = !nOnly; renderNear(); return; }
-    if (e.target.closest("[data-gmpaste]")) { pasteGoogle(); return; }
     if (e.target.closest("[data-gmgo]")) { gGo(); toast("拷貝後回來按「貼上地址」"); return; }
-    if (e.target.closest("[data-gmopen]")) { if (gm) { gm.step = 2; gm.opened = true; gm.back = false; gm.note = ""; setTimeout(renderNear, 60); } return; }
-    if (e.target.closest("[data-gmskip]")) { if (gm) { gm.step = 2; renderNear(); } return; }
-    if (e.target.closest("[data-gmclose]")) { gm = null; renderNear(); return; }
-    if (e.target.closest("[data-gmstart]")) {
-      gm = { q: (nDest && nDest.q) || $("#nQ").value.trim() || "店家", step: 1, reason: "fix" }; renderNear();
-      $("#nearBox").scrollIntoView({ behavior: "smooth", block: "start" }); return;
-    }
     const rc = e.target.closest("[data-recent]"); if (rc) { $("#nQ").value = rc.dataset.recent; runNear(rc.dataset.recent); return; }
     const cd = e.target.closest("[data-cand]"); if (cd) { candOpen = false; pickDest(+cd.dataset.cand); window.scrollTo({ top: $("#nearForm").getBoundingClientRect().top + scrollY - 16, behavior: "smooth" }); return; }
-    if (e.target.closest("[data-nclear]")) { gm = null; nMissQ = ""; gDone(); nDest = null; nCands = []; nErr = ""; $("#nQ").value = ""; $("#nearUpd").textContent = ""; renderNear(); return; }
+    if (e.target.closest("[data-nclear]")) { nMissQ = ""; $("#nQ").classList.remove("pastehint"); gDone(); nDest = null; nCands = []; nErr = ""; $("#nQ").value = ""; $("#nearUpd").textContent = ""; renderNear(); return; }
     const nw = e.target.closest("[data-nwatch]");
     if (nw) {
       const [city, id] = nw.dataset.nwatch.split("|"); const i = state.watch.findIndex(w => w.id === id && w.city === city);
