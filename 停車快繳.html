@@ -30,9 +30,16 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);fo
 .wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
 header{display:flex;align-items:center;gap:12px}
 .mark{width:42px;height:42px;border-radius:9px;background:var(--signal);color:var(--signal-ink);display:grid;place-items:center;font-family:var(--f-mono);font-weight:700;font-size:24px;flex:none}
-header h1{margin:0;font-weight:900;font-size:22px;letter-spacing:.02em}
+header h1{margin:0;font-weight:900;font-size:22px;letter-spacing:.02em;flex:1}
 header p{margin:0;color:var(--muted);font-size:12.5px}
-.gear{margin-left:auto;display:flex;align-items:center;gap:6px;border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:12.5px;color:var(--muted);min-height:40px}
+.gear{margin-left:auto;display:flex;align-items:center;gap:7px;border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:12.5px;color:var(--muted);min-height:40px;min-width:40px;justify-content:center}
+.gear.ok{padding:6px 10px}.gear.ok #tdxLabel{display:none}
+.sec{display:flex;flex-direction:column;gap:10px}
+.iconbtn{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:16px;display:grid;place-items:center}
+.chip.lnk{color:var(--ink);font-weight:700;background:var(--surface)}
+.parkbar{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;background:var(--asphalt);color:var(--asphalt-ink);border:0;border-radius:12px;padding:0 14px;min-height:50px;font-size:15px;font-weight:700;position:relative;overflow:hidden}
+.parkbar::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:repeating-linear-gradient(180deg,var(--signal) 0 10px,transparent 10px 16px)}
+.parkbar span{color:var(--signal)}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
 .dot.on{background:var(--ok)}.dot.err{background:var(--danger)}
 h2{margin:0;font-size:13px;color:var(--muted);font-weight:700}
@@ -58,9 +65,9 @@ button{cursor:pointer;touch-action:manipulation}
 .btn[aria-disabled="true"]{opacity:.45;pointer-events:none}
 .wide{width:100%}
 
-.plate-row{display:flex;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.plate-row{display:flex;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
 .plate-row label{font-size:12px;color:var(--muted);flex:none}
-.plate{flex:1;border:2px solid var(--ink);border-radius:6px;padding:4px 8px;font-family:var(--f-mono);font-weight:700;font-size:20px;letter-spacing:.12em;text-transform:uppercase;text-align:center;background:var(--surface)}
+.plate{flex:1;border:2px solid var(--ink);border-radius:6px;padding:2px 8px;font-family:var(--f-mono);font-weight:700;font-size:18px;letter-spacing:.12em;text-transform:uppercase;text-align:center;background:var(--surface)}
 
 .list-head{display:flex;align-items:center;gap:10px}
 .list-head .right{margin-left:auto;display:flex;gap:6px;align-items:center}
@@ -152,13 +159,64 @@ button{cursor:pointer;touch-action:manipulation}
 .cands summary{font-size:13px;font-weight:700;padding:11px 0;cursor:pointer;color:var(--ink)}
 .cand{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;background:transparent;border:0;border-top:1px dashed var(--line);padding:10px 0;min-height:48px}
 .cand b{font-size:14.5px}.cand span{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
-.gm{background:var(--surface);border:1.5px solid var(--signal);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;font-size:13.5px}
-.gm>b{font-size:15.5px}.gm p{margin:0}
-.gm ol{margin:0;padding-left:20px;color:var(--muted)}.gm ol b{color:var(--ink)}
-.gma{display:flex;gap:8px;flex-wrap:wrap}.gma .btn{flex:1 1 140px}
-.gmrow{flex-direction:row!important;flex-wrap:wrap;align-items:center;gap:4px!important;font-size:12.5px;color:var(--muted)}
-.gmrow a{color:var(--ink);font-weight:700}
-.gmrow button{border:1px solid var(--line);background:transparent;border-radius:999px;padding:2px 10px;font-size:12.5px;min-height:30px}
+/* Google 地圖單行欄位 */
+.gline{display:flex;align-items:center;gap:6px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);padding:5px 5px 5px 8px;transition:border-color .15s}
+.gline:focus-within{border-color:var(--signal);align-items:flex-start}
+.gpin{width:28px;height:28px;border-radius:8px;background:var(--signal);color:var(--signal-ink);display:grid;place-items:center;flex:none}
+.gline:focus-within .gpin{margin-top:4px}
+.gline textarea{flex:1;border:0;background:transparent;resize:none;font:inherit;font-size:16px;line-height:1.4;padding:7px 2px;height:36px;color:var(--ink);overflow:hidden}
+.gline textarea:focus{outline:none;overflow:auto}
+.gline textarea::placeholder{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gb{flex:none;min-height:36px;border-radius:9px;border:1px solid var(--line);background:transparent;padding:0 10px;font-size:13.5px;font-weight:700;display:inline-flex;align-items:center;gap:4px;color:var(--ink);text-decoration:none;white-space:nowrap}
+.gb.gsub{background:var(--signal);border-color:var(--signal);color:var(--signal-ink)}
+/* Google 地圖接力卡 */
+.relay{background:var(--surface);border:1.5px solid var(--signal);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.rhead{display:flex;align-items:flex-start;gap:10px}
+.rpin{width:38px;height:38px;border-radius:10px;background:var(--signal);color:var(--signal-ink);display:grid;place-items:center;flex:none}
+.rt{flex:1;display:flex;flex-direction:column;gap:2px}
+.rt b{font-size:16px;line-height:1.35;overflow-wrap:anywhere}
+.rt small{font-size:12.5px;color:var(--muted)}
+.rx{flex:none;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:20px;line-height:1;display:grid;place-items:center}
+.steps{list-style:none;margin:0;padding:0;display:flex;align-items:center}
+.steps li{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);white-space:nowrap}
+.steps li:first-child{flex:1}
+.steps li:first-child::after{content:"";flex:1;height:2px;border-radius:1px;background:var(--line);margin:0 10px;min-width:14px}
+.steps li.done::after{background:var(--ok)}
+.steps i{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:700;font-size:12.5px;border:1.5px solid var(--line);background:var(--surface);flex:none;font-family:var(--f-mono)}
+.steps li.now{color:var(--ink);font-weight:700}
+.steps li.now i{background:var(--signal);border-color:var(--signal);color:var(--signal-ink)}
+.steps li.done i{background:var(--ok);border-color:var(--ok);color:#fff}
+.rbig{flex:none;min-height:54px;font-size:16.5px;border-radius:12px;gap:8px}
+.rtip{margin:0;font-size:13px;color:var(--muted);text-align:center}
+.rtip b{color:var(--ink)}
+.rlink{align-self:center;background:transparent;border:0;color:var(--ink);font-size:13px;font-weight:700;text-decoration:underline;text-underline-offset:3px;min-height:40px;padding:0 6px;display:inline-flex;align-items:center}
+.rnote{background:color-mix(in srgb,var(--warn) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--warn) 45%,transparent);color:var(--ink);border-radius:10px;padding:9px 11px;font-size:13px;line-height:1.5}
+.rback{margin:0;text-align:center;font-weight:700;font-size:14px;color:var(--ok)}
+.ill{display:grid;grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr);align-items:center;gap:6px;background:var(--bg);border-radius:12px;padding:12px}
+.illar{color:var(--muted);display:grid;place-items:center}
+.ph{aspect-ratio:10/11;max-height:150px;border:1.5px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden;display:flex;flex-direction:column}
+.phmap{flex:1;position:relative;background:
+  linear-gradient(90deg,transparent 46%,var(--line) 46% 50%,transparent 50%) 0 0/100% 100%,
+  linear-gradient(0deg,transparent 58%,var(--line) 58% 62%,transparent 62%) 0 0/100% 100%,
+  linear-gradient(135deg,color-mix(in srgb,var(--ok) 14%,var(--surface)),var(--surface))}
+.phpin{position:absolute;left:50%;top:50%;transform:translate(-50%,-70%);color:var(--danger)}
+.ph.dim .phmap{background:color-mix(in srgb,var(--ink) 18%,var(--surface))}
+.phsheet{padding:7px 7px 8px;border-top:1px solid var(--line);background:var(--surface)}
+.phsheet b{display:block;font-size:11px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.phsheet em{display:block;height:5px;width:62%;background:var(--line);border-radius:3px;margin:4px 0 6px}
+.phacts{display:flex;gap:3px}
+.phacts span{flex:1;font-size:10px;text-align:center;border:1px solid var(--line);border-radius:999px;padding:2px 0;color:var(--muted);white-space:nowrap}
+.phacts .hl{border-color:var(--signal);background:color-mix(in srgb,var(--signal) 26%,var(--surface));color:var(--ink);font-weight:700;position:relative}
+.tap{position:absolute;right:-3px;bottom:-7px;width:13px;height:13px;border-radius:50%;background:var(--ink);opacity:.3}
+.srcb{display:inline-block;margin-left:8px;font-size:11px;font-weight:700;color:var(--signal-ink);background:var(--signal);border-radius:4px;padding:0 6px;opacity:1;vertical-align:1px}
+.gmcand{flex-direction:row!important;align-items:center!important;gap:8px!important}
+.gmcand span{color:var(--ink)!important;font-weight:500;text-decoration:underline;text-underline-offset:3px}
+@media (prefers-reduced-motion:no-preference){
+  .tap{animation:tap 1.6s ease-out infinite}
+  @keyframes tap{0%{transform:scale(.6);opacity:.45}70%{transform:scale(1.6);opacity:0}100%{opacity:0}}
+  .relay.back .rpaste{animation:ring 1.5s ease-out infinite}
+  @keyframes ring{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--signal) 75%,transparent)}100%{box-shadow:0 0 0 16px transparent}}
+}
 .dkm{font-family:var(--f-mono);font-weight:700;color:var(--ink)}
 .ov{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;background:transparent;width:100%;text-align:left;min-height:52px}
 .ov b{flex:1;font-size:15px}
@@ -180,68 +238,61 @@ button{cursor:pointer;touch-action:manipulation}
 <div class="wrap">
   <header>
     <div class="mark" aria-hidden="true">P</div>
-    <div>
-      <h1>停車快繳</h1>
-      <p>即時空位・一鍵繳費</p>
-    </div>
-    <button class="gear" id="gearBtn" type="button"><span class="dot" id="tdxDot"></span><span id="tdxLabel">TDX 設定</span></button>
+    <h1>停車快繳</h1>
+    <button class="gear" id="gearBtn" type="button" aria-label="TDX 設定"><span class="dot" id="tdxDot"></span><span id="tdxLabel">TDX 設定</span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
   </header>
 
-  <section class="ticket idle" id="ticket" aria-live="polite"></section>
+  <section class="ticket idle" id="ticket" aria-live="polite" hidden></section>
 
-  <section style="display:flex;flex-direction:column;gap:10px">
-    <div class="list-head"><h2>目的地附近停車</h2><div class="right"><span class="upd" id="nearUpd"></span></div></div>
+  <section class="sec">
+    <div class="list-head"><h2>找附近停車</h2><div class="right"><span class="upd" id="nearUpd"></span></div></div>
     <form class="nsearch" id="nearForm" novalidate>
-      <input id="nQ" type="search" placeholder="店名或地址，例：鼎泰豐 信義店" autocomplete="off" enterkeyhint="search">
+      <input id="nQ" type="search" placeholder="店名或地址" autocomplete="off" enterkeyhint="search">
       <button class="btn btn-pay" type="submit">找車位</button>
     </form>
-    <div class="filters" id="nRadius">
+    <form class="gline" id="gForm" novalidate>
+      <span class="gpin" aria-hidden="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>
+      <textarea id="gText" rows="1" placeholder="貼上 Google 地圖" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="Google 地圖分享內容"></textarea>
+      <button type="button" class="gb" id="gPaste">貼上</button>
+      <button type="submit" class="gb gsub" id="gSub" hidden>帶入</button>
+      <a class="gb" id="gOpen" href="https://www.google.com/maps" target="_blank" rel="noopener" aria-label="開啟 Google 地圖找店">地圖<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a>
+    </form>
+    <div class="filters" id="nRecent"></div>
+    <div class="filters" id="nRadius" hidden>
       <button type="button" class="chip" data-r="300">300 m</button>
       <button type="button" class="chip" data-r="500">500 m</button>
       <button type="button" class="chip" data-r="1000">1 km</button>
       <button type="button" class="chip" data-r="2000">2 km</button>
       <button type="button" class="chip" id="nOnly">只看有空位</button>
-      <button type="button" class="chip" data-gmpaste>貼上 Google 地圖</button>
     </div>
-    <div class="filters" id="nRecent"></div>
     <div id="nearBox" class="list"></div>
   </section>
 
-  <section style="display:flex;flex-direction:column;gap:10px">
+  <section class="sec">
     <div class="list-head">
       <h2>即時空位</h2>
       <div class="right">
         <span class="upd" id="liveUpd"></span>
-        <button class="btn btn-plain" id="refreshBtn" type="button" aria-label="重新整理">↻</button>
+        <button class="iconbtn" id="refreshBtn" type="button" aria-label="重新整理" hidden>↻</button>
+        <button class="chip lnk" id="findBtn" type="button">全台 ›</button>
       </div>
     </div>
     <div id="liveBox"></div>
-    <button class="btn btn-plain wide" id="findBtn" type="button">全台停車場空位（依縣市查）</button>
   </section>
 
-  <div class="plate-row">
-    <label for="plate">我的車牌</label>
-    <input id="plate" class="plate" placeholder="ABC-1234" autocomplete="off" autocapitalize="characters" maxlength="10">
-    <button class="btn btn-plain" id="copyPlate" type="button">複製</button>
-  </div>
-
-  <section style="display:flex;flex-direction:column;gap:10px">
+  <section class="sec">
     <div class="list-head">
-      <h2>常用停車場（繳費）</h2>
-      <div class="right"><button class="btn btn-plain" id="addBtn" type="button">＋ 新增</button></div>
+      <h2>常用停車場</h2>
+      <div class="right"><button class="chip lnk" id="addBtn" type="button">＋ 新增</button></div>
+    </div>
+    <div class="plate-row" id="plateRow" hidden>
+      <label for="plate">車牌</label>
+      <input id="plate" class="plate" placeholder="ABC-1234" autocomplete="off" autocapitalize="characters" maxlength="10">
+      <button class="chip" id="copyPlate" type="button">複製</button>
     </div>
     <div class="list" id="list"></div>
   </section>
 
-  <details class="tips">
-    <summary><b>怎麼把繳費連結存進來？</b></summary>
-    <ol>
-      <li>用 iPhone 相機對準停車場的繳費 QR Code，上方會跳出網址。</li>
-      <li>長按那個網址 → 選「拷貝連結」。</li>
-      <li>回到這裡按「＋ 新增」，貼進「繳費網址」，取個名字就好。</li>
-    </ol>
-    <p class="hint" style="margin-top:8px">在「新增／編輯」裡按「連結即時空位」，這張繳費卡就會直接顯示那間停車場的剩餘車位。</p>
-  </details>
 </div>
 
 <!-- 新增／編輯繳費停車場 -->
@@ -306,11 +357,9 @@ button{cursor:pointer;touch-action:manipulation}
 <div class="sheet" id="setSheet" hidden>
   <form class="panel" id="setForm" novalidate>
     <h3>TDX 即時空位設定</h3>
-    <p class="hint">金鑰只存在這支手機的瀏覽器裡，不會上傳到其他地方。到 <a href="https://tdx.transportdata.tw/" target="_blank" rel="noopener" style="color:inherit">tdx.transportdata.tw</a> 註冊會員 → 會員中心 → API 金鑰。</p>
     <label class="field"><span>Client ID</span><input id="cId" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
     <label class="field"><span>Client Secret</span><input id="cSecret" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
-    <label class="field"><span>Google Maps API 金鑰（選填，店名搜尋更準）</span><input id="cGkey" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="不填也能用，會改用開放地圖資料"></label>
-    <p class="hint">沒填的話，店名搜尋用 OpenStreetMap 與 TDX 地標資料，連鎖店與知名店家大多找得到，小店可能找不到；填了會優先用 Google 地點搜尋（需在 Google Cloud 啟用 Maps JavaScript API 與 Places API (New)）。</p>
+    <label class="field"><span>Google Maps API 金鑰</span><input id="cGkey" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="選填"></label>
     <label class="field"><span>預設縣市</span><select id="cCity"></select></label>
     <p class="err" id="cErr" hidden></p>
     <p class="hint" id="cOk" hidden style="color:var(--ok)"></p>
@@ -398,7 +447,7 @@ button{cursor:pointer;touch-action:manipulation}
   }
   function errText(e){
     const m = String(e && e.message || e);
-    const map = { NOKEY: "尚未設定 TDX 金鑰", BADKEY: "TDX 金鑰錯誤，或帳號尚未通過審核", NET: "連不上 TDX，請檢查網路", TIMEOUT: "TDX 回應逾時，稍後再試",
+    const map = { NOKEY: "尚未設定 TDX 金鑰", BADKEY: "TDX 金鑰錯誤，或帳號尚未通過審核", NET: (/^https?:$/.test(location.protocol) ? "連不上 TDX，請檢查網路" : "連不上 TDX：目前是在預覽畫面打開，預覽不能連網，請改用 Safari 開啟"), TIMEOUT: "TDX 回應逾時，稍後再試",
       RATE: "查詢太頻繁，稍等一下再試", BADJSON: "TDX 回傳的資料格式異常", HTTP403: "TDX 拒絕存取（金鑰權限或使用額度問題）", HTTP404: "這個縣市沒有提供停車資料" };
     if (map[m]) return map[m];
     if (/^HTTP5/.test(m)) return "TDX 伺服器暫時異常（" + m.slice(4) + "），稍後再試";
@@ -472,6 +521,7 @@ button{cursor:pointer;touch-action:manipulation}
 
   function setDot(s){
     const d = $("#tdxDot"); d.className = "dot" + (s === "on" ? " on" : s === "err" ? " err" : "");
+    $("#gearBtn").classList.toggle("ok", s === "on" && hasKey());
     $("#tdxLabel").textContent = !hasKey() ? "TDX 設定" : s === "on" ? "TDX 已連線" : s === "err" ? "TDX 異常" : "TDX 連線中";
   }
 
@@ -485,10 +535,10 @@ button{cursor:pointer;touch-action:manipulation}
         <button class="btn btn-pay" type="button" data-open-set>設定 TDX 金鑰</button></div>`;
       $("#findBtn").hidden = true; $("#refreshBtn").hidden = true; return;
     }
-    $("#findBtn").hidden = false; $("#refreshBtn").hidden = false;
+    $("#findBtn").hidden = false; $("#refreshBtn").hidden = !state.watch.length;
     let html = liveErr ? `<p class="err">${esc(liveErr)}</p>` : "";
     if (!state.watch.length) {
-      html += `<p class="empty">還沒有關注的停車場。在附近停車結果或「全台停車場空位」裡按「關注」，空位就會固定顯示在這裡。</p>`;
+
     } else {
       html += `<div class="board">` + state.watch.map(w => {
         const d = info(w.city, w.id); const v = d && d.car; const [cls, lab] = level(v, d && d.full);
@@ -520,11 +570,11 @@ button{cursor:pointer;touch-action:manipulation}
   function renderTicket(){
     const t = $("#ticket"); const s = state.session;
     const lot = s && state.lots.find(l => l.id === s.lotId);
+    if (!state.lots.length && !(s && lot)) { t.hidden = true; t.innerHTML = ""; return; }
+    t.hidden = false;
     if (!s || !lot) {
-      t.className = "ticket idle";
-      t.innerHTML = `<div class="since">目前沒有在停車</div><div class="elapsed">停好車按一下，開始計時</div>
-        <div class="actions"><button class="btn btn-pay" id="startPark" type="button" ${state.lots.length ? "" : 'aria-disabled="true"'}>我停好車了</button></div>
-        ${state.lots.length ? "" : '<div class="since">先在下方新增一間停車場</div>'}`;
+      t.className = "idlebar";
+      t.innerHTML = `<button class="parkbar" id="startPark" type="button">我停好車了<span>開始計時 ›</span></button>`;
       return;
     }
     const ms = Math.max(0, Date.now() - s.start), m = Math.floor(ms / 60000);
@@ -539,11 +589,9 @@ button{cursor:pointer;touch-action:manipulation}
 
   function renderList(){
     const box = $("#list");
+    $("#plateRow").hidden = !state.lots.length;
     if (!state.lots.length) {
-      box.innerHTML = `<div class="lotcard example"><div class="name">公司旁地下停車場<span class="tag">範例</span></div>
-        <div class="meta"><span class="lb lv-ok">汽車 37</span>每小時 40 元 · <span class="host">pay.example-parking.tw</span></div>
-        <span class="btn pay" aria-disabled="true">繳費</span></div>
-        <p class="empty">按「＋ 新增」把你第一間停車場的繳費網址存進來。</p>`;
+      box.innerHTML = "";
       return;
     }
     box.innerHTML = sortedLots().map(l => {
@@ -658,7 +706,7 @@ button{cursor:pointer;touch-action:manipulation}
     if (!out.length && !looksAddr(q)) { const a = await tdxGeo("Address", q); return a.slice(0, 1).map(x => Object.assign(x, { name: x.addr || q })); }
     return out;
   }
-  let nSeq = 0, candOpen = true, nMiss = "";
+  let nSeq = 0, candOpen = true, gm = null;   // gm：Google 地圖接力卡狀態 {q, step, reason, note, opened, back}
   const gmUrl = q => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
   const isShare = t => /https?:\/\/|maps\.app\.goo\.gl|goo\.gl\/maps|google\.[a-z.]+\/maps/i.test(t) || /\n/.test(t.trim());
   // 解析 Google 地圖「分享 → 拷貝」的內容：抓座標、地址、店名
@@ -678,9 +726,10 @@ button{cursor:pointer;touch-action:manipulation}
     name = name.replace(/\s+/g, " ").replace(/[，,。·・|｜\-–—\s]+$/, "").trim().slice(0, 40);
     return { name, addr, lat: c ? +c[1] : null, lon: c ? +c[2] : null };
   }
-  async function runNear(q){
+  async function runNear(q, fromPaste){
     q = String(q || "").trim(); if (!q) { $("#nQ").focus(); return; }
-    const my = ++nSeq; candOpen = true; nMiss = "";
+    const my = ++nSeq; candOpen = true;
+    if (!fromPaste && !isShare(q)) gm = null;
     if (!hasKey()) { openSet(); return; }
     let cands = [], label = q, share = null;
     if (isShare(q)) {
@@ -697,11 +746,16 @@ button{cursor:pointer;touch-action:manipulation}
     if (my !== nSeq) return;
     if (!cands.length) {
       nBusy = "";
-      if (share) nErr = share.name || share.addr ? `讀不到「${label}」的位置。` : "這段內容看不出地址或座標。";
-      else { nMiss = q; nErr = ""; }
-      if (share) nErr += "在 Google 地圖點店家 → 分享 → 選「拷貝」（要包含地址那段文字），再回來按「貼上 Google 地圖」。只複製短網址的話讀不到位置。";
+      if (share || fromPaste) {
+        gm = gm || { q: label, reason: "miss" };
+        gm.step = 2; gm.back = false; nErr = "";
+        gm.note = (share && !share.name && !share.addr)
+          ? "剛剛拷貝的只有短網址，看不出位置。請在 Google 地圖按「分享」後選「拷貝」，要拷貝含地址的整段文字。"
+          : `讀不到「${label}」的位置。換成拷貝整段分享內容，或直接拷貝店家地址再貼一次。`;
+      } else { gm = { q, step: 1, reason: "miss" }; nErr = ""; }
       renderNear(); return;
     }
+    if (share || fromPaste) { gm = null; cands.forEach(c => c.src = "Google"); }
     cands.forEach(c => c.q = label); nCands = cands;
     state.recent = [label, ...state.recent.filter(x => x !== label)].slice(0, 5); persist(); renderRecent();
     pickDest(0);
@@ -709,8 +763,13 @@ button{cursor:pointer;touch-action:manipulation}
   async function pasteGoogle(){
     let t = "";
     try { t = await navigator.clipboard.readText(); } catch (e) {}
-    if (!t || !t.trim()) { $("#nQ").focus(); toast("讀不到剪貼簿，請在輸入框長按「貼上」再按找車位"); return; }
-    runNear(isShare(t) || looksAddr(t) ? t : t);
+    if (!t || !t.trim()) {
+      gm = gm || { q: $("#nQ").value.trim() || "店家", reason: "fix" };
+      gm.step = 2; gm.back = false;
+      gm.note = "Safari 沒有允許讀取剪貼簿，或剪貼簿是空的。請長按上方輸入框 →「貼上」，再按「找車位」。";
+      renderNear(); $("#nQ").focus(); return;
+    }
+    runNear(t, true);
   }
   async function pickDest(i){
     const d = nCands[i]; if (!d) return;
@@ -736,24 +795,55 @@ button{cursor:pointer;touch-action:manipulation}
   function renderRecent(){
     $("#nRecent").innerHTML = state.recent.map(q => `<button type="button" class="chip rec" data-recent="${esc(q)}">${esc(q)}</button>`).join("");
   }
+  const ICON = {
+    pin: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+    ext: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
+    clip: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4.5V3h6v1.5"/><path d="M9.5 12.5l2 2 3.5-4"/></svg>',
+    arrow: '<svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h11"/><path d="M11 5.5L15.5 10 11 14.5"/></svg>'
+  };
+  function gmIll(name){
+    const nm = esc(String(name || "店家").slice(0, 8));
+    return `<div class="ill" aria-hidden="true">
+      <div class="ph"><div class="phmap"><span class="phpin">${ICON.pin}</span></div>
+        <div class="phsheet"><b>${nm}</b><em></em><div class="phacts"><span>路線</span><span>儲存</span><span class="hl">分享<i class="tap"></i></span></div></div></div>
+      <span class="illar">${ICON.arrow}</span>
+      <div class="ph dim"><div class="phmap"></div>
+        <div class="phsheet"><b>分享</b><em style="width:40%"></em><div class="phacts"><span>訊息</span><span>郵件</span><span class="hl">拷貝<i class="tap"></i></span></div></div></div>
+    </div>`;
+  }
+  function gmCard(){
+    const two = gm.step === 2, url = esc(gmUrl(gm.q));
+    const title = gm.reason === "miss" ? `找不到「${esc(gm.q)}」` : `用 Google 地圖找「${esc(gm.q)}」`;
+
+    return `<section class="relay${gm.back ? " back" : ""}" aria-label="用 Google 地圖找店家">
+      <div class="rhead"><span class="rpin">${ICON.pin}</span><div class="rt"><b>${title}</b></div>
+        <button type="button" class="rx" data-gmclose aria-label="關閉">×</button></div>
+      <ol class="steps">
+        <li class="${two ? "done" : "now"}"><i>${two ? "✓" : "1"}</i><span>到 Google 地圖找店</span></li>
+        <li class="${two ? "now" : ""}"><i>2</i><span>拷貝後回來貼上</span></li>
+      </ol>
+      ${two ? `
+        
+        <button type="button" class="btn btn-pay wide rbig rpaste" data-gmpaste>${ICON.clip}<span>貼上並查停車位</span></button>
+        ${gm.note ? `<div class="rnote">${esc(gm.note)}</div>` : ""}
+        <a class="rlink" href="${url}" target="_blank" rel="noopener" data-gmopen>還沒找到？再開一次 Google 地圖</a>`
+      : `
+        <a class="btn btn-pay wide rbig" href="${url}" target="_blank" rel="noopener" data-gmopen>${ICON.ext}<span>開啟 Google 地圖搜尋</span></a>
+        ${gmIll(gm.q)}
+        <button type="button" class="rlink" data-gmskip>已經拷貝好了，直接貼上 →</button>`}
+    </section>`;
+  }
   function renderNear(){
     $("#nRadius").querySelectorAll("[data-r]").forEach(b => b.classList.toggle("on", +b.dataset.r === state.nRadius));
     $("#nOnly").classList.toggle("on", nOnly);
+    $("#nRadius").hidden = !nDest || !!nBusy;
+    $("#nRecent").hidden = !!nDest || !!nBusy || !state.recent.length || !!gm;
     const box = $("#nearBox");
     if (nBusy) { box.innerHTML = `<div class="loading"><span class="spin">↻</span> ${esc(nBusy)}</div>`; return; }
-    if (nMiss && !nDest) {
-      box.innerHTML = `<div class="gm">
-        <b>開放地圖找不到「${esc(nMiss)}」</b>
-        <p>改用 Google 地圖找，找到後把位置帶回來：</p>
-        <ol><li>按下方按鈕，在 Google 地圖找到這家店</li><li>點店家 → <b>分享</b> → <b>拷貝</b></li><li>回到這裡按「貼上並查停車位」</li></ol>
-        <div class="gma"><a class="btn btn-pay" href="${esc(gmUrl(nMiss))}" target="_blank" rel="noopener">到 Google 地圖查</a>
-        <button class="btn btn-plain" type="button" data-gmpaste>貼上並查停車位</button></div>
-        <p class="hint">想要全自動：在右上角設定填入 Google Maps API 金鑰，找不到時會直接用 Google 地點搜尋，不用切換。</p>
-      </div>`;
-      return;
-    }
+    const gmHtml = gm ? gmCard() : "";
+    if (!nDest && gm) { box.innerHTML = gmHtml; return; }
     if (nErr && !nDest) { box.innerHTML = `<p class="err">${esc(nErr)}</p>`; return; }
-    if (!nDest) { box.innerHTML = `<p class="empty">輸入店名（可加分店或地區，例：「鼎泰豐 信義」）或地址，就會列出附近停車場和剩餘車位。有多間分店時可以再選。全台縣市都能查。</p>`; return; }
+    if (!nDest) { box.innerHTML = ""; return; }
     let rows = nearRows(); const allCnt = rows.length;
     const liveRows = rows.filter(r => r.d && r.d.car);
     const sumCar = liveRows.reduce((s, r) => s + Math.max(0, r.d.car.a), 0);
@@ -762,15 +852,14 @@ button{cursor:pointer;touch-action:manipulation}
     const rad = state.nRadius >= 1000 ? state.nRadius / 1000 + " km" : state.nRadius + " m";
     const near1 = liveRows.find(r => r.d.car.a > 0 && !r.d.full);
     const others = nCands.map((c, i) => [c, i]).filter(([, i]) => i !== nDest.idx);
-    let html = `<div class="dest">
-      <div class="dl">目的地</div><b>${esc(nDest.name)}</b>${nDest.addr && nDest.addr !== nDest.name ? `<div class="dad">${esc(nDest.addr)}</div>` : ""}
+    let html = gmHtml + `<div class="dest">
+      <div class="dl">目的地${nDest.src === "Google" ? `<span class="srcb">來自 Google 地圖</span>` : ""}</div><b>${esc(nDest.name)}</b>${nDest.addr && nDest.addr !== nDest.name ? `<div class="dad">${esc(nDest.addr)}</div>` : ""}
       <div class="sum">${rad} 內 ${allCnt} 間停車場，${liveRows.length} 間有即時資料${liveRows.length ? `，共 <strong>${sumCar}</strong> 個汽車空位` : ""}${near1 ? `<br>最近有空位：${esc(near1.name)}（${fmtD(near1.m)}，剩 ${near1.d.car.a} 位）` : (liveRows.length ? "<br>附近有即時資料的停車場目前都滿了，放大範圍試試" : "")}</div>
-      <div class="da"><a href="${esc(mapUrl(nDest.name, nDest.lat, nDest.lon))}" target="_blank" rel="noopener">在地圖確認位置</a><button type="button" data-nclear>清除</button></div>
+      <div class="da"><a href="${esc(mapUrl(nDest.name, nDest.lat, nDest.lon))}" target="_blank" rel="noopener">看地圖</a>${gm ? "" : `<button type="button" data-gmstart>位置不對？</button>`}<button type="button" data-nclear>清除</button></div>
     </div>`;
     if (others.length) html += `<details class="cands"${candOpen ? " open" : ""}><summary>不是這間？還有 ${others.length} 個符合「${esc(nDest.q)}」的地點</summary>
       ${others.map(([c, i]) => `<button type="button" class="cand" data-cand="${i}"><b>${esc(c.name)}</b><span>${esc(c.addr || "")}${c.addr ? " · " : ""}距目前選擇 ${fmtD(dist(c, nDest))}</span></button>`).join("")}
-      <div class="cand gmrow">都不是？<a href="${esc(gmUrl(nDest.q))}" target="_blank" rel="noopener">到 Google 地圖查</a>，拷貝分享內容後按 <button type="button" data-gmpaste>貼上</button></div></details>`;
-    else html += `<p class="hint" style="text-align:center">位置不對？<a href="${esc(gmUrl(nDest.q))}" target="_blank" rel="noopener" style="color:inherit">到 Google 地圖查</a>，拷貝分享內容後按 <button type="button" class="chip" data-gmpaste>貼上 Google 地圖</button></p>`;
+      ${gm ? "" : `<button type="button" class="cand gmcand" data-gmstart><b>都不是？</b><span>用 Google 地圖找正確的店</span></button>`}</details>`;
     if (nErr) html += `<p class="err">${esc(nErr)}</p>`;
     if (!rows.length) {
       html += `<p class="empty">${nOnly ? "範圍內目前沒有確定有空位的停車場" : `${rad} 內沒有停車場資料`}${state.nRadius < 2000 ? "，" : "。"}</p>`
@@ -796,15 +885,53 @@ button{cursor:pointer;touch-action:manipulation}
     $("#nearUpd").textContent = isFinite(at) ? "更新 " + ago(at) : "";
   }
   document.addEventListener("toggle", e => { if (e.target.classList && e.target.classList.contains("cands")) candOpen = e.target.open; }, true);
+  // ---- Google 地圖獨立欄位 ----
+  const gText = $("#gText");
+  function gSync(){
+    const main = $("#nQ").value.trim(), g = gText.value.trim();
+    const q = main && !isShare(main) ? main : (g && !isShare(g) && !looksAddr(g) ? g : "");
+    $("#gOpen").href = q ? gmUrl(q) : "https://www.google.com/maps";
+    $("#gOpen").setAttribute("aria-label", q ? `在 Google 地圖搜尋「${q}」` : "開啟 Google 地圖找店");
+    $("#gPaste").hidden = !!g; $("#gSub").hidden = !g;
+    const open = g || document.activeElement === gText;
+    gText.style.height = "36px"; if (open) gText.style.height = Math.min(120, Math.max(36, gText.scrollHeight)) + "px";
+  }
+  function gRun(){
+    const t = gText.value.trim();
+    if (!t) { gText.focus(); toast("先貼上 Google 地圖的分享內容或地址"); return; }
+    runNear(t, isShare(t) || looksAddr(t));
+    gText.value = ""; gSync();
+    $("#nearBox").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  $("#gForm").addEventListener("submit", e => { e.preventDefault(); gText.blur(); gRun(); });
+  gText.addEventListener("input", gSync);
+  gText.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); gText.blur(); gRun(); } });
+  gText.addEventListener("paste", () => setTimeout(() => { gSync(); if (gText.value.trim()) { gText.blur(); gRun(); } }, 60));   // 貼上就自動查
+  $("#gPaste").addEventListener("click", async () => {
+    let t = ""; try { t = await navigator.clipboard.readText(); } catch (e) {}
+    if (!t || !t.trim()) { gText.focus(); toast("讀不到剪貼簿，請長按欄位 →「貼上」"); return; }
+    gText.value = t; gSync(); gRun();
+  });
+  gText.addEventListener("focus", gSync); gText.addEventListener("blur", () => setTimeout(gSync, 0));
+  $("#nQ").addEventListener("input", gSync);
+  $("#nQ").addEventListener("paste", () => setTimeout(() => { const v = $("#nQ").value; if (isShare(v)) { $("#nQ").blur(); runNear(v, true); } }, 60));
+  gSync();
   $("#nearForm").addEventListener("submit", e => { e.preventDefault(); $("#nQ").blur(); runNear($("#nQ").value); });
   document.addEventListener("click", e => {
     const r = e.target.closest("[data-r]");
     if (r) { state.nRadius = +r.dataset.r; persist(); renderNear(); return; }
     if (e.target.closest("#nOnly")) { nOnly = !nOnly; renderNear(); return; }
     if (e.target.closest("[data-gmpaste]")) { pasteGoogle(); return; }
+    if (e.target.closest("[data-gmopen]")) { if (gm) { gm.step = 2; gm.opened = true; gm.back = false; gm.note = ""; setTimeout(renderNear, 60); } return; }
+    if (e.target.closest("[data-gmskip]")) { if (gm) { gm.step = 2; renderNear(); } return; }
+    if (e.target.closest("[data-gmclose]")) { gm = null; renderNear(); return; }
+    if (e.target.closest("[data-gmstart]")) {
+      gm = { q: (nDest && nDest.q) || $("#nQ").value.trim() || "店家", step: 1, reason: "fix" }; renderNear();
+      $("#nearBox").scrollIntoView({ behavior: "smooth", block: "start" }); return;
+    }
     const rc = e.target.closest("[data-recent]"); if (rc) { $("#nQ").value = rc.dataset.recent; runNear(rc.dataset.recent); return; }
     const cd = e.target.closest("[data-cand]"); if (cd) { candOpen = false; pickDest(+cd.dataset.cand); window.scrollTo({ top: $("#nearForm").getBoundingClientRect().top + scrollY - 16, behavior: "smooth" }); return; }
-    if (e.target.closest("[data-nclear]")) { nMiss = ""; nDest = null; nCands = []; nErr = ""; $("#nQ").value = ""; $("#nearUpd").textContent = ""; renderNear(); return; }
+    if (e.target.closest("[data-nclear]")) { gm = null; nDest = null; nCands = []; nErr = ""; $("#nQ").value = ""; $("#nearUpd").textContent = ""; renderNear(); return; }
     const nw = e.target.closest("[data-nwatch]");
     if (nw) {
       const [city, id] = nw.dataset.nwatch.split("|"); const i = state.watch.findIndex(w => w.id === id && w.city === city);
@@ -1041,7 +1168,11 @@ button{cursor:pointer;touch-action:manipulation}
   getToken().then(() => { setDot("on"); refreshAll(true); }).catch(e => { liveErr = errText(e); setDot("err"); renderLive(); });
   setInterval(() => { if (document.visibilityState === "visible") { if (state.session) renderTicket(); renderLive(); } }, 30000);
   setInterval(() => { if (document.visibilityState === "visible") refreshAll(true); }, 90000);
-  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { render(); refreshAll(false); } });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible") return;
+    if (gm && gm.opened && gm.step === 2 && !gm.back) { gm.back = true; toast("回來了！按「貼上並查停車位」"); }
+    render(); refreshAll(false);
+  });
 }
 </script>
 </body>
