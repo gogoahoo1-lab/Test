@@ -311,7 +311,7 @@ button{cursor:pointer;touch-action:manipulation}
       <button type="submit" class="btn btn-pay" id="cSave">儲存並測試</button>
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
-      <button type="button" class="chip" id="cClear">清除金鑰</button>
+      <button type="button" class="chip" id="cClear">改回內建金鑰</button>
     </div>
   </form>
 </div>
@@ -352,35 +352,49 @@ button{cursor:pointer;touch-action:manipulation}
   function host(u){ try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return ""; } }
   function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
   const safeUrl = u => /^https?:\/\//i.test(u || "") ? u : "";
-  const cred = () => rj(CRED) || {};
+  // 內建 TDX 金鑰（設定頁改過會以設定頁為準）
+  const BUILTIN = { id: "gogoahoo-8f2c3ad7-07ef-4601", secret: "fa2278a9-f192-4a62-9112-e2e749713f59" };
+  const cred = () => { const c = rj(CRED) || {}; return (c.id && c.secret) ? c : Object.assign({}, BUILTIN, { gkey: c.gkey || "" }); };
   const hasKey = () => { const c = cred(); return !!(c.id && c.secret); };
 
   /* ---------- TDX ---------- */
-  async function getToken(){
-    const c = cred(); if (!c.id || !c.secret) throw new Error("NOKEY");
-    const tk = rj(TOK); if (tk && tk.cid === c.id && tk.exp > Date.now() + 60000) return tk.t;
-    let r;
-    try {
-      r = await fetch(AUTH, { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
+  // 帶逾時的 fetch：網路卡住時不會無限轉圈
+  async function tfetch(url, opt = {}, ms = 15000){
+    const ac = new AbortController(); const tm = setTimeout(() => ac.abort(), ms);
+    try { return await fetch(url, Object.assign({}, opt, { signal: ac.signal })); }
+    catch (e) { throw new Error(e.name === "AbortError" ? "TIMEOUT" : "NET"); }
+    finally { clearTimeout(tm); }
+  }
+  let tokP = null;   // 同時多個請求時只申請一次權杖
+  function getToken(){
+    const c = cred(); if (!c.id || !c.secret) return Promise.reject(new Error("NOKEY"));
+    const tk = rj(TOK); if (tk && tk.t && tk.cid === c.id && tk.exp > Date.now() + 60000) return Promise.resolve(tk.t);
+    if (tokP) return tokP;
+    tokP = (async () => {
+      const r = await tfetch(AUTH, { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({ grant_type: "client_credentials", client_id: c.id, client_secret: c.secret }) });
-    } catch (e) { throw new Error("NET"); }
-    if (!r.ok) throw new Error(r.status === 400 || r.status === 401 ? "BADKEY" : "HTTP" + r.status);
-    const j = await r.json();
-    wj(TOK, { t: j.access_token, exp: Date.now() + (j.expires_in || 3600) * 1000, cid: c.id });
-    return j.access_token;
+      if (!r.ok) throw new Error(r.status === 400 || r.status === 401 ? "BADKEY" : r.status === 429 ? "RATE" : "HTTP" + r.status);
+      const j = await r.json(); if (!j.access_token) throw new Error("BADKEY");
+      wj(TOK, { t: j.access_token, exp: Date.now() + (j.expires_in || 3600) * 1000, cid: c.id });
+      return j.access_token;
+    })().finally(() => { tokP = null; });
+    return tokP;
   }
   async function api(path, retry = true){
-    const t = await getToken(); let r;
-    try { r = await fetch((/^https?:/.test(path) ? "" : BASE) + path, { headers: { authorization: "Bearer " + t } }); } catch (e) { throw new Error("NET"); }
+    const t = await getToken();
+    const r = await tfetch((/^https?:/.test(path) ? "" : BASE) + path, { headers: { authorization: "Bearer " + t } });
     if (r.status === 401 && retry) { localStorage.removeItem(TOK); return api(path, false); }
     if (r.status === 429) throw new Error("RATE");
     if (!r.ok) throw new Error("HTTP" + r.status);
-    return r.json();
+    try { return await r.json(); } catch (e) { throw new Error("BADJSON"); }
   }
   function errText(e){
     const m = String(e && e.message || e);
-    return ({ NOKEY: "尚未設定 TDX 金鑰", BADKEY: "金鑰錯誤，請檢查 Client ID / Secret", NET: "連不上 TDX，請檢查網路", RATE: "查詢太頻繁，稍等一下再試" })[m]
-      || (m.startsWith("HTTP") ? "TDX 回應錯誤（" + m.slice(4) + "），這個縣市可能沒有提供資料" : "讀取失敗");
+    const map = { NOKEY: "尚未設定 TDX 金鑰", BADKEY: "TDX 金鑰錯誤，或帳號尚未通過審核", NET: "連不上 TDX，請檢查網路", TIMEOUT: "TDX 回應逾時，稍後再試",
+      RATE: "查詢太頻繁，稍等一下再試", BADJSON: "TDX 回傳的資料格式異常", HTTP403: "TDX 拒絕存取（金鑰權限或使用額度問題）", HTTP404: "這個縣市沒有提供停車資料" };
+    if (map[m]) return map[m];
+    if (/^HTTP5/.test(m)) return "TDX 伺服器暫時異常（" + m.slice(4) + "），稍後再試";
+    return m.startsWith("HTTP") ? "TDX 回應錯誤（" + m.slice(4) + "）" : "讀取失敗";
   }
   const zh = v => (v && typeof v === "object") ? (v.Zh_tw || v.En || "") : (v || "");
 
@@ -398,7 +412,7 @@ button{cursor:pointer;touch-action:manipulation}
     return out;
   }
   async function refreshCity(city){
-    const j = await api(`/v1/Parking/OffStreet/ParkingAvailability/City/${city}?$format=JSON`);
+    const j = await api(`/v1/Parking/OffStreet/ParkingAvailability/City/${city}?$top=10000&$format=JSON`);
     const arr = Array.isArray(j) ? j : (j.ParkingAvailabilities || []);
     const map = {}; arr.forEach(p => { if (p.CarParkID) map[p.CarParkID] = parseAvail(p); });
     live[city] = { at: Date.now(), map };
@@ -407,7 +421,7 @@ button{cursor:pointer;touch-action:manipulation}
     if (carParks[city]) return carParks[city];
     const c = rj(CP + city);
     if (c && Date.now() - c.at < 864e5) { carParks[city] = c.list.map(r => ({ id: r[0], name: r[1], addr: r[2], lat: r[3], lon: r[4] })); return carParks[city]; }
-    const j = await api(`/v1/Parking/OffStreet/CarPark/City/${city}?$format=JSON`);
+    const j = await api(`/v1/Parking/OffStreet/CarPark/City/${city}?$top=10000&$format=JSON`);
     const arr = Array.isArray(j) ? j : (j.CarParks || []);
     const list = arr.map(p => ({ id: p.CarParkID, name: zh(p.CarParkName), addr: zh(p.Address),
       lat: p.CarParkPosition ? +p.CarParkPosition.PositionLat : null, lon: p.CarParkPosition ? +p.CarParkPosition.PositionLon : null })).filter(p => p.id);
@@ -450,7 +464,7 @@ button{cursor:pointer;touch-action:manipulation}
 
   function setDot(s){
     const d = $("#tdxDot"); d.className = "dot" + (s === "on" ? " on" : s === "err" ? " err" : "");
-    $("#tdxLabel").textContent = hasKey() ? (s === "err" ? "TDX 異常" : "TDX 已連線") : "TDX 設定";
+    $("#tdxLabel").textContent = !hasKey() ? "TDX 設定" : s === "on" ? "TDX 已連線" : s === "err" ? "TDX 異常" : "TDX 連線中";
   }
 
   function renderLive(){
@@ -551,7 +565,7 @@ button{cursor:pointer;touch-action:manipulation}
   function citiesNear(p, primary){
     const list = CITIES.map(c => [c[0], dist(p, { lat: CENT[c[0]][0], lon: CENT[c[0]][1] })]).sort((a, b) => a[1] - b[1]);
     const out = primary ? [primary] : [];
-    for (const [c, d] of list) { if (out.length >= 4) break; if (!out.includes(c) && (d < 25000 || !out.length)) out.push(c); }
+    for (const [c, d] of list) { if (out.length >= 4) break; if (!out.includes(c) && (d < 30000 || out.length < 2)) out.push(c); }
     return out;
   }
   const wkt = g => { const m = String(g || "").match(/POINT\s*\(\s*(-?[\d.]+)\s+(-?[\d.]+)/i); return m ? { lon: +m[1], lat: +m[2] } : null; };
@@ -559,7 +573,7 @@ button{cursor:pointer;touch-action:manipulation}
   const fmtAddr = s => norm(s).replace(/\s+/g, "");
   async function tdxGeo(kind, q){
     try {
-      const j = await api(`${ADV}/V3/Map/GeoCode/Coordinate/${kind}/${encodeURIComponent(q)}?format=JSON`);
+      const j = await api(`${ADV}/V3/Map/GeoCode/Coordinate/${kind}/${encodeURIComponent(norm(q))}?format=JSON`);
       const arr = Array.isArray(j) ? j : (j.Data || j.data || []);
       return arr.map(x => { const p = wkt(x.Geometry || x.geometry); if (!p) return null;
         const nm = x.MarkName || x.Markname || ""; return Object.assign(p, { name: nm || x.Address || q, addr: x.Address || "", src: "TDX" }); }).filter(Boolean);
@@ -573,7 +587,7 @@ button{cursor:pointer;touch-action:manipulation}
   async function photonGeo(q){
     try {
       const [la, lo] = bias(q);
-      const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=10&lat=${la}&lon=${lo}&bbox=118.1,21.8,122.1,26.4`);
+      const r = await tfetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=10&lat=${la}&lon=${lo}&bbox=118.1,21.8,122.1,26.4`);
       if (!r.ok) return [];
       const j = await r.json();
       return (j.features || []).map(f => { const p = f.properties || {}, c = f.geometry && f.geometry.coordinates; if (!c) return null;
@@ -584,7 +598,7 @@ button{cursor:pointer;touch-action:manipulation}
   }
   async function osmGeo(q){
     try {
-      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=tw&limit=5&accept-language=zh-TW&q=${encodeURIComponent(q)}`);
+      const r = await tfetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=tw&limit=5&accept-language=zh-TW&q=${encodeURIComponent(q)}`);
       if (!r.ok) return [];
       return (await r.json()).map(x => { const parts = x.display_name.split(",").map(s => s.trim());
         const addr = fmtAddr(parts.slice(x.name ? 1 : 0).reverse().filter(s => !/^(臺灣|Taiwan|\d{3,6})$/.test(s)).join(""));
@@ -610,7 +624,7 @@ button{cursor:pointer;touch-action:manipulation}
     try {
       await loadGoogle(key);
       const [la, lo] = bias(q);
-      const { places } = await google.maps.places.Place.searchByText({ textQuery: q, fields: ["displayName", "formattedAddress", "location"],
+      const { places } = await google.maps.places.Place.searchByText({ textQuery: norm(q), fields: ["displayName", "formattedAddress", "location"],
         language: "zh-TW", region: "tw", maxResultCount: 8, locationBias: { lat: la, lng: lo } });
       return (places || []).map(p => ({ lat: p.location.lat(), lon: p.location.lng(), name: p.displayName || q,
         addr: fmtAddr(String(p.formattedAddress || "").replace(/^\d{3,6}/, "").replace(/^臺灣/, "")), src: "Google" }));
@@ -636,12 +650,15 @@ button{cursor:pointer;touch-action:manipulation}
     if (!out.length && !looksAddr(q)) { const a = await tdxGeo("Address", q); return a.slice(0, 1).map(x => Object.assign(x, { name: x.addr || q })); }
     return out;
   }
+  let nSeq = 0, candOpen = true;
   async function runNear(q){
     q = q.trim(); if (!q) { $("#nQ").focus(); return; }
+    const my = ++nSeq; candOpen = true;
     if (!hasKey()) { openSet(); return; }
     nErr = ""; nBusy = looksAddr(q) ? "定位地址中…" : `搜尋「${q}」…`; nDest = null; nCands = []; renderNear();
     let cands = [];
     try { cands = await geocode(q); } catch (e) { nErr = errText(e); }
+    if (my !== nSeq) return;
     if (!cands.length) { nBusy = ""; nErr = nErr || (looksAddr(q) ? "找不到這個地址，試試加上縣市。" : "找不到這個店家。試試加上分店或地區（例：鼎泰豐 信義），或改貼地址。") + "也可以貼上 Google 地圖的座標（例：25.0408, 121.5671）。"; renderNear(); return; }
     cands.forEach(c => c.q = q); nCands = cands;
     state.recent = [q, ...state.recent.filter(x => x !== q)].slice(0, 5); persist(); renderRecent();
@@ -649,10 +666,13 @@ button{cursor:pointer;touch-action:manipulation}
   }
   async function pickDest(i){
     const d = nCands[i]; if (!d) return;
+    const my = ++nSeq;
     d.idx = i; d.cities = citiesNear(d, detectCity(d.addr) || detectCity(d.name) || detectCity(d.q));
     nDest = d; nBusy = `讀取${d.cities.map(cityName).join("、")}停車場…`; nErr = ""; renderNear();
     const res = await Promise.allSettled(d.cities.flatMap(c => [loadCarParks(c), live[c] && Date.now() - live[c].at < 30000 ? null : refreshCity(c)]));
-    const bad = res.find(r => r.status === "rejected"); if (bad && !d.cities.some(c => carParks[c])) nErr = errText(bad.reason);
+    if (my !== nSeq) return;
+    const bad = res.find(r => r.status === "rejected");
+    if (bad && !d.cities.some(c => carParks[c] || live[c])) nErr = errText(bad.reason);
     setDot(nErr ? "err" : "on");
     nBusy = ""; renderNear();
   }
@@ -688,7 +708,7 @@ button{cursor:pointer;touch-action:manipulation}
       <div class="sum">${rad} 內 ${allCnt} 間停車場，${liveRows.length} 間有即時資料${liveRows.length ? `，共 <strong>${sumCar}</strong> 個汽車空位` : ""}${near1 ? `<br>最近有空位：${esc(near1.name)}（${fmtD(near1.m)}，剩 ${near1.d.car.a} 位）` : (liveRows.length ? "<br>附近有即時資料的停車場目前都滿了，放大範圍試試" : "")}</div>
       <div class="da"><a href="${esc(mapUrl(nDest.name, nDest.lat, nDest.lon))}" target="_blank" rel="noopener">在地圖確認位置</a><button type="button" data-nclear>清除</button></div>
     </div>`;
-    if (others.length) html += `<details class="cands"${nDest.idx === 0 && !nCands.pick ? " open" : ""}><summary>不是這間？還有 ${others.length} 個符合「${esc(nDest.q)}」的地點</summary>
+    if (others.length) html += `<details class="cands"${candOpen ? " open" : ""}><summary>不是這間？還有 ${others.length} 個符合「${esc(nDest.q)}」的地點</summary>
       ${others.map(([c, i]) => `<button type="button" class="cand" data-cand="${i}"><b>${esc(c.name)}</b><span>${esc(c.addr || "")}${c.addr ? " · " : ""}距目前選擇 ${fmtD(dist(c, nDest))}</span></button>`).join("")}</details>`;
     if (nErr) html += `<p class="err">${esc(nErr)}</p>`;
     if (!rows.length) {
@@ -714,13 +734,14 @@ button{cursor:pointer;touch-action:manipulation}
     const at = Math.min(...nDest.cities.map(c => live[c] ? live[c].at : Infinity));
     $("#nearUpd").textContent = isFinite(at) ? "更新 " + ago(at) : "";
   }
+  document.addEventListener("toggle", e => { if (e.target.classList && e.target.classList.contains("cands")) candOpen = e.target.open; }, true);
   $("#nearForm").addEventListener("submit", e => { e.preventDefault(); $("#nQ").blur(); runNear($("#nQ").value); });
   document.addEventListener("click", e => {
     const r = e.target.closest("[data-r]");
     if (r) { state.nRadius = +r.dataset.r; persist(); renderNear(); return; }
     if (e.target.closest("#nOnly")) { nOnly = !nOnly; renderNear(); return; }
     const rc = e.target.closest("[data-recent]"); if (rc) { $("#nQ").value = rc.dataset.recent; runNear(rc.dataset.recent); return; }
-    const cd = e.target.closest("[data-cand]"); if (cd) { nCands.pick = true; pickDest(+cd.dataset.cand); window.scrollTo({ top: $("#nearForm").getBoundingClientRect().top + scrollY - 16, behavior: "smooth" }); return; }
+    const cd = e.target.closest("[data-cand]"); if (cd) { candOpen = false; pickDest(+cd.dataset.cand); window.scrollTo({ top: $("#nearForm").getBoundingClientRect().top + scrollY - 16, behavior: "smooth" }); return; }
     if (e.target.closest("[data-nclear]")) { nDest = null; nCands = []; nErr = ""; $("#nQ").value = ""; $("#nearUpd").textContent = ""; renderNear(); return; }
     const nw = e.target.closest("[data-nwatch]");
     if (nw) {
@@ -851,7 +872,8 @@ button{cursor:pointer;touch-action:manipulation}
   }
   $("#gearBtn").addEventListener("click", openSet);
   $("#cCancel").addEventListener("click", () => $("#setSheet").hidden = true);
-  $("#cClear").addEventListener("click", () => { localStorage.removeItem(CRED); localStorage.removeItem(TOK); $("#cId").value = $("#cSecret").value = $("#cGkey").value = ""; setDot(""); render(); toast("已清除金鑰"); });
+  $("#cClear").addEventListener("click", () => { localStorage.removeItem(CRED); localStorage.removeItem(TOK); $("#cId").value = $("#cSecret").value = $("#cGkey").value = ""; setDot(""); render(); toast("已改回內建金鑰");
+    getToken().then(() => { setDot("on"); liveErr = ""; refreshAll(true); }).catch(e => { liveErr = errText(e); setDot("err"); renderLive(); }); });
   $("#setForm").addEventListener("submit", async e => {
     e.preventDefault();
     const id = $("#cId").value.trim(), secret = $("#cSecret").value.trim();
@@ -861,9 +883,14 @@ button{cursor:pointer;touch-action:manipulation}
     wj(CRED, { id, secret, gkey: $("#cGkey").value.trim() }); gmLoading = null; localStorage.removeItem(TOK);
     $("#cSave").textContent = "測試中…";
     try {
-      await refreshCity(state.city);
-      const n = Object.keys(live[state.city].map).length;
-      $("#cOk").textContent = `連線成功：${cityName(state.city)}有 ${n} 間停車場提供即時空位。`; $("#cOk").hidden = false; setDot("on"); liveErr = ""; render();
+      await getToken();   // 先確認金鑰本身
+      setDot("on"); liveErr = "";
+      try {
+        await refreshCity(state.city);
+        const n = Object.keys(live[state.city].map).length;
+        $("#cOk").textContent = `金鑰正確，連線成功：${cityName(state.city)}有 ${n} 間停車場提供即時空位。`;
+      } catch (err2) { $("#cOk").textContent = `金鑰正確。但${cityName(state.city)}目前讀不到停車資料（${errText(err2)}）。`; }
+      $("#cOk").hidden = false; render(); refreshAll(true);
     } catch (err) { $("#cErr").textContent = errText(err); $("#cErr").hidden = false; setDot("err"); }
     $("#cSave").textContent = "儲存並測試";
   });
@@ -948,7 +975,8 @@ button{cursor:pointer;touch-action:manipulation}
   ["sheet", "parkSheet", "setSheet", "searchSheet"].forEach(id => $("#" + id).addEventListener("click", e => { if (e.target.id === id) { $("#" + id).hidden = true; if (id === "sheet") editingId = null; render(); } }));
 
   /* ---------- 啟動與自動更新 ---------- */
-  loadLocal(); setDot(""); renderRecent(); render(); refreshAll(true);
+  loadLocal(); setDot(""); renderRecent(); render();
+  getToken().then(() => { setDot("on"); refreshAll(true); }).catch(e => { liveErr = errText(e); setDot("err"); renderLive(); });
   setInterval(() => { if (document.visibilityState === "visible") { if (state.session) renderTicket(); renderLive(); } }, 30000);
   setInterval(() => { if (document.visibilityState === "visible") refreshAll(true); }, 90000);
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { render(); refreshAll(false); } });
