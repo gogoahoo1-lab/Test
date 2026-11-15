@@ -79,7 +79,7 @@ button{cursor:pointer;touch-action:manipulation}
 .board{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media (max-width:360px){.board{grid-template-columns:1fr}}
 .tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px;position:relative}
-.tile .tn{font-weight:700;font-size:14.5px;line-height:1.35;overflow-wrap:anywhere;padding-right:4px}
+.tile .tn{font-weight:700;font-size:14.5px;line-height:1.35;overflow-wrap:anywhere;padding-right:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.7em}
 .big{display:flex;align-items:baseline;gap:6px}
 .big b{font-family:var(--f-mono);font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
 .big span{font-size:12px;color:var(--muted)}
@@ -167,8 +167,6 @@ button{cursor:pointer;touch-action:manipulation}
 .nbtns .btn{flex:1 1 0;min-height:48px;font-size:15.5px;border-radius:12px}
 .gbtn{gap:7px}
 .gbtn span{white-space:nowrap}
-.gbtn .gs{display:none}
-@media (max-width:370px){.gbtn .gl{display:none}.gbtn .gs{display:inline}.nbtns .btn{font-size:15px;padding:10px 8px}}
 .gbtn.gwait{border-color:var(--signal);background:color-mix(in srgb,var(--signal) 16%,var(--surface))}
 .gre{flex:0 0 48px!important;padding:0}
 .miss{background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13.5px;display:flex;flex-direction:column;gap:2px}
@@ -257,7 +255,7 @@ button{cursor:pointer;touch-action:manipulation}
       <input id="nQ" type="search" placeholder="店名或地址" autocomplete="off" enterkeyhint="search">
       <div class="nbtns">
         <button class="btn btn-pay" type="submit">找車位</button>
-        <a class="btn btn-plain gbtn" id="gBtn" href="https://www.google.com/maps" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span class="gl">Google 地圖找地址</span><span class="gs">Google 地圖</span></a>
+        <a class="btn btn-plain gbtn" id="gBtn" href="https://www.google.com/maps" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span>Google 地址</span></a>
         <button class="btn btn-plain gbtn gwait" id="gPasteBtn" type="button" hidden><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4.5V3h6v1.5"/><path d="M9.5 12.5l2 2 3.5-4"/></svg><span>貼上地址</span></button>
         <a class="btn btn-plain gre" id="gRe" href="https://www.google.com/maps" target="_blank" rel="noopener" aria-label="重新開啟 Google 地圖" hidden><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a>
       </div>
@@ -754,8 +752,8 @@ button{cursor:pointer;touch-action:manipulation}
       if (share || fromPaste) {
         gWait = true; gSync();
         nErr = (share && !share.name && !share.addr)
-          ? "只拷貝到短網址，看不出位置。請在 Google 地圖按「分享」→「拷貝」整段文字，再按「貼上地址」。"
-          : `讀不到「${label}」的位置，換成拷貝整段分享內容或店家地址再貼一次。`;
+          ? "只拷貝到短網址。請在 Google 地圖按分享 → 拷貝整段文字"
+          : `讀不到「${label}」的位置，請改拷貝整段分享內容或地址`;
         nMissQ = "";
       } else { nMissQ = q; nErr = ""; $("#gBtn").classList.add("glow"); }
       renderNear(); return;
@@ -770,7 +768,7 @@ button{cursor:pointer;touch-action:manipulation}
     let t = "";
     try { t = await navigator.clipboard.readText(); } catch (e) {}
     if (!t || !t.trim()) {
-      nErr = "讀不到剪貼簿。請長按搜尋框 →「貼上」，會自動帶入。"; nDest = null; renderNear(); $("#nQ").focus(); return;
+      nErr = "讀不到剪貼簿，請長按搜尋框 → 貼上"; nDest = null; renderNear(); $("#nQ").focus(); return;
     }
     runNear(t, true);
   }
@@ -844,7 +842,7 @@ button{cursor:pointer;touch-action:manipulation}
     const box = $("#nearBox");
     if (nBusy) { box.innerHTML = `<div class="loading"><span class="spin">↻</span> ${esc(nBusy)}</div>`; return; }
     const gmHtml = gm ? gmCard() : "";
-    if (!nDest && nMissQ) { box.innerHTML = `<div class="miss"><b>找不到「${esc(nMissQ)}」</b><span>到 Google 地圖找到店家 →「分享」→「拷貝」，回來按「貼上地址」。</span></div>`; return; }
+    if (!nDest && nMissQ) { box.innerHTML = `<div class="miss"><b>找不到「${esc(nMissQ)}」</b><span>按「Google 地址」→ 分享 → 拷貝，回來按「貼上地址」</span></div>`; return; }
     if (nErr && !nDest) { box.innerHTML = `<p class="err">${esc(nErr)}</p>`; return; }
     if (!nDest) { box.innerHTML = ""; return; }
     let rows = nearRows(); const allCnt = rows.length;
@@ -913,7 +911,7 @@ button{cursor:pointer;touch-action:manipulation}
     if (r) { state.nRadius = +r.dataset.r; persist(); renderNear(); return; }
     if (e.target.closest("#nOnly")) { nOnly = !nOnly; renderNear(); return; }
     if (e.target.closest("[data-gmpaste]")) { pasteGoogle(); return; }
-    if (e.target.closest("[data-gmgo]")) { gGo(); toast("在 Google 地圖拷貝後，回來按「貼上地址」"); return; }
+    if (e.target.closest("[data-gmgo]")) { gGo(); toast("拷貝後回來按「貼上地址」"); return; }
     if (e.target.closest("[data-gmopen]")) { if (gm) { gm.step = 2; gm.opened = true; gm.back = false; gm.note = ""; setTimeout(renderNear, 60); } return; }
     if (e.target.closest("[data-gmskip]")) { if (gm) { gm.step = 2; renderNear(); } return; }
     if (e.target.closest("[data-gmclose]")) { gm = null; renderNear(); return; }
@@ -1162,7 +1160,7 @@ button{cursor:pointer;touch-action:manipulation}
   setInterval(() => { if (document.visibilityState === "visible") refreshAll(true); }, 90000);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible") return;
-    if (gWait) { $("#gPasteBtn").classList.add("glow"); toast("按「貼上地址」帶入 Google 地圖的位置"); }
+    if (gWait) { $("#gPasteBtn").classList.add("glow"); toast("按「貼上地址」帶入位置"); }
     render(); refreshAll(false);
   });
 }
