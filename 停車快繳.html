@@ -104,7 +104,7 @@ button{cursor:pointer;touch-action:manipulation}
 .lb{display:inline-flex;align-items:center;gap:4px;font-weight:700;font-size:12px;border:1px solid currentColor;border-radius:999px;padding:0 8px;margin-right:4px;font-variant-numeric:tabular-nums}
 .chip{border:1px solid var(--line);background:transparent;border-radius:999px;padding:5px 11px;font-size:12.5px;color:var(--muted);min-height:34px}
 .chip.on{border-color:var(--ink);color:var(--ink);font-weight:700}
-.chip.del{align-self:flex-start}
+.dellink{align-self:center;background:transparent;border:0;color:var(--danger);font-size:13.5px;font-weight:700;min-height:40px;padding:0 8px}
 .empty{color:var(--muted);font-size:13.5px;text-align:center;padding:6px 0;margin:0}
 
 .sheet{position:fixed;inset:0;background:rgba(10,12,15,.55);display:flex;align-items:flex-end;justify-content:center;z-index:20;overscroll-behavior:contain}
@@ -128,8 +128,10 @@ button{cursor:pointer;touch-action:manipulation}
 .panel .actions .btn{flex:1}
 .confirm{border:1px solid var(--danger);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
 .srow{display:flex;gap:8px}
+.srow select,.srow input{border:1.5px solid var(--line);border-radius:10px;padding:10px 11px;background:var(--bg);color:var(--ink);font-size:16px;min-height:46px}
 .srow select{flex:0 0 120px}
 .srow input{flex:1}
+.srow select:focus,.srow input:focus{border-color:var(--signal);outline:none}
 .filters{display:flex;gap:6px;flex-wrap:wrap}
 .res{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center}
 .rname{font-weight:700;font-size:15px;overflow-wrap:anywhere}
@@ -139,7 +141,9 @@ button{cursor:pointer;touch-action:manipulation}
 .rnum small{font-size:11px;font-weight:700}
 .ract{grid-column:1 / -1;display:flex;gap:6px;flex-wrap:wrap}
 .ract a{text-decoration:none;display:inline-flex;align-items:center}
-.chip.rec{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip.rec{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none}
+#nRecent{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px;-webkit-overflow-scrolling:touch}
+#nRecent::-webkit-scrollbar{display:none}
 .dest{background:var(--asphalt);color:var(--asphalt-ink);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
 .dest .dl{font-size:12px;opacity:.7}
 .dest b{font-size:15px;line-height:1.4;overflow-wrap:anywhere}
@@ -171,6 +175,9 @@ button{cursor:pointer;touch-action:manipulation}
 .gre{flex:0 0 48px!important;padding:0}
 .miss{background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13.5px;display:flex;flex-direction:column;gap:2px}
 .miss b{font-size:15px}.miss span{color:var(--muted)}
+.miss.warn{border-color:color-mix(in srgb,var(--warn) 55%,var(--line))}
+.miss.warn>span{color:var(--ink);line-height:1.55}
+.mact{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 @media (prefers-reduced-motion:no-preference){
   .glow{animation:ring 1.5s ease-out infinite}
   @keyframes ring{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--signal) 75%,transparent)}100%{box-shadow:0 0 0 16px transparent}}
@@ -183,9 +190,11 @@ button{cursor:pointer;touch-action:manipulation}
 .ov b{flex:1;font-size:15px}
 .ov span{font-size:12px;color:var(--muted);text-align:right}
 .ov strong{font-family:var(--f-mono);font-size:18px;display:block;color:var(--ok)}
+.ov strong small{font-family:var(--f-body);font-size:12px;font-weight:500}
 .loading{color:var(--muted);text-align:center;padding:20px 0;font-size:13.5px}
 
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom));background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:13.5px;z-index:40;font-weight:500;max-width:90vw;text-align:center}
+.toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top));background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:13.5px;z-index:40;font-weight:500;max-width:90vw;text-align:center;display:flex;align-items:center;gap:12px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.toast button{border:0;background:transparent;color:var(--signal);font-weight:700;font-size:13.5px;padding:4px 2px;min-height:32px}
 [hidden]{display:none!important}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spin{display:inline-block;animation:spin .8s linear infinite}
@@ -258,7 +267,6 @@ button{cursor:pointer;touch-action:manipulation}
 <div class="sheet" id="sheet" hidden>
   <form class="panel" id="form" novalidate>
     <h3 id="formTitle">新增停車場</h3>
-    <button type="button" class="chip del" id="delOpen" hidden>刪除這間</button>
     <label class="field"><span>名稱</span><input id="fName" placeholder="例：公司旁 B2 停車場" maxlength="40"></label>
     <label class="field"><span>繳費網址</span><input id="fUrl" type="url" inputmode="url" placeholder="https://…" autocomplete="off"></label>
     <label class="field"><span>備註（費率、常停樓層…選填）</span><input id="fNote" placeholder="例：每小時 40 元，常停 B2" maxlength="60"></label>
@@ -277,6 +285,7 @@ button{cursor:pointer;touch-action:manipulation}
       <button type="button" class="btn btn-plain" id="cancel">取消</button>
       <button type="submit" class="btn btn-pay">儲存</button>
     </div>
+    <button type="button" class="dellink" id="delOpen" hidden>刪除這間停車場</button>
   </form>
 </div>
 
@@ -302,7 +311,7 @@ button{cursor:pointer;touch-action:manipulation}
       <select id="sCity" aria-label="縣市"></select>
       <input id="sQuery" type="search" placeholder="停車場名稱或路名" autocomplete="off" enterkeyhint="search">
     </div>
-    <div class="filters">
+    <div class="filters" id="sFilters">
       <button type="button" class="chip on" id="sLive">只看有即時空位</button>
       <button type="button" class="chip" id="sNear">依距離排序</button>
       <button type="button" class="chip" id="sAvail">空位多的優先</button>
@@ -363,7 +372,11 @@ button{cursor:pointer;touch-action:manipulation}
 
   function loadLocal(){ const d = rj(KEY); if (d && Array.isArray(d.lots)) state = Object.assign(state, d); if (!Array.isArray(state.watch)) state.watch = []; if (!Array.isArray(state.recent)) state.recent = []; if (!state.nRadius) state.nRadius = 500; if (!CENT[state.city]) state.city = "Taipei"; state.watch = state.watch.filter(w => !String(w.id).startsWith("DEMO-")); try { localStorage.removeItem("parking-pay-demo"); } catch (e) {} }
   function persist(){ state.updated = Date.now(); wj(KEY, state); }
-  function toast(t){ const el = $("#toast"); el.textContent = t; el.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => el.hidden = true, 2000); }
+  function toast(t, undo){
+    const el = $("#toast"); el.innerHTML = `<span>${esc(t)}</span>${undo ? '<button type="button" id="toastUndo">復原</button>' : ""}`; el.hidden = false;
+    if (undo) $("#toastUndo").onclick = () => { el.hidden = true; undo(); };
+    clearTimeout(toast._t); toast._t = setTimeout(() => el.hidden = true, undo ? 5000 : 2000);
+  }
   const uid = () => Math.random().toString(36).slice(2, 9);
   function host(u){ try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return ""; } }
   function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
@@ -666,7 +679,7 @@ button{cursor:pointer;touch-action:manipulation}
     if (!out.length && !looksAddr(q)) { const a = await tdxGeo("Address", q); return a.slice(0, 1).map(x => Object.assign(x, { name: x.addr || q })); }
     return out;
   }
-  let nSeq = 0, candOpen = true, nMissQ = "";
+  let nSeq = 0, candOpen = true, nMissQ = "", gLastQ = "", lastLink = "", nErrAct = false;
   const gmUrl = q => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
   const isShare = t => /https?:\/\/|maps\.app\.goo\.gl|goo\.gl\/maps|google\.[a-z.]+\/maps/i.test(t) || /\n/.test(t.trim());
   // 解析 Google 地圖「分享 → 拷貝」的內容：抓座標、地址、店名
@@ -699,13 +712,18 @@ button{cursor:pointer;touch-action:manipulation}
     return { name, addr, lat: c ? +c[1] : null, lon: c ? +c[2] : null };
   }
   async function runNear(q, fromPaste){
-    q = String(q || "").trim(); if (!q) { $("#nQ").focus(); return; }
+    q = String(q || "").trim(); if (!q) { $("#nQ").focus(); toast("先輸入店名或地址"); return; }
     const my = ++nSeq; candOpen = true;
     $("#nQ").classList.remove("pastehint");
     if (!hasKey()) { openSet(); return; }
-    let cands = [], label = q, share = null;
+    let cands = [], label = q, share = null, link = "", repeat = false;
     if (isShare(q)) {
-      share = parseShare(q); label = share.name || share.addr || "";
+      share = parseShare(q);
+      link = (q.match(/https?:\/\/\S+/) || [""])[0];
+      if (!share.name && !share.addr && !share.lat && link) {
+        repeat = link === lastLink; lastLink = link;
+      }
+      label = share.name || share.addr || "";
       $("#nQ").value = label;
     }
     nErr = ""; nBusy = share ? "讀取 Google 地圖分享的位置…" : looksAddr(q) ? "定位地址中…" : `搜尋「${q}」…`; nDest = null; nCands = []; renderNear();
@@ -721,13 +739,16 @@ button{cursor:pointer;touch-action:manipulation}
       nBusy = "";
       if (share || fromPaste) {
         gWait = true; gSync();
-        const onlyLink = share && !share.name && !share.addr;
-        nErr = onlyLink
-          ? "這是 Google 地圖的短網址，裡面沒有地址。請在店家頁點「地址」那一行 → 複製，再回來貼上。"
-          : `讀不到「${label || q.slice(0, 20)}」的位置。請在 Google 地圖店家頁點「地址」→ 複製，再回來貼上。`;
+        const onlyLink = share && !share.name && !share.addr && !share.lat;
+        nErr = repeat
+          ? "剪貼簿裡還是剛才那個短網址，還沒複製到地址。請回 Google 地圖，在店家頁點一下（或長按）地址那一行，看到「已複製」再回來貼上。"
+          : onlyLink
+          ? "這是 Google 地圖的短網址，裡面沒有地址。請在店家頁點一下（或長按）地址那一行，看到「已複製」再回來貼上。"
+          : `讀不到「${label || q.slice(0, 20)}」的位置。請改複製店家頁上的地址再貼上。`;
+        nErrAct = true;
         nMissQ = "";
         const box = $("#nQ"); box.value = ""; box.classList.add("pastehint"); box.placeholder = "長按這裡 → 貼上地址"; qSync();
-      } else { nMissQ = q; nErr = ""; $("#gBtn").classList.add("glow"); }
+      } else { nMissQ = q; nErr = ""; nErrAct = false; $("#gBtn").classList.add("glow"); }
       renderNear(); return;
     }
     nMissQ = ""; $("#gBtn").classList.remove("glow"); gDone();
@@ -781,12 +802,17 @@ button{cursor:pointer;touch-action:manipulation}
     $("#nRadius").querySelectorAll("[data-r]").forEach(b => b.classList.toggle("on", +b.dataset.r === state.nRadius));
     $("#nOnly").classList.toggle("on", nOnly);
     $("#nRadius").hidden = !nDest || !!nBusy;
-    $("#nRecent").hidden = !!nDest || !!nBusy || !state.recent.length;
-    $("#qClear").hidden = !$("#nQ").value;
+    $("#nRecent").hidden = !!nDest || !!nBusy || !state.recent.length || !!nMissQ || !!nErr;
+    qSync();
     const box = $("#nearBox");
     if (nBusy) { box.innerHTML = `<div class="loading"><span class="spin">↻</span> ${esc(nBusy)}</div>`; return; }
     if (!nDest && nMissQ) { box.innerHTML = `<div class="miss"><b>找不到「${esc(nMissQ)}」</b><span>按「Google 地址」→ 點店家的地址 → 複製，回來按「貼上地址」</span></div>`; return; }
-    if (nErr && !nDest) { box.innerHTML = `<p class="err">${esc(nErr)}</p>`; return; }
+    if (nErr && !nDest) {
+      box.innerHTML = `<div class="miss warn"><span>${esc(nErr)}</span>${nErrAct ? `<div class="mact">
+        ${gLastQ ? `<button type="button" class="chip lnk" data-retry>改用「${esc(gLastQ.length > 10 ? gLastQ.slice(0, 10) + "…" : gLastQ)}」再搜一次</button>` : ""}
+        <button type="button" class="chip" data-reset>取消</button></div>` : ""}</div>`;
+      return;
+    }
     if (!nDest) { box.innerHTML = ""; return; }
     let rows = nearRows(); const allCnt = rows.length;
     const liveRows = rows.filter(r => r.d && r.d.car);
@@ -837,9 +863,9 @@ button{cursor:pointer;touch-action:manipulation}
     $("#gBtn").href = url; $("#gRe").href = url;
     $("#gBtn").hidden = gWait; $("#gPasteBtn").hidden = !gWait; $("#gRe").hidden = !gWait;
     if (!$("#nQ").classList.contains("pastehint")) $("#nQ").placeholder = gWait ? "長按貼上 Google 地圖拷貝的內容" : "店名或地址";
-    $("#qClear").hidden = !$("#nQ").value;
+    qSync();
   }
-  function gGo(){ gWait = true; $("#gBtn").classList.remove("glow"); setTimeout(gSync, 60); }
+  function gGo(){ const v = $("#nQ").value.trim(); if (v && !isShare(v)) gLastQ = v; else if (nDest && nDest.q) gLastQ = nDest.q; gWait = true; $("#gBtn").classList.remove("glow"); setTimeout(gSync, 60); }
   function gDone(){ gWait = false; $("#gPasteBtn").classList.remove("glow"); gSync(); }
   $("#gBtn").addEventListener("click", gGo);
   $("#gRe").addEventListener("click", () => setTimeout(gSync, 60));
@@ -854,16 +880,23 @@ button{cursor:pointer;touch-action:manipulation}
     }
     if (!t) setTimeout(() => { const v = $("#nQ").value; if (v.trim() && (gWait || wasHint || isShare(v))) { $("#nQ").blur(); runNear(v, true); } }, 60);
   });
-  function qSync(){ $("#qClear").hidden = !$("#nQ").value; }
+  function stuck(){ return gWait || $("#nQ").classList.contains("pastehint") || (!!nErr && !nDest); }
+  function qSync(){ $("#qClear").hidden = !$("#nQ").value && !stuck(); }
+  function resetSearch(){
+    const q = $("#nQ"); q.value = ""; q.classList.remove("pastehint");
+    nErr = ""; nErrAct = false; nMissQ = ""; $("#gBtn").classList.remove("glow"); gDone(); renderNear(); qSync();
+  }
   $("#nQ").addEventListener("input", qSync);
   $("#qClear").addEventListener("mousedown", e => e.preventDefault());
-  $("#qClear").addEventListener("click", () => { $("#nQ").value = ""; qSync(); gSync(); $("#nQ").focus(); });
+  $("#qClear").addEventListener("click", () => { const wasStuck = stuck() && !$("#nQ").value; if (wasStuck) resetSearch(); else { $("#nQ").value = ""; qSync(); gSync(); } $("#nQ").focus(); });
   gSync();
   $("#nearForm").addEventListener("submit", e => { e.preventDefault(); $("#nQ").blur(); const v = $("#nQ").value; runNear(v, gWait && (isShare(v) || looksAddr(v))); });
   document.addEventListener("click", e => {
     const r = e.target.closest("[data-r]");
     if (r) { state.nRadius = +r.dataset.r; persist(); renderNear(); return; }
     if (e.target.closest("#nOnly")) { nOnly = !nOnly; renderNear(); return; }
+    if (e.target.closest("[data-reset]")) { resetSearch(); return; }
+    if (e.target.closest("[data-retry]")) { const q = gLastQ; resetSearch(); $("#nQ").value = q; qSync(); runNear(q); return; }
     if (e.target.closest("[data-gmgo]")) { gGo(); toast("拷貝後回來按「貼上地址」"); return; }
     const rc = e.target.closest("[data-recent]"); if (rc) { $("#nQ").value = rc.dataset.recent; runNear(rc.dataset.recent); return; }
     const cd = e.target.closest("[data-cand]"); if (cd) { candOpen = false; pickDest(+cd.dataset.cand); window.scrollTo({ top: $("#nearForm").getBoundingClientRect().top + scrollY - 16, behavior: "smooth" }); return; }
@@ -895,7 +928,7 @@ button{cursor:pointer;touch-action:manipulation}
     }).sort((a, b) => b.n - a.n);
     $("#sMeta").textContent = `全台 ${tl} 間停車場有即時資料，目前共 ${tc.toLocaleString()} 個汽車空位。點縣市看各停車場。`;
     $("#sList").innerHTML = rows.map(r => `<button type="button" class="ov" data-ovcity="${r.en}"><b>${r.z}</b>
-      <span>${r.n ? `${r.n} 間即時${r.full ? ` · ${r.full} 間已滿` : ""}` : "未提供即時資料"}${r.n ? `<strong>${r.sum.toLocaleString()}</strong>` : ""}</span></button>`).join("");
+      <span>${r.n ? `${r.n} 間即時${r.full ? ` · ${r.full} 間已滿` : ""}` : "未提供即時資料"}${r.n ? `<strong>${r.sum.toLocaleString()}<small> 個空位</small></strong>` : ""}</span></button>`).join("");
   }
 
   async function openSearch(mode){
@@ -908,6 +941,7 @@ button{cursor:pointer;touch-action:manipulation}
   }
   async function loadSearchCity(){
     const city = $("#sCity").value;
+    $("#sQuery").hidden = $("#sFilters").hidden = city === "ALL"; $("#sCity").style.flex = city === "ALL" ? "1 1 auto" : "";
     if (city === "ALL") { loadOverview(); return; }
     $("#sList").innerHTML = `<div class="loading"><span class="spin">↻</span> 讀取${esc(cityName(city))}停車場…</div>`; $("#sMeta").textContent = "";
     const [cp, lv] = await Promise.allSettled([loadCarParks(city), refreshCity(city)]);
@@ -952,7 +986,7 @@ button{cursor:pointer;touch-action:manipulation}
       return `<div class="res">
         <div class="rname">${esc(r.name)}</div>
         <div class="raddr">${esc(r.addr || "")}${sNear && isFinite(r.m) ? ` · ${fmtD(r.m)}` : ""}${r.d && r.d.moto ? ` · 機車 ${r.d.moto.a}` : ""}</div>
-        <div class="rnum ${cls}"><b>${v ? v.a : "—"}</b><small>${v ? "汽車空位" : lab}</small></div>
+        <div class="rnum ${cls}"><b>${v ? v.a : "—"}</b><small>${v ? (r.d.full || v.a === 0 ? "已滿" : "汽車空位") : lab}</small></div>
         <div class="ract">${acts}</div></div>`;
     }).join("") + (rows.length > sLimit ? `<button class="btn btn-plain wide" type="button" id="sMore">再顯示 ${Math.min(30, rows.length - sLimit)} 間</button>` : "");
   }
@@ -1030,10 +1064,10 @@ button{cursor:pointer;touch-action:manipulation}
     const cp = ev.target.closest("[data-copy]"); if (cp) { copyText(state.lots.find(x => x.id === cp.dataset.copy).url, "網址已複製"); return; }
     const ed = ev.target.closest("[data-edit]"); if (ed) { openForm(ed.dataset.edit); return; }
     const uw = ev.target.closest("[data-unwatch]");
-    if (uw) { state.watch = state.watch.filter(w => w.id !== uw.dataset.unwatch); persist(); renderLive(); toast("已移除"); return; }
+    if (uw) { const prev = state.watch.slice(); state.watch = state.watch.filter(w => w.id !== uw.dataset.unwatch); persist(); renderLive(); toast("已移除", () => { state.watch = prev; persist(); render(); }); return; }
     if (ev.target.closest("[data-open-set]")) { openSet(); return; }
     if (ev.target.closest("#startPark")) { openPark(sortedLots()[0] && sortedLots()[0].id); return; }
-    if (ev.target.closest("#endPark")) { state.session = null; persist(); render(); toast("已結束計時"); return; }
+    if (ev.target.closest("#endPark")) { const prev = state.session; state.session = null; persist(); render(); toast("已結束計時", () => { state.session = prev; persist(); render(); }); return; }
   });
   $("#findBtn").addEventListener("click", () => openSearch("browse"));
   $("#refreshBtn").addEventListener("click", () => refreshAll(true));
