@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-Hant" data-skin="glass" data-ver="v2026.11.16k">
+<html lang="zh-Hant" data-skin="glass" data-ver="v2026.11.16l">
 <head>
 <meta charset="utf-8">
 <meta name="theme-color" content="#FFFFFF" id="themeColor">
@@ -970,6 +970,16 @@ html[data-skin="glass"][data-mode="dark"] .gglow{background:radial-gradient(clos
 html[data-skin="glass"][data-mode="dark"] :is(nav.tabs,.langsw,.tabbar) button::after{background:radial-gradient(closest-side,rgba(230,195,125,.55),rgba(230,195,125,.22) 55%,transparent) !important}
 @media (max-width:760px){ html[data-skin="glass"][data-mode="dark"] .tabbar{background:linear-gradient(180deg,rgba(44,38,30,.9),rgba(28,24,19,.88)) !important} }
 </style>
+<style id="dark-forms">
+/* 深色模式的表單：下拉選單展開的清單要有深色底，否則 Windows／部分瀏覽器會變成白底白字 */
+html[data-skin="glass"][data-mode="dark"] select{background-color:var(--panel2);color:var(--text);color-scheme:dark}
+html[data-skin="glass"][data-mode="dark"] select option,html[data-skin="glass"][data-mode="dark"] select optgroup{background-color:#231E18;color:#F3EEE6}
+html[data-skin="glass"][data-mode="dark"] select option:checked{background-color:#3A3024;color:#FFFFFF}
+html[data-skin="glass"][data-mode="dark"] input,html[data-skin="glass"][data-mode="dark"] textarea{color-scheme:dark}
+html[data-skin="glass"][data-mode="dark"] input:-webkit-autofill{-webkit-text-fill-color:var(--text);-webkit-box-shadow:0 0 0 1000px var(--panel2) inset}
+/* 淺色模式也明確指定，避免沿用系統深色設定造成反白 */
+html[data-skin="glass"]:not([data-mode="dark"]) select option{background-color:#FFFFFF;color:#25272C}
+</style>
 <style>
 /* ---------- 空位查詢篩選：2×2 下拉選單（方案 B） ---------- */
 #sxFilt{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}
@@ -1015,7 +1025,7 @@ html[data-skin="glass"][data-mode="dark"] :is(nav.tabs,.langsw,.tabbar) button::
       <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
     </button>
     <span class="offbadge" id="offBadge" data-noi18n><i></i><span id="offTxt">離線</span></span>
-    <div class="ver" id="appVerTag" data-noi18n title="2026.11.16k：空位清單確認為 UTC，一律換算｜2026.11.16j：空位清單時間預設以 UTC 換算（修正接飛 STD／STA 早 8 小時）｜2026.11.16i：開啟一律先顯示淺色｜2026.11.16h：深色改為暖炭香檳金｜2026.11.16g：天氣時效統一為「幾點更新・有效剩多久」｜2026.11.16f：深色改為深海青綠｜2026.11.16e：新增深色模式切換｜2026.11.16d：天氣卡移除來源說明列｜2026.11.16c：版面改為純白極簡｜2026.11.16b：天氣時效移除「實況有效」字樣｜2026.11.16：移除頁籤列右側捲軸｜2026.11.14g：移除頁籤捲軸；部署在其他帳號也能讀天氣快取｜2026.11.14f：天氣改由 Cloudflare 轉接即時 METAR／TAF｜2026.11.14e：開啟即事先載入全部場站天氣｜2026.11.14d：頁籤與切換鈕選中時散光、按下閃光｜2026.11.14c：天氣加註資料有效時限（METAR 實況時效、TAF 效期），TAF 過期不判讀｜2026.11.14b：場站天氣改與「航點天氣警戒」同源、同一套 TAF 判讀｜2026.11.14：底部頁籤列、場站天氣、宵禁倒數、離線可用與新版提示、版面精簡｜2026.11.10：壓克力玻璃按鈕與冷灰底色｜2026.11.07：左右滑動切換頁籤、STD 依出發站當地時間顯示（UTC 自動校正）"><span>版次</span>v2026.11.16k</div>
+    <div class="ver" id="appVerTag" data-noi18n title="2026.11.16l：深色模式下拉選單改深底淺字｜2026.11.16k：空位清單確認為 UTC，一律換算｜2026.11.16j：空位清單時間預設以 UTC 換算（修正接飛 STD／STA 早 8 小時）｜2026.11.16i：開啟一律先顯示淺色｜2026.11.16h：深色改為暖炭香檳金｜2026.11.16g：天氣時效統一為「幾點更新・有效剩多久」｜2026.11.16f：深色改為深海青綠｜2026.11.16e：新增深色模式切換｜2026.11.16d：天氣卡移除來源說明列｜2026.11.16c：版面改為純白極簡｜2026.11.16b：天氣時效移除「實況有效」字樣｜2026.11.16：移除頁籤列右側捲軸｜2026.11.14g：移除頁籤捲軸；部署在其他帳號也能讀天氣快取｜2026.11.14f：天氣改由 Cloudflare 轉接即時 METAR／TAF｜2026.11.14e：開啟即事先載入全部場站天氣｜2026.11.14d：頁籤與切換鈕選中時散光、按下閃光｜2026.11.14c：天氣加註資料有效時限（METAR 實況時效、TAF 效期），TAF 過期不判讀｜2026.11.14b：場站天氣改與「航點天氣警戒」同源、同一套 TAF 判讀｜2026.11.14：底部頁籤列、場站天氣、宵禁倒數、離線可用與新版提示、版面精簡｜2026.11.10：壓克力玻璃按鈕與冷灰底色｜2026.11.07：左右滑動切換頁籤、STD 依出發站當地時間顯示（UTC 自動校正）"><span>版次</span>v2026.11.16l</div>
   </div>
   <div class="stat">
     <div><b id="statStations">0</b><span>收錄場站</span></div>
