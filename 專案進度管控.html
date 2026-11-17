@@ -828,14 +828,14 @@ const authForm=(id,rows,btn,msg)=>`<form id="${id}" novalidate><div class="grp">
 let lastUser='';try{lastUser=localStorage.getItem('pc-user')||''}catch(e){}
 function showLogin(msg){authPage('專案進度管控','請登入你的帳號',authForm('au-login',srvRow()+row('au-u','帳號','text','主管給你的帳號','username',lastUser)+row('au-p','密碼','password','密碼','current-password'),'登入',msg),
   `<button class="lnk" data-aa="forgot">忘記密碼？</button><span>·</span><button class="lnk" data-aa="setup">第一次使用（建立主管帳號）</button>`)}
-function showSetup(msg){authPage('建立主管帳號','第一次使用：輸入部署時設定的「救援碼」，建立你的主管帳號',authForm('au-setup',srvRow()+row('au-r','救援碼','password','Cloudflare 的 RECOVERY_KEY','off')+row('au-n','姓名','text','例如：陳經理','name')+row('au-u','帳號','text','英文或數字，例如 manager','username')+row('au-p','密碼','password','至少 8 個字','new-password')+row('au-p2','確認','password','再輸入一次密碼','new-password'),'建立並登入',msg),
+function showSetup(msg){const rk=!!(window.ST&&ST.recoveryConfigured);authPage('建立主管帳號',rk?'第一次使用：輸入 Cloudflare 設定的救援碼（RECOVERY_KEY），建立你的主管帳號':'第一次使用：建立你的主管帳號。同仁的帳號之後由你在「帳號」頁新增',authForm('au-setup',srvRow()+(rk?row('au-r','救援碼','password','Cloudflare 的 RECOVERY_KEY','off'):'')+row('au-n','姓名','text','例如：陳經理','name')+row('au-u','帳號','text','英文或數字，例如 manager','username')+row('au-p','密碼','password','至少 8 個字','new-password')+row('au-p2','確認','password','再輸入一次密碼','new-password'),'建立並登入',msg),
   `<button class="lnk" data-aa="login">‹ 回到登入</button>`)}
 function showForgot(msg){authPage('忘記密碼','輸入你的帳號',authForm('au-forgot',srvRow()+row('au-u','帳號','text','你的帳號','username',lastUser),'下一步',msg),`<button class="lnk" data-aa="login">‹ 回到登入</button>`)}
 function showForgotSent(un){authPage('已送出申請',`帳號：${esc(un)}`,
   `<div class="grp lg-info"><p><b>如果你是員工</b>：已通知主管，主管重設後會給你一組臨時密碼，用它登入後再設定新密碼。</p><p><b>如果你是主管</b>：6 位數驗證碼已傳到 Telegram（10 分鐘內有效），請在下面輸入。</p></div>
   <div style="height:16px"></div>${authForm('au-verify',row('au-c','驗證碼','text','6 位數','one-time-code')+row('au-p','新密碼','password','至少 8 個字','new-password')+row('au-p2','確認','password','再輸入一次','new-password'),'設定新密碼並登入')}`,
   `<button class="lnk" data-aa="recover">沒收到驗證碼？用救援碼重設主管密碼</button><span>·</span><button class="lnk" data-aa="login">回到登入</button>`);$('#au-verify').dataset.u=un}
-function showRecover(msg){authPage('用救援碼重設','只限主管帳號；救援碼是部署時在 Cloudflare 設定的 RECOVERY_KEY',authForm('au-recover',srvRow()+row('au-r','救援碼','password','RECOVERY_KEY','off')+row('au-u','主管帳號','text','你的主管帳號','username',lastUser)+row('au-p','新密碼','password','至少 8 個字','new-password')+row('au-p2','確認','password','再輸入一次','new-password'),'重設並登入',msg),`<button class="lnk" data-aa="login">‹ 回到登入</button>`)}
+function showRecover(msg){authPage('用救援碼重設','只限主管帳號。忘了救援碼也沒關係：到 Cloudflare 的 Worker →「Settings」→「Variables and Secrets」把 RECOVERY_KEY 改成一組新的字（沒有就新增），存檔後在這裡輸入新的那組',authForm('au-recover',srvRow()+row('au-r','救援碼','password','RECOVERY_KEY','off')+row('au-u','主管帳號','text','你的主管帳號','username',lastUser)+row('au-p','新密碼','password','至少 8 個字','new-password')+row('au-p2','確認','password','再輸入一次','new-password'),'重設並登入',msg),`<button class="lnk" data-aa="login">‹ 回到登入</button>`)}
 function showPw(forced,msg){
   if(forced){authPage('設定新密碼',`${esc((ME&&ME.name)||'')}，你目前用的是臨時密碼，請先設定自己的密碼`,authForm('au-pw',row('au-p','新密碼','password','至少 8 個字','new-password')+row('au-p2','確認','password','再輸入一次','new-password'),'儲存並開始使用',msg),`<button class="lnk" data-aa="logout">登出</button>`);return}
   openSheet('pw',`<div class="grab"></div><div class="ph"><h2>修改密碼</h2><button class="x" data-act="close" aria-label="關閉">×</button></div>${authForm('au-pw',row('au-o','目前密碼','password','目前的密碼','current-password')+row('au-p','新密碼','password','至少 8 個字','new-password')+row('au-p2','確認','password','再輸入一次','new-password'),'儲存新密碼',msg)}<p class="note-s">修改後，你在其他裝置上的登入會被登出。</p>`);
@@ -853,7 +853,7 @@ document.addEventListener('submit',async e=>{
     if(f.id==='au-login'){const u=val('#au-u'),p=$('#au-p').value;if(!u||!p){authErr('請輸入帳號和密碼');busy(false);return}
       const r=await api('/login',{method:'POST',json:{username:u,password:p},open:true});saveTok(r.token);try{localStorage.setItem('pc-user',u)}catch(x){}location.reload()}
     else if(f.id==='au-setup'){const p=pwPair();if(!p){busy(false);return}
-      const r=await api('/setup',{method:'POST',json:{recovery:$('#au-r').value,name:val('#au-n'),username:val('#au-u'),password:p},open:true});saveTok(r.token);try{localStorage.setItem('pc-user',val('#au-u'))}catch(x){}location.reload()}
+      const r=await api('/setup',{method:'POST',json:{recovery:$('#au-r')?$('#au-r').value:'',name:val('#au-n'),username:val('#au-u'),password:p},open:true});saveTok(r.token);try{localStorage.setItem('pc-user',val('#au-u'))}catch(x){}location.reload()}
     else if(f.id==='au-forgot'){const u=val('#au-u');if(!u){authErr('請輸入帳號');busy(false);return}await api('/forgot',{method:'POST',json:{username:u},open:true});showForgotSent(u)}
     else if(f.id==='au-verify'){const p=pwPair();if(!p){busy(false);return}const r=await api('/forgot/verify',{method:'POST',json:{username:f.dataset.u,code:val('#au-c'),password:p},open:true});saveTok(r.token);location.reload()}
     else if(f.id==='au-recover'){const p=pwPair();if(!p){busy(false);return}const r=await api('/recover',{method:'POST',json:{recovery:$('#au-r').value,username:val('#au-u'),password:p},open:true});saveTok(r.token);location.reload()}
@@ -1735,7 +1735,7 @@ window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(['ov
   const h=location.hash.slice(1);view=['overview','report','weekly','grid','admin'].includes(h)?h:'';
   if(!API.key){
     if(location.protocol==='file:'&&!PCB){showLogin();return}
-    try{const st=await api('/status',{open:true});if(st.setup){showSetup();return}}catch(e){showLogin(e.message);return}
+    try{const st=await api('/status',{open:true});window.ST=st;if(st.setup){showSetup();return}}catch(e){showLogin(e.message);return}
     showLogin();return}
   let info;try{info=await api('/me',{noLogout:true})}catch(e){if(e.code==='unauth')logout(true);else if(e.code!=='mustchange'){failed='連不上伺服器';render()}return}
   ME=info;me=info.name;try{localStorage.setItem('pc-me',me)}catch(x){}
