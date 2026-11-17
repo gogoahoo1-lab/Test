@@ -780,7 +780,7 @@ async function api(path,opt={}){
   const d=r.status===204?null:await r.json().catch(()=>null);
   if(r.status===401&&!opt.open){if(!opt.noLogout)logout(true);throw{code:'unauth',message:(d&&d.error)||'請重新登入'}}
   if(r.status===403&&d&&d.mustChange){showPw(true);throw{code:'mustchange'}}
-  if(!r.ok)throw{code:r.status===403?'invalid_argument':r.status===423?'locked':'unavailable',status:r.status,message:(d&&d.error)||'發生錯誤，請稍後再試'};
+  if(!r.ok)throw{code:r.status===403?'invalid_argument':r.status===423?'locked':'unavailable',status:r.status,message:(d&&d.error)||(r.status>=500?`伺服器處理失敗（代碼 ${r.status}），請確認 Worker 已部署最新版並綁定 DB、PHOTOS`:'發生錯誤，請稍後再試')};
   return d;
 }
 const mkSnap=a=>({docs:a.map(o=>({id:o.id,exists:true,data:()=>o.data})),size:a.length,empty:!a.length,metadata:{fromCache:false,hasPendingWrites:false},docChanges:()=>[]});
