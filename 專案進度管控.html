@@ -249,7 +249,7 @@ h3{font-size:15px;font-weight:900;margin:22px 0 10px}
 .tl-bar em{position:absolute;top:3px;bottom:3px;width:2px;background:var(--ink);border-radius:1px}
 .tl-bar span{position:absolute;left:8px;top:0;line-height:28px;font-size:12px;font-weight:900;color:#fff;text-shadow:0 1px 2px rgb(0 0 0/.25)}
 .tl-bar.ok span,.tl-bar.amber span{color:#14301f;text-shadow:none}
-.tl-i .tl-name,.tl-i .tl-track{height:34px}
+.tl-i .tl-name,.tl-i .tl-track{height:50px}
 .tl-i .tl-name{padding-left:36px;gap:8px}
 .tl-in{all:unset;flex:1;min-width:0;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
 .tl-in small{color:var(--mute);font-weight:700;margin-right:6px;font-size:11px}
@@ -257,6 +257,11 @@ h3{font-size:15px;font-weight:900;margin:22px 0 10px}
 .tl-dot.doing{border-color:var(--blue);background:var(--blue)}.tl-dot.done{border-color:var(--grn);background:var(--grn)}.tl-dot.late{border-color:var(--red);background:var(--red)}.tl-dot.ns{border-color:var(--amb)}
 .tl-ib{position:absolute;top:10px;height:14px;border-radius:7px;background:var(--card);box-shadow:inset 0 0 0 2px #b9bccb}
 .tl-ib.doing{background:var(--blue);box-shadow:none}.tl-ib.done{background:#9be3c4;box-shadow:none}.tl-ib.late{background:var(--red);box-shadow:none}.tl-ib.ns{box-shadow:inset 0 0 0 2px var(--amb);background:var(--ambbg)}
+.tl-i .tl-ib{top:18px}.tl-i .tl-il{top:16px}.tl-i .tl-bl{top:34px}
+.tl-in{display:flex!important;flex-direction:column;justify-content:center;white-space:normal!important;line-height:1.25}
+.tl-in small{display:block;margin:0 0 2px!important;font-weight:600!important;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl-in span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;word-break:break-word;font-size:13px;font-weight:600}
+@media(max-width:600px){.tl-name{width:min(230px,60vw)}.tl-i .tl-name{padding-left:22px;gap:7px}.tl-p .tl-name{padding-left:4px}.tl-name .pill{padding:3px 6px;font-size:10.5px}}
 .tl-il{position:absolute;top:8px;height:18px;line-height:18px;padding:0 6px;border-radius:6px;background:var(--card);box-shadow:0 0 0 1px var(--line);font-size:11.5px;color:var(--mute);font-weight:700;white-space:nowrap;pointer-events:none;z-index:3}
 .tl-il.late{color:var(--redt)}
 .tl-today{position:absolute;top:0;bottom:0;width:2px;background:var(--red);z-index:2;pointer-events:none}
@@ -941,7 +946,7 @@ function timelineHTML(bad,good,fin){
     let h=`<div class="tl-row tl-p"><div class="tl-name"><button class="tl-tg" data-act="tltog" data-id="${esc(p.id)}" aria-expanded="${open}" aria-label="${open?'收合':'展開'}作業項目" ${ms.length?'':'disabled'}>${ms.length?(open?'▾':'▸'):''}</button><button class="tl-pn" data-open="${esc(p.id)}"><b>${esc(p.name)}</b><small>${esc(p.owners)}${ms.length?` · ${x.nd}/${x.nt}`:''}${rs.length?` · <em>${esc(rs[0])}</em>`:''}</small></button><span class="pill ${pl[0]}">${pl[1]}</span></div>
     <div class="tl-track" style="width:${W}px;${gridBg}"><div class="tl-bar ${x.lv}" style="left:${l}px;width:${w}px" title="${esc(p.name)}：${md(p.start)}–${md(p.due)}，完成 ${x.pr}%，應達 ${x.exp}%"><i style="width:${x.pr}%"></i>${x.lv!=='done'?`<em style="left:${x.exp}%"></em>`:''}<span>${x.pr}%</span></div></div></div>`;
     if(open)h+=ms.map(m=>{const s2=SO(m),late=itLate(m,t),ns=itNS(m,t);const has=m.start&&m.due;const il=has?X(m.start):0,iw=has?Math.max(px,X(m.due)+px-il):0;const cls=s2==='done'?'done':late?'late':s2==='doing'?'doing':ns?'ns':'todo';
-      return `<div class="tl-row tl-i"><div class="tl-name"><span class="tl-dot ${cls}"></span><button class="tl-in" data-open="${esc(p.id)}" title="${esc(m.t)}">${m.cat?`<small>${esc(m.cat)}</small>`:''}${esc(m.t)}</button></div><div class="tl-track" style="width:${W}px;${gridBg}">${has?`${m.bdue&&m.bdue!==m.due?`<div class="tl-bl" style="left:${X(m.bstart||m.start)}px;width:${Math.max(px,X(m.bdue)+px-X(m.bstart||m.start))}px" title="原訂 ${md(m.bstart||m.start)}–${md(m.bdue)}"></div>`:''}<div class="tl-ib ${cls}" data-k="${esc(p.id)}|${esc(m.id)}" style="left:${il}px;width:${iw}px" title="${esc(m.t)}：${md(m.start)}–${md(m.due)} · ${SL[s2]}${late?' · 已逾期':ns?' · 應已開始':''}"></div>${tlLab(il,iw,`${md(m.start)}–${md(m.due)}${late?' 逾期':''}`,late,W,TX)}`:'<span class="tl-il" style="left:8px;color:var(--redt)">缺預計起訖日</span>'}</div></div>`}).join('');
+      return `<div class="tl-row tl-i"><div class="tl-name"><span class="tl-dot ${cls}"></span><button class="tl-in" data-open="${esc(p.id)}" title="${esc(m.t)}">${m.cat?`<small>${esc(catS(m.cat))}</small>`:''}<span>${esc(m.t)}</span></button></div><div class="tl-track" style="width:${W}px;${gridBg}">${has?`${m.bdue&&m.bdue!==m.due?`<div class="tl-bl" style="left:${X(m.bstart||m.start)}px;width:${Math.max(px,X(m.bdue)+px-X(m.bstart||m.start))}px" title="原訂 ${md(m.bstart||m.start)}–${md(m.bdue)}"></div>`:''}<div class="tl-ib ${cls}" data-k="${esc(p.id)}|${esc(m.id)}" style="left:${il}px;width:${iw}px" title="${esc(m.t)}：${md(m.start)}–${md(m.due)} · ${SL[s2]}${late?' · 已逾期':ns?' · 應已開始':''}"></div>${tlLab(il,iw,`${md(m.start)}–${md(m.due)}${late?' 逾期':''}`,late,W,TX)}`:'<span class="tl-il" style="left:8px;color:var(--redt)">缺預計起訖日</span>'}</div></div>`}).join('');
     return h;
   };
   return `<div class="card tl"><div class="tl-bar0"><div class="tl-zoom" role="group" aria-label="時間刻度">${Object.entries(ZM).map(([k,z])=>`<button data-act="tlzoom" data-z="${k}" aria-pressed="${tlZoom===k}">${z.n}</button>`).join('')}</div>
@@ -954,6 +959,7 @@ function timelineHTML(bad,good,fin){
   <div class="tl-today" style="left:${NW+X(iso(t))+Math.round(px/2)}px"></div></div></div>
   ${fin.length?`<button class="tl-more" data-act="togdone">${showDone?'隱藏':'顯示'}已完成專案（${fin.length}）</button>`:''}</div>`;
 }
+function catS(c){c=String(c||'').trim();const m=c.match(/^(.*?[\u3400-\u9fff\uff00-\uffef][^A-Za-z]*?)\s+[A-Za-z].*$/);return m?m[1].trim():c}
 function tlLab(il,iw,txt,late,W,TX){
   const lw=Math.round(txt.length*6.6+14),hit=x=>TX>=x-3&&TX<=x+lw+3;
   let x=il+iw+6,cls='';
