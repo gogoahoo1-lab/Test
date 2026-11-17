@@ -266,6 +266,20 @@ h3{font-size:15px;font-weight:900;margin:22px 0 10px}
 @keyframes ithl{0%,55%{box-shadow:0 0 0 2.5px var(--blue),0 8px 24px rgb(0 122 255/.18)}100%{box-shadow:var(--sh)}}
 .tl-i.sel .tl-name{background:#eaf2ff}.tl-i.sel .tl-name::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:0 3px 3px 0;background:var(--blue)}
 .tl-i .tl-name:hover{background:#f5f7fb}.tl-in:hover span{color:var(--blue)}
+.tl-vw{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-basis:100%}
+.tl-seg,.tl-fl{display:inline-flex;gap:2px;background:var(--soft);border-radius:10px;padding:3px}
+.tl-seg button,.tl-fl button{all:unset;padding:0 11px;height:30px;line-height:30px;border-radius:8px;font-size:13px;font-weight:600;color:var(--mute);cursor:pointer;white-space:nowrap}
+.tl-seg button[aria-pressed=true]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgb(0 0 0/.12)}
+.tl-fl{background:none;padding:0;gap:6px}.tl-fl button{background:var(--soft);border-radius:999px;height:30px;padding:0 12px}
+.tl-fl button[aria-pressed=true]{background:var(--ink);color:#fff}
+.tl-seg button:focus-visible,.tl-fl button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.tl-cs{display:inline-flex}.tl-cs select{appearance:none;line-height:30px;-webkit-appearance:none;height:30px;border:0;border-radius:999px;background:var(--soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238e8e93' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 11px center;padding:0 28px 0 12px;font:600 13px var(--sf);color:var(--ink);cursor:pointer;max-width:200px}
+.tl-g .tl-name{gap:6px;padding-left:6px;color:var(--ink);background:var(--soft)}.tl-g .tl-track{background:var(--soft)}
+.tl-g .tl-gn{font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.tl-g i{background:var(--mute)}
+.tl-g.is-late i{background:var(--red)}.tl-g.is-ns i{background:var(--amb)}.tl-g.is-doing i{background:var(--blue)}.tl-g.is-done i{background:var(--grn)}
+.tl-empty{position:sticky;left:0;width:min(100%,560px);padding:36px 24px;text-align:center;color:var(--mute);font-size:14px}
+.tl-row .tl-name{z-index:5}
 .tl-il{position:absolute;top:8px;height:18px;line-height:18px;padding:0 6px;border-radius:6px;background:var(--card);box-shadow:0 0 0 1px var(--line);font-size:11.5px;color:var(--mute);font-weight:700;white-space:nowrap;pointer-events:none;z-index:3}
 .tl-il.late{color:var(--redt)}
 .tl-today{position:absolute;top:0;bottom:0;width:2px;background:var(--red);z-index:2;pointer-events:none}
@@ -924,7 +938,11 @@ function footHTML(){return `<p class="note-s acct">已登入：${esc(me||'')}（
 
 /* ---------- 電腦版時間軸 ---------- */
 const deskMQ=matchMedia('(min-width:900px)');const isDesk=()=>deskMQ.matches;
-let tlMode='timeline',tlZoom='week',tlOpen=null,tlScrollTo=true;
+let tlMode='timeline',tlZoom='week',tlOpen=null,tlScrollTo=true,tlGroup='proj',tlF='all',tlCat='',tlShut=new Set();
+try{const v=JSON.parse(localStorage.getItem('pc-tlv')||'{}');tlGroup=v.g||'proj';tlF=v.f||'all';tlCat=v.c||''}catch(e){}
+function tlSave(){try{localStorage.setItem('pc-tlv',JSON.stringify({g:tlGroup,f:tlF,c:tlCat}))}catch(e){}}
+const TLG={proj:'依專案',cat:'作業類型',who:'負責人',ist:'項目狀態'},TLF={all:'全部',open:'未完成',late:'逾期',doing:'進行中',todo:'待進行',done:'完成'};
+const IST=[['late','逾期'],['ns','應開始未開始'],['doing','進行中'],['todo','待進行'],['done','完成']];
 try{tlMode=localStorage.getItem('pc-tlmode')||'timeline';tlZoom=localStorage.getItem('pc-tlzoom')||'week'}catch(e){}
 const ZM={day:{px:30,n:'日'},week:{px:12,n:'週'},month:{px:4,n:'月'},fit:{px:2,n:'全覽'}};
 const zpx=days=>{if(tlZoom!=='fit')return ZM[tlZoom].px;const sc=$('#tlsc'),w=(sc?sc.clientWidth:Math.min(innerWidth,1480)-60)-300-24;return Math.max(1,Math.min(30,w/Math.max(1,days)))};
@@ -943,23 +961,38 @@ function timelineHTML(bad,good,fin){
   if(tlZoom==='day'){for(let i=0;i<days;i++){const d=new Date(R0.getTime()+i*DAY),we=d.getDay()===0||d.getDay()===6;sub+=`<span class="tl-d${we?' we':''}${iso(d)===iso(t)?' td':''}" style="left:${i*px}px;width:${px}px">${d.getDate()}</span>`}}
   else{let d=new Date(R0);while(d.getDay()!==1)d=new Date(d.getTime()+DAY);const wl=px*7>=34;if(px*7>=8)for(;d<R1;d=new Date(d.getTime()+7*DAY))sub+=`<span class="tl-w" style="left:${X(iso(d))}px">${wl&&tlZoom!=='month'?md(iso(d)):''}</span>`}
   let mo=new Date(R0);while(mo.getDay()!==1)mo=new Date(mo.getTime()+DAY);const gridBg=px*7>=8?`background-size:${7*px}px 100%;background-position:${X(iso(mo))}px 0`:'background-image:none';
-  const sec=(cls,label,arr,n)=>`<div class="tl-sec ${cls}"><div class="tl-name"><i></i>${label}<span>${n}</span></div><div class="tl-track" style="width:${W}px"></div></div>`+arr.map(o=>projRow(o)).join('');
+  const sec=(cls,label,arr)=>{const rows=arr.map(o=>projRow(o)).filter(Boolean);if(fAct&&!rows.length)return '';return `<div class="tl-sec ${cls}"><div class="tl-name"><i></i>${label}<span>${rows.length}</span></div><div class="tl-track" style="width:${W}px"></div></div>`+rows.join('')};
+  const gsec=(key,label,items,cls)=>{const shut=tlShut.has('g:'+key);return `<div class="tl-sec tl-g ${cls||''}"><div class="tl-name"><button class="tl-tg" data-act="tlgtog" data-g="${esc(key)}" aria-expanded="${!shut}">${shut?'▸':'▾'}</button><i></i><b class="tl-gn">${esc(label)}</b><span>${items.length}</span></div><div class="tl-track" style="width:${W}px"></div></div>`+(shut?'':items.map(([p,m])=>itemRow(p,m,tlGroup==='cat'?p.name:`${p.name}${m.cat?' · '+catS(m.cat):''}`)).join(''))};
+  const itemRow=(p,m,sm)=>{const s2=SO(m),late=itLate(m,t),ns=itNS(m,t);const has=m.start&&m.due;const il=has?X(m.start):0,iw=has?Math.max(px,X(m.due)+px-il):0;const cls=s2==='done'?'done':late?'late':s2==='doing'?'doing':ns?'ns':'todo';
+      return `<div class="tl-row tl-i${selMid===m.id&&openId===p.id?' sel':''}"><div class="tl-name"><span class="tl-dot ${cls}"></span><button class="tl-in" data-open="${esc(p.id)}" data-mid="${esc(m.id)}" title="${esc(m.t)}">${sm?`<small>${esc(sm)}</small>`:''}<span>${esc(m.t)}</span></button></div><div class="tl-track" style="width:${W}px;${gridBg}">${has?`${m.bdue&&m.bdue!==m.due?`<div class="tl-bl" style="left:${X(m.bstart||m.start)}px;width:${Math.max(px,X(m.bdue)+px-X(m.bstart||m.start))}px" title="原訂 ${md(m.bstart||m.start)}–${md(m.bdue)}"></div>`:''}<div class="tl-ib ${cls}" data-k="${esc(p.id)}|${esc(m.id)}" style="left:${il}px;width:${iw}px" title="${esc(m.t)}：${md(m.start)}–${md(m.due)} · ${SL[s2]}${late?' · 已逾期':ns?' · 應已開始':''}"></div>${tlLab(il,iw,`${md(m.start)}–${md(m.due)}${late?' 逾期':''}`,late,W,TX)}`:'<span class="tl-il" style="left:8px;color:var(--redt)">缺預計起訖日</span>'}</div></div>`};
+  const ik=m=>{const s2=SO(m);return s2==='done'?'done':itLate(m,t)?'late':s2==='doing'?'doing':itNS(m,t)?'ns':'todo'};
+  const fAct=tlF!=='all'||!!tlCat;
+  const fOK=m=>{if(tlCat&&(catS(m.cat)||'未分類')!==tlCat)return false;const k=ik(m);return tlF==='all'||(tlF==='open'?k!=='done':tlF==='todo'?(k==='todo'||k==='ns'):k===tlF)};
   const projRow=o=>{
-    const p=o.p,x=o.x,pl=pill(p,x),open=tlOpen.has(p.id),ms=(p.milestones||[]).slice().sort((a,b)=>(a.start||a.due||'9')<(b.start||b.due||'9')?-1:1);
+    const p=o.p,x=o.x,pl=pill(p,x),ms0=(p.milestones||[]),open=fAct?!tlShut.has(p.id):tlOpen.has(p.id),ms=ms0.filter(fOK).slice().sort((a,b)=>(a.start||a.due||'9')<(b.start||b.due||'9')?-1:1);
+    if(fAct&&!ms.length)return '';
     const l=X(p.start),w=Math.max(px,X(p.due)+px-l),rs=reasons(p,x);
     let h=`<div class="tl-row tl-p"><div class="tl-name"><button class="tl-tg" data-act="tltog" data-id="${esc(p.id)}" aria-expanded="${open}" aria-label="${open?'收合':'展開'}作業項目" ${ms.length?'':'disabled'}>${ms.length?(open?'▾':'▸'):''}</button><button class="tl-pn" data-open="${esc(p.id)}"><b>${esc(p.name)}</b><small>${esc(p.owners)}${ms.length?` · ${x.nd}/${x.nt}`:''}${rs.length?` · <em>${esc(rs[0])}</em>`:''}</small></button><span class="pill ${pl[0]}">${pl[1]}</span></div>
     <div class="tl-track" style="width:${W}px;${gridBg}"><div class="tl-bar ${x.lv}" style="left:${l}px;width:${w}px" title="${esc(p.name)}：${md(p.start)}–${md(p.due)}，完成 ${x.pr}%，應達 ${x.exp}%"><i style="width:${x.pr}%"></i>${x.lv!=='done'?`<em style="left:${x.exp}%"></em>`:''}<span>${x.pr}%</span></div></div></div>`;
-    if(open)h+=ms.map(m=>{const s2=SO(m),late=itLate(m,t),ns=itNS(m,t);const has=m.start&&m.due;const il=has?X(m.start):0,iw=has?Math.max(px,X(m.due)+px-il):0;const cls=s2==='done'?'done':late?'late':s2==='doing'?'doing':ns?'ns':'todo';
-      return `<div class="tl-row tl-i${selMid===m.id&&openId===p.id?' sel':''}"><div class="tl-name"><span class="tl-dot ${cls}"></span><button class="tl-in" data-open="${esc(p.id)}" data-mid="${esc(m.id)}" title="${esc(m.t)}">${m.cat?`<small>${esc(catS(m.cat))}</small>`:''}<span>${esc(m.t)}</span></button></div><div class="tl-track" style="width:${W}px;${gridBg}">${has?`${m.bdue&&m.bdue!==m.due?`<div class="tl-bl" style="left:${X(m.bstart||m.start)}px;width:${Math.max(px,X(m.bdue)+px-X(m.bstart||m.start))}px" title="原訂 ${md(m.bstart||m.start)}–${md(m.bdue)}"></div>`:''}<div class="tl-ib ${cls}" data-k="${esc(p.id)}|${esc(m.id)}" style="left:${il}px;width:${iw}px" title="${esc(m.t)}：${md(m.start)}–${md(m.due)} · ${SL[s2]}${late?' · 已逾期':ns?' · 應已開始':''}"></div>${tlLab(il,iw,`${md(m.start)}–${md(m.due)}${late?' 逾期':''}`,late,W,TX)}`:'<span class="tl-il" style="left:8px;color:var(--redt)">缺預計起訖日</span>'}</div></div>`}).join('');
+    if(open)h+=ms.map(m=>itemRow(p,m,catS(m.cat))).join('');
     return h;
   };
+  let body='';
+  if(tlGroup==='proj')body=sec('bad','落後・需處理',bad)+sec('good','正常進行',good)+(showDone&&fin.length?sec('fin','已完成',fin):'');
+  else{const its=[];all.forEach(o=>(o.p.milestones||[]).forEach(m=>{if(fOK(m))its.push([o.p,m])}));its.sort((a,b)=>(a[1].start||a[1].due||'9')<(b[1].start||b[1].due||'9')?-1:1);
+    const gk=([p,m])=>tlGroup==='cat'?(catS(m.cat)||'未分類'):tlGroup==='who'?((m.who||p.owners||'').trim()||'未指定'):ik(m);
+    const G=new Map();its.forEach(e=>{const k=gk(e);if(!G.has(k))G.set(k,[]);G.get(k).push(e)});
+    let keys=[...G.keys()];if(tlGroup==='ist')keys=IST.map(x=>x[0]).filter(k=>G.has(k));else keys.sort((a,b)=>(a==='未分類'||a==='未指定')-(b==='未分類'||b==='未指定')||a.localeCompare(b,'zh-Hant'));
+    body=keys.map(k=>gsec(k,tlGroup==='ist'?IST.find(x=>x[0]===k)[1]:k,G.get(k),tlGroup==='ist'?'is-'+k:'')).join('');}
+  if(!body)body=`<div class="tl-empty">沒有符合篩選條件的作業項目</div>`;
+  const cats=[...new Set(all.flatMap(o=>(o.p.milestones||[]).map(m=>catS(m.cat)||'未分類')))].sort((a,b)=>a.localeCompare(b,'zh-Hant'));
   return `<div class="card tl"><div class="tl-bar0"><div class="tl-zoom" role="group" aria-label="時間刻度">${Object.entries(ZM).map(([k,z])=>`<button data-act="tlzoom" data-z="${k}" aria-pressed="${tlZoom===k}">${z.n}</button>`).join('')}</div>
-  <button class="btn ghost sm" data-act="tltoday">回到今天</button><button class="btn ghost sm" data-act="tlall">${tlOpen.size?'全部收合':'全部展開'}</button>
+  <button class="btn ghost sm" data-act="tltoday">回到今天</button><button class="btn ghost sm" data-act="tlall">${(tlGroup==='proj'&&!fAct)?(tlOpen.size?'全部收合':'全部展開'):(tlShut.size?'全部展開':'全部收合')}</button>
   <span class="tl-hint">拖曳空白處移動時間；拖曳項目長條可改日期</span><button class="btn ghost sm" data-act="tlpan" data-d="-1" aria-label="往前">‹</button><button class="btn ghost sm" data-act="tlpan" data-d="1" aria-label="往後">›</button>
-  <span class="tl-lg"><i class="lg-p"></i>專案進度<i class="lg-e"></i>應達<i class="lg-d"></i>進行中<i class="lg-g"></i>完成<i class="lg-r"></i>逾期</span></div>
+  <div class="tl-vw"><div class="tl-seg" role="group" aria-label="檢視方式">${Object.entries(TLG).map(([k,n])=>`<button data-act="tlgrp" data-g="${k}" aria-pressed="${tlGroup===k}">${n}</button>`).join('')}</div><div class="tl-fl" role="group" aria-label="篩選項目狀態">${Object.entries(TLF).map(([k,n])=>`<button data-act="tlf" data-f="${k}" aria-pressed="${tlF===k}">${n}</button>`).join('')}</div>${cats.length>1?`<label class="tl-cs"><select id="tl-cat" aria-label="作業類型"><option value="">全部類型</option>${cats.map(c=>`<option${c===tlCat?' selected':''}>${esc(c)}</option>`).join('')}</select></label>`:''}${fAct?`<button class="btn ghost sm" data-act="tlfclr">清除篩選</button>`:''}</div><span class="tl-lg"><i class="lg-p"></i>專案進度<i class="lg-e"></i>應達<i class="lg-d"></i>進行中<i class="lg-g"></i>完成<i class="lg-r"></i>逾期</span></div>
   <div class="tl-scroll" id="tlsc" data-tx="${NW+X(iso(t))}"><div class="tl-in0" style="width:${NW+W}px">
   <div class="tl-head"><div class="tl-name tl-hn">專案／作業項目</div><div class="tl-hd" style="width:${W}px"><div class="tl-mr">${mon}</div><div class="tl-sr">${sub}<span class="tl-tdh" style="left:${X(iso(t))+Math.round(px/2)}px">今天 ${md(iso(t))}</span></div></div></div>
-  ${sec('bad','落後・需處理',bad,bad.length)}${sec('good','正常進行',good,good.length)}${showDone&&fin.length?sec('fin','已完成',fin,fin.length):''}
+  ${body}
   <div class="tl-today" style="left:${NW+X(iso(t))+Math.round(px/2)}px"></div></div></div>
   ${fin.length?`<button class="tl-more" data-act="togdone">${showDone?'隱藏':'顯示'}已完成專案（${fin.length}）</button>`:''}</div>`;
 }
@@ -1232,6 +1265,7 @@ async function gExport(btn){
 }
 const gBusy=()=>{const a=document.activeElement;return !!(a&&a.closest&&a.closest('#gsc')&&a.tagName==='INPUT'&&a.type!=='checkbox'&&(a.type==='date'||a.value!==a.defaultValue))};
 document.addEventListener('change',e=>{
+  if(e.target.id==='tl-cat'){tlCat=e.target.value;tlShut.clear();tlSave();render();return}
   const el=e.target;if(view!=='grid'||!el.closest||!el.closest('#main'))return;
   if(el.dataset.gsel!==undefined){el.checked?gSel.add(el.dataset.gsel):gSel.delete(el.dataset.gsel);gDelArm=false;render(true);return}
   if(el.id==='g-all'){gFilter(gRows()).forEach(r=>el.checked?gSel.add(r.k):gSel.delete(r.k));render(true);return}
@@ -1576,8 +1610,12 @@ document.addEventListener('click',async e=>{
   else if(act==='tlzoom'){const sc=$('#tlsc');const r=sc?(sc.scrollLeft+sc.clientWidth/2-300)/ZM[tlZoom].px:0;tlZoom=a.dataset.z;try{localStorage.setItem('pc-tlzoom',tlZoom)}catch(x){}render();const n=$('#tlsc');if(n)n.scrollLeft=Math.max(0,r*ZM[tlZoom].px+300-n.clientWidth/2)}
   else if(act==='tltoday'){const sc=$('#tlsc');if(sc)sc.scrollTo({left:Math.max(0,+sc.dataset.tx-300-sc.clientWidth*.3),behavior:'smooth'})}
   else if(act==='tlpan'){const sc=$('#tlsc');if(sc)sc.scrollBy({left:(+a.dataset.d)*(sc.clientWidth-300)*.6,behavior:'smooth'})}
-  else if(act==='tltog'){const id=a.dataset.id;tlOpen.has(id)?tlOpen.delete(id):tlOpen.add(id);render()}
-  else if(act==='tlall'){if(tlOpen.size)tlOpen.clear();else P.forEach(p=>tlOpen.add(p.id));render()}
+  else if(act==='tltog'){const id=a.dataset.id;if(tlF!=='all'||tlCat){tlShut.has(id)?tlShut.delete(id):tlShut.add(id)}else{tlOpen.has(id)?tlOpen.delete(id):tlOpen.add(id)}render()}
+  else if(act==='tlall'){if(tlGroup==='proj'&&tlF==='all'&&!tlCat){if(tlOpen.size)tlOpen.clear();else P.forEach(p=>tlOpen.add(p.id))}else if(tlShut.size)tlShut.clear();else{if(tlGroup==='proj')P.forEach(p=>tlShut.add(p.id));else document.querySelectorAll('[data-act=tlgtog]').forEach(b=>tlShut.add('g:'+b.dataset.g))}render()}
+  else if(act==='tlgrp'){tlGroup=a.dataset.g;tlShut.clear();tlSave();render()}
+  else if(act==='tlf'){tlF=a.dataset.f;tlShut.clear();tlSave();render()}
+  else if(act==='tlfclr'){tlF='all';tlCat='';tlShut.clear();tlSave();render()}
+  else if(act==='tlgtog'){const k='g:'+a.dataset.g;tlShut.has(k)?tlShut.delete(k):tlShut.add(k);render()}
   else if(act==='lbclose'){$('#lb').hidden=true}
   else if(act==='phdel'){
     if(a.dataset.arm!=='1'){a.dataset.arm='1';a.textContent='再按一次確認移除';return}
