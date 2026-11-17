@@ -6286,6 +6286,14 @@ function twCollect(list, estList){
 /* 台灣附近出現航線不明的 JX 航班（多為臨時調機），而且 OpsLink 清單裡沒有這班：自動在背景補查一次 OpsLink
    ─ 最多每 30 分鐘一次（多個看板分頁共用計時）；需要登入時只記錄，不跳出分頁打擾 */
 var TWAL = { t:0, flts:"" };
+/* OpsLink 登入失敗保護：只要上次查詢失敗、而且之後沒有成功過，就鎖住所有「自動」查詢，絕不自動重試登入
+   ─ 避免被公司系統判定為暴力登入或惡意攻擊；鎖住時也會關掉擴充功能的每 3 小時排程
+   ─ 解除方式：自己在瀏覽器登入 OpsLink 成功後，按「立即更新」手動查一次（成功就自動解鎖），再把自動開關勾回 */
+var OPS_FAIL_RE = /登入|登录|login|log in|sign.?in|密碼|password|帳號|驗證|auth|unauthori[sz]ed|forbidden|401|403|session|憑證|鎖定|locked|captcha|mfa|otp/i;
+function opsLock(){ try{ return JSON.parse(localStorage.getItem("opsAuthLock") || "null"); }catch(e){ return null; } }
+function opsLockSet(o){ try{ if(o) localStorage.setItem("opsAuthLock", JSON.stringify(o)); else localStorage.removeItem("opsAuthLock"); }catch(e){} }
+/* 依擴充功能回報的狀態判斷：最後一次是「登入相關」失敗、而且之後沒有成功過 → 視為登入失敗中（其他錯誤如逾時、找不到選單不會停掉自動查詢） */
+function opsFailing(st){ st = st || {}; return !!st.lastErr && OPS_FAIL_RE.test(st.lastErr) && (st.lastRun || 0) >= (st.lastOk || 0); }
 function twAutoLegs(unk){
   if(LITE || !holdBridge() || !$("seatAuto") || !$("seatAuto").checked || SEAT.manual) return;
   var miss = (unk || []).filter(function(u){
@@ -6295,11 +6303,20 @@ function twAutoLegs(unk){
   if(!miss.length) return;
   var last = 0; try{ last = +(localStorage.getItem("twAutoLegsT") || 0); }catch(e){}
   if(Date.now() - last < 30*60000) return;
+  if(opsLock()){ TWAL.flts = miss.join("、"); TWAL.msg = "OpsLink 上次登入失敗，已停止自動補查（不會自動重試登入）"; return; }
   try{ localStorage.setItem("twAutoLegsT", String(Date.now())); }catch(e){}
   TWAL.t = Date.now(); TWAL.flts = miss.join("、");
-  bgCmd("autoLegsRun", { quiet:true }).then(function(r){
-    TWAL.msg = r && r.ok === false ? "自動補查未執行：" + (r.error || "") : "已自動在背景補查 OpsLink（" + fixHm(TWAL.t) + "）";
-  }, function(e){ TWAL.msg = "自動補查失敗：" + (e && e.message || ""); });
+  bgCmd("autoLegsStatus").then(function(s){
+    if(s && (s.running || opsFailing(s.stat))){
+      if(s && !s.running) opsLockSet({ t:Date.now(), err:String((s.stat || {}).lastErr || "") });
+      TWAL.msg = s && s.running ? "OpsLink 正在查詢中，略過自動補查" : "OpsLink 上次登入失敗，已停止自動補查（不會自動重試登入）";
+      return;
+    }
+    return bgCmd("autoLegsRun", { quiet:true }).then(function(r){
+    if(r && r.ok === false){ TWAL.msg = "自動補查未執行：" + (r.error || ""); if(OPS_FAIL_RE.test(r.error || "")) opsLockSet({ t:Date.now(), err:String(r.error) }); return; }
+    TWAL.msg = "已自動在背景補查 OpsLink（" + fixHm(TWAL.t) + "）";
+    });
+  }).catch(function(e){ TWAL.msg = "自動補查失敗：" + (e && e.message || ""); });
 }
 function twTimeLine(tm){
   if(!tm || (!tm.std && !tm.sta)) return '<div class="tw-l3"><span class="tw-na">STD／STA 暫無資料</span></div>';
@@ -6961,12 +6978,23 @@ function seatInit(){
         if(st.lastOk) m += "｜上次成功 " + alWhen(st.lastOk) + (st.lastRows && !st.lastErr ? "（" + st.lastRows + " 班）" : "");
         if(st.lastErr) m += "｜⚠ " + st.lastErr + "（" + alWhen(st.lastRun) + "）" + (r.hint ? "｜" + r.hint : "");
       }
+      var lk = opsLock();
+      if(!r.running && opsFailing(st)){
+        if(!lk || r.on){
+          opsLockSet({ t:Date.now(), err:String(st.lastErr || "") });
+          if(r.on) bgCmd("ctlSet", { opslink:false }).then(function(c){ try{ ctlPaint(c); }catch(e){} }, function(){});   // 關掉每 3 小時自動查詢
+        }
+        m += "｜🔒 已停止自動查詢，不會自動重試登入；請先自行登入 OpsLink，再按「立即更新」手動查一次，成功後再勾回自動開關";
+      } else if(lk && !r.running && st.lastOk && st.lastOk > (lk.t || 0)){
+        opsLockSet(null);   // 之後有成功過：解鎖
+      }
       $("autoLegsMsg").textContent = m;
       $("btnAutoLegs").disabled = !!r.running;
     }, function(e){ $("autoLegsMsg").textContent = holdBridge() ? "⚠ " + alErr(e) : ""; });
   }
   $("btnAutoLegs").addEventListener("click", function(){
     if(!holdBridge()){ $("autoLegsMsg").textContent = "需要安裝 ADS-B 橋接擴充功能 v2.8"; return; }
+    if(opsLock() && !confirm("OpsLink 上次登入失敗。\n請先在瀏覽器自行登入 OpsLink 成功，再按確定手動查一次。\n（只會查這一次，不會自動重試）")) return;
     SEAT.manual = false; $("seatAuto").checked = true; try{ localStorage.setItem("seatAuto", "1"); }catch(e){}
     bgCmd("autoLegsRun").then(function(r){
       if(r && r.ok === false){ $("autoLegsMsg").textContent = "⚠ " + (r.error || "無法開始"); return; }
@@ -6990,7 +7018,7 @@ function seatInit(){
   }
   function ctlErr(e){ var m = alErr(e); $("ctlMsg").textContent = /未知指令|沒有回應/.test(m) ? "需要 ADS-B 橋接 v2.14 以上才能使用開關" : "⚠ " + m; }
   function ctlLoad(){ if(!holdBridge() || document.hidden) return; bgCmd("ctlStatus").then(ctlPaint, ctlErr); }
-  $("ctlOps").addEventListener("change", function(){ bgCmd("ctlSet", { opslink: this.checked }).then(function(r){ ctlPaint(r); alStatus(); }, ctlErr); });
+  $("ctlOps").addEventListener("change", function(){ if(this.checked) opsLockSet(null); bgCmd("ctlSet", { opslink: this.checked }).then(function(r){ ctlPaint(r); alStatus(); }, ctlErr); });
   $("ctlAirs").addEventListener("change", function(){ bgCmd("ctlSet", { airs: this.checked }).then(ctlPaint, ctlErr); });
   $("ctlShare").addEventListener("change", function(){
     var v = this.checked, rc = relayCfg();
