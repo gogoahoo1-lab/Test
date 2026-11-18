@@ -6,8 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#f3f4f9">
-<!-- 伺服器網址：部署好 Cloudflare Worker 後，把網址填在下面 content 裡（例如 https://project-tracker.xxx.workers.dev），同仁打開這個檔案就不用再輸入 -->
-<meta name="pc-api" content="">
+<meta name="pc-api" content="https://project-tracker.gogoahoo.workers.dev">
 <title>專案進度管控</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icon.svg">
@@ -280,6 +279,34 @@ h3{font-size:15px;font-weight:900;margin:22px 0 10px}
 .tl-g.is-late i{background:var(--red)}.tl-g.is-ns i{background:var(--amb)}.tl-g.is-doing i{background:var(--blue)}.tl-g.is-done i{background:var(--grn)}
 .tl-empty{position:sticky;left:0;width:min(100%,560px);padding:36px 24px;text-align:center;color:var(--mute);font-size:14px}
 .tl-row .tl-name{z-index:5}
+.tl-lay{display:grid;grid-template-columns:248px minmax(0,1fr);gap:14px;align-items:start;margin-top:12px}
+.tl-lay.off{grid-template-columns:minmax(0,1fr)}
+.tl-lay>.card.tl{margin-top:0}
+.rl{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;background:var(--card);border-radius:16px;padding:8px;box-shadow:var(--sh);overscroll-behavior:contain}
+.rl-top{display:flex;align-items:center;justify-content:space-between;padding:6px 8px 8px;font-size:15px;font-weight:700}
+.rl-x{all:unset;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:var(--mute);font-size:18px;cursor:pointer}.rl-x:hover{background:var(--soft);color:var(--ink)}
+.rl-h{display:flex;justify-content:space-between;padding:12px 10px 4px;font-size:11.5px;font-weight:700;color:var(--mute);letter-spacing:.02em}
+.rl-h span{font-weight:600}
+.rl-it{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:11px;cursor:pointer;position:relative}
+.rl-it:hover{background:var(--soft)}
+.rl-it[aria-pressed=true]{background:#eaf2ff}
+.rl-it[aria-pressed=true]::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:var(--blue)}
+.rl-it:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.rl-dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--grn)}
+.rl-it.bad .rl-dot{background:var(--red)}.rl-it.fin .rl-dot{background:#c7c7cc}.rl-all .rl-dot{background:var(--ink)}
+.rl-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.rl-tx b{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rl-it[aria-pressed=true] .rl-tx b{color:var(--blue)}
+.rl-tx small{font-size:11.5px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rl-bar{display:block;height:3px;border-radius:2px;background:var(--soft);margin-top:4px;overflow:hidden}
+.rl-bar span{display:block;height:100%;border-radius:2px;background:var(--grn)}
+.rl-it.bad .rl-bar span{background:var(--red)}.rl-it.fin .rl-bar span{background:#c7c7cc}
+.rl-it em{font-style:normal;font-size:12px;font-weight:600;color:var(--mute);font-variant-numeric:tabular-nums}
+.rl-it.bad em{color:var(--red)}
+.rl-open{all:unset;justify-self:start;margin-bottom:-4px;padding:6px 12px;border-radius:999px;background:var(--card);box-shadow:var(--sh);font-size:13px;font-weight:600;color:var(--blue);cursor:pointer}
+.tl-one{display:flex;align-items:center;gap:8px;padding:12px 16px 0;font-size:13px;color:var(--mute)}.tl-one b{color:var(--ink);font-size:14px}.tl-one .btn{margin-left:auto}
+@media(max-width:1180px){.tl-lay{grid-template-columns:208px minmax(0,1fr)}}
+body.drawer .tl-lay{grid-template-columns:200px minmax(0,1fr)}
 .tl-il{position:absolute;top:8px;height:18px;line-height:18px;padding:0 6px;border-radius:6px;background:var(--card);box-shadow:0 0 0 1px var(--line);font-size:11.5px;color:var(--mute);font-weight:700;white-space:nowrap;pointer-events:none;z-index:3}
 .tl-il.late{color:var(--redt)}
 .tl-today{position:absolute;top:0;bottom:0;width:2px;background:var(--red);z-index:2;pointer-events:none}
@@ -729,6 +756,7 @@ async function loadLog(id){
 /* ---------- Cloudflare 後端連線 ---------- */
 const API={key:'',name:'',role:''};
 const STANDALONE=!!document.querySelector('meta[name=pc-api]');
+const META_URL=((document.querySelector('meta[name=pc-api]')||{}).content||'').trim();
 try{API.key=localStorage.getItem('pc-key')||''}catch(e){}
 async function api(path,opt={}){
   const h={'X-Key':API.key,'X-Name':encodeURIComponent(me||''),...(opt.headers||{})};if(opt.json)h['Content-Type']='application/json';
@@ -764,7 +792,7 @@ function showLogin(msg){
   document.body.classList.add('login');
   $('#main').innerHTML=`<div class="lg"><div class="lg-ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M9 12l2 2 4-4"/></svg></div>
   <h1 class="lt" style="text-align:center">專案進度管控</h1><p class="date" style="text-align:center;margin:6px 0 22px">輸入你的名字和通關密碼就能進入</p>
-  <form id="loginf"><div class="grp"><label class="lgrow"><span>名字</span><input id="lg-n" autocomplete="name" placeholder="例如：王小明" value="${esc(me)}" required></label>${location.protocol==='file:'||PCB||STANDALONE?`<label class="lgrow"><span>伺服器</span><input id="lg-u" type="url" placeholder="https://xxx.workers.dev" value="${esc(PCB)}" required></label>`:''}<label class="lgrow"><span>通關密碼</span><input id="lg-k" type="password" autocomplete="current-password" placeholder="主管提供的通關密碼" required></label></div>
+  <form id="loginf"><div class="grp"><label class="lgrow"><span>名字</span><input id="lg-n" autocomplete="name" placeholder="例如：王小明" value="${esc(me)}" required></label>${(location.protocol==='file:'||PCB||STANDALONE)&&!META_URL?`<label class="lgrow"><span>伺服器</span><input id="lg-u" type="url" placeholder="https://xxx.workers.dev" value="${esc(PCB)}" required></label>`:''}<label class="lgrow"><span>通關密碼</span><input id="lg-k" type="password" autocomplete="current-password" placeholder="主管提供的通關密碼" required></label></div>
   <p class="err" id="lg-err">${msg?esc(msg):''}</p><button class="btn" type="submit" style="width:100%;margin-top:14px;min-height:50px">登入</button></form>
   <p class="note-s" style="text-align:center">通關密碼請向主管索取。這台裝置會記住，下次不用再輸入。</p></div>`;
 }
@@ -778,6 +806,7 @@ function footHTML(){return `<p class="note-s" style="text-align:center;margin-to
 
 /* ---------- 電腦版時間軸 ---------- */
 const deskMQ=matchMedia('(min-width:900px)');const isDesk=()=>deskMQ.matches;
+var tlProj='',tlRailOff=false;try{tlProj=localStorage.getItem('pc-tlp')||'';tlRailOff=localStorage.getItem('pc-tlr')==='0'}catch(e){}
 let tlMode='timeline',tlZoom='week',tlOpen=null,tlScrollTo=true,tlGroup='proj',tlF='all',tlCat='',tlShut=new Set();
 try{const v=JSON.parse(localStorage.getItem('pc-tlv')||'{}');tlGroup=v.g||'proj';tlF=v.f||'all';tlCat=v.c||''}catch(e){}
 function tlSave(){try{localStorage.setItem('pc-tlv',JSON.stringify({g:tlGroup,f:tlF,c:tlCat}))}catch(e){}}
@@ -786,8 +815,21 @@ const IST=[['late','逾期'],['ns','應開始未開始'],['doing','進行中'],[
 try{tlMode=localStorage.getItem('pc-tlmode')||'timeline';tlZoom=localStorage.getItem('pc-tlzoom')||'week'}catch(e){}
 const ZM={day:{px:30,n:'日'},week:{px:12,n:'週'},month:{px:4,n:'月'},fit:{px:2,n:'全覽'}};
 const zpx=days=>{if(tlZoom!=='fit')return ZM[tlZoom].px;const sc=$('#tlsc'),w=(sc?sc.clientWidth:Math.min(innerWidth,1480)-60)-300-24;return Math.max(1,Math.min(30,w/Math.max(1,days)))};
+function tlRail(bad,good,fin){
+  const row=(o,cls)=>{const p=o.p,x=o.x,pr=Math.max(0,Math.min(100,Math.round(x.pr||0))),sel=tlProj===p.id;
+    return `<button class="rl-it ${cls}" data-act="tlproj" data-id="${esc(p.id)}" aria-pressed="${sel}" title="${esc(p.name)}"><i class="rl-dot"></i><span class="rl-tx"><b>${esc(p.name)}</b><small>${esc(p.owners||'未指定')} · ${x.nd}/${x.nt} 項</small><span class="rl-bar"><span style="width:${pr}%"></span></span></span><em>${pr}%</em></button>`};
+  const sec=(t,arr,cls)=>arr.length?`<div class="rl-h">${t}<span>${arr.length}</span></div>`+arr.map(o=>row(o,cls)).join(''):'';
+  const n=bad.length+good.length+(showDone?fin.length:0);
+  return `<aside class="rl" aria-label="專案清單"><div class="rl-top"><span>專案</span><button class="rl-x" data-act="tlrail" aria-label="收起專案清單" title="收起">‹</button></div>
+  <button class="rl-it rl-all" data-act="tlproj" data-id="" aria-pressed="${!tlProj}"><i class="rl-dot"></i><span class="rl-tx"><b>全部專案</b><small>${n} 個專案</small></span></button>
+  ${sec('落後・需處理',bad,'bad')}${sec('正常進行',good,'good')}${showDone?sec('已完成',fin,'fin'):''}</aside>`;
+}
 function timelineHTML(bad,good,fin){
-  const all=[...bad,...good,...(showDone?fin:[])];
+  const rb=bad,rg=good,rf=fin;
+  if(tlProj&&![...bad,...good,...fin].some(o=>o.p.id===tlProj))tlProj='';
+  if(tlProj){const f=o=>o.p.id===tlProj;bad=bad.filter(f);good=good.filter(f);fin=fin.filter(f)}
+  const one=tlProj?[...bad,...good,...fin][0]:null;
+  const all=[...bad,...good,...((showDone||tlProj)?fin:[])];
   if(tlOpen===null)tlOpen=new Set(bad.map(o=>o.p.id));
   const t=today(),ds=[];all.forEach(o=>{ds.push(o.p.start,o.p.due);(o.p.milestones||[]).forEach(m=>{if(m.start)ds.push(m.start);if(m.due)ds.push(m.due)})});
   const v=ds.filter(Boolean).sort();
@@ -801,7 +843,7 @@ function timelineHTML(bad,good,fin){
   if(tlZoom==='day'){for(let i=0;i<days;i++){const d=new Date(R0.getTime()+i*DAY),we=d.getDay()===0||d.getDay()===6;sub+=`<span class="tl-d${we?' we':''}${iso(d)===iso(t)?' td':''}" style="left:${i*px}px;width:${px}px">${d.getDate()}</span>`}}
   else{let d=new Date(R0);while(d.getDay()!==1)d=new Date(d.getTime()+DAY);const wl=px*7>=34;if(px*7>=8)for(;d<R1;d=new Date(d.getTime()+7*DAY))sub+=`<span class="tl-w" style="left:${X(iso(d))}px">${wl&&tlZoom!=='month'?md(iso(d)):''}</span>`}
   let mo=new Date(R0);while(mo.getDay()!==1)mo=new Date(mo.getTime()+DAY);const gridBg=px*7>=8?`background-size:${7*px}px 100%;background-position:${X(iso(mo))}px 0`:'background-image:none';
-  const sec=(cls,label,arr)=>{const rows=arr.map(o=>projRow(o)).filter(Boolean);if(fAct&&!rows.length)return '';return `<div class="tl-sec ${cls}"><div class="tl-name"><i></i>${label}<span>${rows.length}</span></div><div class="tl-track" style="width:${W}px"></div></div>`+rows.join('')};
+  const sec=(cls,label,arr)=>{const rows=arr.map(o=>projRow(o)).filter(Boolean);if((fAct||tlProj)&&!rows.length)return '';return `<div class="tl-sec ${cls}"><div class="tl-name"><i></i>${label}<span>${rows.length}</span></div><div class="tl-track" style="width:${W}px"></div></div>`+rows.join('')};
   const gsec=(key,label,items,cls)=>{const shut=tlShut.has('g:'+key);return `<div class="tl-sec tl-g ${cls||''}"><div class="tl-name"><button class="tl-tg" data-act="tlgtog" data-g="${esc(key)}" aria-expanded="${!shut}">${shut?'▸':'▾'}</button><i></i><b class="tl-gn">${esc(label)}</b><span>${items.length}</span></div><div class="tl-track" style="width:${W}px"></div></div>`+(shut?'':items.map(([p,m])=>itemRow(p,m,tlGroup==='cat'?p.name:`${p.name}${m.cat?' · '+catS(m.cat):''}`)).join(''))};
   const itemRow=(p,m,sm)=>{const s2=SO(m),late=itLate(m,t),ns=itNS(m,t);const has=m.start&&m.due;const il=has?X(m.start):0,iw=has?Math.max(px,X(m.due)+px-il):0;const cls=s2==='done'?'done':late?'late':s2==='doing'?'doing':ns?'ns':'todo';
       return `<div class="tl-row tl-i${selMid===m.id&&openId===p.id?' sel':''}"><div class="tl-name"><span class="tl-dot ${cls}"></span><button class="tl-in" data-open="${esc(p.id)}" data-mid="${esc(m.id)}" title="${esc(m.t)}">${sm?`<small>${esc(sm)}</small>`:''}<span>${esc(m.t)}</span></button></div><div class="tl-track" style="width:${W}px;${gridBg}">${has?`${m.bdue&&m.bdue!==m.due?`<div class="tl-bl" style="left:${X(m.bstart||m.start)}px;width:${Math.max(px,X(m.bdue)+px-X(m.bstart||m.start))}px" title="原訂 ${md(m.bstart||m.start)}–${md(m.bdue)}"></div>`:''}<div class="tl-ib ${cls}" data-k="${esc(p.id)}|${esc(m.id)}" style="left:${il}px;width:${iw}px" title="${esc(m.t)}：${md(m.start)}–${md(m.due)} · ${SL[s2]}${late?' · 已逾期':ns?' · 應已開始':''}"></div>${tlLab(il,iw,`${md(m.start)}–${md(m.due)}${late?' 逾期':''}`,late,W,TX)}`:'<span class="tl-il" style="left:8px;color:var(--redt)">缺預計起訖日</span>'}</div></div>`};
@@ -809,7 +851,7 @@ function timelineHTML(bad,good,fin){
   const fAct=tlF!=='all'||!!tlCat;
   const fOK=m=>{if(tlCat&&(catS(m.cat)||'未分類')!==tlCat)return false;const k=ik(m);return tlF==='all'||(tlF==='open'?k!=='done':tlF==='todo'?(k==='todo'||k==='ns'):k===tlF)};
   const projRow=o=>{
-    const p=o.p,x=o.x,pl=pill(p,x),ms0=(p.milestones||[]),open=fAct?!tlShut.has(p.id):tlOpen.has(p.id),ms=ms0.filter(fOK).slice().sort((a,b)=>(a.start||a.due||'9')<(b.start||b.due||'9')?-1:1);
+    const p=o.p,x=o.x,pl=pill(p,x),ms0=(p.milestones||[]),open=(fAct||tlProj)?!tlShut.has(p.id):tlOpen.has(p.id),ms=ms0.filter(fOK).slice().sort((a,b)=>(a.start||a.due||'9')<(b.start||b.due||'9')?-1:1);
     if(fAct&&!ms.length)return '';
     const l=X(p.start),w=Math.max(px,X(p.due)+px-l),rs=reasons(p,x);
     let h=`<div class="tl-row tl-p"><div class="tl-name"><button class="tl-tg" data-act="tltog" data-id="${esc(p.id)}" aria-expanded="${open}" aria-label="${open?'收合':'展開'}作業項目" ${ms.length?'':'disabled'}>${ms.length?(open?'▾':'▸'):''}</button><button class="tl-pn" data-open="${esc(p.id)}"><b>${esc(p.name)}</b><small>${esc(p.owners)}${ms.length?` · ${x.nd}/${x.nt}`:''}${rs.length?` · <em>${esc(rs[0])}</em>`:''}</small></button><span class="pill ${pl[0]}">${pl[1]}</span></div>
@@ -818,7 +860,7 @@ function timelineHTML(bad,good,fin){
     return h;
   };
   let body='';
-  if(tlGroup==='proj')body=sec('bad','落後・需處理',bad)+sec('good','正常進行',good)+(showDone&&fin.length?sec('fin','已完成',fin):'');
+  if(tlGroup==='proj')body=sec('bad','落後・需處理',bad)+sec('good','正常進行',good)+((showDone||tlProj)&&fin.length?sec('fin','已完成',fin):'');
   else{const its=[];all.forEach(o=>(o.p.milestones||[]).forEach(m=>{if(fOK(m))its.push([o.p,m])}));its.sort((a,b)=>(a[1].start||a[1].due||'9')<(b[1].start||b[1].due||'9')?-1:1);
     const gk=([p,m])=>tlGroup==='cat'?(catS(m.cat)||'未分類'):tlGroup==='who'?((m.who||p.owners||'').trim()||'未指定'):ik(m);
     const G=new Map();its.forEach(e=>{const k=gk(e);if(!G.has(k))G.set(k,[]);G.get(k).push(e)});
@@ -826,7 +868,8 @@ function timelineHTML(bad,good,fin){
     body=keys.map(k=>gsec(k,tlGroup==='ist'?IST.find(x=>x[0]===k)[1]:k,G.get(k),tlGroup==='ist'?'is-'+k:'')).join('');}
   if(!body)body=`<div class="tl-empty">沒有符合篩選條件的作業項目</div>`;
   const cats=[...new Set(all.flatMap(o=>(o.p.milestones||[]).map(m=>catS(m.cat)||'未分類')))].sort((a,b)=>a.localeCompare(b,'zh-Hant'));
-  return `<div class="card tl"><div class="tl-bar0"><div class="tl-zoom" role="group" aria-label="時間刻度">${Object.entries(ZM).map(([k,z])=>`<button data-act="tlzoom" data-z="${k}" aria-pressed="${tlZoom===k}">${z.n}</button>`).join('')}</div>
+  const rail=tlRailOff?`<button class="rl-open" data-act="tlrail" aria-label="展開專案清單">專案清單 ›</button>`:tlRail(rb,rg,rf);
+  return `<div class="tl-lay${tlRailOff?' off':''}">${rail}<div class="card tl">${one?`<div class="tl-one"><span>只顯示</span><b>${esc(one.p.name)}</b><button class="btn ghost sm" data-act="tlproj" data-id="">顯示全部專案</button></div>`:''}<div class="tl-bar0"><div class="tl-zoom" role="group" aria-label="時間刻度">${Object.entries(ZM).map(([k,z])=>`<button data-act="tlzoom" data-z="${k}" aria-pressed="${tlZoom===k}">${z.n}</button>`).join('')}</div>
   <button class="btn ghost sm" data-act="tltoday">回到今天</button><button class="btn ghost sm" data-act="tlall">${(tlGroup==='proj'&&!fAct)?(tlOpen.size?'全部收合':'全部展開'):(tlShut.size?'全部展開':'全部收合')}</button>
   <span class="tl-hint">拖曳空白處移動時間；拖曳項目長條可改日期</span><button class="btn ghost sm" data-act="tlpan" data-d="-1" aria-label="往前">‹</button><button class="btn ghost sm" data-act="tlpan" data-d="1" aria-label="往後">›</button>
   <div class="tl-vw"><div class="tl-seg" role="group" aria-label="檢視方式">${Object.entries(TLG).map(([k,n])=>`<button data-act="tlgrp" data-g="${k}" aria-pressed="${tlGroup===k}">${n}</button>`).join('')}</div><div class="tl-fl" role="group" aria-label="篩選項目狀態">${Object.entries(TLF).map(([k,n])=>`<button data-act="tlf" data-f="${k}" aria-pressed="${tlF===k}">${n}</button>`).join('')}</div>${cats.length>1?`<label class="tl-cs"><select id="tl-cat" aria-label="作業類型"><option value="">全部類型</option>${cats.map(c=>`<option${c===tlCat?' selected':''}>${esc(c)}</option>`).join('')}</select></label>`:''}${fAct?`<button class="btn ghost sm" data-act="tlfclr">清除篩選</button>`:''}</div><span class="tl-lg"><i class="lg-p"></i>專案進度<i class="lg-e"></i>應達<i class="lg-d"></i>進行中<i class="lg-g"></i>完成<i class="lg-r"></i>逾期</span></div>
@@ -834,7 +877,7 @@ function timelineHTML(bad,good,fin){
   <div class="tl-head"><div class="tl-name tl-hn">專案／作業項目</div><div class="tl-hd" style="width:${W}px"><div class="tl-mr">${mon}</div><div class="tl-sr">${sub}<span class="tl-tdh" style="left:${X(iso(t))+Math.round(px/2)}px">今天 ${md(iso(t))}</span></div></div></div>
   ${body}
   <div class="tl-today" style="left:${NW+X(iso(t))+Math.round(px/2)}px"></div></div></div>
-  ${fin.length?`<button class="tl-more" data-act="togdone">${showDone?'隱藏':'顯示'}已完成專案（${fin.length}）</button>`:''}</div>`;
+  ${!tlProj&&fin.length?`<button class="tl-more" data-act="togdone">${showDone?'隱藏':'顯示'}已完成專案（${fin.length}）</button>`:''}</div></div>`;
 }
 function catS(c){c=String(c||'').trim();const m=c.match(/^(.*?[\u3400-\u9fff\uff00-\uffef][^A-Za-z]*?)\s+[A-Za-z].*$/);return m?m[1].trim():c}
 function tlLab(il,iw,txt,late,W,TX){
@@ -1453,6 +1496,8 @@ document.addEventListener('click',async e=>{
   else if(act==='tlpan'){const sc=$('#tlsc');if(sc)sc.scrollBy({left:(+a.dataset.d)*(sc.clientWidth-300)*.6,behavior:'smooth'})}
   else if(act==='tltog'){const id=a.dataset.id;if(tlF!=='all'||tlCat){tlShut.has(id)?tlShut.delete(id):tlShut.add(id)}else{tlOpen.has(id)?tlOpen.delete(id):tlOpen.add(id)}render()}
   else if(act==='tlall'){if(tlGroup==='proj'&&tlF==='all'&&!tlCat){if(tlOpen.size)tlOpen.clear();else P.forEach(p=>tlOpen.add(p.id))}else if(tlShut.size)tlShut.clear();else{if(tlGroup==='proj')P.forEach(p=>tlShut.add(p.id));else document.querySelectorAll('[data-act=tlgtog]').forEach(b=>tlShut.add('g:'+b.dataset.g))}render()}
+  else if(act==='tlproj'){tlProj=a.dataset.id||'';tlShut.clear();tlScrollTo=true;try{localStorage.setItem('pc-tlp',tlProj)}catch(e){}render();const m=document.querySelector('.tl-lay .card.tl');if(m&&m.getBoundingClientRect().top<0)m.scrollIntoView({block:'start'})}
+  else if(act==='tlrail'){tlRailOff=!tlRailOff;try{localStorage.setItem('pc-tlr',tlRailOff?'0':'1')}catch(e){}render()}
   else if(act==='tlgrp'){tlGroup=a.dataset.g;tlShut.clear();tlSave();render()}
   else if(act==='tlf'){tlF=a.dataset.f;tlShut.clear();tlSave();render()}
   else if(act==='tlfclr'){tlF='all';tlCat='';tlShut.clear();tlSave();render()}
