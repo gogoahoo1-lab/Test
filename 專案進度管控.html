@@ -733,7 +733,7 @@ async function api(path,opt={}){
   const h={'X-Key':API.key,'X-Name':encodeURIComponent(me||''),...(opt.headers||{})};if(opt.json)h['Content-Type']='application/json';
   let r;try{r=await fetch(PCB+'/api'+path,{method:opt.method||'GET',headers:h,body:opt.json?JSON.stringify(opt.json):opt.body})}catch(e){throw{code:'unavailable'}}
   if(r.status===401){if(!opt.noLogout)logout(true);throw{code:'unauth'}}
-  if(!r.ok){const e=await r.json().catch(()=>({}));throw{code:r.status===403?'invalid_argument':'unavailable',message:e.error||''}}
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw{code:r.status===403?'invalid_argument':'unavailable',status:r.status,message:e.error||''}}
   return r.status===204?null:r.json();
 }
 const mkSnap=a=>({docs:a.map(o=>({id:o.id,exists:true,data:()=>o.data})),size:a.length,empty:!a.length,metadata:{fromCache:false,hasPendingWrites:false},docChanges:()=>[]});
@@ -772,7 +772,7 @@ document.addEventListener('submit',async e=>{if(e.target.id!=='loginf')return;e.
   const u=$('#lg-u');if(u){const v=u.value.trim().replace(/\/+$/,'');if(!/^https?:\/\//.test(v)){$('#lg-err').textContent='請輸入完整伺服器網址（https:// 開頭）';return}try{localStorage.setItem('pc-api',v)}catch(x){}PCB=v}
   b.disabled=true;b.textContent='登入中…';API.key=k;me=n;
   try{await api('/me',{noLogout:true});try{localStorage.setItem('pc-key',k);localStorage.setItem('pc-me',n)}catch(x){}location.reload()}
-  catch(err){b.disabled=false;b.textContent='登入';$('#lg-err').textContent=err.code==='unauth'?'通關密碼錯誤':'連不上伺服器，請稍後再試'}},true);
+  catch(err){b.disabled=false;b.textContent='登入';$('#lg-err').textContent=err.code==='unauth'?'通關密碼錯誤':(err.message||(err.status?`伺服器回應錯誤（代碼 ${err.status}），請確認 Worker 已部署最新版並綁定 DB、PHOTOS`:'連不上伺服器，請檢查網路或伺服器網址'))}},true);
 function footHTML(){return `<p class="note-s" style="text-align:center;margin-top:28px">已登入：${esc(me||'')}　<button class="lnk" style="font-size:13px" data-act="logout">登出</button>${admin?'　<button class="lnk" style="font-size:13px" data-act="testpush">測試 Telegram 推播</button>':''}</p>`}
 
 /* ---------- 電腦版時間軸 ---------- */
