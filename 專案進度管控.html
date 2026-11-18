@@ -728,6 +728,7 @@ async function loadLog(id){
 
 /* ---------- Cloudflare 後端連線 ---------- */
 const API={key:'',name:'',role:''};
+const STANDALONE=!!document.querySelector('meta[name=pc-api]');
 try{API.key=localStorage.getItem('pc-key')||''}catch(e){}
 async function api(path,opt={}){
   const h={'X-Key':API.key,'X-Name':encodeURIComponent(me||''),...(opt.headers||{})};if(opt.json)h['Content-Type']='application/json';
@@ -763,7 +764,7 @@ function showLogin(msg){
   document.body.classList.add('login');
   $('#main').innerHTML=`<div class="lg"><div class="lg-ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M9 12l2 2 4-4"/></svg></div>
   <h1 class="lt" style="text-align:center">專案進度管控</h1><p class="date" style="text-align:center;margin:6px 0 22px">輸入你的名字和通關密碼就能進入</p>
-  <form id="loginf"><div class="grp"><label class="lgrow"><span>名字</span><input id="lg-n" autocomplete="name" placeholder="例如：王小明" value="${esc(me)}" required></label>${location.protocol==='file:'||PCB?`<label class="lgrow"><span>伺服器</span><input id="lg-u" type="url" placeholder="https://xxx.workers.dev" value="${esc(PCB)}" required></label>`:''}<label class="lgrow"><span>通關密碼</span><input id="lg-k" type="password" autocomplete="current-password" placeholder="主管提供的通關密碼" required></label></div>
+  <form id="loginf"><div class="grp"><label class="lgrow"><span>名字</span><input id="lg-n" autocomplete="name" placeholder="例如：王小明" value="${esc(me)}" required></label>${location.protocol==='file:'||PCB||STANDALONE?`<label class="lgrow"><span>伺服器</span><input id="lg-u" type="url" placeholder="https://xxx.workers.dev" value="${esc(PCB)}" required></label>`:''}<label class="lgrow"><span>通關密碼</span><input id="lg-k" type="password" autocomplete="current-password" placeholder="主管提供的通關密碼" required></label></div>
   <p class="err" id="lg-err">${msg?esc(msg):''}</p><button class="btn" type="submit" style="width:100%;margin-top:14px;min-height:50px">登入</button></form>
   <p class="note-s" style="text-align:center">通關密碼請向主管索取。這台裝置會記住，下次不用再輸入。</p></div>`;
 }
@@ -772,7 +773,7 @@ document.addEventListener('submit',async e=>{if(e.target.id!=='loginf')return;e.
   const u=$('#lg-u');if(u){const v=u.value.trim().replace(/\/+$/,'');if(!/^https?:\/\//.test(v)){$('#lg-err').textContent='請輸入完整伺服器網址（https:// 開頭）';return}try{localStorage.setItem('pc-api',v)}catch(x){}PCB=v}
   b.disabled=true;b.textContent='登入中…';API.key=k;me=n;
   try{await api('/me',{noLogout:true});try{localStorage.setItem('pc-key',k);localStorage.setItem('pc-me',n)}catch(x){}location.reload()}
-  catch(err){b.disabled=false;b.textContent='登入';$('#lg-err').textContent=err.code==='unauth'?'通關密碼錯誤':(err.message||(err.status?`伺服器回應錯誤（代碼 ${err.status}），請確認 Worker 已部署最新版並綁定 DB、PHOTOS`:'連不上伺服器，請檢查網路或伺服器網址'))}},true);
+  catch(err){b.disabled=false;b.textContent='登入';$('#lg-err').textContent=err.code==='unauth'?'通關密碼錯誤':(err.message||(err.status===404?'找不到伺服器：請在「伺服器」欄填入 Cloudflare Worker 網址（https://…workers.dev），或直接用那個網址打開':err.status?`伺服器回應錯誤（代碼 ${err.status}），請確認 Worker 已部署最新版並綁定 DB、PHOTOS`:'連不上伺服器，請檢查網路或伺服器網址'))}},true);
 function footHTML(){return `<p class="note-s" style="text-align:center;margin-top:28px">已登入：${esc(me||'')}　<button class="lnk" style="font-size:13px" data-act="logout">登出</button>${admin?'　<button class="lnk" style="font-size:13px" data-act="testpush">測試 Telegram 推播</button>':''}</p>`}
 
 /* ---------- 電腦版時間軸 ---------- */
