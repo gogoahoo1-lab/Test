@@ -307,6 +307,61 @@ h3{font-size:15px;font-weight:900;margin:22px 0 10px}
 .tl-one{display:flex;align-items:center;gap:8px;padding:12px 16px 0;font-size:13px;color:var(--mute)}.tl-one b{color:var(--ink);font-size:14px}.tl-one .btn{margin-left:auto}
 @media(max-width:1180px){.tl-lay{grid-template-columns:208px minmax(0,1fr)}}
 body.drawer .tl-lay{grid-template-columns:200px minmax(0,1fr)}
+.stw{position:relative;flex:none;align-self:flex-start}
+.stb{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px 0 9px;border-radius:999px;font-size:13px;font-weight:700;cursor:pointer;background:#ececf1;color:var(--ink);white-space:nowrap;transition:filter .15s}
+.stb:hover{filter:brightness(.96)}.stb:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.stb i,.stm i{width:7px;height:7px;border-radius:50%;background:#8e8e93;flex:none}
+.stb svg{opacity:.6;margin-left:1px}
+.stb.k-doing{background:#e3eeff;color:#0057d9}.stb.k-doing i,.stm .k-doing i{background:var(--blue)}
+.stb.k-done{background:#dcf5e5;color:#11743a}.stb.k-done i,.stm .k-done i{background:var(--grn)}
+.stb[aria-expanded=true]{box-shadow:0 0 0 2px rgb(0 122 255/.35)}
+.stm{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:156px;padding:6px;border-radius:14px;background:var(--card);box-shadow:0 0 0 .5px rgb(0 0 0/.08),0 12px 32px rgb(0 0 0/.16);animation:stin .14s ease-out}
+.stm.up{top:auto;bottom:calc(100% + 6px)}
+.stm button{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:9px;width:100%;height:38px;padding:0 10px;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;color:var(--ink)}
+.stm button:hover,.stm button:focus-visible{background:var(--soft)}
+.stm button b{margin-left:auto;color:var(--blue);font-size:13px}
+.it.stopen{position:relative;z-index:5}
+@keyframes stin{from{opacity:0;transform:translateY(-4px)}}
+@media(prefers-reduced-motion:reduce){.stm{animation:none}}
+.iu{display:flex;align-items:center;gap:4px;margin-top:3px;font-size:11.5px;font-weight:600;color:#8e8e93;font-variant-numeric:tabular-nums}
+.iu svg{flex:none;opacity:.8}.iu.none{color:#aeaeb2}.iu.old{color:#c25e00}
+.bell{all:unset;position:relative;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:var(--ink);cursor:pointer;flex:none;margin-left:8px;background:var(--card);box-shadow:var(--sh)}
+#b-new[hidden]+.bell{margin-left:auto}
+.bell:hover{color:var(--blue)}.bell:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.bell[aria-expanded=true]{color:var(--blue);box-shadow:0 0 0 2px rgb(0 122 255/.25)}
+.bell .bd{position:absolute;top:-5px;right:-6px;min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:9px;background:var(--red);color:#fff;font-size:11px;font-weight:700;line-height:18px;text-align:center;box-shadow:0 0 0 2px var(--bg);font-variant-numeric:tabular-nums}
+.bell .bd.seen{background:#8e8e93}
+.ab-bell{margin-left:auto;width:36px;height:36px;border-radius:50%;box-shadow:none;background:none;color:var(--blue)}
+#bellp{position:fixed;z-index:40;width:400px;max-height:min(640px,calc(100vh - 90px));overflow:auto;background:var(--card);border-radius:18px;box-shadow:0 0 0 .5px rgb(0 0 0/.08),0 20px 50px rgb(0 0 0/.18);animation:stin .16s ease-out;overscroll-behavior:contain}
+.bp-h{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;align-items:center;padding:14px 10px 10px 18px;background:var(--card);border-bottom:.5px solid var(--sep)}
+.bp-h b{font-size:17px;margin-right:8px}.bp-h span{font-size:13px;color:var(--mute);font-weight:600}.bp-h .x{width:34px;height:34px;font-size:20px}
+.bp-b{padding:6px 8px 4px}
+.bp-sum{margin:8px 10px 6px;font-size:13.5px;line-height:1.55;color:var(--ink)}.bp-sum .o{color:#c25e00}
+.bp-sec{padding:12px 10px 6px;font-size:11.5px;font-weight:700;color:var(--mute);letter-spacing:.02em}
+.bp-it{all:unset;box-sizing:border-box;display:flex;align-items:flex-start;gap:10px;width:100%;padding:11px 10px;border-radius:12px;cursor:pointer;color:var(--mute)}
+.bp-it:hover,.bp-it:focus-visible{background:var(--soft)}.bp-it:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.bp-it>i{width:9px;height:9px;border-radius:50%;margin-top:6px;flex:none;background:var(--amb)}.bp-it>i.r{background:var(--red)}.bp-it>i.b{background:var(--blue)}
+.bp-it>svg{margin-top:5px;flex:none;opacity:.5}
+.bp-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.bp-n{display:flex;align-items:baseline;gap:8px;min-width:0}.bp-n b{font-size:14.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bp-n small{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bp-it.sm .bp-n{flex-direction:column;gap:1px;align-items:flex-start}
+.bp-p{font-size:12.5px;font-weight:600}.bp-p b{color:var(--redt)}
+.bp-rs{display:flex;flex-wrap:wrap;gap:4px}.bp-rs em{font-style:normal;font-size:11.5px;font-weight:600;padding:2px 7px;border-radius:6px;background:#fff0ef;color:var(--redt)}
+.bp-ok{display:flex;flex-direction:column;align-items:center;gap:6px;padding:34px 20px 22px;text-align:center}.bp-ok span{width:44px;height:44px;border-radius:50%;background:#dcf5e5;color:#11743a;display:grid;place-items:center;font-size:22px;font-weight:700}.bp-ok b{font-size:15px}.bp-ok small{color:var(--mute);font-size:13px}
+.bp-f{margin:0;padding:10px 18px 14px;font-size:11.5px;color:var(--mute);border-top:.5px solid var(--sep)}
+.bp-more{all:unset;display:block;margin:4px 10px 8px;padding:8px 0;font-size:13px;font-weight:600;color:var(--blue);cursor:pointer}
+@media(max-width:600px){#bellp{left:8px;right:8px;top:calc(env(safe-area-inset-top) + 56px);width:auto;max-height:calc(100vh - env(safe-area-inset-top) - 150px)}}
+.bp-card{border-radius:12px}.bp-card+.bp-card{margin-top:2px;border-top:.5px solid var(--sep);border-radius:0}
+.bp-ms{margin:-4px 0 8px 29px;display:flex;flex-direction:column}
+.bp-ms button{all:unset;box-sizing:border-box;display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--ink)}
+.bp-ms button:hover,.bp-ms button:focus-visible{background:var(--soft)}
+.bp-ms button span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bp-ms button small{flex:none;font-size:12px;font-weight:600;color:var(--redt)}
+.bp-ms button.more span{color:var(--blue);font-weight:600}
+.bp-row{align-items:center}.bp-row>i{margin-top:0}.bp-row>svg{margin-top:0}
+.bp-row .bp-tx{gap:2px}.bp-o{font-size:12px;font-weight:600;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bp-row .bp-rs{flex:none;flex-direction:column;align-items:flex-end;gap:3px}
+.bp-row+.bp-row{border-top:.5px solid var(--sep);border-radius:0 0 12px 12px}
 .tl-il{position:absolute;top:8px;height:18px;line-height:18px;padding:0 6px;border-radius:6px;background:var(--card);box-shadow:0 0 0 1px var(--line);font-size:11.5px;color:var(--mute);font-weight:700;white-space:nowrap;pointer-events:none;z-index:3}
 .tl-il.late{color:var(--redt)}
 .tl-today{position:absolute;top:0;bottom:0;width:2px;background:var(--red);z-index:2;pointer-events:none}
@@ -481,6 +536,34 @@ body.drawer #nav .btn{margin-right:0}
 #sheet .acts{position:sticky;bottom:-28px;background:linear-gradient(transparent,var(--bg) 30%);padding:18px 0 28px;margin-bottom:-28px}
 }
 @media(min-width:1000px) and (max-width:1270px){#sheet .pane{min-width:420px}body.drawer .wrap{margin-right:max(420px,44vw)}}
+@media(min-width:1000px){
+.ph .wb{margin-left:auto;width:auto;height:36px;margin-top:4px;padding:0 12px;gap:6px;display:inline-flex;align-items:center;border-radius:10px;background:var(--card);box-shadow:var(--sh);color:var(--ink);font-size:13px;font-weight:600}
+.ph .wb:hover{color:var(--blue)}.ph .wb:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+body.wide #sheet{background:rgb(15 20 30/.24);pointer-events:auto;justify-content:center}
+body.wide #sheet .pane{width:calc(100vw - 56px);max-width:1600px;min-width:0;margin:0 auto;padding:0 36px 28px;animation:wdin .2s ease-out;box-shadow:0 0 0 .5px var(--sep),0 24px 60px rgb(0 0 0/.18)}
+body.wide #sheet .ph{padding-top:22px}
+body.wide #pane .kv{max-width:720px}
+body.wide #items{display:flex;flex-direction:column;gap:6px}
+body.wide #items>.it{display:grid;grid-template-columns:minmax(320px,1fr) minmax(360px,1.4fr);column-gap:20px;row-gap:10px;align-items:center;padding:10px 12px 10px 16px;border-radius:12px}
+body.wide #items>.it>*{grid-column:1/-1;margin:0}
+body.wide #items>.it>.itop{grid-column:1;grid-row:1;min-width:0}
+body.wide #items>.it>.irow{grid-column:2;grid-row:1;margin:0}
+body.wide #items>.it .itop .tx{font-size:15px}
+body.wide #items>.it .irow .note{min-height:44px}
+body.wide #items>.it>.irow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch}
+body.wide #items>.it>.irow .cam{grid-column:2}
+body.wide #items>.it>.ned{grid-column:2;grid-row:2}
+body.wide #items>.it>.ned .nb .btn{min-height:38px;font-size:14px}
+body.wide #items>.it>.ned textarea{min-height:72px}
+body.wide #items>.it:hover{box-shadow:0 0 0 1px rgb(0 122 255/.18),var(--sh)}
+body.wide #pane .ih{position:sticky;top:64px;z-index:1;background:var(--bg);padding-bottom:4px}
+body.wide .ihc{display:grid;position:sticky;top:96px;z-index:1;background:var(--bg);padding-top:4px}
+.ihc{display:none;grid-template-columns:minmax(320px,1fr) minmax(360px,1.4fr);column-gap:20px;padding:0 12px 6px 16px;font-size:12px;font-weight:600;color:var(--mute)}
+body.wide #addit{max-width:760px}
+body.wide #pane .log{columns:2 420px;column-gap:16px}body.wide #pane .log>li{break-inside:avoid}
+}
+@keyframes wdin{from{opacity:.4;transform:scale(.985)}}
+@media(prefers-reduced-motion:reduce){body.wide #sheet .pane{animation:none}}
 @keyframes slin{from{transform:translateX(30px);opacity:0}}
 @media(prefers-reduced-motion:reduce){#sheet .pane{animation:none}}
 .lg{max-width:420px;margin:8vh auto 0}
@@ -515,7 +598,7 @@ body{padding:0 env(safe-area-inset-right) 0 env(safe-area-inset-left)}
 </style>
 </head>
 <body>
-<header class="appbar" id="appbar"><span class="ab-t" id="abt">專案總覽</span><span class="ab-d" id="abd"></span><button class="ab-add" data-act="new" id="m-new" aria-label="新增專案" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></header>
+<header class="appbar" id="appbar"><span class="ab-t" id="abt">專案總覽</span><span class="ab-d" id="abd"></span><button class="bell ab-bell" data-act="bell" aria-label="通知" aria-haspopup="dialog" aria-expanded="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="bd" hidden></span></button><button class="ab-add" data-act="new" id="m-new" aria-label="新增專案" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></header>
 <nav class="tabbar" aria-label="主選單">
   <button data-go="overview" id="m-ov"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 10h18"/></svg><span>總覽</span></button>
   <button data-go="grid" id="m-gd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9.5h18M3 14.5h18M9 4v16"/></svg><span>管控表</span></button>
@@ -529,9 +612,11 @@ body{padding:0 env(safe-area-inset-right) 0 env(safe-area-inset-left)}
     <button class="tab" data-go="weekly" id="t-wk" hidden>週報</button>
     <button class="tab" data-go="report" id="t-rp">回報進度</button>
     <button class="btn" data-act="new" id="b-new" style="margin-left:auto" hidden>＋ 新增專案</button>
+    <button class="bell" data-act="bell" id="bell" aria-label="通知" aria-haspopup="dialog" aria-expanded="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="bd" hidden></span></button>
   </nav>
   <main id="main"><div class="card empty"><b>連線中…</b>正在讀取專案資料</div></main>
 </div>
+<div id="bellp" role="dialog" aria-label="通知" hidden></div>
 <div id="sheet" hidden><div class="pane" id="pane"></div></div>
 <div id="lb" hidden></div>
 <input type="file" id="xfile" accept=".xlsx,.xls,.csv" hidden>
@@ -638,24 +723,31 @@ function overview(){
 }
 function report(){
   const mine=P.filter(p=>st(p).lv!=='done').filter(p=>!me||String(p.owners||'').includes(me));
-  return `<h1 class="lt">回報進度</h1><p style="color:var(--mute);margin:6px 0 0;font-size:14px;font-weight:600">選你負責的專案：更新作業項目狀態、拍照、寫進度說明，再送出回報。</p>
+  return `<h1 class="lt">回報進度</h1><p style="color:var(--mute);margin:6px 0 0;font-size:14px;font-weight:600">選你負責的專案：更新作業項目狀態、寫進度說明，再送出回報。</p>
   <label for="me">我的名字（用來篩選我的專案）</label><input id="me" value="${esc(me)}" placeholder="例如：王小明" autocomplete="name">
   <div class="gh"><span>我的專案</span><span>${mine.length}</span></div><div class="grp">
   ${mine.length?mine.map(p=>rowHTML(p,'data-pick')).join(''):`<div class="empty"><b>找不到專案</b>${me?'請確認名字和主管設定的負責人一致，或清空名字查看全部。':'目前沒有進行中的專案。'}</div>`}</div>`;
 }
 
+function updInfo(m){const nt=m.notes||[],ln=nt[nt.length-1];let at=m.upd||'',by=m.updBy||'';if(ln&&ln.at&&(!at||new Date(ln.at)>new Date(at))){at=ln.at;by=ln.by||by}
+  if(!at)return `<span class="iu none">尚無更新紀錄</span>`;
+  const d=new Date(at),n=new Date(),d0=new Date(d.getFullYear(),d.getMonth(),d.getDate()),n0=new Date(n.getFullYear(),n.getMonth(),n.getDate()),dd=Math.round((n0-d0)/864e5);
+  const hm=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  const txt=dd===0?`今天 ${hm}`:dd===1?`昨天 ${hm}`:dd<7?`${dd} 天前`:`${d.getMonth()+1}/${d.getDate()}`;
+  const old=dd>=7&&SO(m)!=='done';
+  return `<span class="iu${old?' old':''}" title="最後更新：${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${hm}${by?' · '+esc(by):''}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>最後更新 ${txt}${by?' · '+esc(by):''}${old?'（超過 7 天）':''}</span>`}
 function itemHTML(m,t){
   const s=SO(m),late=itLate(m,t),ns=itNS(m,t),nd=itND(m),nt=m.notes||[],ln=nt[nt.length-1],ph=m.photos||[];
   const range=nd?`<span class="fr">${!m.start&&!m.due?'缺預計起訖日':!m.start?'缺預計開始日':'缺預計完成日'}</span>`:`${md(m.start)}–${md(m.due)}`;
   const flag=late?` · <b class="fr">已逾期</b>`:ns?` · <b class="fa">應已開始</b>`:'';
   return `<div class="it s-${s}" data-iid="${esc(m.id)}">
-  <div class="itop"><span class="dot" aria-hidden="true"></span><div class="tx">${esc(m.t)}<small>${m.cat?esc(m.cat)+' · ':''}${range}${flag}${m.who?' · '+esc(m.who):''}</small></div>
+  <div class="itop"><span class="dot" aria-hidden="true"></span><div class="tx">${esc(m.t)}<small>${m.cat?esc(m.cat)+' · ':''}${range}${flag}${m.who?' · '+esc(m.who):''}</small>${updInfo(m)}</div>
+  <div class="stw"><button type="button" class="stb k-${s}" data-act="stmenu" aria-haspopup="menu" aria-expanded="false" aria-label="${esc(m.t)} 狀態：${SL[s]}，點選變更"><i></i>${SL[s]}<svg width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="stm" role="menu" hidden>${['todo','doing','done'].map(k=>`<button type="button" role="menuitemradio" class="k-${k}" data-st="${k}" aria-checked="${s===k}"><i></i>${SL[k]}${s===k?'<b aria-hidden="true">✓</b>':''}</button>`).join('')}</div></div>
   <div class="acts2"><button class="ib" type="button" data-act="itedit" aria-label="編輯 ${esc(m.t)}">${IC.edit}</button><button class="x" type="button" data-act="itdel" data-id="${esc(m.id)}" aria-label="刪除 ${esc(m.t)}">×</button></div></div>
   <div class="ied" hidden><input class="e-t" value="${esc(m.t)}" aria-label="作業項目名稱"><div class="two" style="margin-top:8px"><div><span class="fl">預計開始日</span><input class="e-s" type="date" value="${esc(m.start||'')}"></div><div><span class="fl">預計完成日</span><input class="e-d" type="date" value="${esc(m.due||'')}"></div></div><input class="e-w" value="${esc(m.who||'')}" placeholder="負責人（可空）" aria-label="負責人" style="margin-top:8px"><p class="err e-err"></p><div class="nb"><button type="button" class="btn" data-act="itsave">儲存</button><button type="button" class="btn ghost" data-act="itcancel">取消</button></div></div>
-  <div class="seg3" role="group" aria-label="${esc(m.t)} 狀態">${['todo','doing','done'].map(k=>`<button type="button" class="k-${k}" data-st="${k}" aria-pressed="${s===k}">${SL[k]}</button>`).join('')}</div>
   ${ph.length?`<div class="ph-strip">${ph.map((f,i)=>`<button type="button" data-ph="${esc(m.id)}|${i}" aria-label="查看照片 ${i+1}"><img src="${blob(f.id)}" alt="" loading="lazy"></button>`).join('')}</div>`:''}
   <div class="upl" hidden></div>
-  <div class="irow"><button type="button" class="note${ln?'':' empty'}" data-act="noteopen">${ln?`<span class="nt">${esc(ln.t)}</span><small>${when(ln.at)}${ln.by?' · '+esc(ln.by):''}${nt.length>1?` · 共 ${nt.length} 則`:''}</small>`:'<span class="nt">＋ 填寫進度說明</span>'}</button>${assets?`<button type="button" class="cam" data-act="photo" aria-label="上傳照片">${IC.cam}<span>${ph.length?ph.length+' 張':'照片'}</span></button>`:''}</div>
+  <div class="irow"><button type="button" class="note${ln?'':' empty'}" data-act="noteopen">${ln?`<span class="nt">${esc(ln.t)}</span><small>${when(ln.at)}${ln.by?' · '+esc(ln.by):''}${nt.length>1?` · 共 ${nt.length} 則`:''}</small>`:'<span class="nt">＋ 填寫進度說明</span>'}</button></div>
   <div class="ned" hidden><textarea aria-label="進度說明" placeholder="目前做到哪裡、下一步、需要什麼協助"></textarea>
   <div class="qn">${QN.map(q=>`<button type="button" data-qn="${esc(q)}">${esc(q)}</button>`).join('')}</div>
   <div class="nb"><button type="button" class="btn" data-act="notesave">儲存說明</button><button type="button" class="btn ghost" data-act="notecancel">取消</button></div>
@@ -666,7 +758,7 @@ function itemsHTML(p){
   const c=itemCounts(ms),d0=iso(t);
   return `<div id="itemsWrap"><div class="ih"><h3 style="margin:22px 0 10px">作業項目</h3><span><b class="c-doing">進行中 ${c.doing}</b> · 待進行 ${c.todo} · <b class="c-done">完成 ${c.done}</b></span></div>
   ${ms.length?`<div class="ipb" aria-hidden="true"><i class="k-done" style="flex:${c.done}"></i><i class="k-doing" style="flex:${c.doing}"></i><i class="k-todo" style="flex:${c.todo}"></i></div>`:''}
-  <div class="items" id="items">${ms.map(m=>itemHTML(m,t)).join('')||'<div class="card empty" style="padding:16px">還沒有作業項目，在下面新增或從 Excel 匯入</div>'}</div>
+  <div class="ihc" aria-hidden="true"><span>作業項目／狀態</span><span>進度說明</span></div><div class="items" id="items">${ms.map(m=>itemHTML(m,t)).join('')||'<div class="card empty" style="padding:16px">還沒有作業項目，在下面新增或從 Excel 匯入</div>'}</div>
   <div class="addit" id="addit"><div class="ttl">新增作業項目</div><input id="ai-t" placeholder="例如：完成廠商報價比較" aria-label="作業項目內容">
   <div class="two"><div><span class="fl">預計開始日 *</span><input id="ai-s" type="date" value="${d0}"></div><div><span class="fl">預計完成日 *</span><input id="ai-d" type="date"></div></div>
   <input id="ai-w" placeholder="負責人（可空）" aria-label="負責人" style="margin-top:8px"><p class="err" id="ai-err"></p>
@@ -734,9 +826,12 @@ function reportForm(p){
   <label for="r-b">卡在哪裡／需要主管協助（沒有可留空）</label><textarea id="r-b" placeholder="例如：等資訊部開權限，已等 3 天"></textarea>
   <p class="err" id="ferr"></p><div class="acts"><button class="btn" type="submit">送出回報</button></div></form>`;
 }
+var wideOn=false;try{wideOn=localStorage.getItem('pc-wide')==='1'}catch(e){}
+const wideBtn=()=>isDesk()?`<button class="x wb" data-act="wide" aria-pressed="${wideOn}" aria-label="${wideOn?'縮回側邊面板':'放大成全畫面編輯'}" title="${wideOn?'縮回側邊（Esc）':'放大成全畫面編輯'}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${wideOn?'<path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>':'<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>'}</svg><span>${wideOn?'縮回':'全畫面'}</span></button>`:'';
+function setWide(on){wideOn=on;try{localStorage.setItem('pc-wide',on?'1':'0')}catch(e){}document.body.classList.toggle('wide',on&&sheetMode==='detail'&&isDesk());const b=$('#pane .wb');if(b)b.outerHTML=wideBtn();if(sheetMode==='detail'&&selMid)setTimeout(()=>focusItem(selMid),60)}
 function detailHTML(p){
   const x=st(p),pl=pill(p,x),rs=reasons(p,x);
-  return head(esc(p.name),`${esc(p.owners)} · ${md(p.start)}–${md(p.due)} · 每 ${x.cad} 天回報`)+
+  return head(esc(p.name),`${esc(p.owners)} · ${md(p.start)}–${md(p.due)} · 每 ${x.cad} 天回報`).replace('<button class="x" data-act="close"',wideBtn()+'<button class="x" data-act="close"')+
   `<div class="kv"><div><span>實際完成</span><b style="color:${x.lv==='red'?'var(--redt)':x.lv==='amber'?'var(--ambt)':'var(--grnt)'}">${x.pr}%</b></div><div><span>依時程應達</span><b>${x.exp}%</b></div><div><span>上次回報</span><b style="${x.stale?'color:var(--redt)':''}">${x.never?'從未':x.since===0?'今天':x.since+' 天前'}</b></div></div>
   <div class="tags"><span class="pill ${pl[0]}" style="width:auto;padding:4px 10px;font-size:12px">${pl[1]}</span>${rs.map(r=>`<span class="tag">${esc(r)}</span>`).join('')}</div>
   ${p.lastBlock?`<div class="blk"><b>最新卡關：</b>${esc(p.lastBlock)}</div>`:''}
@@ -751,6 +846,36 @@ async function loadLog(id){
   }catch(e){const el=$('#log');if(el)el.innerHTML='<li class="t">回報紀錄暫時讀不到。</li>'}
 }
 
+
+
+/* ---------- 通知鈴鐺 ---------- */
+function bellData(){
+  const xs=P.map(p=>({p,x:st(p)})),act=xs.filter(o=>o.x.lv!=='done');
+  const late=act.filter(o=>o.x.late||o.x.odm.length).sort((a,b)=>(b.x.late-a.x.late)||(b.x.odm.length-a.x.odm.length));
+  const sig=late.map(o=>o.p.id+':'+(o.x.late?o.x.left:'')+':'+o.x.odm.map(m=>m.id).join(',')).join(';');
+  return {late,act,sig,n:late.length};
+}
+let bellSeen='';try{bellSeen=localStorage.getItem('pc-bellseen')||''}catch(e){}
+function updBell(){if(!loaded)return;const d=bellData(),fresh=d.n&&d.sig!==bellSeen;
+  document.querySelectorAll('.bell').forEach(b=>{const bd=b.querySelector('.bd');bd.hidden=!d.n;bd.textContent=d.n>99?'99+':d.n;bd.classList.toggle('seen',!fresh);b.setAttribute('aria-label',d.n?`逾期提醒：${d.n} 個專案有逾期${fresh?'（有新的）':''}`:'逾期提醒：目前沒有逾期')});
+  if(!$('#bellp').hidden)$('#bellp').innerHTML=bellHTML(d)}
+function bellHTML(d){
+  const t=today(),wk=['日','一','二','三','四','五','六'][t.getDay()],t0=iso(t);
+  const head=`<div class="bp-h"><div><b>逾期提醒</b><span>${t.getMonth()+1}/${t.getDate()} 週${wk}</span></div><button class="x" data-act="bellclose" aria-label="關閉通知">×</button></div>`;
+  if(!d.late.length)return head+`<div class="bp-ok"><span>✓</span><b>目前沒有逾期的專案</b><small>共 ${d.act.length} 個進行中的專案</small></div>`+bellFoot();
+  const ago=m=>{const n=Math.round((pd(t0)-pd(m.due))/864e5);return n>0?`逾期 ${n} 天`:'今天到期'};
+  const cards=d.late.map(o=>{const ms=o.x.odm.slice().sort((a,b)=>a.due<b.due?-1:1),mx=ms.length?Math.round((pd(t0)-pd(ms[0].due))/864e5):0;
+    const tags=[o.x.late?`已過截止 ${-o.x.left} 天`:'',ms.length?`${ms.length} 項逾期`:''].filter(Boolean);
+    return `<button class="bp-it bp-row" data-act="bellgo" data-id="${esc(o.p.id)}"${ms[0]?` data-mid="${esc(ms[0].id)}"`:''}><i class="r"></i><span class="bp-tx"><span class="bp-n"><b>${esc(o.p.name)}</b></span><small class="bp-o">${esc(o.p.owners||'未指定負責人')}${mx>0?` · 最久逾期 ${mx} 天`:''}</small></span><span class="bp-rs">${tags.map(r=>`<em>${esc(r)}</em>`).join('')}</span><svg width="8" height="13" viewBox="0 0 8 13" aria-hidden="true"><path d="M1.5 1.5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`}).join('');
+  return head+`<div class="bp-b"><p class="bp-sum"><b>${d.late.length} 個專案有逾期</b>，共 ${d.late.reduce((n,o)=>n+o.x.odm.length,0)} 項作業逾期</p>${cards}</div>`+bellFoot();
+}
+const bellFoot=()=>`<p class="bp-f">點專案即可查看並處理逾期的作業項目</p>`;
+function bellToggle(btn){const pp=$('#bellp');if(!pp.hidden){bellClose();return}
+  const d=bellData();pp.innerHTML=bellHTML(d);pp.hidden=false;
+  const r=btn.getBoundingClientRect();if(innerWidth>600){pp.style.top=(r.bottom+10)+'px';pp.style.right=Math.max(12,innerWidth-r.right-8)+'px'}else{pp.style.top='';pp.style.right=''}
+  document.querySelectorAll('.bell').forEach(b=>b.setAttribute('aria-expanded','true'));
+  bellSeen=d.sig;try{localStorage.setItem('pc-bellseen',bellSeen)}catch(e){}updBell();const f=pp.querySelector('.bp-it,.x');f&&f.focus()}
+function bellClose(){const pp=$('#bellp');if(pp.hidden)return;pp.hidden=true;document.querySelectorAll('.bell').forEach(b=>b.setAttribute('aria-expanded','false'))}
 
 
 /* ---------- Cloudflare 後端連線 ---------- */
@@ -1255,7 +1380,7 @@ function weekly(){
   return `<h1 class="lt">週報</h1>
   <div class="wkbar"><button class="btn ghost sm" data-act="wkprev" aria-label="上一週">‹ 上週</button><span class="lbl">${md(iso(ws))}–${md(iso(we1))}${wk===0?'（本週）':''}</span><button class="btn ghost sm" data-act="wknext" aria-label="下一週" ${wk>=0?'disabled':''}>下週 ›</button></div>
   <div class="card sum"><div class="cnt"><div><b>${wd.length}</b><span>專案</span></div><div><b style="color:var(--redt)">${tot.bad}</b><span>需處理</span></div><div><b style="color:var(--grnt)">${tot.done}</b><span>完成項目</span></div><div><b>${tot.ph}</b><span>照片</span></div></div>
-  <p style="margin:12px 0 0;font-size:14px;line-height:1.6">本週共 ${tot.rp} 次回報、${tot.nt} 則進度說明、上傳 ${tot.ph} 張照片，完成 ${tot.done} 項作業；${tot.bad?`<b style="color:var(--redt)">${tot.bad} 個專案需要處理</b>`:'所有專案進度正常'}。</p></div>
+  <p style="margin:12px 0 0;font-size:14px;line-height:1.6">本週共 ${tot.rp} 次回報、${tot.nt} 則進度說明，完成 ${tot.done} 項作業；${tot.bad?`<b style="color:var(--redt)">${tot.bad} 個專案需要處理</b>`:'所有專案進度正常'}。</p></div>
   <div class="card ai"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b style="flex:1;font-size:16px">重點摘要</b>${sample?`<button class="btn sm" data-act="aisum" id="aibtn">${ai?'重新產生':'AI 產生重點摘要'}</button>`:''}</div>
   <div class="out" id="aiout">${ai?esc(ai.text):sample?'<span style="color:var(--mute)">按「AI 產生重點摘要」，會依本週各專案的進度、作業項目說明與卡關事項，整理出整體概況、需要關注、本週亮點與下週重點。</span>':'<span style="color:var(--mute)">此檢視無法使用 AI 摘要，請參考下方各專案明細。</span>'}</div>
   ${ai?`<p style="font-size:12px;color:var(--mute);margin:8px 0 0;font-weight:600">產生於 ${when(ai.at)}</p>`:''}</div>
@@ -1409,6 +1534,7 @@ function render(force){
   const tabs=[['#t-ov','#m-ov','overview'],['#t-gd','#m-gd','grid'],['#t-wk','#m-wk','weekly'],['#t-rp','#m-rp','report']];
   for(const [a,b,v] of tabs){$(a).setAttribute('aria-current',view===v);$(b).setAttribute('aria-current',view===v)}
   $('#t-wk').hidden=$('#m-wk').hidden=!admin;$('#b-new').hidden=!(admin&&view==='overview');$('#m-new').hidden=!(admin&&view==='overview');
+  try{updBell()}catch(e){}
   const n=new Date();$('#abt').textContent=view==='report'?'回報進度':view==='weekly'?'週報':view==='grid'?'管控表':'專案總覽';$('#abd').textContent=`${n.getMonth()+1}/${n.getDate()} 週${'日一二三四五六'[n.getDay()]}`;
   if(failed){$('#main').innerHTML=`<div class="card empty"><b>${failed}</b>請檢查網路連線後重新整理。</div>`;return}
   if(!loaded)return;
@@ -1436,11 +1562,12 @@ function openDetail(id,keep){
   const p=P.find(q=>q.id===id);if(!p){closeSheet();return}
   const fresh=openId!==id||!keep;openId=id;sheetMode='detail';delArm=false;
   const top=keep?$('#pane').scrollTop:0,logHTML=keep&&$('#log')?$('#log').innerHTML:'';
-  $('#pane').innerHTML=detailHTML(p);$('#sheet').hidden=false;document.body.classList.add('drawer');$('#pane').scrollTop=top;
+  $('#pane').innerHTML=detailHTML(p);$('#sheet').hidden=false;document.body.classList.add('drawer');document.body.classList.toggle('wide',wideOn&&isDesk());$('#pane').scrollTop=top;
   if(logHTML&&!fresh)$('#log').innerHTML=logHTML;else loadLog(id);
 }
-function openSheet(mode,html){sheetMode=mode;$('#pane').innerHTML=html;$('#sheet').hidden=false;document.body.classList.add('drawer');$('#pane').scrollTop=0}
-function closeSheet(){selMid='';document.querySelectorAll('.tl-i.sel').forEach(x=>x.classList.remove('sel'));$('#sheet').hidden=true;document.body.classList.remove('drawer');sheetMode='';openId='';editId='';pickId='';impRows=null}
+function openSheet(mode,html){sheetMode=mode;document.body.classList.remove('wide');$('#pane').innerHTML=html;$('#sheet').hidden=false;document.body.classList.add('drawer');$('#pane').scrollTop=0}
+function stClose(){document.querySelectorAll('.stm:not([hidden])').forEach(m=>{m.hidden=true;m.classList.remove('up');const b=m.previousElementSibling;b&&b.setAttribute('aria-expanded','false');const it=m.closest('.it');it&&it.classList.remove('stopen')})}
+function closeSheet(){document.body.classList.remove('wide');selMid='';document.querySelectorAll('.tl-i.sel').forEach(x=>x.classList.remove('sel'));$('#sheet').hidden=true;document.body.classList.remove('drawer');sheetMode='';openId='';editId='';pickId='';impRows=null}
 async function setView(v){view=v;if(location.hash!=='#'+v)history.replaceState(null,'','#'+v);if(v==='weekly'){render();await loadUpdates(true);loadAI(wk)}render();window.scrollTo(0,0)}
 const fail=(e,el)=>{const m=el||$('#ferr');if(m)m.textContent=e&&e.code==='invalid_argument'?'你沒有這項操作的權限，請洽主管。':'儲存失敗，請稍後再試。'};
 const curP=()=>P.find(q=>q.id===(sheetMode==='report'||sheetMode==='plan'?pickId:openId));
@@ -1467,7 +1594,11 @@ document.addEventListener('click',async e=>{
   if(e.target.closest('.tl-scroll')&&window.__tlMoved){window.__tlMoved=false;return}
   const k=e.target.closest('[data-pick]');if(k){const p=P.find(q=>q.id===k.dataset.pick);if(!p)return;pickId=p.id;const has=(p.milestones||[]).length;openSheet(has?'report':'plan',has?reportForm(p):planHTML(p));return}
   const q=e.target.closest('[data-q]');if(q){$('#r-p').value=q.dataset.q;$('#r-o').textContent=q.dataset.q+'%';document.querySelectorAll('.qp [data-q]').forEach(b=>b.setAttribute('aria-pressed',b===q));return}
-  const sb=e.target.closest('[data-st]');if(sb){const it=sb.closest('.it'),p=curP();if(!p||!it)return;const s2=sb.dataset.st;const cur=(p.milestones||[]).find(m=>m.id===it.dataset.iid);if(!cur||SO(cur)===s2)return;
+  const smb=e.target.closest('[data-act=stmenu]');
+  if(smb){const mn=smb.nextElementSibling,open=mn.hidden;stClose();if(open){mn.hidden=false;smb.setAttribute('aria-expanded','true');smb.closest('.it').classList.add('stopen');const pr=$('#pane').getBoundingClientRect(),r2=mn.getBoundingClientRect();if(r2.bottom>pr.bottom-90)mn.classList.add('up');(mn.querySelector('[aria-checked=true]')||mn.firstElementChild).focus()}return}
+  if(!e.target.closest('.stm'))stClose();
+  if(!e.target.closest('#bellp')&&!e.target.closest('.bell'))bellClose();
+  const sb=e.target.closest('[data-st]');if(sb){stClose();const it=sb.closest('.it'),p=curP();if(!p||!it)return;const s2=sb.dataset.st;const cur=(p.milestones||[]).find(m=>m.id===it.dataset.iid);if(!cur||SO(cur)===s2)return;
     const now=new Date().toISOString(),patch={status:s2,done:s2==='done',stAt:now};if(s2==='done')patch.doneAt=now;updItem(p,it.dataset.iid,patch);toast(`已改為「${SL[s2]}」`);return}
   const qn=e.target.closest('[data-qn]');if(qn){const ta=qn.closest('.ned').querySelector('textarea');ta.value=ta.value?ta.value.replace(/\s*$/,'；')+qn.dataset.qn:qn.dataset.qn;ta.focus();return}
   const ph=e.target.closest('[data-ph]');if(ph){const [iid,i]=ph.dataset.ph.split('|'),p=curP();const m=p&&(p.milestones||[]).find(x=>x.id===iid);const f=m&&(m.photos||[])[+i];if(!f)return;
@@ -1478,7 +1609,7 @@ document.addEventListener('click',async e=>{
     const fn=$('#f-n');if(fn&&!fn.value.trim())fn.value=TPL[k].n;
     fillMs(tplItems(k,S,D),TPL[k].n);$('#tplpanel').hidden=true;return}
   const wph=e.target.closest('[data-wph]');if(wph){openLB(blob(wph.dataset.wph),wph.dataset.cap,'');return}
-  if(e.target===$('#sheet')){closeSheet();return}
+  if(e.target===$('#sheet')){if(document.body.classList.contains('wide'))setWide(false);else closeSheet();return}
   if(e.target===$('#lb')){$('#lb').hidden=true;return}
   const a=e.target.closest('[data-act]');if(!a)return;
   const act=a.dataset.act;
@@ -1498,6 +1629,10 @@ document.addEventListener('click',async e=>{
   else if(act==='tlall'){if(tlGroup==='proj'&&tlF==='all'&&!tlCat){if(tlOpen.size)tlOpen.clear();else P.forEach(p=>tlOpen.add(p.id))}else if(tlShut.size)tlShut.clear();else{if(tlGroup==='proj')P.forEach(p=>tlShut.add(p.id));else document.querySelectorAll('[data-act=tlgtog]').forEach(b=>tlShut.add('g:'+b.dataset.g))}render()}
   else if(act==='tlproj'){tlProj=a.dataset.id||'';tlShut.clear();tlScrollTo=true;try{localStorage.setItem('pc-tlp',tlProj)}catch(e){}render();const m=document.querySelector('.tl-lay .card.tl');if(m&&m.getBoundingClientRect().top<0)m.scrollIntoView({block:'start'})}
   else if(act==='tlrail'){tlRailOff=!tlRailOff;try{localStorage.setItem('pc-tlr',tlRailOff?'0':'1')}catch(e){}render()}
+  else if(act==='wide'){setWide(!wideOn)}
+  else if(act==='bell'){bellToggle(a)}
+  else if(act==='bellclose'){bellClose()}
+  else if(act==='bellgo'){bellClose();const id=a.dataset.id,mid=a.dataset.mid;openDetail(id);if(mid)setTimeout(()=>focusItem(mid),80);else if(isDesk()){const r=document.querySelector(`.tl-p [data-id="${CSS.escape(id)}"]`);r&&r.scrollIntoView({block:'center'})}}
   else if(act==='tlgrp'){tlGroup=a.dataset.g;tlShut.clear();tlSave();render()}
   else if(act==='tlf'){tlF=a.dataset.f;tlShut.clear();tlSave();render()}
   else if(act==='tlfclr'){tlF='all';tlCat='';tlShut.clear();tlSave();render()}
@@ -1580,7 +1715,10 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&e.target.id==='ai-t'){e.preventDefault();$('#ai-d').focus()}
   if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)&&e.target.closest('.ned')){e.preventDefault();e.target.closest('.ned').querySelector('[data-act=notesave]').click()}
   if(e.key==='Escape'&&!$('#lb').hidden)$('#lb').hidden=true;
-  else if(e.key==='Escape'&&!$('#sheet').hidden&&!e.target.closest('#gsc')){const a=document.activeElement;if(!(a&&a.closest&&a.closest('#pane')&&(a.tagName==='TEXTAREA'||a.tagName==='INPUT')))closeSheet()}
+  else if(e.key==='Escape'&&!$('#bellp').hidden){const b=document.querySelector('.bell[aria-expanded=true]');bellClose();b&&b.focus()}
+  else if(e.key==='Escape'&&document.querySelector('.stm:not([hidden])')){const m=document.querySelector('.stm:not([hidden])'),b=m.previousElementSibling;stClose();b&&b.focus()}
+  else if((e.key==='ArrowDown'||e.key==='ArrowUp')&&e.target.closest('.stm')){e.preventDefault();const bs=[...e.target.closest('.stm').children],i=bs.indexOf(e.target);bs[(i+(e.key==='ArrowDown'?1:bs.length-1))%bs.length].focus()}
+  else if(e.key==='Escape'&&!$('#sheet').hidden&&!e.target.closest('#gsc')){const a=document.activeElement;if(!(a&&a.closest&&a.closest('#pane')&&(a.tagName==='TEXTAREA'||a.tagName==='INPUT'))){if(document.body.classList.contains('wide'))setWide(false);else closeSheet()}}
 });
 document.addEventListener('input',e=>{
   if(e.target.id==='r-p'){$('#r-o').textContent=e.target.value+'%';document.querySelectorAll('.qp [data-q]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.q===e.target.value&&!b.classList.contains('sug')))}
