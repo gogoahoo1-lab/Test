@@ -362,6 +362,39 @@ body.drawer .tl-lay{grid-template-columns:200px minmax(0,1fr)}
 .bp-row .bp-tx{gap:2px}.bp-o{font-size:12px;font-weight:600;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bp-row .bp-rs{flex:none;flex-direction:column;align-items:flex-end;gap:3px}
 .bp-row+.bp-row{border-top:.5px solid var(--sep);border-radius:0 0 12px 12px}
+#banner{margin:-6px 0 16px}
+.bn{display:flex;align-items:center;gap:12px;height:52px;padding:0 8px 0 14px;border-radius:14px;background:linear-gradient(90deg,#fff1f0,#fff7f6);box-shadow:inset 0 0 0 1px rgb(255 59 48/.18)}
+.bn-ic{width:28px;height:28px;border-radius:8px;background:var(--red);color:#fff;display:grid;place-items:center;flex:none}
+.bn-lb{display:flex;flex-direction:column;flex:none;font-size:13.5px;font-weight:700;color:var(--redt);line-height:1.2;padding-right:12px;border-right:1px solid rgb(255 59 48/.2)}
+.bn-lb small{font-size:11.5px;font-weight:600;color:#c4554d}
+.bn-vp{flex:1;min-width:0;height:100%;perspective:600px;overflow:hidden}
+.bn-card{height:100%;display:flex;align-items:center;transform-origin:50% 50%;backface-visibility:hidden}
+.bn-card.out{animation:bnout .26s ease-in forwards}.bn-card.in{animation:bnin .32s cubic-bezier(.2,.8,.2,1)}
+@keyframes bnout{to{transform:rotateX(85deg);opacity:0}}
+@keyframes bnin{from{transform:rotateX(-85deg);opacity:0}}
+.bn-it{all:unset;box-sizing:border-box;display:flex;align-items:baseline;gap:10px;width:100%;min-width:0;padding:6px 10px;border-radius:9px;cursor:pointer;white-space:nowrap}
+.bn-it:hover{background:rgb(255 255 255/.7)}.bn-it:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.bn-it b{font-size:15px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
+.bn-o{font-size:13px;font-weight:600;color:var(--mute);flex:none}
+.bn-t{display:flex;align-items:baseline;gap:8px;margin-left:auto;font-size:13px;font-weight:700;color:var(--redt);flex:none}
+.bn-mx{font-size:12px;font-weight:600;color:#c4554d;padding:2px 8px;border-radius:999px;background:rgb(255 59 48/.1)}
+.bn-nav{display:flex;align-items:center;gap:2px;flex:none;font-size:12px;font-weight:600;color:var(--mute);font-variant-numeric:tabular-nums}
+.bn-nav span{min-width:30px;text-align:center}
+.bn-nav button{all:unset;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:18px;color:var(--mute);cursor:pointer}
+.bn-nav button:hover{background:rgb(255 255 255/.8);color:var(--ink)}.bn-nav button:focus-visible{outline:2px solid var(--blue)}
+@media(max-width:600px){#banner{margin:4px 0 12px}.bn{height:auto;min-height:56px;padding:6px 6px 6px 10px;gap:8px}.bn-lb{display:none}
+.bn-it{flex-wrap:wrap;row-gap:2px;align-items:center}.bn-it b{flex-basis:100%}.bn-t{margin-left:0}.bn-o{order:2}.bn-t{order:3}}
+@media(prefers-reduced-motion:reduce){.bn-card.out,.bn-card.in{animation:none}}
+.rl-tt{all:unset;display:inline-flex;align-items:center;gap:6px;padding:2px 6px 2px 0;border-radius:8px;cursor:pointer;font-size:15px;font-weight:700}
+.rl-tt small{font-size:12px;font-weight:600;color:var(--mute)}
+.rl-tt:hover{color:var(--blue)}.rl-tt:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.rl-ch{color:var(--mute);transition:transform .18s}
+.rl-tt[aria-expanded=false] .rl-ch,.rl-h[aria-expanded=false] .rl-ch{transform:rotate(-90deg)}
+button.rl-h{all:unset;box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;width:100%;padding:12px 10px 4px;font-size:11.5px;font-weight:700;color:var(--mute);letter-spacing:.02em;cursor:pointer;border-radius:8px}
+button.rl-h:hover{color:var(--ink)}button.rl-h:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.rl-hl{display:inline-flex;align-items:center;gap:6px}.rl-h .rl-ch{width:8px}
+.rl.fold{padding-bottom:6px}
+@media(prefers-reduced-motion:reduce){.rl-ch{transition:none}}
 .tl-il{position:absolute;top:8px;height:18px;line-height:18px;padding:0 6px;border-radius:6px;background:var(--card);box-shadow:0 0 0 1px var(--line);font-size:11.5px;color:var(--mute);font-weight:700;white-space:nowrap;pointer-events:none;z-index:3}
 .tl-il.late{color:var(--redt)}
 .tl-today{position:absolute;top:0;bottom:0;width:2px;background:var(--red);z-index:2;pointer-events:none}
@@ -598,7 +631,7 @@ body{padding:0 env(safe-area-inset-right) 0 env(safe-area-inset-left)}
 </style>
 </head>
 <body>
-<header class="appbar" id="appbar"><span class="ab-t" id="abt">專案總覽</span><span class="ab-d" id="abd"></span><button class="bell ab-bell" data-act="bell" aria-label="通知" aria-haspopup="dialog" aria-expanded="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="bd" hidden></span></button><button class="ab-add" data-act="new" id="m-new" aria-label="新增專案" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></header>
+<header class="appbar" id="appbar"><span class="ab-t" id="abt">專案總覽</span><span class="ab-d" id="abd"></span><button class="ab-add" data-act="new" id="m-new" aria-label="新增專案" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></header>
 <nav class="tabbar" aria-label="主選單">
   <button data-go="overview" id="m-ov"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 10h18"/></svg><span>總覽</span></button>
   <button data-go="grid" id="m-gd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9.5h18M3 14.5h18M9 4v16"/></svg><span>管控表</span></button>
@@ -612,8 +645,8 @@ body{padding:0 env(safe-area-inset-right) 0 env(safe-area-inset-left)}
     <button class="tab" data-go="weekly" id="t-wk" hidden>週報</button>
     <button class="tab" data-go="report" id="t-rp">回報進度</button>
     <button class="btn" data-act="new" id="b-new" style="margin-left:auto" hidden>＋ 新增專案</button>
-    <button class="bell" data-act="bell" id="bell" aria-label="通知" aria-haspopup="dialog" aria-expanded="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="bd" hidden></span></button>
   </nav>
+  <div id="banner" hidden></div>
   <main id="main"><div class="card empty"><b>連線中…</b>正在讀取專案資料</div></main>
 </div>
 <div id="bellp" role="dialog" aria-label="通知" hidden></div>
@@ -878,6 +911,31 @@ function bellToggle(btn){const pp=$('#bellp');if(!pp.hidden){bellClose();return}
 function bellClose(){const pp=$('#bellp');if(pp.hidden)return;pp.hidden=true;document.querySelectorAll('.bell').forEach(b=>b.setAttribute('aria-expanded','false'))}
 
 
+/* ---------- 逾期橫幅（輪播） ---------- */
+let bnI=0,bnT=null,bnSig='',bnHold=false;
+const bnRM=matchMedia('(prefers-reduced-motion:reduce)');
+function bnItem(o){const t0=iso(today()),ms=o.x.odm.slice().sort((a,b)=>a.due<b.due?-1:1),mx=ms.length?Math.round((pd(t0)-pd(ms[0].due))/864e5):0;
+  const tags=[o.x.late?`已過截止 ${-o.x.left} 天`:'',ms.length?`${ms.length} 項逾期`:''].filter(Boolean).join(' · ');
+  return `<button class="bn-it" data-act="bngo" data-id="${esc(o.p.id)}"${ms[0]?` data-mid="${esc(ms[0].id)}"`:''}><b>${esc(o.p.name)}</b><span class="bn-o">${esc(o.p.owners||'未指定')}</span><span class="bn-t">${tags}${mx>0?`<span class="bn-mx">最久 ${mx} 天</span>`:''}</span></button>`}
+function updBanner(){
+  const el=$('#banner');if(!el)return;
+  if(!loaded||view==='report'){el.hidden=true;bnStop();return}
+  const d=bellData();if(!d.late.length){el.hidden=true;bnStop();return}
+  if(bnI>=d.late.length)bnI=0;
+  if(d.sig!==bnSig||el.hidden){bnSig=d.sig;el.hidden=false;
+    const n=d.late.length,tot=d.late.reduce((a,o)=>a+o.x.odm.length,0);
+    el.innerHTML=`<div class="bn" role="region" aria-label="逾期提醒"><span class="bn-ic" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l10 18H2z"/><path d="M12 10v4M12 17.5v.5"/></svg></span><span class="bn-lb">逾期提醒<small>${n} 個專案 · ${tot} 項</small></span><div class="bn-vp" aria-live="polite"><div class="bn-card" id="bncard">${bnItem(d.late[bnI])}</div></div>${n>1?`<div class="bn-nav"><button data-act="bnprev" aria-label="上一個">‹</button><span id="bnpg">${bnI+1}/${n}</span><button data-act="bnnext" aria-label="下一個">›</button></div>`:''}</div>`;}
+  bnStart(d.late.length);
+}
+function bnShow(dir){const d=bellData();if(!d.late.length)return;const n=d.late.length;bnI=(bnI+dir+n)%n;const c=$('#bncard'),pg=$('#bnpg');if(!c)return;
+  if(pg)pg.textContent=`${bnI+1}/${n}`;
+  if(bnRM.matches){c.innerHTML=bnItem(d.late[bnI]);return}
+  c.classList.remove('in');c.classList.add('out');setTimeout(()=>{c.innerHTML=bnItem(d.late[bnI]);c.classList.remove('out');void c.offsetWidth;c.classList.add('in')},260)}
+function bnStart(n){if(n<2){bnStop();return}if(bnT)return;bnT=setInterval(()=>{if(!bnHold&&!document.hidden)bnShow(1)},4000)}
+function bnStop(){clearInterval(bnT);bnT=null}
+document.addEventListener('pointerover',e=>{bnHold=!!(e.target.closest&&e.target.closest('#banner'))});document.addEventListener('focusin',e=>{bnHold=!!e.target.closest('#banner')});
+
+
 /* ---------- Cloudflare 後端連線 ---------- */
 const API={key:'',name:'',role:''};
 const STANDALONE=!!document.querySelector('meta[name=pc-api]');
@@ -931,7 +989,9 @@ function footHTML(){return `<p class="note-s" style="text-align:center;margin-to
 
 /* ---------- 電腦版時間軸 ---------- */
 const deskMQ=matchMedia('(min-width:900px)');const isDesk=()=>deskMQ.matches;
-var tlProj='',tlRailOff=false;try{tlProj=localStorage.getItem('pc-tlp')||'';tlRailOff=localStorage.getItem('pc-tlr')==='0'}catch(e){}
+var tlProj='',tlRailOff=false,rlFold=new Set();try{rlFold=new Set(JSON.parse(localStorage.getItem('pc-rlf')||'[]'))}catch(e){}
+function rlSave(){try{localStorage.setItem('pc-rlf',JSON.stringify([...rlFold]))}catch(e){}}
+var tlProj0;try{tlProj=localStorage.getItem('pc-tlp')||'';tlRailOff=localStorage.getItem('pc-tlr')==='0'}catch(e){}
 let tlMode='timeline',tlZoom='week',tlOpen=null,tlScrollTo=true,tlGroup='proj',tlF='all',tlCat='',tlShut=new Set();
 try{const v=JSON.parse(localStorage.getItem('pc-tlv')||'{}');tlGroup=v.g||'proj';tlF=v.f||'all';tlCat=v.c||''}catch(e){}
 function tlSave(){try{localStorage.setItem('pc-tlv',JSON.stringify({g:tlGroup,f:tlF,c:tlCat}))}catch(e){}}
@@ -943,11 +1003,12 @@ const zpx=days=>{if(tlZoom!=='fit')return ZM[tlZoom].px;const sc=$('#tlsc'),w=(s
 function tlRail(bad,good,fin){
   const row=(o,cls)=>{const p=o.p,x=o.x,pr=Math.max(0,Math.min(100,Math.round(x.pr||0))),sel=tlProj===p.id;
     return `<button class="rl-it ${cls}" data-act="tlproj" data-id="${esc(p.id)}" aria-pressed="${sel}" title="${esc(p.name)}"><i class="rl-dot"></i><span class="rl-tx"><b>${esc(p.name)}</b><small>${esc(p.owners||'未指定')} · ${x.nd}/${x.nt} 項</small><span class="rl-bar"><span style="width:${pr}%"></span></span></span><em>${pr}%</em></button>`};
-  const sec=(t,arr,cls)=>arr.length?`<div class="rl-h">${t}<span>${arr.length}</span></div>`+arr.map(o=>row(o,cls)).join(''):'';
+  const sec=(t,arr,cls)=>{if(!arr.length)return '';const f=rlFold.has(cls),selIn=arr.find(o=>o.p.id===tlProj);return `<button class="rl-h${f?' f':''}" data-act="rlsec" data-k="${cls}" aria-expanded="${!f}"><span class="rl-hl"><svg class="rl-ch" width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>${t}</span><span>${arr.length}</span></button>`+(f?(selIn?row(selIn,cls):''):arr.map(o=>row(o,cls)).join(''))};
+  const all0=rlFold.has('all'),selO=[...bad,...good,...fin].find(o=>o.p.id===tlProj);
   const n=bad.length+good.length+(showDone?fin.length:0);
-  return `<aside class="rl" aria-label="專案清單"><div class="rl-top"><span>專案</span><button class="rl-x" data-act="tlrail" aria-label="收起專案清單" title="收起">‹</button></div>
+  return `<aside class="rl${all0?' fold':''}" aria-label="專案清單"><div class="rl-top"><button class="rl-tt" data-act="rlsec" data-k="all" aria-expanded="${!all0}" title="${all0?'展開':'收合'}專案清單">專案<small>${n}</small><svg class="rl-ch" width="10" height="6" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="rl-x" data-act="tlrail" aria-label="收起專案清單" title="收起">‹</button></div>
   <button class="rl-it rl-all" data-act="tlproj" data-id="" aria-pressed="${!tlProj}"><i class="rl-dot"></i><span class="rl-tx"><b>全部專案</b><small>${n} 個專案</small></span></button>
-  ${sec('落後・需處理',bad,'bad')}${sec('正常進行',good,'good')}${showDone?sec('已完成',fin,'fin'):''}</aside>`;
+  ${all0?(selO?row(selO,selO.x.bad?'bad':selO.x.lv==='done'?'fin':'good'):''):sec('落後・需處理',bad,'bad')+sec('正常進行',good,'good')+(showDone?sec('已完成',fin,'fin'):'')}</aside>`;
 }
 function timelineHTML(bad,good,fin){
   const rb=bad,rg=good,rf=fin;
@@ -1534,7 +1595,7 @@ function render(force){
   const tabs=[['#t-ov','#m-ov','overview'],['#t-gd','#m-gd','grid'],['#t-wk','#m-wk','weekly'],['#t-rp','#m-rp','report']];
   for(const [a,b,v] of tabs){$(a).setAttribute('aria-current',view===v);$(b).setAttribute('aria-current',view===v)}
   $('#t-wk').hidden=$('#m-wk').hidden=!admin;$('#b-new').hidden=!(admin&&view==='overview');$('#m-new').hidden=!(admin&&view==='overview');
-  try{updBell()}catch(e){}
+  try{updBanner()}catch(e){}
   const n=new Date();$('#abt').textContent=view==='report'?'回報進度':view==='weekly'?'週報':view==='grid'?'管控表':'專案總覽';$('#abd').textContent=`${n.getMonth()+1}/${n.getDate()} 週${'日一二三四五六'[n.getDay()]}`;
   if(failed){$('#main').innerHTML=`<div class="card empty"><b>${failed}</b>請檢查網路連線後重新整理。</div>`;return}
   if(!loaded)return;
@@ -1628,8 +1689,12 @@ document.addEventListener('click',async e=>{
   else if(act==='tltog'){const id=a.dataset.id;if(tlF!=='all'||tlCat){tlShut.has(id)?tlShut.delete(id):tlShut.add(id)}else{tlOpen.has(id)?tlOpen.delete(id):tlOpen.add(id)}render()}
   else if(act==='tlall'){if(tlGroup==='proj'&&tlF==='all'&&!tlCat){if(tlOpen.size)tlOpen.clear();else P.forEach(p=>tlOpen.add(p.id))}else if(tlShut.size)tlShut.clear();else{if(tlGroup==='proj')P.forEach(p=>tlShut.add(p.id));else document.querySelectorAll('[data-act=tlgtog]').forEach(b=>tlShut.add('g:'+b.dataset.g))}render()}
   else if(act==='tlproj'){tlProj=a.dataset.id||'';tlShut.clear();tlScrollTo=true;try{localStorage.setItem('pc-tlp',tlProj)}catch(e){}render();const m=document.querySelector('.tl-lay .card.tl');if(m&&m.getBoundingClientRect().top<0)m.scrollIntoView({block:'start'})}
+  else if(act==='rlsec'){const k=a.dataset.k;rlFold.has(k)?rlFold.delete(k):rlFold.add(k);rlSave();render()}
   else if(act==='tlrail'){tlRailOff=!tlRailOff;try{localStorage.setItem('pc-tlr',tlRailOff?'0':'1')}catch(e){}render()}
   else if(act==='wide'){setWide(!wideOn)}
+  else if(act==='bnnext'){bnShow(1)}
+  else if(act==='bnprev'){bnShow(-1)}
+  else if(act==='bngo'){const id=a.dataset.id,mid=a.dataset.mid;openDetail(id);if(mid)setTimeout(()=>focusItem(mid),80)}
   else if(act==='bell'){bellToggle(a)}
   else if(act==='bellclose'){bellClose()}
   else if(act==='bellgo'){bellClose();const id=a.dataset.id,mid=a.dataset.mid;openDetail(id);if(mid)setTimeout(()=>focusItem(mid),80);else if(isDesk()){const r=document.querySelector(`.tl-p [data-id="${CSS.escape(id)}"]`);r&&r.scrollIntoView({block:'center'})}}
