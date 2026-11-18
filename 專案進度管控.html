@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="color-scheme" content="light">
+<meta name="theme-color" content="#f3f4f9">
 <!-- 伺服器網址：部署好 Cloudflare Worker 後，把網址填在下面 content 裡（例如 https://project-tracker.xxx.workers.dev），同仁打開這個檔案就不用再輸入 -->
 <meta name="pc-api" content="">
-<meta name="theme-color" content="#f3f4f9">
 <title>專案進度管控</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icon.svg">
@@ -456,55 +456,13 @@ body.drawer #nav .btn{margin-right:0}
 @media(min-width:1000px) and (max-width:1270px){#sheet .pane{min-width:420px}body.drawer .wrap{margin-right:max(420px,44vw)}}
 @keyframes slin{from{transform:translateX(30px);opacity:0}}
 @media(prefers-reduced-motion:reduce){#sheet .pane{animation:none}}
-
-.lg{max-width:440px;margin:7vh auto 0}
+.lg{max-width:420px;margin:8vh auto 0}
 .lg-ic{width:72px;height:72px;border-radius:18px;background:var(--blue);display:grid;place-items:center;margin:0 auto 14px;box-shadow:0 10px 24px rgb(0 122 255/.3)}
 .lgrow{display:flex;align-items:center;gap:12px;margin:0;padding:0 16px;min-height:50px;position:relative;font-weight:500}
 .lgrow+.lgrow::before{content:"";position:absolute;left:16px;right:0;top:0;height:.5px;background:var(--sep)}
-.lgrow span{width:72px;flex:none;font-size:16px}
-.lgrow input{border:0;background:none;padding:0;min-height:48px;font-size:16px;flex:1}
-.lgrow input:focus-visible{outline:none}
-.lgrow:focus-within span{color:var(--blue)}
-.lgrow:focus-within::after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:2px;border-radius:1px;background:var(--blue)}
-.lg-ft{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:18px;color:#c4c4c7;font-size:14px}
-.lg-ft .lnk{font-size:14px}
-.lg-info{padding:4px 16px;font-size:14px;line-height:1.6}.lg-info p{margin:10px 0}
-#pane .grp .lgrow{background:var(--card)}
+.lgrow span{width:64px;flex:none;font-size:16px}
+.lgrow input{border:0;background:none;padding:0;min-height:48px;font-size:16px}
 body.login .tabbar,body.login .appbar,body.login #nav{display:none!important}
-.acct{display:flex;justify-content:center;align-items:center;gap:14px;flex-wrap:wrap;margin-top:28px;text-align:center}
-.acct .lnk{font-size:13px}
-.au-new{padding:14px}
-.au-f{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.au-f label{margin:0;font-size:12.5px;color:var(--mute);font-weight:600}
-.au-f label span{display:block;margin-bottom:4px}
-.au-f input,.au-f select,.au-sel{background:var(--soft);min-height:42px;font-size:15px}
-.au-sub{font-size:12.5px;color:var(--mute);font-weight:600;margin:12px 0 6px}
-.au-pp{display:flex;flex-wrap:wrap;gap:6px 18px}
-.au-pp>label,.au-pl label{display:inline-flex;align-items:center;gap:7px;margin:0;font-weight:500;font-size:14.5px;min-height:34px}
-.au-pp input{width:18px;height:18px;min-height:0;accent-color:var(--blue)}
-.au-pl{flex-basis:100%;display:flex;flex-wrap:wrap;gap:2px 16px;padding:8px 12px;background:var(--soft);border-radius:10px}
-.au-u+.au-u{border-top:.5px solid var(--sep)}
-.au-c{cursor:default}.au-c+.au-c::before{display:none}
-.au-me{color:var(--mute);font-weight:400;font-size:13px}
-.au-bd{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}.au-bd:empty{display:none}
-.au-bd em{font-style:normal;font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--soft);color:var(--mute)}
-.au-bd .b-ad{background:var(--bluebg);color:var(--blue)}.au-bd .b-r{background:var(--redbg);color:var(--redt)}.au-bd .b-a{background:var(--ambbg);color:var(--ambt)}
-.au-ed{font-size:15px;flex:none}
-.au-x{padding:4px 16px 16px 58px}
-.au-acts{display:flex;gap:8px;flex-wrap:wrap}
-.au-acts .au-del{color:var(--red)}
-.gh .au-sel{width:auto;min-height:30px;height:30px;font-size:13px;padding:0 8px;background:var(--card)}
-.gh{align-items:center}
-.au-l{padding:10px 16px}.au-l+.au-l{border-top:.5px solid var(--sep)}
-.au-lh{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:14px}
-.au-lh b{font-weight:600}.au-lh span{color:var(--ink)}.au-lh time{margin-left:auto;font-size:12.5px;color:var(--mute);white-space:nowrap}
-.au-ld{font-size:13px;color:var(--mute);white-space:pre-line;margin-top:3px;line-height:1.5}
-.au-more{display:block;padding:12px 16px;font-size:14px}
-.au-tmp{margin-top:14px}
-.au-tmp .t small{display:block;font-size:12.5px;color:var(--mute)}
-.au-pw{font:700 24px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace!important;letter-spacing:.04em}
-.au-msg{background:var(--card);border-radius:12px;padding:12px 14px;font:13.5px/1.6 var(--sf);white-space:pre-wrap;margin:14px 0 0;color:var(--mute)}
-@media(max-width:600px){.au-f{grid-template-columns:minmax(0,1fr)}.au-x{padding-left:16px}}
 .appbar,.tabbar{display:none}
 @media(max-width:600px){
 body{padding:0 env(safe-area-inset-right) 0 env(safe-area-inset-left)}
@@ -535,7 +493,6 @@ body{padding:0 env(safe-area-inset-right) 0 env(safe-area-inset-left)}
   <button data-go="overview" id="m-ov"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 10h18"/></svg><span>總覽</span></button>
   <button data-go="grid" id="m-gd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9.5h18M3 14.5h18M9 4v16"/></svg><span>管控表</span></button>
   <button data-go="weekly" id="m-wk" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M7 14h5M7 17h8"/></svg><span>週報</span></button>
-  <button data-go="admin" id="m-ad" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .8 3 2.8 3 6"/></svg><span>帳號</span></button>
   <button data-go="report" id="m-rp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M9 12l2 2 4-4"/></svg><span>回報</span></button>
 </nav>
 <div class="wrap">
@@ -544,7 +501,6 @@ body{padding:0 env(safe-area-inset-right) 0 env(safe-area-inset-left)}
     <button class="tab" data-go="grid" id="t-gd">管控表</button>
     <button class="tab" data-go="weekly" id="t-wk" hidden>週報</button>
     <button class="tab" data-go="report" id="t-rp">回報進度</button>
-    <button class="tab" data-go="admin" id="t-ad" hidden>帳號</button>
     <button class="btn" data-act="new" id="b-new" style="margin-left:auto" hidden>＋ 新增專案</button>
   </nav>
   <main id="main"><div class="card empty"><b>連線中…</b>正在讀取專案資料</div></main>
@@ -634,7 +590,7 @@ function dateStr(){const n=new Date();return `${n.getMonth()+1} 月 ${n.getDate(
 function overview(){
   if(!P.length)return `<div class="date">${dateStr()}</div><h1 style="margin-top:4px">還沒有專案</h1>
   <div class="card empty" style="margin-top:16px"><b>新增第一個專案</b>設定截止日與回報週期，系統就會開始幫你盯進度。${admin?'<div style="margin-top:16px"><button class="btn" data-act="new">＋ 新增專案</button></div>':''}</div>
-  <p class="note-s">讓員工回報：到「帳號」頁替每位同仁建立帳號，把網址、帳號和臨時密碼傳給他們；他們登入後會直接進到「回報進度」。</p>`;
+  <p class="note-s">讓員工回報：把這個網址和「通關密碼」傳給同仁，同仁輸入自己的名字和通關密碼後就能進入回報與編輯。</p>`;
   const xs=P.map(p=>({p,x:st(p)}));
   const bad=xs.filter(o=>o.x.bad).sort((a,b)=>score(b.x)-score(a.x)||(a.p.due<b.p.due?-1:1));
   const good=xs.filter(o=>!o.x.bad&&o.x.lv!=='done').sort((a,b)=>a.p.due<b.p.due?-1:1);
@@ -656,7 +612,7 @@ function overview(){
 function report(){
   const mine=P.filter(p=>st(p).lv!=='done').filter(p=>!me||String(p.owners||'').includes(me));
   return `<h1 class="lt">回報進度</h1><p style="color:var(--mute);margin:6px 0 0;font-size:14px;font-weight:600">選你負責的專案：更新作業項目狀態、拍照、寫進度說明，再送出回報。</p>
-  <p class="date" style="margin-top:12px">以「${esc(me)}」的身分回報 · 列出負責人包含你名字的專案</p>
+  <label for="me">我的名字（用來篩選我的專案）</label><input id="me" value="${esc(me)}" placeholder="例如：王小明" autocomplete="name">
   <div class="gh"><span>我的專案</span><span>${mine.length}</span></div><div class="grp">
   ${mine.length?mine.map(p=>rowHTML(p,'data-pick')).join(''):`<div class="empty"><b>找不到專案</b>${me?'請確認名字和主管設定的負責人一致，或清空名字查看全部。':'目前沒有進行中的專案。'}</div>`}</div>`;
 }
@@ -770,18 +726,15 @@ async function loadLog(id){
 
 
 
-/* ---------- Cloudflare 後端連線（個人帳號版） ---------- */
-const API={key:''};
+/* ---------- Cloudflare 後端連線 ---------- */
+const API={key:'',name:'',role:''};
 try{API.key=localStorage.getItem('pc-key')||''}catch(e){}
-let ME=null;
 async function api(path,opt={}){
-  const h={'X-Key':API.key,...(opt.headers||{})};if(opt.json)h['Content-Type']='application/json';
-  let r;try{r=await fetch(PCB+'/api'+path,{method:opt.method||'GET',headers:h,body:opt.json?JSON.stringify(opt.json):opt.body})}catch(e){throw{code:'unavailable',message:'連不上伺服器，請檢查網路或伺服器網址'}}
-  const d=r.status===204?null:await r.json().catch(()=>null);
-  if(r.status===401&&!opt.open){if(!opt.noLogout)logout(true);throw{code:'unauth',message:(d&&d.error)||'請重新登入'}}
-  if(r.status===403&&d&&d.mustChange){showPw(true);throw{code:'mustchange'}}
-  if(!r.ok)throw{code:r.status===403?'invalid_argument':r.status===423?'locked':'unavailable',status:r.status,message:(d&&d.error)||(r.status>=500?`伺服器處理失敗（代碼 ${r.status}），請確認 Worker 已部署最新版並綁定 DB、PHOTOS`:'發生錯誤，請稍後再試')};
-  return d;
+  const h={'X-Key':API.key,'X-Name':encodeURIComponent(me||''),...(opt.headers||{})};if(opt.json)h['Content-Type']='application/json';
+  let r;try{r=await fetch(PCB+'/api'+path,{method:opt.method||'GET',headers:h,body:opt.json?JSON.stringify(opt.json):opt.body})}catch(e){throw{code:'unavailable'}}
+  if(r.status===401){if(!opt.noLogout)logout(true);throw{code:'unauth'}}
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw{code:r.status===403?'invalid_argument':'unavailable',message:e.error||''}}
+  return r.status===204?null:r.json();
 }
 const mkSnap=a=>({docs:a.map(o=>({id:o.id,exists:true,data:()=>o.data})),size:a.length,empty:!a.length,metadata:{fromCache:false,hasPendingWrites:false},docChanges:()=>[]});
 let pollT=null,sver=-1;const subs=[];
@@ -805,136 +758,22 @@ const DBX={
 const ASSETS={async upload(b,o){const r=await api('/photos',{method:'POST',body:b,headers:{'Content-Type':(o&&o.type)||b.type||'image/jpeg'}});return{id:r.id,url:blob(r.id)}},async delete(id){await api('/photos/'+id,{method:'DELETE'});return{deleted:true}}};
 const DOWNLOADS={async save({filename,data}){const b=data instanceof Blob?data:new Blob([data],{type:/\.html$/.test(filename)?'text/html':'application/octet-stream'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),8000);return{status:'saved'}}};
 const SAMPLE=async(prompt,opts)=>{try{const r=await api('/ai',{method:'POST',json:{prompt}});opts&&opts.onText&&opts.onText({text:r.text,delta:r.text});return{text:r.text,truncated:false}}catch(e){throw{code:e.code==='invalid_argument'?'not_granted':'upstream_error',message:e.message}}};
-function saveTok(t){API.key=t;try{localStorage.setItem('pc-key',t)}catch(e){}}
-async function logout(expired){
-  if(!expired&&API.key){try{await api('/logout',{method:'POST',noLogout:true})}catch(e){}}
-  try{localStorage.removeItem('pc-key')}catch(e){}API.key='';
-  if(expired)showLogin('登入已過期或已在其他地方登出，請重新登入');else location.reload();
+function logout(expired){try{localStorage.removeItem('pc-key')}catch(e){}API.key='';if(expired){showLogin('通關密碼已變更，請重新輸入')}else location.reload()}
+function showLogin(msg){
+  document.body.classList.add('login');
+  $('#main').innerHTML=`<div class="lg"><div class="lg-ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M9 12l2 2 4-4"/></svg></div>
+  <h1 class="lt" style="text-align:center">專案進度管控</h1><p class="date" style="text-align:center;margin:6px 0 22px">輸入你的名字和通關密碼就能進入</p>
+  <form id="loginf"><div class="grp"><label class="lgrow"><span>名字</span><input id="lg-n" autocomplete="name" placeholder="例如：王小明" value="${esc(me)}" required></label>${location.protocol==='file:'||PCB?`<label class="lgrow"><span>伺服器</span><input id="lg-u" type="url" placeholder="https://xxx.workers.dev" value="${esc(PCB)}" required></label>`:''}<label class="lgrow"><span>通關密碼</span><input id="lg-k" type="password" autocomplete="current-password" placeholder="主管提供的通關密碼" required></label></div>
+  <p class="err" id="lg-err">${msg?esc(msg):''}</p><button class="btn" type="submit" style="width:100%;margin-top:14px;min-height:50px">登入</button></form>
+  <p class="note-s" style="text-align:center">通關密碼請向主管索取。這台裝置會記住，下次不用再輸入。</p></div>`;
 }
-
-/* ---------- 登入相關畫面 ---------- */
-const LOGO='<div class="lg-ic"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M9 12l2 2 4-4"/></svg></div>';
-const needSrv=()=>location.protocol==='file:'||!!PCB;
-const srvRow=()=>needSrv()?`<label class="lgrow"><span>伺服器</span><input id="au-srv" type="url" placeholder="https://xxx.workers.dev" value="${esc(PCB)}" autocomplete="url" required></label>`:'';
-function readSrv(){const u=$('#au-srv');if(!u)return true;const v=u.value.trim().replace(/\/+$/,'');if(!/^https?:\/\//.test(v)){authErr('請輸入完整伺服器網址（https:// 開頭）');return false}try{localStorage.setItem('pc-api',v)}catch(x){}PCB=v;return true}
-const authErr=t=>{const e=$('#au-err');if(e)e.textContent=t||''};
-const row=(id,lab,type,ph,ac,val)=>`<label class="lgrow"><span>${lab}</span><input id="${id}" type="${type}" placeholder="${ph}"${ac?` autocomplete="${ac}"`:''}${val?` value="${esc(val)}"`:''} required></label>`;
-function authPage(title,sub,form,foot){
-  document.body.classList.add('login');sheetMode='';$('#sheet').hidden=true;
-  $('#main').innerHTML=`<div class="lg">${LOGO}<h1 class="lt" style="text-align:center">${title}</h1><p class="date" style="text-align:center;margin:6px 0 22px">${sub}</p>${form}<div class="lg-ft">${foot||''}</div></div>`;
-  const f=$('#main input:not([value]),#main input[value=""]');if(f)f.focus();
-}
-const authForm=(id,rows,btn,msg)=>`<form id="${id}" novalidate><div class="grp">${rows}</div><p class="err" id="au-err" role="alert">${msg?esc(msg):''}</p><button class="btn" type="submit" style="width:100%;margin-top:14px;min-height:50px">${btn}</button></form>`;
-let lastUser='';try{lastUser=localStorage.getItem('pc-user')||''}catch(e){}
-function showLogin(msg){authPage('專案進度管控','請登入你的帳號',authForm('au-login',srvRow()+row('au-u','帳號','text','主管給你的帳號','username',lastUser)+row('au-p','密碼','password','密碼','current-password'),'登入',msg),
-  `<button class="lnk" data-aa="forgot">忘記密碼？</button><span>·</span><button class="lnk" data-aa="setup">第一次使用（建立主管帳號）</button>`)}
-function showSetup(msg){const rk=!!(window.ST&&ST.recoveryConfigured);authPage('建立主管帳號',rk?'第一次使用：輸入 Cloudflare 設定的救援碼（RECOVERY_KEY），建立你的主管帳號':'第一次使用：建立你的主管帳號。同仁的帳號之後由你在「帳號」頁新增',authForm('au-setup',srvRow()+(rk?row('au-r','救援碼','password','Cloudflare 的 RECOVERY_KEY','off'):'')+row('au-n','姓名','text','例如：陳經理','name')+row('au-u','帳號','text','英文或數字，例如 manager','username')+row('au-p','密碼','password','至少 8 個字','new-password')+row('au-p2','確認','password','再輸入一次密碼','new-password'),'建立並登入',msg),
-  `<button class="lnk" data-aa="login">‹ 回到登入</button>`)}
-function showForgot(msg){authPage('忘記密碼','輸入你的帳號',authForm('au-forgot',srvRow()+row('au-u','帳號','text','你的帳號','username',lastUser),'下一步',msg),`<button class="lnk" data-aa="login">‹ 回到登入</button>`)}
-function showForgotSent(un){authPage('已送出申請',`帳號：${esc(un)}`,
-  `<div class="grp lg-info"><p><b>如果你是員工</b>：已通知主管，主管重設後會給你一組臨時密碼，用它登入後再設定新密碼。</p><p><b>如果你是主管</b>：6 位數驗證碼已傳到 Telegram（10 分鐘內有效），請在下面輸入。</p></div>
-  <div style="height:16px"></div>${authForm('au-verify',row('au-c','驗證碼','text','6 位數','one-time-code')+row('au-p','新密碼','password','至少 8 個字','new-password')+row('au-p2','確認','password','再輸入一次','new-password'),'設定新密碼並登入')}`,
-  `<button class="lnk" data-aa="recover">沒收到驗證碼？用救援碼重設主管密碼</button><span>·</span><button class="lnk" data-aa="login">回到登入</button>`);$('#au-verify').dataset.u=un}
-function showRecover(msg){authPage('用救援碼重設','只限主管帳號。忘了救援碼也沒關係：到 Cloudflare 的 Worker →「Settings」→「Variables and Secrets」把 RECOVERY_KEY 改成一組新的字（沒有就新增），存檔後在這裡輸入新的那組',authForm('au-recover',srvRow()+row('au-r','救援碼','password','RECOVERY_KEY','off')+row('au-u','主管帳號','text','你的主管帳號','username',lastUser)+row('au-p','新密碼','password','至少 8 個字','new-password')+row('au-p2','確認','password','再輸入一次','new-password'),'重設並登入',msg),`<button class="lnk" data-aa="login">‹ 回到登入</button>`)}
-function showPw(forced,msg){
-  if(forced){authPage('設定新密碼',`${esc((ME&&ME.name)||'')}，你目前用的是臨時密碼，請先設定自己的密碼`,authForm('au-pw',row('au-p','新密碼','password','至少 8 個字','new-password')+row('au-p2','確認','password','再輸入一次','new-password'),'儲存並開始使用',msg),`<button class="lnk" data-aa="logout">登出</button>`);return}
-  openSheet('pw',`<div class="grab"></div><div class="ph"><h2>修改密碼</h2><button class="x" data-act="close" aria-label="關閉">×</button></div>${authForm('au-pw',row('au-o','目前密碼','password','目前的密碼','current-password')+row('au-p','新密碼','password','至少 8 個字','new-password')+row('au-p2','確認','password','再輸入一次','new-password'),'儲存新密碼',msg)}<p class="note-s">修改後，你在其他裝置上的登入會被登出。</p>`);
-  const o=$('#au-o');o&&o.focus();
-}
-const pwPair=()=>{const a=$('#au-p').value,b=$('#au-p2').value;if(a.length<8){authErr('密碼至少 8 個字');return null}if(a!==b){authErr('兩次輸入的密碼不一樣');return null}return a};
-document.addEventListener('submit',async e=>{
-  const f=e.target;if(!f.id||!f.id.startsWith('au-'))return;e.preventDefault();e.stopImmediatePropagation();
-  const b=f.querySelector('button[type=submit]'),lb=b.textContent;authErr('');
-  const busy=v=>{b.disabled=v;b.textContent=v?'處理中…':lb};
-  if(!readSrv())return;
-  const val=id=>($(id)||{}).value?$(id).value.trim():'';
-  try{
-    busy(true);
-    if(f.id==='au-login'){const u=val('#au-u'),p=$('#au-p').value;if(!u||!p){authErr('請輸入帳號和密碼');busy(false);return}
-      const r=await api('/login',{method:'POST',json:{username:u,password:p},open:true});saveTok(r.token);try{localStorage.setItem('pc-user',u)}catch(x){}location.reload()}
-    else if(f.id==='au-setup'){const p=pwPair();if(!p){busy(false);return}
-      const r=await api('/setup',{method:'POST',json:{recovery:$('#au-r')?$('#au-r').value:'',name:val('#au-n'),username:val('#au-u'),password:p},open:true});saveTok(r.token);try{localStorage.setItem('pc-user',val('#au-u'))}catch(x){}location.reload()}
-    else if(f.id==='au-forgot'){const u=val('#au-u');if(!u){authErr('請輸入帳號');busy(false);return}await api('/forgot',{method:'POST',json:{username:u},open:true});showForgotSent(u)}
-    else if(f.id==='au-verify'){const p=pwPair();if(!p){busy(false);return}const r=await api('/forgot/verify',{method:'POST',json:{username:f.dataset.u,code:val('#au-c'),password:p},open:true});saveTok(r.token);location.reload()}
-    else if(f.id==='au-recover'){const p=pwPair();if(!p){busy(false);return}const r=await api('/recover',{method:'POST',json:{recovery:$('#au-r').value,username:val('#au-u'),password:p},open:true});saveTok(r.token);location.reload()}
-    else if(f.id==='au-pw'){const p=pwPair();if(!p){busy(false);return}const o=$('#au-o');
-      await api('/password',{method:'POST',json:{old:o?o.value:'',password:p}});
-      if(ME&&ME.mustChange)location.reload();else{closeSheet();toast('已更新密碼')}}
-  }catch(err){busy(false);authErr(err.message||'發生錯誤，請稍後再試')}
-},true);
-
-/* ---------- 帳號管理（主管） ---------- */
-let AU=null,AL=null,alUser='',alN=60,auEdit='',auDel='',auErr='';
-async function loadAdmin(){try{const [u,l]=await Promise.all([api('/users'),api('/audit?limit=300')]);AU=u;AL=l}catch(e){AU=AU||[];AL=AL||[];toast(e.message||'讀取失敗')}if(view==='admin')render(true)}
-const AV=['#e2445c','#579bfc','#a25ddc','#ff158a','#00a9c5','#784bd1','#bb3354','#037f4c','#ff642e'];
-const avc=n=>{let h=0;for(const c of String(n||''))h=(h*31+c.charCodeAt(0))>>>0;return AV[h%AV.length]};
-const ago=t=>{if(!t)return'從未登入';const m=Math.round((Date.now()-new Date(t))/60000);return m<1?'剛剛':m<60?`${m} 分鐘前`:m<1440?`${Math.round(m/60)} 小時前`:`${Math.round(m/1440)} 天前`};
-function projPick(sel,name){const all=!sel;return `<div class="au-pp"><label><input type="radio" name="${name}" value="all"${all?' checked':''}>全部專案</label><label><input type="radio" name="${name}" value="some"${all?'':' checked'}>只看指定專案</label><div class="au-pl"${all?' hidden':''}>${P.length?P.map(p=>`<label><input type="checkbox" value="${esc(p.id)}"${sel&&sel.includes(p.id)?' checked':''}>${esc(p.name)}</label>`).join(''):'<span class="note-s">還沒有專案</span>'}</div></div>`}
-function readPick(box){const m=box.querySelector('input[type=radio]:checked');if(!m||m.value==='all')return null;return [...box.querySelectorAll('.au-pl input:checked')].map(i=>i.value)}
-function adminHTML(){
-  if(!AU)return `<h1 class="lt">帳號管理</h1><div class="card empty" style="margin-top:16px"><b>讀取中…</b></div>`;
-  const reqs=AU.filter(u=>u.resetReq&&u.active),act=AU.filter(u=>u.active),off=AU.filter(u=>!u.active);
-  const badge=u=>[u.role==='admin'?'<em class="b-ad">主管</em>':'',!u.active?'<em class="b-off">已停用</em>':'',u.locked?'<em class="b-r">鎖定中</em>':'',u.mustChange&&u.active?'<em class="b-a">待設定密碼</em>':'',u.resetReq&&u.active?'<em class="b-r">申請重設密碼</em>':''].join('');
-  const cell=u=>{const me2=ME&&u.id===ME.id,ed=auEdit===u.id;
-    return `<div class="au-u${ed?' open':''}"><div class="cell au-c"><span class="ic" style="background:${avc(u.name)}">${esc(u.name.slice(-1))}</span><div class="t"><b>${esc(u.name)}${me2?' <span class="au-me">（你）</span>':''}</b><small>${esc(u.username)} · ${u.projects?`可看 ${u.projects.length} 個專案`:'全部專案'} · ${ago(u.lastLogin)}${u.devices?` · ${u.devices} 台裝置登入中`:''}</small><div class="au-bd">${badge(u)}</div></div>
-    <button class="lnk au-ed" data-aa="edit" data-id="${esc(u.id)}" aria-expanded="${ed}">${ed?'收起':'管理'}</button></div>
-    ${ed?`<div class="au-x"><div class="au-f"><label><span>姓名</span><input id="ae-n" value="${esc(u.name)}"></label><label><span>角色</span><select id="ae-r"${me2?' disabled':''}><option value="staff"${u.role==='staff'?' selected':''}>員工</option><option value="admin"${u.role==='admin'?' selected':''}>主管</option></select></label></div>
-    <div class="au-sub">可以看到的專案</div><div id="ae-pp">${projPick(u.projects,'ae-pp')}</div>
-    <p class="err">${auErr?esc(auErr):''}</p>
-    <div class="au-acts"><button class="btn sm" data-aa="save" data-id="${esc(u.id)}">儲存變更</button><button class="btn ghost sm" data-aa="reset" data-id="${esc(u.id)}">重設密碼</button>${u.devices?`<button class="btn ghost sm" data-aa="kick" data-id="${esc(u.id)}">強制登出所有裝置</button>`:''}${u.locked?`<button class="btn ghost sm" data-aa="unlock" data-id="${esc(u.id)}">解除鎖定</button>`:''}${me2?'':`<button class="btn ghost sm" data-aa="toggle" data-id="${esc(u.id)}">${u.active?'停用帳號':'重新啟用'}</button><button class="btn ghost sm au-del" data-aa="del" data-id="${esc(u.id)}">${auDel===u.id?'再按一次確認刪除':'刪除帳號'}</button>`}</div></div>`:''}</div>`};
-  const users=Object.fromEntries(AU.map(u=>[u.id,u.name]));
-  const logs=(AL||[]).filter(l=>!alUser||l.uid===alUser);
-  return `<h1 class="lt">帳號管理</h1><div class="date" style="margin-top:2px">${act.length} 位啟用中${off.length?` · ${off.length} 位已停用`:''}</div>
-  ${reqs.length?`<div class="gh"><span>待處理：申請重設密碼</span><span>${reqs.length}</span></div><div class="grp">${reqs.map(u=>`<div class="cell"><span class="ic" style="background:var(--red)">!</span><div class="t"><b>${esc(u.name)}（${esc(u.username)}）</b><small>${ago(u.resetReq)}申請 · 同仁正在等你給他臨時密碼</small></div><button class="lnk" data-aa="reset" data-id="${esc(u.id)}">重設密碼</button></div>`).join('')}</div>`:''}
-  <div class="gh"><span>新增同仁</span></div>
-  <form id="ad-new" class="grp au-new"><div class="au-f"><label><span>姓名</span><input id="an-n" placeholder="例如：王小明" required></label><label><span>帳號</span><input id="an-u" placeholder="英文或數字，例如 ming.wang" autocapitalize="off" required></label><label><span>角色</span><select id="an-r"><option value="staff">員工</option><option value="admin">主管</option></select></label></div>
-  <div class="au-sub">可以看到的專案</div><div id="an-pp">${projPick(null,'an-pp')}</div><p class="err" id="an-err"></p><button class="btn" type="submit" style="width:100%">新增並產生臨時密碼</button></form>
-  <div class="gh"><span>同仁帳號</span><span>${AU.length}</span></div><div class="grp">${[...act,...off].map(cell).join('')}</div>
-  <div class="gh"><span>操作紀錄</span><select id="al-u" class="au-sel" aria-label="篩選人員"><option value="">所有人</option>${AU.map(u=>`<option value="${esc(u.id)}"${alUser===u.id?' selected':''}>${esc(u.name)}</option>`).join('')}</select></div>
-  <div class="grp au-log">${logs.slice(0,alN).map(l=>`<div class="au-l"><div class="au-lh"><b>${esc(l.name||users[l.uid]||'（未登入）')}</b><span>${esc(l.action)}${l.target?`・${esc(l.target)}`:''}</span><time>${when(l.at)}</time></div>${l.detail?`<div class="au-ld">${esc(l.detail)}</div>`:''}</div>`).join('')||'<div class="empty">還沒有紀錄</div>'}
-  ${logs.length>alN?`<button class="lnk au-more" data-aa="more">顯示更多（還有 ${logs.length-alN} 筆）</button>`:''}</div>
-  <p class="note-s">紀錄保留最近 20,000 筆。同仁忘記密碼時，按「重設密碼」會產生一組臨時密碼，對方用它登入後必須改成自己的密碼。</p>`;
-}
-function showTemp(u,pw,title){
-  const link=(PCB||location.origin);
-  const msg=`【專案進度管控】\n網址：${link}\n帳號：${u.username}\n臨時密碼：${pw}\n第一次登入後請設定自己的密碼。`;
-  openSheet('temp',`<div class="grab"></div><div class="ph"><h2>${title}</h2><button class="x" data-act="close" aria-label="關閉">×</button></div>
-  <p style="margin:0;color:var(--mute);font-size:14px">這組臨時密碼只會顯示這一次，請現在交給 ${esc(u.name)}。</p>
-  <div class="grp au-tmp"><div class="cell"><div class="t"><small>帳號</small><b>${esc(u.username)}</b></div></div><div class="cell"><div class="t"><small>臨時密碼</small><b class="au-pw">${esc(pw)}</b></div></div></div>
-  <pre class="au-msg">${esc(msg)}</pre><div class="acts"><button class="btn" data-aa="copy">複製給同仁的訊息</button></div>`);
-  $('#pane').dataset.msg=msg;
-}
-document.addEventListener('click',async e=>{
-  const a=e.target.closest('[data-aa]');if(!a)return;const k=a.dataset.aa,id=a.dataset.id,u=AU&&AU.find(x=>x.id===id);
-  if(k==='login')return showLogin();if(k==='setup')return showSetup();if(k==='forgot')return showForgot();if(k==='recover')return showRecover();if(k==='logout')return logout(false);
-  if(k==='chpw')return showPw(false);
-  if(k==='copy'){try{await navigator.clipboard.writeText($('#pane').dataset.msg);a.textContent='已複製'}catch(x){a.textContent='請手動複製上方文字'}return}
-  if(k==='more'){alN+=100;render(true);return}
-  if(k==='edit'){auEdit=auEdit===id?'':id;auDel='';auErr='';render(true);return}
-  if(!u)return;
-  const run=async(fn,ok)=>{a.disabled=true;auErr='';try{const r=await fn();await loadAdmin();if(ok)toast(ok);return r}catch(x){auErr=x.message;a.disabled=false;render(true)}};
-  if(k==='save'){const pp=readPick($('#ae-pp'));await run(()=>api('/users/'+id,{method:'PATCH',json:{name:$('#ae-n').value.trim(),role:$('#ae-r').value,projects:pp}}),'已儲存')}
-  else if(k==='reset'){const r=await run(()=>api('/users/'+id+'/reset',{method:'POST'}));if(r)showTemp(u,r.tempPassword,'已重設密碼')}
-  else if(k==='kick')await run(()=>api('/users/'+id+'/logout',{method:'POST'}),`已讓 ${u.name} 的所有裝置登出`);
-  else if(k==='unlock')await run(()=>api('/users/'+id,{method:'PATCH',json:{unlock:true}}),'已解除鎖定');
-  else if(k==='toggle')await run(()=>api('/users/'+id,{method:'PATCH',json:{active:!u.active}}),u.active?`已停用 ${u.name}，所有裝置已登出`:`已重新啟用 ${u.name}`);
-  else if(k==='del'){if(auDel!==id){auDel=id;render(true);setTimeout(()=>{if(auDel===id){auDel='';render(true)}},3000);return}auDel='';auEdit='';await run(()=>api('/users/'+id,{method:'DELETE'}),`已刪除 ${u.name} 的帳號`)}
-});
-document.addEventListener('change',e=>{
-  const t=e.target;
-  if(t.matches&&t.matches('.au-pp input[type=radio]')){const l=t.closest('.au-pp').querySelector('.au-pl');if(l)l.hidden=t.value!=='some'}
-  if(t.id==='al-u'){alUser=t.value;alN=60;render(true)}
-});
-document.addEventListener('submit',async e=>{
-  if(e.target.id!=='ad-new')return;e.preventDefault();e.stopImmediatePropagation();
-  const b=e.target.querySelector('[type=submit]'),er=$('#an-err');er.textContent='';
-  const name=$('#an-n').value.trim(),un=$('#an-u').value.trim().toLowerCase();
-  if(!name){er.textContent='請填姓名';return}if(!/^[a-z0-9._-]{3,40}$/.test(un)){er.textContent='帳號需為 3 個字以上的英文、數字或 . _ -';return}
-  b.disabled=true;
-  try{const r=await api('/users',{method:'POST',json:{name,username:un,role:$('#an-r').value,projects:readPick($('#an-pp'))}});await loadAdmin();showTemp({name,username:un},r.tempPassword,'已新增帳號')}
-  catch(x){er.textContent=x.message;b.disabled=false}
-},true);
-function footHTML(){return `<p class="note-s acct">已登入：${esc(me||'')}（${admin?'主管':'員工'}）<button class="lnk" data-aa="chpw">修改密碼</button><button class="lnk" data-aa="logout">登出</button>${admin?'<button class="lnk" data-act="testpush">測試 Telegram 推播</button>':''}</p>`}
+document.addEventListener('submit',async e=>{if(e.target.id!=='loginf')return;e.preventDefault();e.stopImmediatePropagation();
+  const n=$('#lg-n').value.trim(),k=$('#lg-k').value.trim(),b=e.target.querySelector('button');if(!n||!k)return;
+  const u=$('#lg-u');if(u){const v=u.value.trim().replace(/\/+$/,'');if(!/^https?:\/\//.test(v)){$('#lg-err').textContent='請輸入完整伺服器網址（https:// 開頭）';return}try{localStorage.setItem('pc-api',v)}catch(x){}PCB=v}
+  b.disabled=true;b.textContent='登入中…';API.key=k;me=n;
+  try{await api('/me',{noLogout:true});try{localStorage.setItem('pc-key',k);localStorage.setItem('pc-me',n)}catch(x){}location.reload()}
+  catch(err){b.disabled=false;b.textContent='登入';$('#lg-err').textContent=err.code==='unauth'?'通關密碼錯誤':'連不上伺服器，請稍後再試'}},true);
+function footHTML(){return `<p class="note-s" style="text-align:center;margin-top:28px">已登入：${esc(me||'')}　<button class="lnk" style="font-size:13px" data-act="logout">登出</button>${admin?'　<button class="lnk" style="font-size:13px" data-act="testpush">測試 Telegram 推播</button>':''}</p>`}
 
 /* ---------- 電腦版時間軸 ---------- */
 const deskMQ=matchMedia('(min-width:900px)');const isDesk=()=>deskMQ.matches;
@@ -1521,12 +1360,12 @@ function openLB(src,cap,del){
 }
 
 /* ---------- 共用 ---------- */
-function viewHTML(){return view==='admin'?adminHTML():view==='report'?report():view==='weekly'?weekly():view==='grid'?gridHTML():overview()}
+function viewHTML(){return view==='report'?report():view==='weekly'?weekly():view==='grid'?gridHTML():overview()}
 function render(force){
-  const tabs=[['#t-ov','#m-ov','overview'],['#t-gd','#m-gd','grid'],['#t-ad','#m-ad','admin'],['#t-wk','#m-wk','weekly'],['#t-rp','#m-rp','report']];
+  const tabs=[['#t-ov','#m-ov','overview'],['#t-gd','#m-gd','grid'],['#t-wk','#m-wk','weekly'],['#t-rp','#m-rp','report']];
   for(const [a,b,v] of tabs){$(a).setAttribute('aria-current',view===v);$(b).setAttribute('aria-current',view===v)}
-  $('#t-wk').hidden=$('#m-wk').hidden=!admin;$('#t-ad').hidden=$('#m-ad').hidden=!admin;$('#b-new').hidden=!(admin&&view==='overview');$('#m-new').hidden=!(admin&&view==='overview');
-  const n=new Date();$('#abt').textContent=view==='report'?'回報進度':view==='weekly'?'週報':view==='grid'?'管控表':view==='admin'?'帳號管理':'專案總覽';$('#abd').textContent=`${n.getMonth()+1}/${n.getDate()} 週${'日一二三四五六'[n.getDay()]}`;
+  $('#t-wk').hidden=$('#m-wk').hidden=!admin;$('#b-new').hidden=!(admin&&view==='overview');$('#m-new').hidden=!(admin&&view==='overview');
+  const n=new Date();$('#abt').textContent=view==='report'?'回報進度':view==='weekly'?'週報':view==='grid'?'管控表':'專案總覽';$('#abd').textContent=`${n.getMonth()+1}/${n.getDate()} 週${'日一二三四五六'[n.getDay()]}`;
   if(failed){$('#main').innerHTML=`<div class="card empty"><b>${failed}</b>請檢查網路連線後重新整理。</div>`;return}
   if(!loaded)return;
   if(view==='weekly'&&$('#main').contains(document.activeElement)&&document.activeElement.id==='aibtn')return;
@@ -1558,7 +1397,7 @@ function openDetail(id,keep){
 }
 function openSheet(mode,html){sheetMode=mode;$('#pane').innerHTML=html;$('#sheet').hidden=false;document.body.classList.add('drawer');$('#pane').scrollTop=0}
 function closeSheet(){selMid='';document.querySelectorAll('.tl-i.sel').forEach(x=>x.classList.remove('sel'));$('#sheet').hidden=true;document.body.classList.remove('drawer');sheetMode='';openId='';editId='';pickId='';impRows=null}
-async function setView(v){if(v==='admin'&&!admin)v='overview';view=v;if(v==='admin'){auEdit='';render(true);loadAdmin()}if(location.hash!=='#'+v)history.replaceState(null,'','#'+v);if(v==='weekly'){render();await loadUpdates(true);loadAI(wk)}render();window.scrollTo(0,0)}
+async function setView(v){view=v;if(location.hash!=='#'+v)history.replaceState(null,'','#'+v);if(v==='weekly'){render();await loadUpdates(true);loadAI(wk)}render();window.scrollTo(0,0)}
 const fail=(e,el)=>{const m=el||$('#ferr');if(m)m.textContent=e&&e.code==='invalid_argument'?'你沒有這項操作的權限，請洽主管。':'儲存失敗，請稍後再試。'};
 const curP=()=>P.find(q=>q.id===(sheetMode==='report'||sheetMode==='plan'?pickId:openId));
 async function saveItems(p,items){await db.doc('projects/'+p.id).update({milestones:items})}
@@ -1604,6 +1443,7 @@ document.addEventListener('click',async e=>{
   else if(act==='new'){editId='';openSheet('form',formHTML())}
   else if(act==='edit'){editId=openId;openSheet('form',formHTML(P.find(q=>q.id===editId)))}
   else if(act==='togdone'){showDone=!showDone;render()}
+  else if(act==='logout'){logout(false)}
   else if(act==='testpush'){a.disabled=true;try{const r=await api('/test-push',{method:'POST'});toast(r.sent?'已送出測試推播':'尚未設定 Telegram，請看部署說明')}catch(err){toast('推播失敗：'+(err.message||'請檢查設定'))}a.disabled=false}
   else if(act==='jump'){const el=document.getElementById(a.dataset.to);if(el)el.scrollIntoView({behavior:'smooth',block:'start'})}
   else if(act==='vmode'){tlMode=a.dataset.m;try{localStorage.setItem('pc-tlmode',tlMode)}catch(x){}tlScrollTo=true;render()}
@@ -1729,21 +1569,16 @@ document.addEventListener('submit',async e=>{
   }
 });
 window.addEventListener('scroll',()=>$('#appbar').classList.toggle('sc',scrollY>4),{passive:true});
-window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(['overview','report','weekly','grid','admin'].includes(h)&&h!==view)setView(h)});
+window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(['overview','report','weekly','grid'].includes(h)&&h!==view)setView(h)});
 
 (async()=>{
-  const h=location.hash.slice(1);view=['overview','report','weekly','grid','admin'].includes(h)?h:'';
-  if(!API.key){
-    if(location.protocol==='file:'&&!PCB){showLogin();return}
-    try{const st=await api('/status',{open:true});window.ST=st;if(st.setup){showSetup();return}}catch(e){showLogin(e.message);return}
-    showLogin();return}
-  let info;try{info=await api('/me',{noLogout:true})}catch(e){if(e.code==='unauth')logout(true);else if(e.code!=='mustchange'){failed='連不上伺服器';render()}return}
-  ME=info;me=info.name;try{localStorage.setItem('pc-me',me)}catch(x){}
-  if(info.mustChange){showPw(true);return}
-  admin=info.role==='admin';uid=info.id;db=DBX;assets=ASSETS;downloads=DOWNLOADS;sample=info.ai?SAMPLE:null;
-  if(!view||((view==='weekly'||view==='admin')&&!admin))view=admin?'overview':'report';
+  const h=location.hash.slice(1);view=['overview','report','weekly','grid'].includes(h)?h:'';
+  if(!API.key){showLogin();return}
+  let info;try{info=await api('/me',{noLogout:true})}catch(e){if(e.code==='unauth'){logout(true)}else{failed='連不上伺服器';render()}return}
+  admin=info.role==='admin';uid=me;db=DBX;assets=ASSETS;downloads=DOWNLOADS;sample=info.ai?SAMPLE:null;
+  if(!view||(view==='weekly'&&!admin))view=admin?'overview':'report';
   const timer=setTimeout(()=>{if(!loaded){failed='暫時連不上資料';render()}},12000);
-  db.collection('projects').onSnapshot(s=>{P=s.docs.map(d=>({id:d.id,...d.data()}));clearTimeout(timer);failed='';const first=!loaded;loaded=true;render();if(first&&(view==='weekly'||view==='admin'))setView(view)},
+  db.collection('projects').onSnapshot(s=>{P=s.docs.map(d=>({id:d.id,...d.data()}));clearTimeout(timer);failed='';const first=!loaded;loaded=true;render();if(first&&view==='weekly')setView('weekly')},
     err=>{clearTimeout(timer);failed='資料讀取中斷';render()});
   render();
 })();
